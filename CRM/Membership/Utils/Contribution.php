@@ -3,7 +3,7 @@
 /**
  * Utils and helper methods to handle offline recurring contribution for Membership.
  */
-class CRM_Membership_Utils {
+class CRM_Membership_Utils_Contribution {
   /**
    * Returns CRM_Contribute_BAO_ContributionRecur instance for specified
    * Membership ID or NULL if there is no Recurring Contribution found.

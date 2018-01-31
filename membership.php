@@ -130,9 +130,9 @@ function membership_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
  */
 function membership_civicrm_pre($op, $objectName, $id, &$params) {
   if ($op === 'edit' && $objectName === 'Membership') {
-    $recurringContribution = CRM_Membership_Utils::getContributionRecurByMembershipId($id);
+    $recurringContribution = CRM_Membership_Utils_Contribution::getContributionRecurByMembershipId($id);
     if (!empty($recurringContribution)) {
-      $isOfflineRecurring = CRM_Membership_Utils::isOfflineRecurring($recurringContribution);
+      $isOfflineRecurring = CRM_Membership_Utils_Contribution::isOfflineRecurring($recurringContribution);
       if ($isOfflineRecurring) {
         unset($params['end_date']);
       }
