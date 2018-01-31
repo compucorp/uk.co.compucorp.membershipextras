@@ -123,30 +123,19 @@ function membership_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _membership_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
-// --- Functions below this ship commented out. Uncomment as required. ---
-
 /**
- * Implements hook_civicrm_preProcess().
+ * Implements hook_civicrm_pre().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-function membership_civicrm_preProcess($formName, &$form) {
-
-} // */
-
-/**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
-function membership_civicrm_navigationMenu(&$menu) {
-  _membership_civix_insert_navigation_menu($menu, NULL, array(
-    'label' => E::ts('The Page'),
-    'name' => 'the_page',
-    'url' => 'civicrm/the-page',
-    'permission' => 'access CiviReport,access CiviContribute',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _membership_civix_navigationMenu($menu);
-} // */
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pre
+ */
+function membership_civicrm_pre($op, $objectName, $id, &$params) {
+  if ($op === 'edit' && $objectName === 'Membership') {
+    $recurringContribution = CRM_Membership_Utils::getContributionRecurByMembershipId($id);
+    if (!empty($recurringContribution)) {
+      $isOfflineRecurring = CRM_Membership_Utils::isOfflineRecurring($recurringContribution);
+      if ($isOfflineRecurring) {
+        unset($params['end_date']);
+      }
+    }
+  }
+}
