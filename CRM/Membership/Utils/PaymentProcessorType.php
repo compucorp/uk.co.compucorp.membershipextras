@@ -12,12 +12,15 @@ class CRM_Membership_Utils_PaymentProcessorType {
    * @return int|NULL
    */
   public static function getManualRecurringPaymentProcessorTypeId() {
-    return CRM_Core_DAO::getFieldValue(
-      'CRM_Financial_DAO_PaymentProcessorType',
-      self::$name,
-      'id',
-      'name'
-    );
+    $processorType = civicrm_api3('PaymentProcessorType', 'get', array(
+        'name' => self::$name,
+    ));
+
+    if (empty($processorType['id'])) {
+      return NULL;
+    }
+
+    return $processorType['id'];
   }
 
   /**
@@ -33,7 +36,7 @@ class CRM_Membership_Utils_PaymentProcessorType {
       'title' => 'Manual Recurring Payment',
       'is_active' => '1',
       'is_default' => '0',
-      'class_name' => 'CRM_Membership_Payment_ManualRecurringPayment',
+      'class_name' => 'Payment_ManualRecurringPayment',
       'billing_mode' => CRM_Core_Payment::BILLING_MODE_NOTIFY, // This parameter is required but deprecated so I guess the value doesn't matter too much.
       'is_recur' => '1',
       'payment_type' => CRM_Core_Payment::PAYMENT_TYPE_DIRECT_DEBIT,
@@ -50,7 +53,7 @@ class CRM_Membership_Utils_PaymentProcessorType {
    *
    * @return int|NULL
    */
-  private static function getPaymentInstrumentValue($name) {
+  public static function getPaymentInstrumentValue($name) {
     $paymentInstrument = civicrm_api3('OptionValue', 'get', array(
       'sequential' => 1,
       'option_group_id' => 'payment_instrument',
