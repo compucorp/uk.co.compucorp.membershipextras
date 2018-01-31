@@ -20,18 +20,20 @@ class CRM_Membership_Utils_PaymentProcessorType {
     );
   }
 
+  /**
+   * Creates Manual Recurring Payment payment type with EFT payment instrument.
+   * This payment type is used for our Offline Recurring Contribution
+   * payment processor.
+   *
+   * @return array
+   */
   public static function createManualRecurringPaymentProcessorType() {
     $manualRecurringPaymentProcessorParams = array(
       'name' => self::$name,
       'title' => 'Manual Recurring Payment',
       'is_active' => '1',
       'is_default' => '0',
-      ///'user_name_label' => 'Merchant Account Email',
       'class_name' => 'CRM_Membership_Payment_ManualRecurringPayment',
-      ///'url_site_default' => 'https://www.paypal.com/',
-      ///'url_recur_default' => 'https://www.paypal.com/',
-      ///'url_site_test_default' => 'https://www.sandbox.paypal.com/',
-      ///'url_recur_test_default' => 'https://www.sandbox.paypal.com/',
       'billing_mode' => CRM_Core_Payment::BILLING_MODE_NOTIFY, // This parameter is required but deprecated so I guess the value doesn't matter too much.
       'is_recur' => '1',
       'payment_type' => CRM_Core_Payment::PAYMENT_TYPE_DIRECT_DEBIT,
