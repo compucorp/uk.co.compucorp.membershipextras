@@ -20,15 +20,6 @@ class CRM_Membership_Upgrader extends CRM_Membership_Upgrader_Base {
     return TRUE;
   }
 
-  /*
-   * @TODO: Implement enable / disable / uninstall methods.
-   *
-   * - What to do with offline payment processor type and offline processor in these
-   *   cases?
-   * - Do we want to disable them?
-   * - What if there are pending transactions using the offline processor?
-   */
-
   /**
    * Creates Manual Recurring Payment processor type if it doesn't exist yet.
    */
@@ -48,4 +39,48 @@ class CRM_Membership_Upgrader extends CRM_Membership_Upgrader_Base {
       CRM_Membership_Utils_PaymentProcessor::createOfflineRecurringContributionProcessor();
     }
   }
+
+  public function uninstall() {
+    $this->removeManualRecurringPaymentProcessors();
+    $this->removeManualRecurringPaymentProcessorType();
+  }
+
+  private function removeManualRecurringPaymentProcessors() {
+    civicrm_api3('PaymentProcessor', 'get', [
+      'payment_processor_type_id' => 'Manual_Recurring_Payment',
+      'api.PaymentProcessor.delete' => ['id' => '$value.id'],
+    ]);
+  }
+
+  private function removeManualRecurringPaymentProcessorType() {
+    civicrm_api3('PaymentProcessorType', 'get', [
+      'name' => 'Manual_Recurring_Payment',
+      'api.PaymentProcessorType.delete' => ['id' => '$value.id'],
+    ]);
+  }
+
+  public function enable() {
+    $this->toggleManualRecurringPaymentProcessors(TRUE);
+    $this->toggleManualRecurringPaymentProcessorType(TRUE);
+  }
+
+  public function disable() {
+    $this->toggleManualRecurringPaymentProcessors(FALSE);
+    $this->toggleManualRecurringPaymentProcessorType(FALSE);
+  }
+
+  private function toggleManualRecurringPaymentProcessors($state) {
+    civicrm_api3('PaymentProcessor', 'get', [
+      'payment_processor_type_id' => 'Manual_Recurring_Payment',
+      'api.PaymentProcessor.create' => ['id' => '$value.id', 'is_active' => $state],
+    ]);
+  }
+
+  private function toggleManualRecurringPaymentProcessorType($state) {
+    civicrm_api3('PaymentProcessorType', 'get', [
+      'name' => 'Manual_Recurring_Payment',
+      'api.PaymentProcessorType.create' => ['id' => '$value.id', 'is_active' => $state],
+    ]);
+  }
+
 }
