@@ -1,0 +1,5 @@
+name = Compucorp CiviCRM Membership
+description = Supporting module for uk.co.compucorp.membership civicrm extension
+package = Compucorp CiviCRM Membership
+version = 1.0.0
+core = 7.x
