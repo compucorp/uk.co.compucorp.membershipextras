@@ -15,8 +15,8 @@ function compucorp_civicrm_membership_webform_civicrm_paylater_payment_processor
   ));
 
   if (!empty($offlineRecPaymentProcessors['values'])) {
-    foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessors) {
-      $payLaterPaymentProcessors[] = $paymentProcessors['id'];
+    foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
+      $payLaterPaymentProcessors[] = $paymentProcessor['id'];
     }
   }
 }
