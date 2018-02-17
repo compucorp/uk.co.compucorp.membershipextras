@@ -48,18 +48,40 @@ class CRM_Membership_Utils_Contribution {
    * of being offline recurring contribution.
    * Otherwise returns FALSE.
    *
-   * @TODO: This method should be changed after we implement offline payment
-   * processor. Currently we rely on NULL value of payment processor ID.
-   *
    * @param CRM_Contribute_BAO_ContributionRecur $recurringContribution
    *
    * @return boolean
    */
   public static function isOfflineRecurring($recurringContribution) {
-    if (!empty($recurringContribution) && $recurringContribution->installments > 1 && empty($recurringContribution->payment_processor_id)) {
-      return TRUE;
+    if (!empty($recurringContribution)) {
+      if ($recurringContribution->installments > 1 &&
+        (empty($recurringContribution->payment_processor_id) ||
+          in_array($recurringContribution->payment_processor_id, self::getOfflineRecurringPaymentProcessors()))) {
+        return TRUE;
+      }
     }
 
     return FALSE;
+  }
+
+  /**
+   * Gets the list of offline Recurring Payment Processors
+   *
+   * @return array
+   */
+  private static function getOfflineRecurringPaymentProcessors() {
+    $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', array(
+      'sequential' => 1,
+      'payment_processor_type_id' => "Offline_Recurring_Contribution",
+    ));
+
+    $recPaymentProcessors = array();
+    if (!empty($offlineRecPaymentProcessors['values'])) {
+      foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
+        $recPaymentProcessors[] = $paymentProcessor['id'];
+      }
+    }
+
+    return $recPaymentProcessors;
   }
 }

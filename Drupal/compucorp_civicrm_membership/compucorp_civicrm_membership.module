@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Implements hook_webform_civicrm_paylater_payment_processors_alter
+ *
+ * Defines any payment processor of type 'Offline_Recurring_Contribution'
+ * as a pay later payment processor for civicrm webforms processing.
+ *
+ * @param $payLaterPaymentProcessors
+ */
+function compucorp_civicrm_membership_webform_civicrm_paylater_payment_processors_alter(&$payLaterPaymentProcessors) {
+  $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', array(
+    'sequential' => 1,
+    'payment_processor_type_id' => "Offline_Recurring_Contribution",
+  ));
+
+  if (!empty($offlineRecPaymentProcessors['values'])) {
+    foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
+      $payLaterPaymentProcessors[] = $paymentProcessor['id'];
+    }
+  }
+}
