@@ -3,7 +3,7 @@
 /**
  * Utils and helper methods to handle offline Payment Processor Type.
  */
-class CRM_Membership_Utils_PaymentProcessorType {
+class CRM_PaymentPlan_Utils_PaymentProcessorType {
   public static $name = 'Manual_Recurring_Payment';
 
   /**

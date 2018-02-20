@@ -3,7 +3,7 @@
 /**
  * Utils and helper methods to handle offline Payment Processor.
  */
-class CRM_Membership_Utils_PaymentProcessor {
+class CRM_PaymentPlan_Utils_PaymentProcessor {
   public static $name = 'Offline_Recurring_Contribution';
 
   /**
@@ -30,7 +30,7 @@ class CRM_Membership_Utils_PaymentProcessor {
    */
   public static function createOfflineRecurringContributionProcessor() {
     $domain = CRM_Core_BAO_Domain::getDomain();
-    $processorTypeId = CRM_Membership_Utils_PaymentProcessorType::getManualRecurringPaymentProcessorTypeId();
+    $processorTypeId = CRM_PaymentPlan_Utils_PaymentProcessorType::getManualRecurringPaymentProcessorTypeId();
 
     if (empty($processorTypeId)) {
       throw new Exception(ts('Cannot create "Offline Recurring Contribution" payment processor because "Manual Recurring Payment" processor type is missing.'));
@@ -45,7 +45,7 @@ class CRM_Membership_Utils_PaymentProcessor {
       'is_test' => '0',
       'class_name' => 'Payment_ManualRecurringPayment',
       'is_recur' => '1',
-      'payment_instrument_id' => CRM_Membership_Utils_PaymentProcessorType::getPaymentInstrumentValue('EFT'),
+      'payment_instrument_id' => CRM_PaymentPlan_Utils_PaymentProcessorType::getPaymentInstrumentValue('EFT'),
     );
 
     return civicrm_api3('PaymentProcessor', 'create', $offlineRecurringContributionProcessorParams);

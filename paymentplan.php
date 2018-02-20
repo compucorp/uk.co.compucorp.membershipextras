@@ -1,15 +1,15 @@
 <?php
 
-require_once 'membership.civix.php';
-use CRM_Membership_ExtensionUtil as E;
+require_once 'paymentplan.civix.php';
+use CRM_PaymentPlan_ExtensionUtil as E;
 
 /**
  * Implements hook_civicrm_config().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
  */
-function membership_civicrm_config(&$config) {
-  _membership_civix_civicrm_config($config);
+function paymentplan_civicrm_config(&$config) {
+  _paymentplan_civix_civicrm_config($config);
 }
 
 /**
@@ -17,8 +17,8 @@ function membership_civicrm_config(&$config) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
  */
-function membership_civicrm_xmlMenu(&$files) {
-  _membership_civix_civicrm_xmlMenu($files);
+function paymentplan_civicrm_xmlMenu(&$files) {
+  _paymentplan_civix_civicrm_xmlMenu($files);
 }
 
 /**
@@ -26,8 +26,8 @@ function membership_civicrm_xmlMenu(&$files) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
-function membership_civicrm_install() {
-  _membership_civix_civicrm_install();
+function paymentplan_civicrm_install() {
+  _paymentplan_civix_civicrm_install();
 }
 
 /**
@@ -35,8 +35,8 @@ function membership_civicrm_install() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postInstall
  */
-function membership_civicrm_postInstall() {
-  _membership_civix_civicrm_postInstall();
+function paymentplan_civicrm_postInstall() {
+  _paymentplan_civix_civicrm_postInstall();
 }
 
 /**
@@ -44,8 +44,8 @@ function membership_civicrm_postInstall() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
  */
-function membership_civicrm_uninstall() {
-  _membership_civix_civicrm_uninstall();
+function paymentplan_civicrm_uninstall() {
+  _paymentplan_civix_civicrm_uninstall();
 }
 
 /**
@@ -53,8 +53,8 @@ function membership_civicrm_uninstall() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
-function membership_civicrm_enable() {
-  _membership_civix_civicrm_enable();
+function paymentplan_civicrm_enable() {
+  _paymentplan_civix_civicrm_enable();
 }
 
 /**
@@ -62,8 +62,8 @@ function membership_civicrm_enable() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_disable
  */
-function membership_civicrm_disable() {
-  _membership_civix_civicrm_disable();
+function paymentplan_civicrm_disable() {
+  _paymentplan_civix_civicrm_disable();
 }
 
 /**
@@ -71,8 +71,8 @@ function membership_civicrm_disable() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
  */
-function membership_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _membership_civix_civicrm_upgrade($op, $queue);
+function paymentplan_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+  return _paymentplan_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -83,8 +83,8 @@ function membership_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
-function membership_civicrm_managed(&$entities) {
-  _membership_civix_civicrm_managed($entities);
+function paymentplan_civicrm_managed(&$entities) {
+  _paymentplan_civix_civicrm_managed($entities);
 }
 
 /**
@@ -96,8 +96,8 @@ function membership_civicrm_managed(&$entities) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
  */
-function membership_civicrm_caseTypes(&$caseTypes) {
-  _membership_civix_civicrm_caseTypes($caseTypes);
+function paymentplan_civicrm_caseTypes(&$caseTypes) {
+  _paymentplan_civix_civicrm_caseTypes($caseTypes);
 }
 
 /**
@@ -110,8 +110,8 @@ function membership_civicrm_caseTypes(&$caseTypes) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
  */
-function membership_civicrm_angularModules(&$angularModules) {
-  _membership_civix_civicrm_angularModules($angularModules);
+function paymentplan_civicrm_angularModules(&$angularModules) {
+  _paymentplan_civix_civicrm_angularModules($angularModules);
 }
 
 /**
@@ -119,8 +119,8 @@ function membership_civicrm_angularModules(&$angularModules) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
  */
-function membership_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _membership_civix_civicrm_alterSettingsFolders($metaDataFolders);
+function paymentplan_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
+  _paymentplan_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
 /**
@@ -128,11 +128,11 @@ function membership_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pre
  */
-function membership_civicrm_pre($op, $objectName, $id, &$params) {
+function paymentplan_civicrm_pre($op, $objectName, $id, &$params) {
   if ($op === 'edit' && $objectName === 'Membership') {
-    $recurringContribution = CRM_Membership_Utils_Contribution::getContributionRecurByMembershipId($id);
+    $recurringContribution = CRM_PaymentPlan_Utils_Contribution::getContributionRecurByMembershipId($id);
     if (!empty($recurringContribution)) {
-      $isOfflineRecurring = CRM_Membership_Utils_Contribution::isOfflineRecurring($recurringContribution);
+      $isOfflineRecurring = CRM_PaymentPlan_Utils_Contribution::isOfflineRecurring($recurringContribution);
       if ($isOfflineRecurring) {
         unset($params['end_date']);
       }

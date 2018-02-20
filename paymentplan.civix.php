@@ -6,10 +6,10 @@
  * The ExtensionUtil class provides small stubs for accessing resources of this
  * extension.
  */
-class CRM_Membership_ExtensionUtil {
-  const SHORT_NAME = "membership";
-  const LONG_NAME = "uk.co.compucorp.membership";
-  const CLASS_PREFIX = "CRM_Membership";
+class CRM_PaymentPlan_ExtensionUtil {
+  const SHORT_NAME = "paymentplan";
+  const LONG_NAME = "uk.co.compucorp.paymentplan";
+  const CLASS_PREFIX = "CRM_PaymentPlan";
 
   /**
    * Translate a string using the extension's domain.
@@ -77,14 +77,14 @@ class CRM_Membership_ExtensionUtil {
 
 }
 
-use CRM_Membership_ExtensionUtil as E;
+use CRM_PaymentPlan_ExtensionUtil as E;
 
 /**
  * (Delegated) Implements hook_civicrm_config().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
  */
-function _membership_civix_civicrm_config(&$config = NULL) {
+function _paymentplan_civix_civicrm_config(&$config = NULL) {
   static $configured = FALSE;
   if ($configured) {
     return;
@@ -114,8 +114,8 @@ function _membership_civix_civicrm_config(&$config = NULL) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
  */
-function _membership_civix_civicrm_xmlMenu(&$files) {
-  foreach (_membership_civix_glob(__DIR__ . '/xml/Menu/*.xml') as $file) {
+function _paymentplan_civix_civicrm_xmlMenu(&$files) {
+  foreach (_paymentplan_civix_glob(__DIR__ . '/xml/Menu/*.xml') as $file) {
     $files[] = $file;
   }
 }
@@ -125,9 +125,9 @@ function _membership_civix_civicrm_xmlMenu(&$files) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
-function _membership_civix_civicrm_install() {
-  _membership_civix_civicrm_config();
-  if ($upgrader = _membership_civix_upgrader()) {
+function _paymentplan_civix_civicrm_install() {
+  _paymentplan_civix_civicrm_config();
+  if ($upgrader = _paymentplan_civix_upgrader()) {
     $upgrader->onInstall();
   }
 }
@@ -137,9 +137,9 @@ function _membership_civix_civicrm_install() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postInstall
  */
-function _membership_civix_civicrm_postInstall() {
-  _membership_civix_civicrm_config();
-  if ($upgrader = _membership_civix_upgrader()) {
+function _paymentplan_civix_civicrm_postInstall() {
+  _paymentplan_civix_civicrm_config();
+  if ($upgrader = _paymentplan_civix_upgrader()) {
     if (is_callable(array($upgrader, 'onPostInstall'))) {
       $upgrader->onPostInstall();
     }
@@ -151,9 +151,9 @@ function _membership_civix_civicrm_postInstall() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
  */
-function _membership_civix_civicrm_uninstall() {
-  _membership_civix_civicrm_config();
-  if ($upgrader = _membership_civix_upgrader()) {
+function _paymentplan_civix_civicrm_uninstall() {
+  _paymentplan_civix_civicrm_config();
+  if ($upgrader = _paymentplan_civix_upgrader()) {
     $upgrader->onUninstall();
   }
 }
@@ -163,9 +163,9 @@ function _membership_civix_civicrm_uninstall() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
-function _membership_civix_civicrm_enable() {
-  _membership_civix_civicrm_config();
-  if ($upgrader = _membership_civix_upgrader()) {
+function _paymentplan_civix_civicrm_enable() {
+  _paymentplan_civix_civicrm_config();
+  if ($upgrader = _paymentplan_civix_upgrader()) {
     if (is_callable(array($upgrader, 'onEnable'))) {
       $upgrader->onEnable();
     }
@@ -178,9 +178,9 @@ function _membership_civix_civicrm_enable() {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_disable
  * @return mixed
  */
-function _membership_civix_civicrm_disable() {
-  _membership_civix_civicrm_config();
-  if ($upgrader = _membership_civix_upgrader()) {
+function _paymentplan_civix_civicrm_disable() {
+  _paymentplan_civix_civicrm_config();
+  if ($upgrader = _paymentplan_civix_upgrader()) {
     if (is_callable(array($upgrader, 'onDisable'))) {
       $upgrader->onDisable();
     }
@@ -198,21 +198,21 @@ function _membership_civix_civicrm_disable() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
  */
-function _membership_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  if ($upgrader = _membership_civix_upgrader()) {
+function _paymentplan_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+  if ($upgrader = _paymentplan_civix_upgrader()) {
     return $upgrader->onUpgrade($op, $queue);
   }
 }
 
 /**
- * @return CRM_Membership_Upgrader
+ * @return CRM_PaymentPlan_Upgrader
  */
-function _membership_civix_upgrader() {
-  if (!file_exists(__DIR__ . '/CRM/Membership/Upgrader.php')) {
+function _paymentplan_civix_upgrader() {
+  if (!file_exists(__DIR__ . '/CRM/PaymentPlan/Upgrader.php')) {
     return NULL;
   }
   else {
-    return CRM_Membership_Upgrader_Base::instance();
+    return CRM_PaymentPlan_Upgrader_Base::instance();
   }
 }
 
@@ -226,7 +226,7 @@ function _membership_civix_upgrader() {
  * @param $pattern string, glob pattern, eg "*.txt"
  * @return array(string)
  */
-function _membership_civix_find_files($dir, $pattern) {
+function _paymentplan_civix_find_files($dir, $pattern) {
   if (is_callable(array('CRM_Utils_File', 'findFiles'))) {
     return CRM_Utils_File::findFiles($dir, $pattern);
   }
@@ -235,7 +235,7 @@ function _membership_civix_find_files($dir, $pattern) {
   $result = array();
   while (!empty($todos)) {
     $subdir = array_shift($todos);
-    foreach (_membership_civix_glob("$subdir/$pattern") as $match) {
+    foreach (_paymentplan_civix_glob("$subdir/$pattern") as $match) {
       if (!is_dir($match)) {
         $result[] = $match;
       }
@@ -261,8 +261,8 @@ function _membership_civix_find_files($dir, $pattern) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
-function _membership_civix_civicrm_managed(&$entities) {
-  $mgdFiles = _membership_civix_find_files(__DIR__, '*.mgd.php');
+function _paymentplan_civix_civicrm_managed(&$entities) {
+  $mgdFiles = _paymentplan_civix_find_files(__DIR__, '*.mgd.php');
   foreach ($mgdFiles as $file) {
     $es = include $file;
     foreach ($es as $e) {
@@ -286,12 +286,12 @@ function _membership_civix_civicrm_managed(&$entities) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
  */
-function _membership_civix_civicrm_caseTypes(&$caseTypes) {
+function _paymentplan_civix_civicrm_caseTypes(&$caseTypes) {
   if (!is_dir(__DIR__ . '/xml/case')) {
     return;
   }
 
-  foreach (_membership_civix_glob(__DIR__ . '/xml/case/*.xml') as $file) {
+  foreach (_paymentplan_civix_glob(__DIR__ . '/xml/case/*.xml') as $file) {
     $name = preg_replace('/\.xml$/', '', basename($file));
     if ($name != CRM_Case_XMLProcessor::mungeCaseType($name)) {
       $errorMessage = sprintf("Case-type file name is malformed (%s vs %s)", $name, CRM_Case_XMLProcessor::mungeCaseType($name));
@@ -315,12 +315,12 @@ function _membership_civix_civicrm_caseTypes(&$caseTypes) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
  */
-function _membership_civix_civicrm_angularModules(&$angularModules) {
+function _paymentplan_civix_civicrm_angularModules(&$angularModules) {
   if (!is_dir(__DIR__ . '/ang')) {
     return;
   }
 
-  $files = _membership_civix_glob(__DIR__ . '/ang/*.ang.php');
+  $files = _paymentplan_civix_glob(__DIR__ . '/ang/*.ang.php');
   foreach ($files as $file) {
     $name = preg_replace(':\.ang\.php$:', '', basename($file));
     $module = include $file;
@@ -343,7 +343,7 @@ function _membership_civix_civicrm_angularModules(&$angularModules) {
  * @param string $pattern
  * @return array, possibly empty
  */
-function _membership_civix_glob($pattern) {
+function _paymentplan_civix_glob($pattern) {
   $result = glob($pattern);
   return is_array($result) ? $result : array();
 }
@@ -355,7 +355,7 @@ function _membership_civix_glob($pattern) {
  * @param string $path - path where insertion should happen (ie. Administer/System Settings)
  * @param array $item - menu you need to insert (parent/child attributes will be filled for you)
  */
-function _membership_civix_insert_navigation_menu(&$menu, $path, $item) {
+function _paymentplan_civix_insert_navigation_menu(&$menu, $path, $item) {
   // If we are done going down the path, insert menu
   if (empty($path)) {
     $menu[] = array(
@@ -376,7 +376,7 @@ function _membership_civix_insert_navigation_menu(&$menu, $path, $item) {
         if (!isset($entry['child'])) {
           $entry['child'] = array();
         }
-        $found = _membership_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item, $key);
+        $found = _paymentplan_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item, $key);
       }
     }
     return $found;
@@ -386,9 +386,9 @@ function _membership_civix_insert_navigation_menu(&$menu, $path, $item) {
 /**
  * (Delegated) Implements hook_civicrm_navigationMenu().
  */
-function _membership_civix_navigationMenu(&$nodes) {
+function _paymentplan_civix_navigationMenu(&$nodes) {
   if (!is_callable(array('CRM_Core_BAO_Navigation', 'fixNavigationMenu'))) {
-    _membership_civix_fixNavigationMenu($nodes);
+    _paymentplan_civix_fixNavigationMenu($nodes);
   }
 }
 
@@ -396,17 +396,17 @@ function _membership_civix_navigationMenu(&$nodes) {
  * Given a navigation menu, generate navIDs for any items which are
  * missing them.
  */
-function _membership_civix_fixNavigationMenu(&$nodes) {
+function _paymentplan_civix_fixNavigationMenu(&$nodes) {
   $maxNavID = 1;
   array_walk_recursive($nodes, function($item, $key) use (&$maxNavID) {
     if ($key === 'navID') {
       $maxNavID = max($maxNavID, $item);
     }
   });
-  _membership_civix_fixNavigationMenuItems($nodes, $maxNavID, NULL);
+  _paymentplan_civix_fixNavigationMenuItems($nodes, $maxNavID, NULL);
 }
 
-function _membership_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) {
+function _paymentplan_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) {
   $origKeys = array_keys($nodes);
   foreach ($origKeys as $origKey) {
     if (!isset($nodes[$origKey]['attributes']['parentID']) && $parentID !== NULL) {
@@ -421,7 +421,7 @@ function _membership_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID
       $origKey = $newKey;
     }
     if (isset($nodes[$origKey]['child']) && is_array($nodes[$origKey]['child'])) {
-      _membership_civix_fixNavigationMenuItems($nodes[$origKey]['child'], $maxNavID, $nodes[$origKey]['attributes']['navID']);
+      _paymentplan_civix_fixNavigationMenuItems($nodes[$origKey]['child'], $maxNavID, $nodes[$origKey]['attributes']['navID']);
     }
   }
 }
@@ -431,7 +431,7 @@ function _membership_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
  */
-function _membership_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
+function _paymentplan_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   static $configured = FALSE;
   if ($configured) {
     return;

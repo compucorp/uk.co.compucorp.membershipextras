@@ -1,10 +1,10 @@
 <?php
-use CRM_Membership_ExtensionUtil as E;
+use CRM_PaymentPlan_ExtensionUtil as E;
 
 /**
  * Collection of upgrade steps.
  */
-class CRM_Membership_Upgrader extends CRM_Membership_Upgrader_Base {
+class CRM_PaymentPlan_Upgrader extends CRM_PaymentPlan_Upgrader_Base {
 
   /**
    * Install action.
@@ -24,9 +24,9 @@ class CRM_Membership_Upgrader extends CRM_Membership_Upgrader_Base {
    * Creates Manual Recurring Payment processor type if it doesn't exist yet.
    */
   private function installManualRecurringPaymentProcessorType() {
-    $paymentProcessorTypeId = CRM_Membership_Utils_PaymentProcessorType::getManualRecurringPaymentProcessorTypeId();
+    $paymentProcessorTypeId = CRM_PaymentPlan_Utils_PaymentProcessorType::getManualRecurringPaymentProcessorTypeId();
     if (empty($paymentProcessorTypeId)) {
-      CRM_Membership_Utils_PaymentProcessorType::createManualRecurringPaymentProcessorType();
+      CRM_PaymentPlan_Utils_PaymentProcessorType::createManualRecurringPaymentProcessorType();
     }
   }
 
@@ -34,9 +34,9 @@ class CRM_Membership_Upgrader extends CRM_Membership_Upgrader_Base {
    * Creates Offline Recurring Contribution processor if it doesn't exist yet.
    */
   private function installOfflineRecurringContributionProcessor() {
-    $paymentProcessorId = CRM_Membership_Utils_PaymentProcessor::getOfflineRecurringContributionProcessorId();
+    $paymentProcessorId = CRM_PaymentPlan_Utils_PaymentProcessor::getOfflineRecurringContributionProcessorId();
     if (empty($paymentProcessorId)) {
-      CRM_Membership_Utils_PaymentProcessor::createOfflineRecurringContributionProcessor();
+      CRM_PaymentPlan_Utils_PaymentProcessor::createOfflineRecurringContributionProcessor();
     }
   }
 
