@@ -131,12 +131,7 @@ function paymentplan_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
  */
 function paymentplan_civicrm_pre($op, $objectName, $id, &$params) {
   if ($op === 'edit' && $objectName === 'Membership') {
-    $recurringContribution = CRM_PaymentPlan_Utils_Contribution::getContributionRecurByMembershipId($id);
-    if (!empty($recurringContribution)) {
-      $isOfflineRecurring = CRM_PaymentPlan_Utils_Contribution::isOfflineRecurring($recurringContribution);
-      if ($isOfflineRecurring) {
-        unset($params['end_date']);
-      }
-    }
+    $preEditMembershipHook = new CRM_PaymentPlan_Hook_PreEdit_Membership($id, $params);
+    $preEditMembershipHook->preventExtendingOfflineRecurringMembership();
   }
 }
