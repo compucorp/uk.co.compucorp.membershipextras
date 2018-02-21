@@ -25,7 +25,7 @@ class CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution {
       return $paymentProcessor;
     }
 
-    $params = array(
+    $params = [
       'sequential' => 1,
       'name' => self::NAME,
       'payment_processor_type_id' => ManualRecurringPaymenProcessorType::NAME,
@@ -35,7 +35,7 @@ class CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution {
       'class_name' => 'Payment_ManualRecurringPayment',
       'is_recur' => '1',
       'payment_instrument_id' => 'EFT',
-    );
+    ];
 
     $paymentProcessor = civicrm_api3('PaymentProcessor', 'create', $params);
     return $paymentProcessor['values'][0];
@@ -48,10 +48,10 @@ class CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution {
    * @return array
    */
   private function get() {
-    $processor = civicrm_api3('PaymentProcessor', 'get', array(
+    $processor = civicrm_api3('PaymentProcessor', 'get', [
       'name' => self::NAME,
       'sequential' => 1,
-    ));
+    ]);
 
     if (empty($processor['id'])) {
       return NULL;
