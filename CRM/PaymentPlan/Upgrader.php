@@ -1,86 +1,69 @@
 <?php
 use CRM_PaymentPlan_ExtensionUtil as E;
+use CRM_PaymentPlan_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
+use CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringPaymentProcessor;
 
 /**
  * Collection of upgrade steps.
  */
 class CRM_PaymentPlan_Upgrader extends CRM_PaymentPlan_Upgrader_Base {
 
-  /**
-   * Install action.
-   *
-   * @return bool
-   */
   public function install() {
-    // First, install the new Payment Processor Type.
-    $this->installManualRecurringPaymentProcessorType();
-    // Then, install the new Payment Processor.
-    $this->installOfflineRecurringContributionProcessor();
-
-    return TRUE;
+    $this->createManualRecurringPaymentProcessorType();
+    $this->createOfflineRecurringContributionProcessor();
   }
 
   /**
-   * Creates Manual Recurring Payment processor type if it doesn't exist yet.
+   * Creates 'Manual Recurring Payment' Payment processor type
    */
-  private function installManualRecurringPaymentProcessorType() {
-    $paymentProcessorTypeId = CRM_PaymentPlan_Utils_PaymentProcessorType::getManualRecurringPaymentProcessorTypeId();
-    if (empty($paymentProcessorTypeId)) {
-      CRM_PaymentPlan_Utils_PaymentProcessorType::createManualRecurringPaymentProcessorType();
-    }
+  private function createManualRecurringPaymentProcessorType() {
+    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
+    $paymentProcessorType->create();
   }
 
   /**
-   * Creates Offline Recurring Contribution processor if it doesn't exist yet.
+   * Creates 'Offline Recurring Contribution' payment processor
    */
-  private function installOfflineRecurringContributionProcessor() {
-    $paymentProcessorId = CRM_PaymentPlan_Utils_PaymentProcessor::getOfflineRecurringContributionProcessorId();
-    if (empty($paymentProcessorId)) {
-      CRM_PaymentPlan_Utils_PaymentProcessor::createOfflineRecurringContributionProcessor();
-    }
-  }
-
-  public function uninstall() {
-    $this->removeManualRecurringPaymentProcessors();
-    $this->removeManualRecurringPaymentProcessorType();
-  }
-
-  private function removeManualRecurringPaymentProcessors() {
-    civicrm_api3('PaymentProcessor', 'get', [
-      'payment_processor_type_id' => 'Manual_Recurring_Payment',
-      'api.PaymentProcessor.delete' => ['id' => '$value.id'],
-    ]);
-  }
-
-  private function removeManualRecurringPaymentProcessorType() {
-    civicrm_api3('PaymentProcessorType', 'get', [
-      'name' => 'Manual_Recurring_Payment',
-      'api.PaymentProcessorType.delete' => ['id' => '$value.id'],
-    ]);
+  private function createOfflineRecurringContributionProcessor() {
+    $paymentProcessor = new OfflineRecurringPaymentProcessor();
+    $paymentProcessor->create();
   }
 
   public function enable() {
-    $this->toggleManualRecurringPaymentProcessors(TRUE);
-    $this->toggleManualRecurringPaymentProcessorType(TRUE);
+    $paymentProcessor = new OfflineRecurringPaymentProcessor();
+    $paymentProcessor->toggle(TRUE);
+
+    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
+    $paymentProcessorType->toggle(TRUE);
   }
 
   public function disable() {
-    $this->toggleManualRecurringPaymentProcessors(FALSE);
-    $this->toggleManualRecurringPaymentProcessorType(FALSE);
+    $paymentProcessor = new OfflineRecurringPaymentProcessor();
+    $paymentProcessor->toggle(FALSE);
+
+    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
+    $paymentProcessorType->toggle(FALSE);
   }
 
-  private function toggleManualRecurringPaymentProcessors($state) {
-    civicrm_api3('PaymentProcessor', 'get', [
-      'payment_processor_type_id' => 'Manual_Recurring_Payment',
-      'api.PaymentProcessor.create' => ['id' => '$value.id', 'is_active' => $state],
-    ]);
+  public function uninstall() {
+    $this->removeOfflineRecurringContributionProcessor();
+    $this->removeManualRecurringPaymentProcessorType();
   }
 
-  private function toggleManualRecurringPaymentProcessorType($state) {
-    civicrm_api3('PaymentProcessorType', 'get', [
-      'name' => 'Manual_Recurring_Payment',
-      'api.PaymentProcessorType.create' => ['id' => '$value.id', 'is_active' => $state],
-    ]);
+  /**
+   * Removes 'Offline Recurring Contribution' payment processor
+   */
+  private function removeOfflineRecurringContributionProcessor() {
+    $paymentProcessor = new OfflineRecurringPaymentProcessor();
+    $paymentProcessor->remove();
+  }
+
+  /**
+   * Removes 'Manual Recurring Payment' Payment processor type
+   */
+  private function removeManualRecurringPaymentProcessorType() {
+    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
+    $paymentProcessorType->remove();
   }
 
 }
