@@ -1,6 +1,7 @@
 <?php
 
 require_once 'paymentplan.civix.php';
+
 use CRM_PaymentPlan_ExtensionUtil as E;
 
 /**

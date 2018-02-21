@@ -1,4 +1,5 @@
 <?php
+
 use CRM_PaymentPlan_ExtensionUtil as E;
 use CRM_PaymentPlan_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
 use CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringPaymentProcessor;

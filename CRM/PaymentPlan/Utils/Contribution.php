@@ -72,7 +72,7 @@ class CRM_PaymentPlan_Utils_Contribution {
   private static function getOfflineRecurringPaymentProcessors() {
     $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
-      'payment_processor_type_id' => "Offline_Recurring_Contribution",
+      'payment_processor_type_id' => 'Offline_Recurring_Contribution',
     ]);
 
     $recPaymentProcessors = [];
@@ -84,4 +84,5 @@ class CRM_PaymentPlan_Utils_Contribution {
 
     return $recPaymentProcessors;
   }
+
 }

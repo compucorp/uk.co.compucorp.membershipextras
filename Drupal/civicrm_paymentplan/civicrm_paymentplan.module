@@ -11,7 +11,7 @@
 function civicrm_paymentplan_webform_civicrm_paylater_payment_processors_alter(&$payLaterPaymentProcessors) {
   $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
     'sequential' => 1,
-    'payment_processor_type_id' => "Offline_Recurring_Contribution",
+    'payment_processor_type_id' => 'Offline_Recurring_Contribution',
   ]);
 
   if (!empty($offlineRecPaymentProcessors['values'])) {

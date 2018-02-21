@@ -22,4 +22,5 @@ class CRM_Core_Payment_ManualRecurringPayment extends CRM_Core_Payment {
   public function checkConfig() {
     return NULL;
   }
+
 }
