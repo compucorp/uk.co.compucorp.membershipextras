@@ -9,7 +9,7 @@ use CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution as OfflineRecu
  */
 class CRM_PaymentPlan_Upgrader extends CRM_PaymentPlan_Upgrader_Base {
 
-  public function install() {
+  public function postInstall() {
     $this->createManualRecurringPaymentProcessorType();
     $this->createOfflineRecurringContributionProcessor();
   }
