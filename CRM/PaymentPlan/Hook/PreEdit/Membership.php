@@ -1,5 +1,7 @@
 <?php
 
+use CRM_PaymentPlan_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
+
 /**
  * Called by paymentplan_civicrm_pre hook
  * before editing/renewing a membership
@@ -129,7 +131,7 @@ class CRM_PaymentPlan_Hook_PreEdit_Membership {
   private function getOfflineRecurringPaymentProcessors() {
     $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
-      'payment_processor_type_id' => 'Offline_Recurring_Contribution',
+      'payment_processor_type_id' => ManualRecurringPaymenProcessorType::NAME,
     ]);
 
     $recPaymentProcessors = [];

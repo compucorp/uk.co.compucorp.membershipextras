@@ -25,7 +25,10 @@ class CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution {
       return $paymentProcessor;
     }
 
+    $domainID = CRM_Core_Config::domainID();
+
     $params = [
+      'domain_id' => $domainID,
       'sequential' => 1,
       'name' => self::NAME,
       'payment_processor_type_id' => ManualRecurringPaymenProcessorType::NAME,
@@ -80,7 +83,7 @@ class CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution {
    */
   public function toggle($newStatus) {
     civicrm_api3('PaymentProcessor', 'get', [
-      'payment_processor_type_id' => self::NAME,
+      'name' => self::NAME,
       'api.PaymentProcessor.create' => ['id' => '$value.id', 'is_active' => $newStatus],
     ]);
   }
