@@ -1,4 +1,4 @@
-name = CiviCRM Payment Plan.
+name = CiviCRM Payment Plan
 description = Supporting module for uk.co.compucorp.paymentplan civicrm extension
 package = CiviCRM Payment Plan
 version = 1.0.0
