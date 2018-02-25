@@ -8,11 +8,11 @@
  *
  * @param $payLaterPaymentProcessors
  */
-function compucorp_civicrm_membership_webform_civicrm_paylater_payment_processors_alter(&$payLaterPaymentProcessors) {
-  $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', array(
+function civicrm_paymentplan_webform_civicrm_paylater_payment_processors_alter(&$payLaterPaymentProcessors) {
+  $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
     'sequential' => 1,
-    'payment_processor_type_id' => "Offline_Recurring_Contribution",
-  ));
+    'payment_processor_type_id' => 'Manual_Recurring_Payment',
+  ]);
 
   if (!empty($offlineRecPaymentProcessors['values'])) {
     foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
