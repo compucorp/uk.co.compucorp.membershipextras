@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<extension key="uk.co.compucorp.membership" type="module">
-  <file>membership</file>
-  <name>uk.co.compucorp.membership</name>
+<extension key="uk.co.compucorp.paymentplan" type="module">
+  <file>paymentplan</file>
+  <name>uk.co.compucorp.paymentplan</name>
   <description>Provides "Offline recurring contribution" Payment Processor and "Manual recurring payment" Payment Processor type which supports offline recurring payment. Implements offline recurring processor for Membership payments to not extend Membership dates.</description>
   <license>AGPL-3.0</license>
   <maintainer>
@@ -9,13 +9,13 @@
     <email>kacper@compucorp.co.uk</email>
   </maintainer>
   <releaseDate>2018-01-30</releaseDate>
-  <version>1.0</version>
+  <version>1.0.0</version>
   <develStage>alpha</develStage>
   <compatibility>
     <ver>4.7</ver>
   </compatibility>
   <comments>This is a new, undeveloped module</comments>
   <civix>
-    <namespace>CRM/Membership</namespace>
+    <namespace>CRM/PaymentPlan</namespace>
   </civix>
 </extension>
