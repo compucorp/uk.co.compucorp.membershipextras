@@ -1,0 +1,5 @@
+name = CiviCRM 'Membership Extra'
+description = Supporting module for uk.co.compucorp.membershipextra civicrm extension
+package = CiviCRM Membership Extra
+version = 1.0.0
+core = 7.x

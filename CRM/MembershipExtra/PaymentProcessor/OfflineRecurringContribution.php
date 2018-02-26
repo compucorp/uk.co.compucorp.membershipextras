@@ -1,11 +1,11 @@
 <?php
 
-use CRM_PaymentPlan_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
+use CRM_MembershipExtra_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
 
 /**
  * 'Offline Recurring Contribution' payment processor.
  */
-class CRM_PaymentPlan_PaymentProcessor_OfflineRecurringContribution {
+class CRM_MembershipExtra_PaymentProcessor_OfflineRecurringContribution {
 
   /**
    * 'Offline Recurring Contribution' Payment Processor machine name.
