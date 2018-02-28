@@ -11,19 +11,37 @@ use CRM_MembershipExtra_PaymentProcessorType_ManualRecurringPayment as ManualRec
  */
 class CRM_MembershipExtra_Hook_PreEdit_Membership {
 
-  private $id = NULL;
+  /**
+   * The membership ID.
+   *
+   * @var int
+   */
+  private $id;
 
-  private $params = [];
+  /**
+   * The membership payment contribution ID.
+   *
+   * @var int
+   */
+  private $paymentContributionID;
 
-  public function __construct($id, &$params) {
+  /**
+   * The other membership parameters passed by the calling hook.
+   *
+   * @var array
+   */
+  private $params;
+
+  public function __construct($id, $paymentContributionID, &$params) {
     $this->id = $id;
+    $this->paymentContributionID = $paymentContributionID;
     $this->params = &$params;
   }
 
   /**
-   * Prevents extending offline recurring Membership.
+   * Prevents extending offline pending recurring Membership.
    *
-   * If a membership price will be paid on multlipe
+   * If a membership price will be paid in multiple
    * installments, then each time an installment get
    * paid then the membership will get extended.
    * For example if you have 12 installments for
@@ -32,95 +50,101 @@ class CRM_MembershipExtra_Hook_PreEdit_Membership {
    * by one year (it is how civicrm work!), this method
    * prevent civicrm from doing that.
    */
-  public function preventExtendingOfflineRecurringMembership() {
-    if ($this->isOfflineRecurringMembership()) {
+  public function preventExtendingOfflinePendingRecurringMembership() {
+    if ($this->isOfflinePendingRecurringMembership()) {
       unset($this->params['end_date']);
     }
   }
 
   /**
    * Determines if the payment for a membership
-   * subscription is offline (pay later) and recurring.
+   * subscription is offline (pay later), pending and recurring.
    *
    * @return bool
    */
-  private function isOfflineRecurringMembership() {
-    $recContributionID = $this->getMembershipRecurringContribution();
+  private function isOfflinePendingRecurringMembership() {
+    $recContributionID = $this->getPaymentRecurringContribution();
 
     if ($recContributionID === NULL) {
       return FALSE;
     }
 
-    return $this->isOfflineRecurringContribution($recContributionID);
+    return $this->isOfflinePendingRecurringContribution($recContributionID);
   }
 
   /**
-   * Gets the recurring contribution
-   * for the membership if it does exist.
+   * Gets the associated recurring contribution for
+   * the membership payment(contribution)
+   * if it does exist.
    *
    * @return int|null
    *   The recurring contribution ID or NULL
    *   if no recurring contribution exist.
    */
-  private function getMembershipRecurringContribution() {
-    $membershipPayment = civicrm_api3('MembershipPayment', 'get', [
+  private function getPaymentRecurringContribution() {
+    $paymentContribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'membership_id' => $this->id,
-      'options' => array('limit' => 1),
-      'return' => ['id', 'contribution_id'],
-    ]);
-
-    if (empty($membershipPayment['id'])) {
-      return NULL;
-    }
-
-    $membershipPayment = $membershipPayment['values'][0];
-
-    $membershipContribution = civicrm_api3('Contribution', 'get', [
-      'sequential' => 1,
-      'id' => $membershipPayment['contribution_id'],
-      'options' => array('limit' => 1),
+      'id' => $this->paymentContributionID,
       'return' => ['id', 'contribution_recur_id'],
     ]);
 
-    if (empty($membershipContribution['id'])) {
+    if (empty($paymentContribution['id'])) {
       return NULL;
     }
 
-    $membershipContribution= $membershipContribution['values'][0];
+    $paymentContribution= $paymentContribution['values'][0];
 
-    if (empty($membershipContribution['contribution_recur_id'])) {
+    if (empty($paymentContribution['contribution_recur_id'])) {
       return NULL;
     }
 
-    return $membershipContribution['contribution_recur_id'];
+    return $paymentContribution['contribution_recur_id'];
   }
-
 
   /**
    * Determines if the recurring
-   * contribution is offline (pay later).
+   * contribution is offline (pay later) and pending.
+   *
+   * First payment made will not be count as pending
+   * even if there are still pending installments.
    *
    * @param $recurringContributionID
    * @return bool
    */
-  private function isOfflineRecurringContribution($recurringContributionID) {
+  private function isOfflinePendingRecurringContribution($recurringContributionID) {
     $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $recurringContributionID,
     ])['values'][0];
 
-    $moreThanOneInstallment = $recurringContribution['installments'] > 1;
+    $installmentsCount = $recurringContribution['installments'];
+    $completedInstallmentsCount = $this->getRecContributionCompletedInstallmentsCount($recurringContributionID);
+
+    $isFirstPaidInstallment = $completedInstallmentsCount === 1;
+    $isTherePendingInstallments = $completedInstallmentsCount !== $installmentsCount;
 
     $offlineRecurringProcessors = self::getOfflineRecurringPaymentProcessors();
-    $offlineContribution = empty($recurringContribution['payment_processor_id']) ||
+    $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
       in_array($recurringContribution['payment_processor_id'], $offlineRecurringProcessors);
 
-    if ($moreThanOneInstallment && $offlineContribution) {
+    if ($isFirstPaidInstallment && $isOfflineContribution) {
+      return FALSE;
+    }
+
+    if ($isTherePendingInstallments && $isOfflineContribution) {
       return TRUE;
     }
 
     return FALSE;
+  }
+
+  private function getRecContributionCompletedInstallmentsCount($recContributionID) {
+    $pendingContributions = civicrm_api3('Contribution', 'get', [
+      'contribution_recur_id' => $recContributionID,
+      'contribution_status_id' => 'Completed',
+    ]);
+
+    return $pendingContributions['count'];
   }
 
   /**
