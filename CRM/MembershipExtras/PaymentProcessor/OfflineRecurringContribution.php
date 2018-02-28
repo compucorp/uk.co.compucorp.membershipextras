@@ -1,11 +1,11 @@
 <?php
 
-use CRM_MembershipExtra_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
+use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
 
 /**
  * 'Offline Recurring Contribution' payment processor.
  */
-class CRM_MembershipExtra_PaymentProcessor_OfflineRecurringContribution {
+class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
 
   /**
    * 'Offline Recurring Contribution' Payment Processor machine name.
@@ -35,7 +35,7 @@ class CRM_MembershipExtra_PaymentProcessor_OfflineRecurringContribution {
       'is_active' => '1',
       'is_default' => '0',
       'is_test' => '0',
-      'class_name' => 'Payment_ManualRecurringPayment',
+      'class_name' => 'Payment_Manual',
       'is_recur' => '1',
       'payment_instrument_id' => 'EFT',
     ];

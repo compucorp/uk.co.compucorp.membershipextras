@@ -1,13 +1,13 @@
 <?php
 
-use CRM_MembershipExtra_ExtensionUtil as E;
-use CRM_MembershipExtra_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
-use CRM_MembershipExtra_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringPaymentProcessor;
+use CRM_MembershipExtras_ExtensionUtil as E;
+use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
+use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringPaymentProcessor;
 
 /**
  * Collection of upgrade steps.
  */
-class CRM_MembershipExtra_Upgrader extends CRM_MembershipExtra_Upgrader_Base {
+class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   public function postInstall() {
     $this->createManualRecurringPaymentProcessorType();

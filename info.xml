@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<extension key="uk.co.compucorp.membershipextra" type="module">
-  <file>membershipextra</file>
-  <name>uk.co.compucorp.membershipextra</name>
+<extension key="uk.co.compucorp.membershipextras" type="module">
+  <file>membershipextras</file>
+  <name>uk.co.compucorp.membershipextras</name>
   <description>Provides "Offline recurring contribution" Payment Processor and "Manual recurring payment" Payment Processor type which supports offline recurring payment. Implements offline recurring processor for Membership payments to not extend Membership dates.</description>
   <license>AGPL-3.0</license>
   <maintainer>
@@ -16,6 +16,6 @@
   </compatibility>
   <comments></comments>
   <civix>
-    <namespace>CRM/MembershipExtra</namespace>
+    <namespace>CRM/MembershipExtras</namespace>
   </civix>
 </extension>

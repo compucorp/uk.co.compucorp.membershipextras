@@ -1,4 +1,4 @@
-Package: uk.co.compucorp.membershipextra
+Package: uk.co.compucorp.membershipextras
 Copyright (C) 2018, Kacper Warda <kacper@compucorp.co.uk>
 Licensed under the GNU Affero Public License 3.0 (below).
 
