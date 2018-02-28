@@ -2,7 +2,7 @@
 
 /**
  * 'Manual Recurring Payment' payment processor type.
- *  this type implements Payment_ManualRecurringPayment
+ *  this type implements Payment_Manual
  *  which is defined for offline payment 'pay later' purposes.
  */
 class CRM_MembershipExtra_PaymentProcessorType_ManualRecurringPayment {
@@ -31,7 +31,7 @@ class CRM_MembershipExtra_PaymentProcessorType_ManualRecurringPayment {
       'title' => 'Manual Recurring Payment',
       'is_active' => '1',
       'is_default' => '0',
-      'class_name' => 'Payment_ManualRecurringPayment',
+      'class_name' => 'Payment_Manual',
       // This parameter is required for now but it's deprecated, so its value does not matter
       'billing_mode' => CRM_Core_Payment::BILLING_MODE_NOTIFY,
       'is_recur' => '1',
