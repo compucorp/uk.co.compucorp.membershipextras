@@ -5,7 +5,7 @@
  *  this type implements Payment_Manual
  *  which is defined for offline payment 'pay later' purposes.
  */
-class CRM_MembershipExtra_PaymentProcessorType_ManualRecurringPayment {
+class CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment {
 
   /**
    * 'Manual Recurring Payment' Payment Processor type machine name.

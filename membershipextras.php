@@ -1,16 +1,16 @@
 <?php
 
-require_once 'membershipextra.civix.php';
+require_once 'membershipextras.civix.php';
 
-use CRM_MembershipExtra_ExtensionUtil as E;
+use CRM_MembershipExtras_ExtensionUtil as E;
 
 /**
  * Implements hook_civicrm_config().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
  */
-function membershipextra_civicrm_config(&$config) {
-  _membershipextra_civix_civicrm_config($config);
+function membershipextras_civicrm_config(&$config) {
+  _membershipextras_civix_civicrm_config($config);
 }
 
 /**
@@ -18,8 +18,8 @@ function membershipextra_civicrm_config(&$config) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
  */
-function membershipextra_civicrm_xmlMenu(&$files) {
-  _membershipextra_civix_civicrm_xmlMenu($files);
+function membershipextras_civicrm_xmlMenu(&$files) {
+  _membershipextras_civix_civicrm_xmlMenu($files);
 }
 
 /**
@@ -27,8 +27,8 @@ function membershipextra_civicrm_xmlMenu(&$files) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
-function membershipextra_civicrm_install() {
-  _membershipextra_civix_civicrm_install();
+function membershipextras_civicrm_install() {
+  _membershipextras_civix_civicrm_install();
 }
 
 /**
@@ -36,8 +36,8 @@ function membershipextra_civicrm_install() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postInstall
  */
-function membershipextra_civicrm_postInstall() {
-  _membershipextra_civix_civicrm_postInstall();
+function membershipextras_civicrm_postInstall() {
+  _membershipextras_civix_civicrm_postInstall();
 }
 
 /**
@@ -45,8 +45,8 @@ function membershipextra_civicrm_postInstall() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
  */
-function membershipextra_civicrm_uninstall() {
-  _membershipextra_civix_civicrm_uninstall();
+function membershipextras_civicrm_uninstall() {
+  _membershipextras_civix_civicrm_uninstall();
 }
 
 /**
@@ -54,8 +54,8 @@ function membershipextra_civicrm_uninstall() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
-function membershipextra_civicrm_enable() {
-  _membershipextra_civix_civicrm_enable();
+function membershipextras_civicrm_enable() {
+  _membershipextras_civix_civicrm_enable();
 }
 
 /**
@@ -63,8 +63,8 @@ function membershipextra_civicrm_enable() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_disable
  */
-function membershipextra_civicrm_disable() {
-  _membershipextra_civix_civicrm_disable();
+function membershipextras_civicrm_disable() {
+  _membershipextras_civix_civicrm_disable();
 }
 
 /**
@@ -72,8 +72,8 @@ function membershipextra_civicrm_disable() {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
  */
-function membershipextra_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _membershipextra_civix_civicrm_upgrade($op, $queue);
+function membershipextras_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+  return _membershipextras_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -84,8 +84,8 @@ function membershipextra_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
-function membershipextra_civicrm_managed(&$entities) {
-  _membershipextra_civix_civicrm_managed($entities);
+function membershipextras_civicrm_managed(&$entities) {
+  _membershipextras_civix_civicrm_managed($entities);
 }
 
 /**
@@ -97,8 +97,8 @@ function membershipextra_civicrm_managed(&$entities) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
  */
-function membershipextra_civicrm_caseTypes(&$caseTypes) {
-  _membershipextra_civix_civicrm_caseTypes($caseTypes);
+function membershipextras_civicrm_caseTypes(&$caseTypes) {
+  _membershipextras_civix_civicrm_caseTypes($caseTypes);
 }
 
 /**
@@ -111,8 +111,8 @@ function membershipextra_civicrm_caseTypes(&$caseTypes) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
  */
-function membershipextra_civicrm_angularModules(&$angularModules) {
-  _membershipextra_civix_civicrm_angularModules($angularModules);
+function membershipextras_civicrm_angularModules(&$angularModules) {
+  _membershipextras_civix_civicrm_angularModules($angularModules);
 }
 
 /**
@@ -120,8 +120,8 @@ function membershipextra_civicrm_angularModules(&$angularModules) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
  */
-function membershipextra_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _membershipextra_civix_civicrm_alterSettingsFolders($metaDataFolders);
+function membershipextras_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
+  _membershipextras_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
 /**
@@ -129,10 +129,10 @@ function membershipextra_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) 
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pre
  */
-function membershipextra_civicrm_pre($op, $objectName, $id, &$params) {
+function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   /**
    * We store the contribution ID in a static variable because we
-   * need it for CRM_MembershipExtra_Hook_PreEdit_Membership class
+   * need it for CRM_MembershipExtras_Hook_PreEdit_Membership class
    * to be able to determine the correct recurring contribution ID in
    * case there was more than one recurring contribution.
    * It is not that pretty solution but there is no much
@@ -144,7 +144,7 @@ function membershipextra_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   if ($op === 'edit' && $objectName === 'Membership' && $contributionID) {
-    $preEditMembershipHook = new CRM_MembershipExtra_Hook_PreEdit_Membership($id, $contributionID, $params);
+    $preEditMembershipHook = new CRM_MembershipExtras_Hook_PreEdit_Membership($id, $contributionID, $params);
     $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
   }
 }

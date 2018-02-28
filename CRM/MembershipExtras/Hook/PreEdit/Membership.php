@@ -1,15 +1,15 @@
 <?php
 
-use CRM_MembershipExtra_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
+use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
 
 /**
- * Called by membershipextra_civicrm_pre hook
+ * Called by membershipextras_civicrm_pre hook
  * before editing/renewing a membership
  * record.
  *
- * Class CRM_MembershipExtra_Hook_PreEdit_Membership
+ * Class CRM_MembershipExtras_Hook_PreEdit_Membership
  */
-class CRM_MembershipExtra_Hook_PreEdit_Membership {
+class CRM_MembershipExtras_Hook_PreEdit_Membership {
 
   /**
    * The membership ID.
