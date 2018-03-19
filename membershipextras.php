@@ -148,3 +148,13 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
   }
 }
+
+/**
+ * Implements hook_civicrm_buildForm()
+ */
+function membershipextras_civicrm_buildForm($formName, &$form) {
+  if ($formName === 'CRM_Member_Form_Membership') {
+    $membershipStatusHook = new CRM_MembershipExtras_Hook_BuildForm_Membership();
+    $membershipStatusHook->buildForm($form);
+  }
+}
