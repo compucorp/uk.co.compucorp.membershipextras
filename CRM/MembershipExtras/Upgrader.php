@@ -9,23 +9,28 @@ use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as Offlin
  */
 class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
-  public function postInstall() {
-    $this->createManualRecurringPaymentProcessorType();
-    $this->createOfflineRecurringContributionProcessor();
+  public function Install() {
+    $this->createOfflineAutoRenewalScheduledJob();
   }
 
   /**
-   * Creates 'Manual Recurring Payment' Payment processor type
+   * Creates 'Renew offline auto-renewal memberships'
+   * Scheduled Job.
    */
-  private function createManualRecurringPaymentProcessorType() {
+  private function createOfflineAutoRenewalScheduledJob() {
+    civicrm_api3('Job', 'create', [
+      'run_frequency' => 'Daily',
+      'name' => 'Renew offline auto-renewal memberships',
+      'description' => ts('Automatically renew any offline/paylater membership that is configured to be auto-renewed'),
+      'api_entity' => 'OfflineAutoRenewalJob',
+      'api_action' => 'run',
+    ]);
+  }
+
+  public function postInstall() {
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->create();
-  }
 
-  /**
-   * Creates 'Offline Recurring Contribution' payment processor
-   */
-  private function createOfflineRecurringContributionProcessor() {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
     $paymentProcessor->create();
   }
@@ -36,6 +41,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->toggle(TRUE);
+
+    $this->toggleOfflineAutoRenewalScheduledJob(TRUE);
   }
 
   public function disable() {
@@ -44,27 +51,42 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->toggle(FALSE);
+
+    $this->toggleOfflineAutoRenewalScheduledJob(FALSE);
+  }
+
+  /**
+   * Enables/Disables 'Renew offline auto-renewal memberships'
+   * Scheduled Job based on the passed status.
+   *
+   * @param int $newStatus
+   */
+  private function toggleOfflineAutoRenewalScheduledJob($newStatus) {
+    civicrm_api3('Job', 'get', [
+      'name' => 'Renew offline auto-renewal memberships',
+      'api.Job.create' => ['id' => '$value.id', 'is_active' => $newStatus],
+    ]);
   }
 
   public function uninstall() {
-    $this->removeOfflineRecurringContributionProcessor();
-    $this->removeManualRecurringPaymentProcessorType();
-  }
-
-  /**
-   * Removes 'Offline Recurring Contribution' payment processor
-   */
-  private function removeOfflineRecurringContributionProcessor() {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
     $paymentProcessor->remove();
+
+    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
+    $paymentProcessorType->remove();
+
+    $this->removeOfflineAutoRenewalScheduledJob();
   }
 
   /**
-   * Removes 'Manual Recurring Payment' Payment processor type
+   * Removes 'Renew offline auto-renewal memberships'
+   * Scheduled Job.
    */
-  private function removeManualRecurringPaymentProcessorType() {
-    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
-    $paymentProcessorType->remove();
+  private function removeOfflineAutoRenewalScheduledJob() {
+    civicrm_api3('Job', 'get', [
+      'name' => 'Renew offline auto-renewal memberships',
+      'api.Job.delete' => ['id' => '$value.id'],
+    ]);
   }
 
 }
