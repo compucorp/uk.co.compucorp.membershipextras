@@ -58,7 +58,7 @@
   </tr>
   <tr id="installments_row">
     <td nowrap>{$form.installments.label}</td>
-    <td>
+    <td nowrap>
       {$form.installments.html}
       {$form.installments_frequency.label}
       {$form.installments_frequency.html}
