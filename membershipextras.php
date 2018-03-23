@@ -154,7 +154,14 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
  */
 function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName === 'CRM_Member_Form_Membership') {
-    $membershipStatusHook = new CRM_MembershipExtras_Hook_BuildForm_Membership();
-    $membershipStatusHook->buildForm($form);
+    $membershipHook = new CRM_MembershipExtras_Hook_BuildForm_Membership($form);
+    $membershipHook->buildForm();
+  }
+}
+
+function membershipextras_civicrm_postProcess($formName, &$form) {
+  if ($formName === 'CRM_Member_Form_Membership') {
+    $membershipHook = new CRM_MembershipExtras_Hook_PostProcess_Membership($form);
+    $membershipHook->postProcess();
   }
 }
