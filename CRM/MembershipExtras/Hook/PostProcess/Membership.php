@@ -8,24 +8,33 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
 
   /**
    * @var CRM_Member_Form_Membership
+   *   Form object submitted to create a new membership.
    */
   private $form;
 
   /**
    * @var object
+   *   Object with the created membership's data.
    */
   private $membership;
 
   /**
    * @var object
+   *   Object with the contribution associated to the membership with full
+   *   payment info.
    */
   private $membershipContribution;
 
   /**
    * @var object
+   *   Recurring contribution created for the payment plan.
    */
   private $recurringContribution;
 
+  /**
+   * @var array
+   *   Array mapping status names to corresponding ID's.
+   */
   private static $contributionStatusValueMap = array();
 
   /**
@@ -54,11 +63,18 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     }
   }
 
+  /**
+   * Loads information for created membership and contribution into class
+   * properties.
+   */
   private function loadCurrentMembershipAndContribution() {
     $this->membership = $this->getMembership($this->form->_id);
     $this->membershipContribution = $this->getContributionForMembership($this->form->_id);
   }
 
+  /**
+   * Creates recurring contribution from existing membership data.
+   */
   private function createRecurringContribution() {
     $totalAmount = $this->form->getSubmitValue('total_amount');
     $installments = $this->form->getSubmitValue('installments');
@@ -84,6 +100,14 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     $this->recurringContribution = array_shift($api->result->values);
   }
 
+  /**
+   * Gets membership data from given membership ID.
+   *
+   * @param $membershipID
+   *
+   * @return object
+   *   Standard object with membership's data
+   */
   private function getMembership($membershipID) {
     $api = new civicrm_api3();
     $api->Membership->getsingle(array('id' => $membershipID));
@@ -92,11 +116,12 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
   }
 
   /**
-   * Obtains contribution BAO object for given membership ID.
+   * Obtains contribution object for given membership ID.
    *
    * @param int $membershipID
    *
    * @return object
+   *   Standard object with contribution's data
    */
   private function getContributionForMembership($membershipID) {
     $contributionID = CRM_Member_BAO_Membership::getMembershipContributionId($membershipID);
@@ -107,6 +132,10 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     return $api->result;
   }
 
+  /**
+   * Creates installments as contributions for the membership created when
+   * processing the form.
+   */
   private function createInstallmentContributions() {
     $totalAmount = floatval($this->recurringContribution->amount);
     $installments = intval($this->recurringContribution->installments);
@@ -142,6 +171,13 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     }
   }
 
+  /**
+   * Given a status name, returns it's corresponding ID.
+   *
+   * @param $statusName
+   *
+   * @return int
+   */
   private function getContributionStatusID($statusName) {
     if (count(self::$contributionStatusValueMap) == 0) {
       $api = new civicrm_api3();
@@ -154,9 +190,15 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
       }
     }
 
-    return CRM_Utils_Array::value($statusName, self::$contributionStatusValueMap);
+    return CRM_Utils_Array::value($statusName, self::$contributionStatusValueMap, 0);
   }
 
+  /**
+   * Injects soft credit parameters, if they were selected on original form,
+   * into the provided parameters array.
+   *
+   * @param $params
+   */
   private function injectSoftCreditParams(&$params) {
     $contributorID = $this->form->getSubmitValue('soft_credit_contact_id');
     $creditTypeID = $this->form->getSubmitValue('soft_credit_type_id');
@@ -173,16 +215,33 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     $params['soft_credit'] = $softParams;
   }
 
+  /**
+   * Injects infrmation for the contribution's line item and changes the label
+   * to the one provided as input parameter.
+   *
+   * @param $params
+   *   Array of parameters being used to create the contribution
+   * @param $label
+   *   Label that should be used on line item
+   */
   private function injectLineItemIntoParams(&$params, $label) {
     CRM_Price_BAO_LineItem::getLineItemArray($params, NULL, 'membership', $params['membership_type_id']);
 
-    foreach ($params['line_item'] as $set => $priceFields) {
-      foreach ($priceFields as $fieldID => $lineItem) {
-        $params['line_item'][$set][$fieldID]['label'] = $label;
+    if (!empty($label)) {
+      foreach ($params['line_item'] as $set => $priceFields) {
+        foreach ($priceFields as $fieldID => $lineItem) {
+          $params['line_item'][$set][$fieldID]['label'] = $label;
+        }
       }
     }
   }
 
+  /**
+   * Builds default parameters that should be used to create each installation's
+   * contribution.
+   *
+   * @return array
+   */
   private function getDefaultContributionParameters() {
     return array(
       // Membership
