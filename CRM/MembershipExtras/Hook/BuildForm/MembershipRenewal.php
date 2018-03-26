@@ -3,7 +3,7 @@
 /**
  * Alters Membership creation form to include payment plan options.
  */
-class CRM_MembershipExtras_Hook_BuildForm_Membership {
+class CRM_MembershipExtras_Hook_BuildForm_MembershipRenewal {
 
   /**
    * @var string
@@ -20,15 +20,15 @@ class CRM_MembershipExtras_Hook_BuildForm_Membership {
   /**
    * CRM_MembershipExtras_Hook_BuildForm_Membership constructor.
    *
-   * @param \CRM_Member_Form_Membership $form
+   * @param \CRM_Member_Form_MembershipRenewal $form
    */
-  public function __construct(CRM_Member_Form_Membership &$form) {
+  public function __construct(CRM_Member_Form_MembershipRenewal &$form) {
     $this->form = $form;
 
     $path = realpath(dirname(__FILE__));
     $classPath = strtr(
       self::class,
-      array('BuildForm_Membership' => 'BuildForm', '_' => '/')
+      array('BuildForm_MembershipRenewal' => 'BuildForm', '_' => '/')
     );
     $this->templatePath = strtr($path, array($classPath => '')) . 'templates';
   }
@@ -38,7 +38,7 @@ class CRM_MembershipExtras_Hook_BuildForm_Membership {
    * juggles around exiting ones.
    */
   public function buildForm() {
-    if ($this->form->_action & CRM_Core_Action::ADD) {
+    if ($this->form->_action & CRM_Core_Action::RENEW) {
       $this->form->add('text', 'installments', ts('Number of Installments'), '', FALSE);
       $this->form->addRule('installments', ts('Installments must be a number.'), 'numeric');
 

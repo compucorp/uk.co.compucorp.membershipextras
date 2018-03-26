@@ -10,7 +10,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
    * @var CRM_Member_Form_Membership
    *   Form object submitted to create a new membership.
    */
-  private $form;
+  protected $form;
 
   /**
    * @var object
@@ -67,15 +67,15 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
    * Loads information for created membership and contribution into class
    * properties.
    */
-  private function loadCurrentMembershipAndContribution() {
+  protected function loadCurrentMembershipAndContribution() {
     $this->membership = $this->getMembership($this->form->_id);
-    $this->membershipContribution = $this->getContributionForMembership($this->form->_id);
+    $this->membershipContribution = $this->getLastContributionForMembership($this->form->_id);
   }
 
   /**
    * Creates recurring contribution from existing membership data.
    */
-  private function createRecurringContribution() {
+  protected function createRecurringContribution() {
     $totalAmount = $this->form->getSubmitValue('total_amount');
     $installments = $this->form->getSubmitValue('installments');
     $installmentsFrequency = $this->form->getSubmitValue('installments_frequency');
@@ -97,7 +97,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     $api = new civicrm_api3();
     $api->ContributionRecur->create($contributionRecurParams);
 
-    $this->recurringContribution = array_shift($api->result->values);
+    $this->recurringContribution = array_shift($api->result()->values);
   }
 
   /**
@@ -123,8 +123,8 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
    * @return object
    *   Standard object with contribution's data
    */
-  private function getContributionForMembership($membershipID) {
-    $contributionID = CRM_Member_BAO_Membership::getMembershipContributionId($membershipID);
+  private function getLastContributionForMembership($membershipID) {
+    $contributionID = $this->getLastMembershipContributionId($membershipID);
 
     $api = new civicrm_api3();
     $api->Contribution->getsingle(array('id' => $contributionID));
@@ -133,42 +133,110 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
   }
 
   /**
+   * Obtains the ID for the last contribution stored for the given membership
+   * ID.
+   *
+   * @param $membershipID
+   *
+   * @return object
+   */
+  private function getLastMembershipContributionId($membershipID) {
+    $api = new civicrm_api3();
+    $api->MembershipPayment->getsingle([
+      'membership_id' => $membershipID,
+      'options' => ['limit' => 1, 'sort' => 'contribution_id DESC'],
+    ]);
+
+    return $api->result()->contribution_id;
+  }
+
+  /**
    * Creates installments as contributions for the membership created when
    * processing the form.
    */
-  private function createInstallmentContributions() {
+  protected function createInstallmentContributions() {
     $totalAmount = floatval($this->recurringContribution->amount);
     $installments = intval($this->recurringContribution->installments);
     $amountPerInstallment = $this->calculateSingleInstallmentAmount($totalAmount, $installments);
     $installmentPercentage = $this->calculateSingleInstallmentPercentage($amountPerInstallment, $totalAmount);
 
+    for ($i = 0; $i < $installments; $i++) {
+      $params = $this->buildContributionParams($i, $amountPerInstallment);
+      $contribution = CRM_Member_BAO_Membership::recordMembershipContribution($params);
+
+      $label = $this->membership->membership_name;
+      if ($installments > 1) {
+        $label .= " ({$installmentPercentage}%), " . CRM_Utils_Date::customFormat($contribution->receive_date);
+      }
+
+      $this->createLineItem($contribution, $label);
+    }
+  }
+
+  /**
+   * Builds an array with all required parameters to create a contribution.
+   *
+   * @param $installmentNumber
+   *   The number for the n-th installment to create
+   * @param $amountPerInstallment
+   *   Total amount for the single installment
+   *
+   * @return array
+   */
+  private function buildContributionParams($installmentNumber, $amountPerInstallment) {
     $firstDate = $this->membershipContribution->receive_date;
     $intervalFrequency = $this->recurringContribution->frequency_interval;
     $frequencyUnit = $this->recurringContribution->frequency_unit;
-    $membershipTypeName = $this->membership->membership_name;
 
-    for ($i = 0; $i < $installments; $i++) {
-      $params = $this->getDefaultContributionParameters();
+    $params = $this->getDefaultContributionParameters();
+    $params['total_amount'] = $amountPerInstallment;
 
-      if ($i == 0) {
-        $receiveDate = $firstDate;
-      } else {
-        $receiveDate = $this->calculateInstallmentReceiveDate($i, $intervalFrequency, $frequencyUnit, $firstDate);
-        $params['contribution_status_id'] = $this->getContributionStatusID('Pending');
-      }
-
-      $params['total_amount'] = $amountPerInstallment;
-      $params['receive_date'] = $receiveDate;
-
-      $label = "$membershipTypeName";
-      if ($installments > 1) {
-        $label .= " ({$installmentPercentage}), " . CRM_Utils_Date::customFormat($receiveDate);
-      }
-      $this->injectLineItemIntoParams($params, $label);
-      $this->injectSoftCreditParams($params);
-
-      CRM_Member_BAO_Membership::recordMembershipContribution($params);
+    if ($installmentNumber == 0) {
+      $receiveDate = $firstDate;
+    } else {
+      $receiveDate = $this->calculateInstallmentReceiveDate($installmentNumber, $intervalFrequency, $frequencyUnit, $firstDate);
+      $params['contribution_status_id'] = $this->getContributionStatusID('Pending');
     }
+
+    $params['receive_date'] = $receiveDate;
+
+    $this->injectSoftCreditParams($params);
+
+    return $params;
+  }
+
+  /**
+   * Creates line items for the membership contribution to be auto-renewed.
+   *
+   * @param \CRM_Contribute_BAO_Contribution $contribution
+   * @param $label
+   */
+  private function createLineItem(CRM_Contribute_BAO_Contribution $contribution, $label) {
+    $api = new civicrm_api3();
+
+    $api->LineItem->create([
+      'entity_table' => 'civicrm_membership',
+      'entity_id' => $this->membership->id,
+      'contribution_id' => $contribution->id,
+      'label' => $label,
+      'qty' => 1,
+      'unit_price' => $contribution->total_amount,
+      'line_total' => $contribution->total_amount,
+      'financial_type_id' => $contribution->financial_type_id,
+    ]);
+    $lineItem = array_shift($api->result()->values);
+
+    $api->FinancialItem->create([
+      'contact_id' => $this->form->_contactID,
+      'description' => $label,
+      'amount' => $contribution->total_amount,
+      'currency' => $contribution->currency,
+      'financial_type_id' => $contribution->financial_type_id,
+      'status_id' => 'Unpaid',
+      'entity_table' => 'civicrm_line_item',
+      'entity_id' => $lineItem->id,
+      'transaction_date' => date('Y-m-d H:i:s'),
+    ]);
   }
 
   /**
@@ -266,9 +334,11 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
       'campaign_id' => $this->membershipContribution->campaign_id,
       'creditnote_id' => $this->membershipContribution->creditnote_id,
       'card_type_id' => $this->membershipContribution->card_type_id,
+      'invoice_id' => md5(uniqid(rand(), TRUE)),
 
       // Line Items
       'membership_type_id' => $this->form->membership->membership_type_id,
+      'skipLineItem' => 1, // Since we're creating line items manually
     );
   }
 
@@ -348,7 +418,10 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     return $amount;
   }
 
-  private function deleteOldContribution() {
+  /**
+   * Deletes original contribution for the full amount.
+   */
+  protected function deleteOldContribution() {
     $api = new civicrm_api3();
     $api->Contribution->delete(array('id' => $this->membershipContribution->id));
   }
