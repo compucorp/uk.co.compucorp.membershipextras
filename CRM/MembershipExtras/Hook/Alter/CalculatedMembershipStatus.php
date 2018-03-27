@@ -6,11 +6,38 @@
  */
 class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
 
+  /**
+   * Array with the membership's details, as passed by the hook function.
+   *
+   * @var array
+   */
   private $membership;
-  private $calculationArguments;
-  private static $memberShipStatuses = array();
-  private static $contributionStatusValueMap = array();
 
+  /**
+   * Dates used by CiviCRM to calculate status, ie. start_date, end_date and
+   * join_date.
+   *
+   * @var array
+   */
+  private $calculationArguments;
+
+  /**
+   * List of all available membership statuses.
+   *
+   * @var array
+   */
+  private static $memberShipStatuses = [];
+
+  /**
+   * Maps the names of contribution statuses to their corresponding values.
+   *
+   * @var array
+   */
+  private static $contributionStatusValueMap = [];
+
+  /**
+   * CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus constructor.
+   */
   public function __construct() {
     if (count(self::$memberShipStatuses) == 0) {
       $membershipStatuses = civicrm_api3('MembershipStatus', 'get', [
@@ -21,9 +48,9 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
     }
 
     if (count(self::$contributionStatusValueMap) == 0) {
-      $contributionStatuses = civicrm_api3('OptionValue', 'get', array(
+      $contributionStatuses = civicrm_api3('OptionValue', 'get', [
         'option_group_id' => "contribution_status",
-      ));
+      ]);
 
       foreach ($contributionStatuses['values'] as $currentStatus) {
         self::$contributionStatusValueMap[$currentStatus['name']] = $currentStatus['value'];
@@ -42,16 +69,23 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
    *   Membership details from the calling function
    */
   public function alterMembershipStatus(&$calculatedStatus, $arguments, $membership) {
+    $isPaymentPlanMembership = $this->checkMembershipPaymentPlan();
+
+    // If membership was not last payed for with a payment plan, no need to process
+    if (!$isPaymentPlanMembership) {
+      return;
+    }
+
     $this->membership = $membership;
     $this->calculationArguments = $arguments;
 
-    foreach (self::$memberShipStatuses as $currentStatus) {
-      $startEventIsArrearsRelated = stripos($currentStatus['start_event'], 'arrears') !== false;
-      $endEventIsArrearsRelated = stripos($currentStatus['end_event'], 'arrears') !== false;
+    foreach (self::$memberShipStatuses as $status) {
+      $startEventIsArrearsRelated = stripos($status['start_event'], 'arrears') !== false;
+      $endEventIsArrearsRelated = stripos($status['end_event'], 'arrears') !== false;
 
       if (!$startEventIsArrearsRelated && !$endEventIsArrearsRelated) {
         // If we reach calculated status, we don't need to consider other options by weight.
-        if ($calculatedStatus['id'] == $currentStatus['id']) {
+        if ($calculatedStatus['id'] == $status['id']) {
           break;
         }
 
@@ -60,25 +94,53 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
       }
 
       $startEvent = $this->checkEvent(
-        CRM_Utils_Array::value('start_event', $currentStatus),
+        CRM_Utils_Array::value('start_event', $status),
         $arguments['status_date'],
-        CRM_Utils_Array::value('start_event_adjust_unit', $currentStatus),
-        CRM_Utils_Array::value('start_event_adjust_interval', $currentStatus)
+        CRM_Utils_Array::value('start_event_adjust_unit', $status),
+        CRM_Utils_Array::value('start_event_adjust_interval', $status)
       );
 
       $endEvent = $this->checkEvent(
-        CRM_Utils_Array::value('end_event', $currentStatus),
+        CRM_Utils_Array::value('end_event', $status),
         $arguments['status_date'],
-        CRM_Utils_Array::value('start_event_adjust_unit', $currentStatus),
-        CRM_Utils_Array::value('start_event_adjust_interval', $currentStatus)
+        CRM_Utils_Array::value('start_event_adjust_unit', $status),
+        CRM_Utils_Array::value('start_event_adjust_interval', $status)
       );
 
       if ($startEvent && !$endEvent) {
-        $calculatedStatus['id'] = $currentStatus['id'];
-        $calculatedStatus['name'] = $currentStatus['name'];
+        $calculatedStatus['id'] = $status['id'];
+        $calculatedStatus['name'] = $status['name'];
         break;
       }
     }
+  }
+
+  /**
+   * Checks if membership was last payed for with a payment plan.
+   *
+   * @return bool
+   */
+  private function checkMembershipPaymentPlan() {
+    $query = '
+      SELECT civicrm_contribution_recur.id AS recurid
+      FROM civicrm_membership_payment
+      INNER JOIN civicrm_contribution ON civicrm_membership_payment.contribution_id = civicrm_contribution.id
+      LEFT JOIN civicrm_contribution_recur ON civicrm_contribution.contribution_recur_id = civicrm_contribution_recur.id
+      WHERE civicrm_membership_payment.membership_id = %1
+      AND civicrm_contribution_recur.installments > 0
+      ORDER BY civicrm_contribution.id DESC
+      LIMIT 1
+    ';
+    $pendingContributionsResult = CRM_Core_DAO::executeQuery($query, [
+      1 => [$this->membership['id'], 'Integer'],
+    ]);
+    $pendingContributionsResult->fetch();
+
+    if (!empty($pendingContributionsResult->recurid)) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**
@@ -302,11 +364,11 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
       AND civicrm_contribution.receive_date <= %3
       AND civicrm_contribution_recur.installments > 0
     ";
-    $pendingContributionsResult = CRM_Core_DAO::executeQuery($query, array(
-      1 => array($this->membership['id'], 'Integer'),
-      2 => array(self::$contributionStatusValueMap['Pending'], 'String'),
-      3 => array($adjustedReferenceDate, 'String'),
-    ));
+    $pendingContributionsResult = CRM_Core_DAO::executeQuery($query, [
+      1 => [$this->membership['id'], 'Integer'],
+      2 => [self::$contributionStatusValueMap['Pending'], 'String'],
+      3 => [$adjustedReferenceDate, 'String'],
+    ]);
     $pendingContributionsResult->fetch();
 
     if ($pendingContributionsResult->total > 0) {

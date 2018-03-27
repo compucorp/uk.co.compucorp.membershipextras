@@ -10,13 +10,13 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipStatus {
    * @var array
    *   Events that can be used to evaluate the start of a membership status
    */
-  private $startEvents = array();
+  private $startEvents = [];
 
   /**
    * @var array
    *   Events that can be used to evaluate the end of a membership status
    */
-  private $endEvents = array();
+  private $endEvents = [];
 
   /**
    * Initializes available start and end events.
@@ -24,14 +24,14 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipStatus {
   public function __construct() {
     $this->startEvents = array_merge(
       CRM_Core_SelectValues::eventDate(),
-      array(
+      [
         'in_arrears' => ts('Membership is in arrears (Payment Plan)'),
         'not_arrears' => ts('Membership is no longer in arrears (Payment Plan)'),
-      )
+      ]
     );
 
     $this->endEvents = array_merge(
-      array('' => ts('- select -')),
+      ['' => ts('- select -')],
       $this->startEvents
     );
   }
