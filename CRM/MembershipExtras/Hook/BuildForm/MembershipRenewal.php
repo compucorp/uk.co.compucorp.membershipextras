@@ -28,9 +28,9 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipRenewal {
     $path = realpath(dirname(__FILE__));
     $classPath = strtr(
       self::class,
-      array('BuildForm_MembershipRenewal' => 'BuildForm', '_' => '/')
+      ['BuildForm_MembershipRenewal' => 'BuildForm', '_' => '/']
     );
-    $this->templatePath = strtr($path, array($classPath => '')) . 'templates';
+    $this->templatePath = strtr($path, [$classPath => '']) . 'templates';
   }
 
   /**
@@ -47,13 +47,13 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipRenewal {
 
       $this->form->add('select', 'installments_frequency_unit',
         ts('Installments Frequency Units'),
-        array('' => ts('- select -')) + CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
+        ['' => ts('- select -')] + CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
         FALSE
       );
 
-      CRM_Core_Region::instance('page-body')->add(array(
+      CRM_Core_Region::instance('page-body')->add([
         'template' => "{$this->templatePath}/CRM/Member/Form/PaymentPlanToggler.tpl"
-      ));
+      ]);
     }
   }
 

@@ -164,6 +164,9 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   }
 }
 
+/**
+ * Implements hook_civicrm_postProcess()
+ */
 function membershipextras_civicrm_postProcess($formName, &$form) {
   if ($formName === 'CRM_Member_Form_Membership') {
     $membershipHook = new CRM_MembershipExtras_Hook_PostProcess_Membership($form);

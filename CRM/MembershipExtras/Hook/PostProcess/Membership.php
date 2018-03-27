@@ -35,7 +35,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
    * @var array
    *   Array mapping status names to corresponding ID's.
    */
-  private static $contributionStatusValueMap = array();
+  private static $contributionStatusValueMap = [];
 
   /**
    * CRM_MembershipExtras_Hook_PostProcess_Membership constructor.
@@ -81,7 +81,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     $installmentsFrequency = $this->form->getSubmitValue('installments_frequency');
     $installmentsFrequencyUnit = $this->form->getSubmitValue('installments_frequency_unit');
 
-    $contributionRecurParams = array(
+    $contributionRecurParams = [
       'contact_id' => $this->form->_contactID,
       'frequency_interval' => $installmentsFrequency,
       'frequency_unit' => $installmentsFrequencyUnit,
@@ -92,7 +92,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
       'payment_processor_id' => $this->membershipContribution->payment_processor_id,
       'payment_instrument_id' => $this->membershipContribution->payment_instrument_id,
       'financial_type_id' =>  $this->membershipContribution->financial_type_id,
-    );
+    ];
 
     $api = new civicrm_api3();
     $api->ContributionRecur->create($contributionRecurParams);
@@ -110,7 +110,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
    */
   private function getMembership($membershipID) {
     $api = new civicrm_api3();
-    $api->Membership->getsingle(array('id' => $membershipID));
+    $api->Membership->getsingle(['id' => $membershipID]);
 
     return $api->result;
   }
@@ -127,7 +127,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
     $contributionID = $this->getLastMembershipContributionId($membershipID);
 
     $api = new civicrm_api3();
-    $api->Contribution->getsingle(array('id' => $contributionID));
+    $api->Contribution->getsingle(['id' => $contributionID]);
 
     return $api->result;
   }
@@ -249,9 +249,9 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
   private function getContributionStatusID($statusName) {
     if (count(self::$contributionStatusValueMap) == 0) {
       $api = new civicrm_api3();
-      $api->OptionValue->get(array(
+      $api->OptionValue->get([
         'option_group_id' => "contribution_status",
-      ));
+      ]);
 
       foreach ($api->result->values as $currentStatus) {
         self::$contributionStatusValueMap[$currentStatus->name] = $currentStatus->value;
@@ -311,7 +311,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
    * @return array
    */
   private function getDefaultContributionParameters() {
-    return array(
+    return [
       // Membership
       'membership_id' => $this->membership->id,
 
@@ -339,7 +339,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
       // Line Items
       'membership_type_id' => $this->form->membership->membership_type_id,
       'skipLineItem' => 1, // Since we're creating line items manually
-    );
+    ];
   }
 
   /**
@@ -423,7 +423,7 @@ class CRM_MembershipExtras_Hook_PostProcess_Membership {
    */
   protected function deleteOldContribution() {
     $api = new civicrm_api3();
-    $api->Contribution->delete(array('id' => $this->membershipContribution->id));
+    $api->Contribution->delete(['id' => $this->membershipContribution->id]);
   }
 
 }
