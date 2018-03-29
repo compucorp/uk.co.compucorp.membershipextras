@@ -127,6 +127,24 @@ function membershipextras_civicrm_alterSettingsFolders(&$metaDataFolders = NULL)
 /**
  * Implements hook_civicrm_pre().
  *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu/
+ */
+function membershipextras_civicrm_navigationMenu(&$menu) {
+  $paymentPlanSettingsMenuItem = [
+    'name' => ts('payment_plan_settings'),
+    'label' => ts('Payment Plan Settings'),
+    'url' => 'civicrm/admin/payment_plan_settings',
+    'permission' => 'administer CiviCRM',
+    'operator' => NULL,
+    'separator' => NULL,
+  ];
+
+  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/', $paymentPlanSettingsMenuItem);
+}
+
+/**
+ * Implements hook_civicrm_pre().
+ *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pre
  */
 function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {

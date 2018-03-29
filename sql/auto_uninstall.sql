@@ -1,0 +1,1 @@
+DELETE FROM civicrm_setting WHERE `name` LIKE 'membershipextras_paymentplan_%';
