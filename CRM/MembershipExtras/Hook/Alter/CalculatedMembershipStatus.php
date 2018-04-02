@@ -35,9 +35,6 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
    */
   private static $contributionStatusValueMap = [];
 
-  /**
-   * CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus constructor.
-   */
   public function __construct() {
     if (count(self::$memberShipStatuses) == 0) {
       $membershipStatuses = civicrm_api3('MembershipStatus', 'get', [
