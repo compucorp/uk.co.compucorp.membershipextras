@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Postprocesses membership renewal, creating payment plan installments when
+ * Postprocesses membership renewal form, creating payment plan installments when
  * necessary.
  */
-class CRM_MembershipExtras_Hook_PostProcess_MembershipRenewal extends CRM_MembershipExtras_Hook_PostProcess_Membership {
+class CRM_MembershipExtras_Hook_PostProcess_MembershipRenewal extends CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlan {
 
   /**
    * CRM_MembershipExtras_Hook_PostProcess_MembershipRenewal constructor.
@@ -12,24 +12,14 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipRenewal extends CRM_Member
    * @param \CRM_Member_Form_MembershipRenewal $form
    */
   public function __construct(CRM_Member_Form_MembershipRenewal &$form) {
-    $this->form = $form;
+    parent::__construct($form);
   }
 
   /**
-   * Post-processes form to check if membership is going to be payed for with a
-   * payment plan and makes the necessary adjustments.
+   * @inheritdoc
    */
-  public function postProcess() {
-    $isMembershipRenewal = $this->form->getAction() & CRM_Core_Action::RENEW;
-    $recordingContribution = $this->form->getSubmitValue('record_contribution');
-    $contributionIsPaymentPlan = $this->form->getSubmitValue('contribution_type_toggle') == 'payment_plan';
-
-    if ($isMembershipRenewal && $recordingContribution && $contributionIsPaymentPlan) {
-      $this->loadCurrentMembershipAndContribution();
-      $this->createRecurringContribution();
-      $this->createInstallmentContributions();
-      $this->deleteOldContribution();
-    }
+  protected function isCorrectOperation($action) {
+    return $action & CRM_Core_Action::RENEW;
   }
 
 }
