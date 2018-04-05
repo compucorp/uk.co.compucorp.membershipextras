@@ -52,7 +52,7 @@ abstract class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlan {
    * @param int $action
    *   Constant value for the action, as defined in CRM_Core_Action class
    *
-   * @return mixed
+   * @return boolean
    */
   protected abstract function isCorrectOperation($action);
 
@@ -137,17 +137,18 @@ abstract class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlan {
    * Creates recurring contribution from existing membership data.
    */
   protected function createRecurringContribution() {
-    $totalAmount = $this->form->getSubmitValue('total_amount');
+    $totalAmount = $this->membershipContribution->total_amount;
     $installments = $this->form->getSubmitValue('installments');
     $installmentsFrequency = $this->form->getSubmitValue('installments_frequency');
     $installmentsFrequencyUnit = $this->form->getSubmitValue('installments_frequency_unit');
+    $amountPerInstallment = $this->calculateSingleInstallmentAmount($totalAmount, $installments);
 
     $contributionRecurParams = [
       'contact_id' => $this->form->_contactID,
       'frequency_interval' => $installmentsFrequency,
       'frequency_unit' => $installmentsFrequencyUnit,
       'installments' => $installments,
-      'amount' => $totalAmount,
+      'amount' => $amountPerInstallment,
       'contribution_status_id' => 'In Progress',
       'currency' => $this->membershipContribution->currency,
       'payment_processor_id' => $this->membershipContribution->payment_processor_id,
@@ -166,7 +167,7 @@ abstract class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlan {
    * processing the form.
    */
   protected function createInstallmentContributions() {
-    $totalAmount = floatval($this->recurringContribution->amount);
+    $totalAmount = $this->membershipContribution->total_amount;
     $installments = intval($this->recurringContribution->installments);
     $amountPerInstallment = $this->calculateSingleInstallmentAmount($totalAmount, $installments);
     $installmentPercentage = $this->calculateSingleInstallmentPercentage($amountPerInstallment, $totalAmount);

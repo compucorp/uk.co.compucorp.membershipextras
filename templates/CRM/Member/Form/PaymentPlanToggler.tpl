@@ -17,9 +17,9 @@
   function moveMembershipFormFields() {
     // Move fields
     CRM.$('#contributionTypeToggle').insertBefore(CRM.$('#is_different_contribution_contact').parent().parent());
-    CRM.$('#recordContribution legend').html('Contribution and Payment Plan');
+    CRM.$('#recordContribution legend:first').html('Contribution and Payment Plan');
     CRM.$('#installments_row').insertAfter(CRM.$('#financial_type_id').parent().parent());
-    CRM.$('#first_installment').insertAfter(CRM.$('#contribution_status_id').parent().parent());
+    CRM.$('#first_installment').insertAfter(CRM.$('#installments_row'));
   }
 
   /**
