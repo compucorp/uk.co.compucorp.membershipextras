@@ -159,8 +159,13 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   }
 
   if ($formName === 'CRM_Member_Form_MembershipRenewal') {
-    $membershipHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipRenewal($form);
-    $membershipHook->buildForm();
+    $membershipRenewal = new CRM_MembershipExtras_Hook_BuildForm_MembershipRenewal($form);
+    $membershipRenewal->buildForm();
+  }
+
+  if ($formName === 'CRM_Member_Form_MembershipStatus') {
+    $membershipStatusHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipStatus();
+    $membershipStatusHook->buildForm($form);
   }
 }
 
@@ -177,4 +182,12 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
     $membershipHook = new CRM_MembershipExtras_Hook_PostProcess_MembershipRenewal($form);
     $membershipHook->postProcess();
   }
+}
+
+/**
+ * Implements hook_civicrm_alterCalculatedMembershipStatus()
+ */
+function membershipextras_civicrm_alterCalculatedMembershipStatus(&$calculatedStatus, $arguments, $membership) {
+  $alterMembershipStatusHook = new CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus();
+  $alterMembershipStatusHook->alterMembershipStatus($calculatedStatus, $arguments, $membership);
 }
