@@ -35,7 +35,7 @@ abstract class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
    * @param int $action
    *   Constant value for the action, as defined in CRM_Core_Action class
    *
-   * @return mixed
+   * @return boolean
    */
   protected abstract function isCorrectOperation($action);
 
@@ -51,22 +51,24 @@ abstract class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
    * juggles around exiting ones.
    */
   protected function addPaymentPlanSection() {
-    if ($this->isCorrectOperation($this->form->_action)) {
-      $this->form->add('text', 'installments', ts('Number of Installments'), '', FALSE);
-      $this->form->addRule('installments', ts('Installments must be a number.'), 'numeric');
-
-      $this->form->add('text', 'installments_frequency', ts('Interval'), '', FALSE);
-      $this->form->addRule('installments_frequency', ts('Installments must be a number.'), 'numeric');
-
-      $this->form->add('select', 'installments_frequency_unit',
-        ts('Installments Frequency Units'),
-        ['' => ts('- select -')] + CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
-        FALSE
-      );
-
-      CRM_Core_Region::instance('page-body')->add([
-        'template' => "{$this->templatePath}/CRM/Member/Form/PaymentPlanToggler.tpl"
-      ]);
+    if (!$this->isCorrectOperation($this->form->_action)) {
+      return;
     }
+
+    $this->form->add('text', 'installments', ts('Number of Installments'), '', FALSE);
+    $this->form->addRule('installments', ts('Installments must be a number.'), 'numeric');
+
+    $this->form->add('text', 'installments_frequency', ts('Interval'), '', FALSE);
+    $this->form->addRule('installments_frequency', ts('Installments must be a number.'), 'numeric');
+
+    $this->form->add('select', 'installments_frequency_unit',
+      ts('Installments Frequency Units'),
+      ['' => ts('- select -')] + CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
+      FALSE
+    );
+
+    CRM_Core_Region::instance('page-body')->add([
+      'template' => "{$this->templatePath}/CRM/Member/Form/PaymentPlanToggler.tpl"
+    ]);
   }
 }
