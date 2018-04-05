@@ -148,3 +148,33 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
   }
 }
+
+/**
+ * Implements hook_civicrm_buildForm()
+ */
+function membershipextras_civicrm_buildForm($formName, &$form) {
+  if ($formName === 'CRM_Member_Form_Membership') {
+    $membershipHook = new CRM_MembershipExtras_Hook_BuildForm_Membership($form);
+    $membershipHook->buildForm();
+  }
+
+  if ($formName === 'CRM_Member_Form_MembershipRenewal') {
+    $membershipHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipRenewal($form);
+    $membershipHook->buildForm();
+  }
+}
+
+/**
+ * Implements hook_civicrm_postProcess()
+ */
+function membershipextras_civicrm_postProcess($formName, &$form) {
+  if ($formName === 'CRM_Member_Form_Membership') {
+    $membershipHook = new CRM_MembershipExtras_Hook_PostProcess_Membership($form);
+    $membershipHook->postProcess();
+  }
+
+  if ($formName === 'CRM_Member_Form_MembershipRenewal') {
+    $membershipHook = new CRM_MembershipExtras_Hook_PostProcess_MembershipRenewal($form);
+    $membershipHook->postProcess();
+  }
+}
