@@ -50,7 +50,7 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
    *
    * @return array
    */
-  private function get() {
+  public function get() {
     $processor = civicrm_api3('PaymentProcessor', 'get', [
       'name' => self::NAME,
       'sequential' => 1,

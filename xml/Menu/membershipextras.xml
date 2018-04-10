@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/admin/payment_plan_settings</path>
+    <page_callback>CRM_MembershipExtras_Form_PaymentPlanSettings</page_callback>
+    <title>Payment Plan Settings</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+</menu>
