@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<CustomData>
+    <CustomGroups>
+        <CustomGroup>
+            <name>offline_autorenew_option</name>
+            <title>Offline auto-renew option</title>
+            <extends>Membership</extends>
+            <style>Inline</style>
+            <collapse_display>0</collapse_display>
+            <is_active>1</is_active>
+            <table_name>civicrm_value_offline_autorenew_option</table_name>
+            <is_multiple>0</is_multiple>
+            <collapse_adv_display>0</collapse_adv_display>
+            <is_reserved>0</is_reserved>
+        </CustomGroup>
+    </CustomGroups>
+    <CustomFields>
+        <CustomField>
+            <name>optout_last_price_offline_autorenew</name>
+            <label>Opt-out auto price update for offline auto-renew</label>
+            <data_type>Boolean</data_type>
+            <html_type>Radio</html_type>
+            <is_required>0</is_required>
+            <is_searchable>1</is_searchable>
+            <is_search_range>0</is_search_range>
+            <is_active>1</is_active>
+            <is_view>0</is_view>
+            <text_length>64</text_length>
+            <note_columns>60</note_columns>
+            <note_rows>4</note_rows>
+            <column_name>optout_last_price_offline_autorenew</column_name>
+            <custom_group_name>offline_autorenew_option</custom_group_name>
+            <in_selector>1</in_selector>
+        </CustomField>
+    </CustomFields>
+</CustomData>

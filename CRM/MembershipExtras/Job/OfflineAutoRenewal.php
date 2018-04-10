@@ -177,7 +177,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
      $this->currentFrequencyInterval = $membership['frequency_interval'];
 
      $this->totalAmount = $membership['total_amount'];
-     if ($this->useMembershipLatestPrice) {
+     if ($this->useMembershipLatestPrice && !$membership['optout_last_price_offline_autorenew']) {
        $this->totalAmount = $this->currentMembershipMinimumFee;
      }
 
@@ -224,6 +224,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    *   - The linked recurring contribution frequency unit (frequency_unit)
    *   - The linked recurring contribution frequency interval (frequency_interval)
    *   - The previous membership total paid amount (total_amount)
+   *   - The membership optout_last_price_offline_autorenew custom field value (optout_last_price_offline_autorenew)
    */
   private function getOfflineAutoRenewalMemberships() {
     $membershipsList = [];
@@ -238,12 +239,15 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $query = 'SELECT cm.id as membership_id, cmt.minimum_fee as membership_minimum_fee,
                 cmt.name as membership_type_name, 
                 ccr.id as contribution_recur_id, ccr.installments , ccr.amount as contribution_recur_amount,
-                ccr.frequency_unit, ccr.frequency_interval 
+                ccr.frequency_unit, ccr.frequency_interval,
+                cvoao.optout_last_price_offline_autorenew 
               FROM civicrm_membership cm
               INNER JOIN civicrm_contribution_recur ccr
                 ON cm.contribution_recur_id = ccr.id
               LEFT JOIN civicrm_membership_type cmt 
                 ON cm.membership_type_id = cmt.id 
+              LEFT JOIN civicrm_value_offline_autorenew_option cvoao  
+                ON cm.id = cvoao.entity_id 
               WHERE ccr.auto_renew = 1 
                 AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $payLaterPaymentProcessorsIDs . '))
                 AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
@@ -260,6 +264,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       $membershipsList['frequency_unit'] = $memberships['frequency_unit'];
       $membershipsList['frequency_interval'] = $memberships['frequency_interval'];
       $membershipsList['total_amount'] = $memberships['installments'] * $memberships['contribution_recur_amount'];
+      $membershipsList['optout_last_price_offline_autorenew'] = $memberships['optout_last_price_offline_autorenew'];
     }
 
     return $membershipsList;
