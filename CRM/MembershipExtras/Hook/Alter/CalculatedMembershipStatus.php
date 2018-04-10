@@ -67,7 +67,6 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
    */
   public function alterMembershipStatus(&$calculatedStatus, $arguments, $membership) {
     $isMembershipExist = CRM_Utils_Array::value('id', $this->membership, false);
-
     if (!$isMembershipExist) {
       return;
     }
