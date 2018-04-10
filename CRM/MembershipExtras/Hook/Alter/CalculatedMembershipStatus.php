@@ -66,8 +66,9 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
    *   Membership details from the calling function
    */
   public function alterMembershipStatus(&$calculatedStatus, $arguments, $membership) {
-    // If membership hasn't been created, do not alter status.
-    if (!CRM_Utils_Array::value('id', $this->membership, false)) {
+    $isMembershipExist = CRM_Utils_Array::value('id', $this->membership, false);
+
+    if (!$isMembershipExist) {
       return;
     }
 
