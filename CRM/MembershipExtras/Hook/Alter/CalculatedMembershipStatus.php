@@ -66,15 +66,19 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
    *   Membership details from the calling function
    */
   public function alterMembershipStatus(&$calculatedStatus, $arguments, $membership) {
+    $isMembershipExist = CRM_Utils_Array::value('id', $this->membership, false);
+    if (!$isMembershipExist) {
+      return;
+    }
+
+    $this->membership = $membership;
+    $this->calculationArguments = $arguments;
     $isPaymentPlanMembership = $this->checkMembershipPaymentPlan();
 
     // If membership was not last payed for with a payment plan, no need to process
     if (!$isPaymentPlanMembership) {
       return;
     }
-
-    $this->membership = $membership;
-    $this->calculationArguments = $arguments;
 
     foreach (self::$memberShipStatuses as $status) {
       $startEventIsArrearsRelated = stripos($status['start_event'], 'arrears') !== false;
@@ -351,6 +355,7 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
     }
 
     $adjustedReferenceDate = $referenceDate->format('Y-m-d H:i:s');
+
     $query = "
       SELECT COUNT(civicrm_contribution.id) AS total
       FROM civicrm_membership_payment
