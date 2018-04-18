@@ -66,14 +66,13 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
    *   Membership details from the calling function
    */
   public function alterMembershipStatus(&$calculatedStatus, $arguments, $membership) {
-    $this->membership = $membership;
-    $this->calculationArguments = $arguments;
-
     $isMembershipExist = CRM_Utils_Array::value('id', $this->membership, false);
     if (!$isMembershipExist) {
       return;
     }
 
+    $this->membership = $membership;
+    $this->calculationArguments = $arguments;
     $isPaymentPlanMembership = $this->checkMembershipPaymentPlan();
 
     // If membership was not last payed for with a payment plan, no need to process

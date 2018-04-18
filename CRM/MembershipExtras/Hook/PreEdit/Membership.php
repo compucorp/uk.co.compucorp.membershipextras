@@ -123,7 +123,7 @@ class CRM_MembershipExtras_Hook_PreEdit_Membership {
     $isFirstPaidInstallment = $completedInstallmentsCount === 1;
     $isTherePendingInstallments = $completedInstallmentsCount !== $installmentsCount;
 
-    $offlineRecurringProcessors = self::getOfflineRecurringPaymentProcessors();
+    $offlineRecurringProcessors = $this->getOfflineRecurringPaymentProcessors();
     $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
       in_array($recurringContribution['payment_processor_id'], $offlineRecurringProcessors);
 
