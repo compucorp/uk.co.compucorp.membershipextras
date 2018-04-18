@@ -110,7 +110,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * @param float $taxAmount
    *   The tax amount of the contribution to be createad
    *   if applicable.
-   *
    */
   public function createFirstInstallmentContribution($contributionAmount = 0, $taxAmount = 0) {
     $this->contributionAmount = $contributionAmount;
@@ -241,8 +240,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       $params['net_amount'] = $params['total_amount'] - $params['fee_amount'];
       $params['tax_amount'] = $this->taxAmount;
     }
-
-
 
     return $params;
   }
