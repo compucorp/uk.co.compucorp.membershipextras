@@ -25,9 +25,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'api_entity' => 'OfflineAutoRenewalJob',
       'api_action' => 'run',
     ]);
-  }
 
-  public function postInstall() {
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->create();
 

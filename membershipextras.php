@@ -165,6 +165,34 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $preEditMembershipHook = new CRM_MembershipExtras_Hook_PreEdit_Membership($id, $contributionID, $params);
     $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
   }
+
+  $action = CRM_Utils_Request::retrieve('action', 'String');
+  $context = CRM_Utils_Request::retrieve('context', 'String');
+
+  $membershipContributionCreation = $objectName === 'Contribution' && $op === 'create'
+    && $context === 'membership';
+  $newMembershipContribution = $membershipContributionCreation && ($action & CRM_Core_Action::ADD);
+  $renewMembershipContribution = $membershipContributionCreation && ($action & CRM_Core_Action::RENEW);
+
+  static $isUpfrontContribution = FALSE;
+  if (($newMembershipContribution || $renewMembershipContribution) && !$isUpfrontContribution) {
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanProcessor->process();
+    $isUpfrontContribution = TRUE;
+  }
+}
+
+/**
+ * Implements hook_civicrm_postProcess()
+ */
+function membershipextras_civicrm_postProcess($formName, &$form) {
+  if (
+  ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD))
+    || ($formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW))
+  ) {
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor($form);
+    $paymentPlanProcessor->process();
+  }
 }
 
 /**
@@ -184,21 +212,6 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName === 'CRM_Member_Form_MembershipStatus') {
     $membershipStatusHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipStatus();
     $membershipStatusHook->buildForm($form);
-  }
-}
-
-/**
- * Implements hook_civicrm_postProcess()
- */
-function membershipextras_civicrm_postProcess($formName, &$form) {
-  if ($formName === 'CRM_Member_Form_Membership') {
-    $membershipHook = new CRM_MembershipExtras_Hook_PostProcess_Membership($form);
-    $membershipHook->postProcess();
-  }
-
-  if ($formName === 'CRM_Member_Form_MembershipRenewal') {
-    $membershipHook = new CRM_MembershipExtras_Hook_PostProcess_MembershipRenewal($form);
-    $membershipHook->postProcess();
   }
 }
 

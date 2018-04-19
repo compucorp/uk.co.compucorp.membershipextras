@@ -82,10 +82,16 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
    *   True to enable, False to disable.
    */
   public function toggle($newStatus) {
-    civicrm_api3('PaymentProcessor', 'get', [
+    $paymentProcessorId = civicrm_api3('PaymentProcessor', 'getvalue', [
+      'return' => 'id',
       'name' => self::NAME,
-      'api.PaymentProcessor.create' => ['id' => '$value.id', 'is_active' => $newStatus],
     ]);
+
+    $paymentProcessor = new CRM_Financial_DAO_PaymentProcessor();
+    $paymentProcessor->id = $paymentProcessorId;
+    $paymentProcessor->find(TRUE);
+    $paymentProcessor->is_active = $newStatus;
+    $paymentProcessor->save();
   }
 
 }
