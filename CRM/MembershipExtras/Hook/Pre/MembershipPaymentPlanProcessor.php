@@ -97,6 +97,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'id' => $this->params['financial_type_id'],
     ]);
 
+    $paymentProcessorId = 'null';
+    if (!empty($this->params['payment_processor_id'])) {
+      $paymentProcessorId = $this->params['payment_processor_id'];
+    }
+
     $contributionRecurParams = [
       'sequential' => 1,
       'contact_id' => $this->params['contact_id'],
@@ -109,7 +114,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'contribution_status_id' => 'Pending',
       'is_test' => $this->params['is_test'],
       'cycle_day' => $this->calculateCycleDay(),
-      'payment_processor_id' => $this->params['payment_processor_id'],
+      'payment_processor_id' => $paymentProcessorId,
       'financial_type_id' =>  $financialType,
       'payment_instrument_id' => $PaymentInstrument,
       'campaign_id' => $this->params['campaign_id'],

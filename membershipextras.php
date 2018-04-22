@@ -166,16 +166,9 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
   }
 
-  $action = CRM_Utils_Request::retrieve('action', 'String');
-  $context = CRM_Utils_Request::retrieve('context', 'String');
-
-  $membershipContributionCreation = $objectName === 'Contribution' && $op === 'create'
-    && $context === 'membership';
-  $newMembershipContribution = $membershipContributionCreation && ($action & CRM_Core_Action::ADD);
-  $renewMembershipContribution = $membershipContributionCreation && ($action & CRM_Core_Action::RENEW);
-
+  $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
   static $isUpfrontContribution = FALSE;
-  if (($newMembershipContribution || $renewMembershipContribution) && !$isUpfrontContribution) {
+  if ($membershipContributionCreation && !$isUpfrontContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanProcessor->process();
     $isUpfrontContribution = TRUE;
