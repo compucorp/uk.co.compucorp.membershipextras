@@ -5,17 +5,6 @@ use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as Installment
 class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
 
   /**
-   * The ID of the previous recurring
-   * contribution if applicable for the membership.
-   * Used to create the first installment contribution if
-   * there is no contribution under the new
-   * recurring contribution to be used as a template.
-   *
-   * @var int
-   */
-  private $previousRecurContributionId;
-
-  /**
    * The data of the current recurring
    * contribution for the membership.
    *
@@ -48,27 +37,10 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    */
   private $receiveDateCalculator;
 
-  /**
-   * The contribution amount to be used for the new
-   * contribution, otherwise the last contribution
-   * amount will be used.
-   *
-   * @var float
-   */
-  private $contributionAmount = 0;
 
-  /**
-   * The contribution tax amount to be used for the new
-   * contribution, otherwise the last contribution
-   * tax amount will be used.
-   *
-   * @var float
-   */
-  private $taxAmount = 0;
-
-  public function __construct($currentRecurContributionId, $previousRecurContributionId = NULL) {
+  public function __construct($currentRecurContributionId) {
     $this->setCurrentRecurContribution($currentRecurContributionId);
-    $this->previousRecurContributionId = $previousRecurContributionId;
+    $this->setLastContribution();
 
     $this->receiveDateCalculator = new InstallmentReceiveDateCalculator($this->currentRecurContribution);
 
@@ -88,77 +60,18 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   }
 
   /**
-   * Sets $currentRecurContribution
-   */
-  private function setContributionPendingStatusValue() {
-    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
-      'return' => 'value',
-      'option_group_id' => 'contribution_status',
-      'name' => 'Pending',
-    ]);
-  }
-
-  /**
-   * Creates the first installment contribution for
-   * the membership new recurring contribution.
-   *
-   * @param float $contributionAmount
-   *   The amount of the contribution to be created.
-   *   If not set then the recurring contribution
-   *   last contribution amount price will be used.
-   *
-   * @param float $taxAmount
-   *   The tax amount of the contribution to be createad
-   *   if applicable.
-   */
-  public function createFirstInstallmentContribution($contributionAmount = 0, $taxAmount = 0) {
-    $this->contributionAmount = $contributionAmount;
-    $this->taxAmount = $taxAmount;
-
-    $recurContributionId = $this->currentRecurContribution['id'];
-    if (!empty($this->previousRecurContributionId)) {
-      $recurContributionId = $this->previousRecurContributionId;
-    }
-    $this->setLastContribution($recurContributionId);
-
-    $this->createContribution();
-  }
-
-  /**
-   * Creates the Remaining installments contributions for
-   * the membership new recurring contribution.
-   */
-  public function createRemainingInstalmentContributionsUpfront() {
-    $this->contributionAmount = NULL;
-    $this->taxAmount = NULL;
-    $this->setLastContribution($this->currentRecurContribution['id']);
-
-    $installmentsCount = (int) $this->currentRecurContribution['installments'];
-    for($contributionNumber = 2; $contributionNumber <= $installmentsCount; $contributionNumber++) {
-      $this->createContribution($contributionNumber);
-    }
-  }
-
-  /**
    * Sets $lastContribution
    *
-   * @param int $recurContributionId
-   *
    */
-  private function setLastContribution($recurContributionId) {
+  private function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
       'return' => ['currency', 'contribution_source', 'net_amount',
         'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
         'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
-      'contribution_recur_id' => $recurContributionId,
+      'contribution_recur_id' => $this->currentRecurContribution['id'],
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];
-
-    $contribution['membership_id'] = civicrm_api3('MembershipPayment', 'getvalue', [
-      'return' => 'membership_id',
-      'contribution_id' => $contribution['id'],
-    ]);
 
     $softContribution = civicrm_api3('ContributionSoft', 'get', [
       'sequential' => 1,
@@ -173,19 +86,29 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       ];
     }
 
-    $lineItem = civicrm_api3('LineItem', 'get', [
-      'sequential' => 1,
-      'return' => ['label', 'price_field_id', 'price_field_value_id'],
-      'contribution_id' => $contribution['id'],
-    ]);
-    if (!empty($lineItem['values'][0])) {
-      $lineItem = $lineItem['values'][0];
-      $contribution['line_item_label'] = $lineItem['label'];
-      $contribution['line_item_price_field_id'] = $lineItem['price_field_id'];
-      $contribution['line_item_price_value_id'] = $lineItem['price_field_value_id'];
-    }
-
     $this->lastContribution = $contribution;
+  }
+
+  /**
+   * Sets $currentRecurContribution
+   */
+  private function setContributionPendingStatusValue() {
+    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => 'contribution_status',
+      'name' => 'Pending',
+    ]);
+  }
+
+  /**
+   * Creates the Remaining installments contributions for
+   * the membership new recurring contribution.
+   */
+  public function createRemainingInstalmentContributionsUpfront() {
+    $installmentsCount = (int) $this->currentRecurContribution['installments'];
+    for($contributionNumber = 2; $contributionNumber <= $installmentsCount; $contributionNumber++) {
+      $this->createContribution($contributionNumber);
+    }
   }
 
   /**
@@ -198,10 +121,45 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    *   .. etc.
    */
   private function createContribution($contributionNumber = 1) {
-    $params = $this->buildContributionParams($contributionNumber);
-    $contribution = $this->recordMembershipContribution($params);
+    $contribution = $this->recordMembershipContribution($contributionNumber);
 
-    $this->createLineItem($contribution);
+    $this->createLineItems($contribution);
+  }
+
+
+  /**
+   * Records the membership contribution and its
+   * related entities using the specified parameters
+   *
+   * @param int $contributionNumber
+   *
+   * @return CRM_Contribute_BAO_Contribution
+   */
+  private function recordMembershipContribution($contributionNumber) {
+    $params = $this->buildContributionParams($contributionNumber);
+    $contribution = CRM_Contribute_BAO_Contribution::create($params);
+
+    $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
+    if (!empty($contributionSoftParams)) {
+      $contributionSoftParams['contribution_id'] = $contribution->id;
+      $contributionSoftParams['currency'] = $contribution->currency;
+      $contributionSoftParams['amount'] = $contribution->total_amount;
+      CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
+    }
+
+    $membershipPayments = civicrm_api3('MembershipPayment', 'get', [
+      'return' => 'membership_id',
+      'contribution_id' => $this->lastContribution['id'],
+    ])['values'];
+
+    foreach ($membershipPayments as $membershipPayment) {
+      CRM_Member_BAO_MembershipPayment::create([
+        'membership_id' => $membershipPayment['membership_id'],
+        'contribution_id' => $contribution->id,
+      ]);
+    }
+
+    return $contribution;
   }
 
   /**
@@ -235,40 +193,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       $params['soft_credit'] = $this->lastContribution['soft_credit'];
     }
 
-    if (!empty($this->contributionAmount)) {
-      $params['total_amount'] = $this->contributionAmount + $this->taxAmount;
-      $params['net_amount'] = $params['total_amount'] - $params['fee_amount'];
-      $params['tax_amount'] = $this->taxAmount;
-    }
-
     return $params;
-  }
-
-  /**
-   * Records the membership contribution and its
-   * related entities using the specified parameters
-   *
-   * @param array $params
-   *
-   * @return CRM_Contribute_BAO_Contribution
-   */
-  private function recordMembershipContribution($params) {
-    $contribution = CRM_Contribute_BAO_Contribution::create($params);
-
-    $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
-    if (!empty($contributionSoftParams)) {
-      $contributionSoftParams['contribution_id'] = $contribution->id;
-      $contributionSoftParams['currency'] = $contribution->currency;
-      $contributionSoftParams['amount'] = $contribution->total_amount;
-      CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
-    }
-
-    CRM_Member_BAO_MembershipPayment::create(array(
-      'membership_id' => $params['membership_id'],
-      'contribution_id' => $contribution->id,
-    ));
-
-    return $contribution;
   }
 
 
@@ -278,31 +203,38 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * @param CRM_Contribute_BAO_Contribution $contribution
    *   The contribution that we need to build the line items for.
    */
-  private function createLineItem(CRM_Contribute_BAO_Contribution $contribution) {
-    $lineItemAmount = $contribution->total_amount;
-    if (!empty($contribution->tax_amount)) {
-      $lineItemAmount -= $contribution->tax_amount;
-    }
+  private function createLineItems(CRM_Contribute_BAO_Contribution $contribution) {
+    $lineItems = civicrm_api3('LineItem', 'get', [
+      'sequential' => 1,
+      'contribution_id' => $this->lastContribution['id'],
+    ])['values'];
 
-    $lineItemParms = [
-      'entity_table' => 'civicrm_membership',
-      'entity_id' => $this->lastContribution['membership_id'],
-      'contribution_id' => $contribution->id,
-      'label' => $this->lastContribution['line_item_label'],
-      'price_field_id' => $this->lastContribution['line_item_price_field_id'],
-      'price_field_value_id' => $this->lastContribution['line_item_price_value_id'],
-      'qty' => 1,
-      'unit_price' => $lineItemAmount,
-      'line_total' => $lineItemAmount,
-      'financial_type_id' => $contribution->financial_type_id,
-      'tax_amount' => $contribution->tax_amount,
-    ];
+    foreach($lineItems as $lineItem) {
+      $entityID = $lineItem['entity_id'];
+      if ($lineItem['entity_table'] === 'civicrm_contribution') {
+        $entityID = $contribution->id;
+      }
 
-    $lineItem = CRM_Price_BAO_LineItem::create($lineItemParms);
+      $lineItemParms = [
+        'entity_table' => $lineItem['entity_table'],
+        'entity_id' => $entityID,
+        'contribution_id' => $contribution->id,
+        'price_field_id' => $lineItem['price_field_id'],
+        'label' => $lineItem['label'],
+        'qty' => $lineItem['qty'],
+        'unit_price' => $lineItem['unit_price'],
+        'line_total' => $lineItem['line_total'],
+        'price_field_value_id' => $lineItem['price_field_value_id'],
+        'financial_type_id' => $lineItem['financial_type_id'],
+        'non_deductible_amount' => $lineItem['non_deductible_amount'],
+        'tax_amount' => $lineItem['tax_amount'],
+      ];
+      $newLineItem = CRM_Price_BAO_LineItem::create($lineItemParms);
 
-    CRM_Financial_BAO_FinancialItem::add($lineItem, $contribution);
-    if (!empty($contribution->tax_amount)) {
-      CRM_Financial_BAO_FinancialItem::add($lineItem, $contribution, TRUE);
+      CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
+      if (!empty($contribution->tax_amount)) {
+        CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
+      }
     }
   }
 

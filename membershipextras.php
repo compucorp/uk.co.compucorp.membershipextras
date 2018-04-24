@@ -166,13 +166,39 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
   }
 
+  $isPaymentPlanPayment = _membershipextras_isPaymentPlanPayment();
+
   $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
-  static $isUpfrontContribution = FALSE;
-  if ($membershipContributionCreation && !$isUpfrontContribution) {
+  static $isUpfrontContribution = TRUE;
+  if ($membershipContributionCreation && $isPaymentPlanPayment && $isUpfrontContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
-    $paymentPlanProcessor->process();
-    $isUpfrontContribution = TRUE;
+    $paymentPlanProcessor->createPaymentPlan();
+    $isUpfrontContribution = FALSE;
   }
+
+  static $upfrontContributionId = NULL;
+  $membershipPaymentCreation = ($objectName === 'MembershipPayment' && $op === 'create');
+  if ($membershipPaymentCreation && $isPaymentPlanPayment && empty($upfrontContributionId)) {
+    $upfrontContributionId = $params['contribution_id'];
+  }
+
+  $upfrontContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && $upfrontContributionId == $params['contribution_id'] );
+  if ($upfrontContributionLineItemCreation) {
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanProcessor->updateLineItemData();
+  }
+}
+
+function _membershipextras_isPaymentPlanPayment() {
+  $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
+  $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
+  $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
+
+  if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 /**
