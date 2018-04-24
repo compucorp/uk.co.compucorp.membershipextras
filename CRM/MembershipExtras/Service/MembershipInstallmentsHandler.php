@@ -61,7 +61,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
 
   /**
    * Sets $lastContribution
-   *
    */
   private function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
@@ -183,7 +182,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'is_test' => $this->lastContribution['is_test'],
       'contribution_status_id' => $this->contributionPendingStatusValue,
       'is_pay_later' => TRUE,
-      'membership_id' => $this->lastContribution['membership_id'],
       'tax_amount' => $this->lastContribution['tax_amount'],
       'skipLineItem' => 1,
       'contribution_recur_id' => $this->currentRecurContribution['id'],
@@ -198,7 +196,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
 
 
   /**
-   * Creates the contribution line item.
+   * Creates the contribution line items.
    *
    * @param CRM_Contribute_BAO_Contribution $contribution
    *   The contribution that we need to build the line items for.

@@ -12,15 +12,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    */
   private $financialTypesIDMap = [];
 
-
-  /**
-   * The ID of the membership that currently
-   * being renewed/processed.
-   *
-   * @var int
-   */
-  private $currentMembershipID;
-
   /**
    * The ID of the recurring Contribution linked
    * with the membership that currently
@@ -48,26 +39,57 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   private $totalAmount;
 
   /**
-   * The new calculated tax amount that
+   * The calculated tax amount that
    * to be used to create the recurring contribution as well as
    * the installment contributions.
    *
    * @var int
    */
-  private $taxAmount = 0;
+  private $totalTaxAmount = 0;
 
   /**
-   * Should the membership latest price
-   * be used for renewal or the old one.
+   * True if we should use the membership latest price
+   * for renewal or false otherwise.
    *
    * @var bool
    */
   private $useMembershipLatestPrice = FALSE;
 
 
+  /**
+   * The last contribution details
+   * from the previous payment plan.
+   *
+   * @var
+   */
+  private $lastContribution;
+
+  /**
+   * The list of line items to be created.
+   *
+   * @var
+   */
+  private $lineItems;
+
+  /**
+   * The option value "value" for the "pending"
+   * contribution status.
+   *
+   * @var int
+   */
+  private $contributionPendingStatusValue;
+
+  /**
+   * The payment plan to-be-created start date.
+   *
+   * @var string
+   */
+  private $paymentPlanStartDate = 'null';
+
   public function __construct() {
     $this->setFinancialTypesIDMap();
     $this->setUseMembershipLatestPrice();
+    $this->setContributionPendingStatusValue();
   }
 
   /**
@@ -90,10 +112,21 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    */
   private function setUseMembershipLatestPrice() {
     $settingFieldName = 'membershipextras_paymentplan_use_membership_latest_price';
-    $this->useMembershipLatestPrice = civicrm_api3('Setting', 'get', array(
+    $this->useMembershipLatestPrice = civicrm_api3('Setting', 'get', [
       'sequential' => 1,
       'return' => [$settingFieldName],
-    ))['values'][0][$settingFieldName];
+    ])['values'][0][$settingFieldName];
+  }
+
+  /**
+   * Sets $currentRecurContribution
+   */
+  private function setContributionPendingStatusValue() {
+    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => 'contribution_status',
+      'name' => 'Pending',
+    ]);
   }
 
   /**
@@ -103,20 +136,21 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    * @return True
    */
   public function run() {
-   $membershipsToRenew = $this->getOfflineAutoRenewalMemberships();
-   foreach ($membershipsToRenew as $membership) {
-     $this->currentMembershipID = $membership['membership_id'];
-     $this->currentRecurContributionID = $membership['contribution_recur_id'];
-     $this->currentInstallmentsNumber = $membership['installments'];
+   $recurContributions = $this->getOfflineAutoRenewalRecurContributions();
+   foreach ($recurContributions as $recurContribution) {
+     $this->currentRecurContributionID = $recurContribution['contribution_recur_id'];
+     $this->currentInstallmentsNumber = $recurContribution['installments'];
 
-     $this->calculateTotalAmount($membership);
-     $this->calculateTaxAmount($membership['financial_type_id']);
+     $this->setLastContribution();
+
+     $this->buildLineItemsParams();
+     $this->setTotalAndTaxAmount();
 
      if ($this->currentInstallmentsNumber > 1) {
-       $this->renewWithInstallmentsMembership();
+       $this->renewWithInstallmentsPaymentPlan();
      }
      else {
-       $this->renewNoInstallmentsMembership();
+       $this->renewNoInstallmentsPaymentPlan();
      }
    }
 
@@ -124,26 +158,21 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   }
 
   /**
-   * Gets the list of offline auto-renewal memberships
-   * to be renewed, the membership should satisfy the following
-   * conditions for it to be auto-renewed :
-   * 1- the membership is set to auto renew (has a linked recurring contribution).
+   * Gets the list of offline auto-renewal Recurring Contributions
+   * to be renewed, the following conditions should Apply:
+   *
+   * 1- The Recurring Contribution has at least one linked membership.
    * 2- the payment processor used is pay later (aka : no payment processor used)
    *   or an equivalent payment processor.
-   * 3- The linked recurring contribution is not cancelled or refunded.
-   * 4- The membership end date is less or equal than today.
+   * 3- The recurring contribution is not cancelled or refunded.
+   * 4- Any of the linked memberships end date is less or equal than today.
    *
    * @return array
-   *   Each membership row Contains :
-   *   - The membership ID (membership_id)
-   *   - The membership current "minimum fee"/"price" (membership_minimum_fee)
-   *   - The linked  recurring contribution (contribution_recur_id)
-   *   - The number of the linked recurring contribution installments (installments)
-   *   - The previous membership total paid amount (total_amount)
-   *   - The financial type ID for the recurring contribution
-   *   - The membership optout_last_price_offline_autorenew custom field value (optout_last_price_offline_autorenew)
+   *   Each row Contains :
+   *   - The  recurring contribution (contribution_recur_id)
+   *   - The number of the recurring contribution installments (installments)
    */
-  private function getOfflineAutoRenewalMemberships() {
+  private function getOfflineAutoRenewalRecurContributions() {
     $getContributionStatusesNameMap = $this->getContributionStatusesNameMap();
     $cancelledStatusID = $getContributionStatusesNameMap['Cancelled'];
     $refundedStatusID = $getContributionStatusesNameMap['Refunded'];
@@ -151,71 +180,25 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $payLaterPaymentProcessors = new CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution();
     $payLaterPaymentProcessorsIDs = implode(',', [0, $payLaterPaymentProcessors->get()['id']]);
 
-    $query = 'SELECT cm.id as membership_id, cmt.minimum_fee as membership_minimum_fee,
-                ccr.id as contribution_recur_id, ccr.installments , ccr.amount as contribution_recur_amount,
-                ccr.financial_type_id, 
-                cvoao.optout_last_price_offline_autorenew 
-              FROM civicrm_membership cm
-              INNER JOIN civicrm_contribution_recur ccr
-                ON cm.contribution_recur_id = ccr.id
-              LEFT JOIN civicrm_membership_type cmt 
-                ON cm.membership_type_id = cmt.id 
-              LEFT JOIN civicrm_value_offline_autorenew_option cvoao  
-                ON cm.id = cvoao.entity_id 
+    $query = 'SELECT ccr.id as contribution_recur_id, ccr.installments  
+              FROM civicrm_contribution_recur ccr 
+              LEFT JOIN civicrm_membership cm 
+                ON ccr.id = cm.contribution_recur_id 
               WHERE ccr.auto_renew = 1 
                 AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $payLaterPaymentProcessorsIDs . '))
                 AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
-                AND cm.end_date <= CURDATE()';
-    $memberships = CRM_Core_DAO::executeQuery($query);
+                AND cm.end_date <= CURDATE() 
+              GROUP BY ccr.id';
+    $recurContributions = CRM_Core_DAO::executeQuery($query);
 
-    $membershipsList = [];
-    while ($memberships->fetch()) {
-      $membership['membership_id'] = $memberships->membership_id;
-      $membership['membership_minimum_fee'] = $memberships->membership_minimum_fee;
-      $membership['contribution_recur_id'] = $memberships->contribution_recur_id;
-      $membership['installments'] = $memberships->installments;
-      $membership['total_amount'] = $memberships->contribution_recur_amount;
-      $membership['financial_type_id'] = $memberships->financial_type_id;
-      $membership['optout_last_price_offline_autorenew'] = $memberships->optout_last_price_offline_autorenew;
-      $membershipsList[] = $membership;
+    $recurContributionsList = [];
+    while ($recurContributions->fetch()) {
+      $membership['contribution_recur_id'] = $recurContributions->contribution_recur_id;
+      $membership['installments'] = $recurContributions->installments;
+      $recurContributionsList[] = $recurContributions;
     }
 
-    return $membershipsList;
-  }
-
-  /**
-   * Calculates the total amount for
-   * the membership.
-   *
-   * @param $membership
-   */
-  private function calculateTotalAmount($membership) {
-    if ($this->useMembershipLatestPrice && !$membership['optout_last_price_offline_autorenew']) {
-      $this->totalAmount = $this->calculateSingleInstallmentAmount(
-        $membership['membership_minimum_fee'], $membership['installments']
-      );
-    }
-    else {
-      $oldTaxAmount = civicrm_api3('Contribution', 'getvalue', [
-        'return' => 'tax_amount',
-        'contribution_recur_id' => $membership['contribution_recur_id'],
-        'options' => ['limit' => 1, 'sort' => 'id DESC'],
-      ]);
-
-      $this->totalAmount = $membership['total_amount'] - $oldTaxAmount;
-    }
-  }
-
-  /**
-   * @param $financialTypeID
-   */
-  private function calculateTaxAmount($financialTypeID) {
-    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-    if (!empty($taxRates[$financialTypeID])) {
-      $taxRate = $taxRates[$financialTypeID];
-      $taxAmount = CRM_Contribute_BAO_Contribution_Utils::calculateTaxAmount($this->totalAmount, $taxRate);
-      $this->taxAmount  = round($taxAmount['tax_amount'], 2);
-    }
+    return $recurContributionsList;
   }
 
   /**
@@ -240,49 +223,192 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   }
 
   /**
-   * Calculates a single installment amount (price) if there is more than one
-   * installment.
+   * Sets $lastContribution
    *
-   * If there is only one installment then its amount will be the total amount.
+   */
+  private function setLastContribution() {
+    $contribution = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['currency', 'contribution_source', 'net_amount',
+        'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
+        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
+      'contribution_recur_id' => $this->currentRecurContributionID,
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ])['values'][0];
+
+    $softContribution = civicrm_api3('ContributionSoft', 'get', [
+      'sequential' => 1,
+      'return' => ['contact_id', 'soft_credit_type_id'],
+      'contribution_id' => $contribution['id'],
+    ]);
+    if (!empty($softContribution['values'][0])) {
+      $softContribution = $softContribution['values'][0];
+      $contribution['soft_credit'] = [
+        'soft_credit_type_id' => $softContribution['soft_credit_type_id'],
+        'contact_id' => $softContribution['contact_id'],
+      ];
+    }
+
+    $this->lastContribution = $contribution;
+  }
+
+  /**
+   * Builds the list of line items to be created
+   * based on the last contribution.
+   */
+  private function buildLineItemsParams() {
+    $lastContributionLineItems = civicrm_api3('LineItem', 'get', [
+      'sequential' => 1,
+      'contribution_id' => $this->lastContribution['id'],
+    ])['values'];
+
+    $lineItemsList = [];
+    foreach($lastContributionLineItems as $lineItem) {
+      $unitPrice = $this->calculateLineItemUnitPrice($lineItem);
+      $lineTotal = $unitPrice * $lineItem['qty'];
+      $taxAmount = $this->calculateLineItemTaxAmount($lineTotal, $lineItem['financial_type_id']);
+
+      $entityID = $lineItem['entity_id'];
+      if ($lineItem['entity_table'] === 'civicrm_contribution') {
+        $entityID = 'null';
+      }
+
+      $lineItemsList[] = [
+        'entity_table' => $lineItem['entity_table'],
+        'entity_id' => $entityID,
+        'contribution_id' => 'null',
+        'price_field_id' => $lineItem['price_field_id'],
+        'label' => $lineItem['label'],
+        'qty' => $lineItem['qty'],
+        'unit_price' => $unitPrice,
+        'line_total' => $lineTotal,
+        'price_field_value_id' => $lineItem['price_field_value_id'],
+        'financial_type_id' => $lineItem['financial_type_id'],
+        'non_deductible_amount' => $lineItem['non_deductible_amount'],
+        'tax_amount' => $lineTotal,
+      ];
+    }
+
+    $this->lineItems = $lineItemsList;
+  }
+
+  /**
+   * Calculates the unit price for
+   * the line item.
    *
-   * @param float $totalAmount
-   * @param int $installmentsCount
+   * @param array $lineItem
    *
    * @return float
    */
-  private function calculateSingleInstallmentAmount($totalAmount, $installmentsCount) {
-    $amount =  $totalAmount;
-    if ($installmentsCount > 1) {
-      $amount = floor(($totalAmount / $installmentsCount) * 100) / 100;
+  private function calculateLineItemUnitPrice($lineItem) {
+    if ($lineItem['entity_table'] === 'civicrm_contribution') {
+      return  $lineItem['unit_price'];
     }
 
-    return $amount;
+    $optoutUsingLastPriceFieldID = civicrm_api3('CustomField', 'getvalue', [
+      'return' => 'id',
+      'custom_group_id' => 'offline_autorenew_option',
+      'name' => 'optout_last_price_offline_autorenew',
+    ]);
+
+    $lineItemMembership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'return' => ["custom_$optoutUsingLastPriceFieldID", 'membership_type_id.minimum_fee'],
+      'id' => $lineItem['entity_id'],
+    ]);
+
+    if (!empty($lineItemMembership['values'][0]['membership_type_id.minimum_fee'])) {
+      $membershipMinimumFee = $lineItemMembership['values'][0]['membership_type_id.minimum_fee'];
+    }
+
+    $isOptoutUsingLastPrice = FALSE;
+    if (!empty($lineItemMembership['values'][0]["custom_$optoutUsingLastPriceFieldID"])) {
+      $isOptoutUsingLastPrice = TRUE;
+    }
+
+
+    if ($this->useMembershipLatestPrice && !$isOptoutUsingLastPrice) {
+      $unitPrice = $this->calculateSingleInstallmentAmount($membershipMinimumFee);
+    }
+    else {
+      $unitPrice = $lineItem['unit_price'];
+    }
+
+    return $unitPrice;
   }
 
+  private function calculateSingleInstallmentAmount($amount) {
+    $resultAmount =  $amount;
+    if ($this->currentInstallmentsNumber > 1) {
+      $resultAmount = floor(($amount / $this->currentInstallmentsNumber) * 100) / 100;
+    }
+
+    return $resultAmount;
+  }
 
   /**
-   * Renews the membership if
+   * Calculates the tax amount for
+   * the line item given the line item
+   * total amount and its financial type.
+   *
+   * @param float $lineTotal
+   * @param int $financialTypeId
+   *
+   * @return float
+   */
+  private function calculateLineItemTaxAmount($lineTotal, $financialTypeId) {
+    $taxAmount = 0;
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+    if (!empty($taxRates[$financialTypeId])) {
+      $taxRate = $taxRates[$financialTypeId];
+      $taxAmount = CRM_Contribute_BAO_Contribution_Utils::calculateTaxAmount($lineTotal, $taxRate);
+      $taxAmount = round($taxAmount['tax_amount'], 2);
+    }
+
+    return $taxAmount;
+  }
+
+  /**
+   * Sets $totalAmount and $totalTaxAmount
+   * based on the line items to be created
+   * data.
+   */
+  private function setTotalAndTaxAmount() {
+    $totalAmount = 0;
+    $taxAmount = 0;
+    foreach ($this->lineItems  as $lineItem) {
+      $totalAmount += $lineItem['line_total'] + $lineItem['tax_amount'];
+      $taxAmount += $lineItem['tax_amount'];
+    }
+
+    $this->totalAmount = $totalAmount;
+    $this->totalTaxAmount = $taxAmount;
+  }
+
+  /**
+   * Renews the payment plan and the related memberships if
    * it paid by installments.
    */
-  private function renewWithInstallmentsMembership() {
-    $previousRecurContributionId = $this->currentRecurContributionID;
+  private function renewWithInstallmentsPaymentPlan() {
     $this->createRecurringContribution();
 
+    $this->recordPaymentPlanFirstContribution();
+
     $installmentsHandler = new MembershipInstallmentsHandler(
-      $this->currentRecurContributionID,
-      $previousRecurContributionId
+      $this->currentRecurContributionID
     );
-    $installmentsHandler->createFirstInstallmentContribution($this->totalAmount, $this->taxAmount);
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
 
-    $this->renewMembership();
+    $this->renewPaymentPlanMemberships();
   }
 
   /**
    * Renews the current membership recurring contribution
    * by creating a new one based on its data.
+   * The amount will be the newly calculated
+   * total amount.
    *
-   * Then new recurring contribution will then
+   * The new recurring contribution will then
    * be set to be the current recurring contribution.
    */
   private function createRecurringContribution() {
@@ -291,16 +417,15 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'id' => $this->currentRecurContributionID,
     ])['values'][0];
 
-
     $paymentProcessorID = !empty($currentRecurContribution['payment_processor_id']) ? $currentRecurContribution['payment_processor_id'] : NULL;
 
     $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($currentRecurContribution);
-    $startDate = $installmentReceiveDateCalculator->calculate($currentRecurContribution['installments'] + 1);
+    $this->paymentPlanStartDate = $installmentReceiveDateCalculator->calculate($currentRecurContribution['installments'] + 1);
 
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
       'sequential' => 1,
       'contact_id' => $currentRecurContribution['contact_id'],
-      'amount' => $this->totalAmount + $this->taxAmount,
+      'amount' => $this->totalAmount,
       'currency' => $currentRecurContribution['currency'],
       'frequency_unit' => $currentRecurContribution['frequency_unit'],
       'frequency_interval' => $currentRecurContribution['frequency_interval'],
@@ -311,8 +436,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'cycle_day' => $currentRecurContribution['cycle_day'],
       'payment_processor_id' => $paymentProcessorID,
       'financial_type_id' => $this->financialTypesIDMap[$currentRecurContribution['financial_type_id']],
-      'payment_instrument_id' =>'EFT',
-      'start_date' => $startDate,
+      'payment_instrument_id' => 'EFT',
+      'start_date' => $this->paymentPlanStartDate,
     ])['values'][0];
 
     // The new recurring contribution is now the current one.
@@ -320,40 +445,112 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   }
 
   /**
-   * Renews the membership if
+   * Renews the payment plan and the related memberships if
    * it paid by once and not using installments.
    *
-   * Paid by once (no installments) membership
+   * Paid by once (no installments) payment plan
    * get renewed by creating single pending contribution
    * that links to the already existing recurring
    * contribution.
    *
    */
-  private function renewNoInstallmentsMembership() {
-    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($this->currentRecurContributionID);
-    $installmentsHandler->createFirstInstallmentContribution($this->totalAmount, $this->taxAmount);
+  private function renewNoInstallmentsPaymentPlan() {
+    $this->paymentPlanStartDate = (new DateTime())->format('Y-m-d H:i:s');
 
-    $this->renewMembership();
+    $this->recordPaymentPlanFirstContribution();
+    $this->renewPaymentPlanMemberships();
   }
 
   /**
-   * Renews/Extend the membership to be auto-renewed
-   * by one term.
+   * Records the payment plan first contribution.
    */
-  private function renewMembership() {
-    $membershipDetails = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'return' => ['contact_id', 'membership_type_id', 'is_test', 'campaign_id'],
-      'id' => $this->currentMembershipID,
-    ])['values'][0];
+  private function recordPaymentPlanFirstContribution() {
+    $params =  [
+      'currency' => $this->lastContribution['currency'],
+      'source' => $this->lastContribution['contribution_source'],
+      'contact_id' => $this->lastContribution['contact_id'],
+      'fee_amount' => $this->lastContribution['fee_amount'],
+      'net_amount' =>  $this->totalAmount - $this->lastContribution['fee_amount'],
+      'total_amount' => $this->totalAmount,
+      'receive_date' => $this->paymentPlanStartDate,
+      'payment_instrument_id' => $this->lastContribution['payment_instrument_id'],
+      'financial_type_id' => $this->lastContribution['financial_type_id'],
+      'is_test' => $this->lastContribution['is_test'],
+      'contribution_status_id' => $this->contributionPendingStatusValue,
+      'is_pay_later' => TRUE,
+      'tax_amount' => $this->totalTaxAmount,
+      'skipLineItem' => 1,
+      'contribution_recur_id' => $this->currentRecurContributionID,
+    ];
 
-    $campaignID = CRM_Utils_Array::value('campaign_id', $membershipDetails);
-    CRM_Member_BAO_Membership::processMembership(
-      $membershipDetails['contact_id'], $membershipDetails['membership_type_id'], $membershipDetails['is_test'],
-      NULL, NULL, NULL, 1, $this->currentMembershipID,
-      FALSE,
-      $this->currentRecurContributionID, NULL, TRUE, $campaignID
-    );
+    if (!empty($this->lastContribution['soft_credit'])) {
+      $params['soft_credit'] = $this->lastContribution['soft_credit'];
+    }
+
+
+    $contribution = CRM_Contribute_BAO_Contribution::create($params);
+
+    $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
+    if (!empty($contributionSoftParams)) {
+      $contributionSoftParams['contribution_id'] = $contribution->id;
+      $contributionSoftParams['currency'] = $contribution->currency;
+      $contributionSoftParams['amount'] = $contribution->total_amount;
+      CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
+    }
+
+    $membershipPayments = civicrm_api3('MembershipPayment', 'get', [
+      'return' => 'membership_id',
+      'contribution_id' => $this->lastContribution['id'],
+    ])['values'];
+
+    foreach ($membershipPayments as $membershipPayment) {
+      CRM_Member_BAO_MembershipPayment::create([
+        'membership_id' => $membershipPayment['membership_id'],
+        'contribution_id' => $contribution->id,
+      ]);
+    }
+
+    foreach($this->lineItems as &$lineItem) {
+      $lineItem['contribution_id'] = $contribution->id;
+
+      if ($lineItem['entity_table'] === 'civicrm_contribution') {
+        $lineItem['entity_id'] = $contribution->id;
+      }
+
+      $newLineItem = CRM_Price_BAO_LineItem::create($lineItem);
+
+      CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
+      if (!empty($contribution->tax_amount)) {
+        CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
+      }
+    }
+  }
+
+  /**
+   * Renews/Extend the related payment plan memberships to be auto-renewed
+   * for one term.
+   */
+  private function renewPaymentPlanMemberships() {
+    $membershipPayments = civicrm_api3('MembershipPayment', 'get', [
+      'return' => 'membership_id',
+      'contribution_id' => $this->lastContribution['id'],
+    ])['values'];
+
+    foreach ($membershipPayments as $membershipPayment) {
+      $membershipDetails = civicrm_api3('Membership', 'get', [
+        'sequential' => 1,
+        'return' => ['id', 'contact_id', 'membership_type_id', 'is_test', 'campaign_id'],
+        'id' => $membershipPayment['membership_id'],
+      ])['values'][0];
+
+      $campaignID = CRM_Utils_Array::value('campaign_id', $membershipDetails);
+      CRM_Member_BAO_Membership::processMembership(
+        $membershipDetails['contact_id'], $membershipDetails['membership_type_id'], $membershipDetails['is_test'],
+        NULL, NULL, NULL, 1, $membershipDetails['membership_id'],
+        FALSE,
+        $this->currentRecurContributionID, NULL, TRUE, $campaignID
+      );
+    }
   }
 
 }

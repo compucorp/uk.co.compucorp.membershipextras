@@ -189,6 +189,13 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 }
 
+/**
+ * Determines if the membership is paid
+ * using payment plan option using more than
+ * one installment or not.
+ *
+ * @return bool
+ */
 function _membershipextras_isPaymentPlanPayment() {
   $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
   $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');

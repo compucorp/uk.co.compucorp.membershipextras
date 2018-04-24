@@ -3,7 +3,7 @@
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
 
   /**
-   * The contribution to be created parameters passed from the hook.
+   * The contribution or line item to-be-created parameters passed from the hook.
    *
    * @var array
    */
@@ -47,11 +47,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   }
 
   /**
-   * Processes the membership in case it is paid
-   * using payment plan option.
+   * Creates the payment plan for the membership
+   * if its paid using payment plan option.
    *
    * For now, it creates the recurring contribution
-   * and update the first contribution & line itme amounts
+   * and update the first contribution amount
    * depending on the installments count.
    */
   public function createPaymentPlan() {
