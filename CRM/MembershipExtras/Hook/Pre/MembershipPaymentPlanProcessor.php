@@ -156,7 +156,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   public function updateLineItemData() {
     $this->params['line_total'] = $this->calculateSingleInstallmentAmount($this->params['line_total']);
     $this->params['unit_price'] = $this->calculateSingleInstallmentAmount($this->params['unit_price']);
-    $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+
+    if (!empty($this->params['tax_amount'])) {
+      $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+    }
   }
 
   /**

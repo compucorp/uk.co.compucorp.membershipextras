@@ -112,10 +112,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    */
   private function setUseMembershipLatestPrice() {
     $settingFieldName = 'membershipextras_paymentplan_use_membership_latest_price';
-    $this->useMembershipLatestPrice = civicrm_api3('Setting', 'get', [
+    $useMembershipLatestPrice = civicrm_api3('Setting', 'get', [
       'sequential' => 1,
       'return' => [$settingFieldName],
-    ])['values'][0][$settingFieldName];
+    ]);
+
+    if (!empty($useMembershipLatestPrice['values'][0][$settingFieldName])) {
+      $this->useMembershipLatestPrice = TRUE;
+    }
   }
 
   /**
@@ -139,7 +143,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    $recurContributions = $this->getOfflineAutoRenewalRecurContributions();
    foreach ($recurContributions as $recurContribution) {
      $this->currentRecurContributionID = $recurContribution['contribution_recur_id'];
-     $this->currentInstallmentsNumber = $recurContribution['installments'];
+
+     if (empty($recurContribution['installments'])) {
+       $this->currentInstallmentsNumber = 1;
+     }
+     else {
+       $this->currentInstallmentsNumber = $recurContribution['installments'];
+     }
+
 
      $this->setLastContribution();
 
@@ -182,7 +193,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
     $query = 'SELECT ccr.id as contribution_recur_id, ccr.installments  
               FROM civicrm_contribution_recur ccr 
-              LEFT JOIN civicrm_membership cm 
+              LEFT JOIN  civicrm_membership cm 
                 ON ccr.id = cm.contribution_recur_id 
               WHERE ccr.auto_renew = 1 
                 AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $payLaterPaymentProcessorsIDs . '))
@@ -193,9 +204,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
     $recurContributionsList = [];
     while ($recurContributions->fetch()) {
-      $membership['contribution_recur_id'] = $recurContributions->contribution_recur_id;
-      $membership['installments'] = $recurContributions->installments;
-      $recurContributionsList[] = $recurContributions;
+      $recurContribution['contribution_recur_id'] = $recurContributions->contribution_recur_id;
+      $recurContribution['installments'] = $recurContributions->installments;
+      $recurContributionsList[] = $recurContribution;
     }
 
     return $recurContributionsList;
@@ -265,7 +276,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $lineItemsList = [];
     foreach($lastContributionLineItems as $lineItem) {
       $unitPrice = $this->calculateLineItemUnitPrice($lineItem);
-      $lineTotal = $unitPrice * $lineItem['qty'];
+      $lineTotal = floor(($unitPrice * $lineItem['qty']) * 100) / 100;
       $taxAmount = $this->calculateLineItemTaxAmount($lineTotal, $lineItem['financial_type_id']);
 
       $entityID = $lineItem['entity_id'];
@@ -285,7 +296,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         'price_field_value_id' => $lineItem['price_field_value_id'],
         'financial_type_id' => $lineItem['financial_type_id'],
         'non_deductible_amount' => $lineItem['non_deductible_amount'],
-        'tax_amount' => $lineTotal,
+        'tax_amount' => $taxAmount,
       ];
     }
 
@@ -455,10 +466,29 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    *
    */
   private function renewNoInstallmentsPaymentPlan() {
-    $this->paymentPlanStartDate = (new DateTime())->format('Y-m-d H:i:s');
+    $this->paymentPlanStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
 
     $this->recordPaymentPlanFirstContribution();
     $this->renewPaymentPlanMemberships();
+  }
+
+  /**
+   * Calculates the new start date for the payment plan
+   * if its paid with no installments.
+   * @return string
+   */
+  private function calculateNoInstallmentsPaymentPlanStartDate() {
+    $currentRecurContribution = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'id' => $this->currentRecurContributionID,
+    ])['values'][0];
+    $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($currentRecurContribution);
+
+    $paymentPlanContributionsCount = civicrm_api3('Contribution', 'getcount', [
+      'contribution_recur_id' => $this->currentRecurContributionID,
+    ]);
+
+    return $installmentReceiveDateCalculator->calculate($paymentPlanContributionsCount + 1);
   }
 
   /**
@@ -537,20 +567,47 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     ])['values'];
 
     foreach ($membershipPayments as $membershipPayment) {
-      $membershipDetails = civicrm_api3('Membership', 'get', [
-        'sequential' => 1,
-        'return' => ['id', 'contact_id', 'membership_type_id', 'is_test', 'campaign_id'],
-        'id' => $membershipPayment['membership_id'],
-      ])['values'][0];
+      $newEndDate = $this->calculateMembershipNewEndDate($membershipPayment['membership_id']);
 
-      $campaignID = CRM_Utils_Array::value('campaign_id', $membershipDetails);
-      CRM_Member_BAO_Membership::processMembership(
-        $membershipDetails['contact_id'], $membershipDetails['membership_type_id'], $membershipDetails['is_test'],
-        NULL, NULL, NULL, 1, $membershipDetails['membership_id'],
-        FALSE,
-        $this->currentRecurContributionID, NULL, TRUE, $campaignID
-      );
+      $membership = new CRM_Member_DAO_Membership();
+      $membership->id = $membershipPayment['membership_id'];
+      $membership->end_date = $newEndDate;
+      $membership->save();
     }
+  }
+
+  /**
+   * Calculates the membership new end date
+   * for renewal.
+   *
+   * @param int $membershipId
+   *
+   * @return string
+   */
+  private function calculateMembershipNewEndDate($membershipId) {
+    $membershipDetails = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'return' => ['end_date', 'membership_type_id.duration_unit', 'membership_type_id.duration_interval'],
+      'id' => $membershipId,
+    ])['values'][0];
+
+    $currentEndDate = new DateTime($membershipDetails['end_date']);
+
+    switch ($membershipDetails['membership_type_id.duration_unit']) {
+      case 'month':
+        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] . 'M';
+        break;
+      case 'day':
+        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] .'D';
+        break;
+      case 'year':
+        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] .'Y';
+        break;
+    }
+
+    $currentEndDate->add(new DateInterval($interval));
+    $newEndDate = $currentEndDate->format('Ymd');
+    return $newEndDate;
   }
 
 }

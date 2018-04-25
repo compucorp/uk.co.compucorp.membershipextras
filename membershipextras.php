@@ -182,7 +182,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $upfrontContributionId = $params['contribution_id'];
   }
 
-  $upfrontContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && $upfrontContributionId == $params['contribution_id'] );
+  $upfrontContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && !empty($upfrontContributionId) && $upfrontContributionId == $params['contribution_id']);
   if ($upfrontContributionLineItemCreation) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanProcessor->updateLineItemData();
