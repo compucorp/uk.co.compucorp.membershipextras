@@ -151,7 +151,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
        $this->currentInstallmentsNumber = $recurContribution['installments'];
      }
 
-
      $this->setLastContribution();
 
      $this->buildLineItemsParams();

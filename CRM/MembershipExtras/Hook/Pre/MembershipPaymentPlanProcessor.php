@@ -56,7 +56,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    */
   public function createPaymentPlan() {
     $this->createRecurringContribution();
-    $this->updateFirstContributionData();
+    $this->alterFirstContributionParameters();
   }
 
   /**
@@ -133,14 +133,15 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   }
 
   /**
-   * Updates the contribution 'to be created' data.
+   * Alters the contribution 'to be created' parameters
+   * before saving it.
    *
    * We here adjust the total, net tax amounts of
    * contribution depending on the installments number.
    * We also link the contribution with the newly created
    * recurring contribution.
    */
-  private function updateFirstContributionData() {
+  private function alterFirstContributionParameters() {
     $this->params['contribution_recur_id'] =  $this->recurringContribution['id'];
     $this->params['total_amount'] =  $this->recurringContribution['amount'];
     $this->params['net_amount'] =  $this->recurringContribution['amount'];
@@ -148,12 +149,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   }
 
   /**
-   * Updates the contribution 'to be created' line item data.
+   * Alters the contribution 'to be created' line item parameters
+   * before saving it.
    *
    * We here adjust the line total, unit price and tax amount
    * of the line item to be inline with the new contribution amount.
    */
-  public function updateLineItemData() {
+  public function alterLineItemParameters() {
     $this->params['line_total'] = $this->calculateSingleInstallmentAmount($this->params['line_total']);
     $this->params['unit_price'] = $this->calculateSingleInstallmentAmount($this->params['unit_price']);
 

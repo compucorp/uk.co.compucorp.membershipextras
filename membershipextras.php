@@ -167,25 +167,25 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   $isPaymentPlanPayment = _membershipextras_isPaymentPlanPayment();
-
+  
+  static $isFirstPaymentPlanContribution = TRUE;
   $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
-  static $isUpfrontContribution = TRUE;
-  if ($membershipContributionCreation && $isPaymentPlanPayment && $isUpfrontContribution) {
+  if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanProcessor->createPaymentPlan();
-    $isUpfrontContribution = FALSE;
+    $isFirstPaymentPlanContribution = FALSE;
   }
 
-  static $upfrontContributionId = NULL;
+  static $firstPaymentPlanContributionId = NULL;
   $membershipPaymentCreation = ($objectName === 'MembershipPayment' && $op === 'create');
-  if ($membershipPaymentCreation && $isPaymentPlanPayment && empty($upfrontContributionId)) {
-    $upfrontContributionId = $params['contribution_id'];
+  if ($membershipPaymentCreation && $isPaymentPlanPayment && empty($firstPaymentPlanContributionId)) {
+    $firstPaymentPlanContributionId = $params['contribution_id'];
   }
 
-  $upfrontContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && !empty($upfrontContributionId) && $upfrontContributionId == $params['contribution_id']);
-  if ($upfrontContributionLineItemCreation) {
+  $firstPaymentPlanContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && !empty($firstPaymentPlanContributionId) && $firstPaymentPlanContributionId == $params['contribution_id']);
+  if ($firstPaymentPlanContributionLineItemCreation) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
-    $paymentPlanProcessor->updateLineItemData();
+    $paymentPlanProcessor->alterLineItemParameters();
   }
 }
 
