@@ -3,7 +3,7 @@
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
 
   /**
-   * The contribution to be created parameters passed from the hook.
+   * The contribution or line item to-be-created parameters passed from the hook.
    *
    * @var array
    */
@@ -40,51 +40,30 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   public function __construct(&$params) {
     $this->params = &$params;
 
+
     $this->installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     $this->installmentsFrequency = CRM_Utils_Request::retrieve('installments_frequency', 'Int');
     $this->installmentsFrequencyUnit = CRM_Utils_Request::retrieve('installments_frequency_unit', 'String');
   }
 
   /**
-   * Processes the membership in case it is paid
-   * using payment plan option.
+   * Creates the payment plan for the membership
+   * if its paid using payment plan option.
    *
    * For now, it creates the recurring contribution
-   * and update the first contribution & line itme amounts
+   * and update the first contribution amount
    * depending on the installments count.
    */
-  public function process() {
-    if (!$this->isPaymentPlanPayment()) {
-      return;
-    }
-
+  public function createPaymentPlan() {
     $this->createRecurringContribution();
-    $this->updateContributionData();
-    $this->updateLineItemData();
-  }
-
-  /**
-   * Detects if the membership is paid for
-   * using payment plan option.
-   *
-   * @return bool
-   */
-  private function isPaymentPlanPayment() {
-    $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
-    $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
-
-    if ($isSavingContribution && $contributionIsPaymentPlan && $this->installmentsCount > 1) {
-      return TRUE;
-    }
-
-    return FALSE;
+    $this->alterFirstContributionParameters();
   }
 
   /**
    * Creates the recurring contribution.
    */
   private function createRecurringContribution() {
-    $amountPerInstallment = $this->calculateSingleInstallmentAmount();
+    $amountPerInstallment = $this->calculateSingleInstallmentAmount($this->params['total_amount']);
 
     $PaymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'name',
@@ -96,6 +75,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'return' => 'name',
       'id' => $this->params['financial_type_id'],
     ]);
+
+    $paymentProcessorId = 'null';
+    if (!empty($this->params['payment_processor_id'])) {
+      $paymentProcessorId = $this->params['payment_processor_id'];
+    }
 
     $contributionRecurParams = [
       'sequential' => 1,
@@ -109,22 +93,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'contribution_status_id' => 'Pending',
       'is_test' => $this->params['is_test'],
       'cycle_day' => $this->calculateCycleDay(),
-      'payment_processor_id' => $this->params['payment_processor_id'],
+      'payment_processor_id' => $paymentProcessorId,
       'financial_type_id' =>  $financialType,
       'payment_instrument_id' => $PaymentInstrument,
       'campaign_id' => $this->params['campaign_id'],
     ];
 
     $this->recurringContribution = civicrm_api3('ContributionRecur', 'create', $contributionRecurParams)['values'][0];
-  }
-
-  /**
-   * Calculates single installment amount.
-   *
-   * @return float
-   */
-  private function calculateSingleInstallmentAmount() {
-    return floor(($this->params['total_amount'] / $this->installmentsCount) * 100) / 100;
   }
 
   /**
@@ -158,43 +133,46 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   }
 
   /**
-   * Updates the contribution 'to be created' data.
+   * Alters the contribution 'to be created' parameters
+   * before saving it.
    *
    * We here adjust the total, net tax amounts of
    * contribution depending on the installments number.
    * We also link the contribution with the newly created
    * recurring contribution.
    */
-  private function updateContributionData() {
+  private function alterFirstContributionParameters() {
     $this->params['contribution_recur_id'] =  $this->recurringContribution['id'];
     $this->params['total_amount'] =  $this->recurringContribution['amount'];
     $this->params['net_amount'] =  $this->recurringContribution['amount'];
-    $this->params['tax_amount'] = $this->calculateSingleInstallmentTaxAmount();
+    $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
   }
 
   /**
-   * Calculates the contribution 'to be created' tax amount.
-   *
-   * @return float
-   */
-  private function calculateSingleInstallmentTaxAmount() {
-    return floor(($this->params['tax_amount'] / $this->installmentsCount) * 100) / 100;
-  }
-
-  /**
-   * Updates the contribution 'to be created' line item data.
+   * Alters the contribution 'to be created' line item parameters
+   * before saving it.
    *
    * We here adjust the line total, unit price and tax amount
    * of the line item to be inline with the new contribution amount.
    */
-  private function updateLineItemData() {
-    $membershipTypeID =  key($this->params['line_item']);
-    $priceValueID = key(current($this->params['line_item']));
+  public function alterLineItemParameters() {
+    $this->params['line_total'] = $this->calculateSingleInstallmentAmount($this->params['line_total']);
+    $this->params['unit_price'] = $this->calculateSingleInstallmentAmount($this->params['unit_price']);
 
-    $lineItemAmount = $this->recurringContribution['amount'] - $this->params['tax_amount'];
-    $this->params['line_item'][$membershipTypeID][$priceValueID]['line_total'] = $lineItemAmount;
-    $this->params['line_item'][$membershipTypeID][$priceValueID]['unit_price'] = $lineItemAmount;
-    $this->params['line_item'][$membershipTypeID][$priceValueID]['tax_amount'] = $this->params['tax_amount'];
+    if (!empty($this->params['tax_amount'])) {
+      $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+    }
+  }
+
+  /**
+   * Calculates single installment amount.
+   *
+   * @param float $amount
+   *
+   * @return float
+   */
+  private function calculateSingleInstallmentAmount($amount) {
+    return floor(($amount / $this->installmentsCount) * 100) / 100;
   }
 
 }

@@ -166,20 +166,46 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
   }
 
-  $action = CRM_Utils_Request::retrieve('action', 'String');
-  $context = CRM_Utils_Request::retrieve('context', 'String');
-
-  $membershipContributionCreation = $objectName === 'Contribution' && $op === 'create'
-    && $context === 'membership';
-  $newMembershipContribution = $membershipContributionCreation && ($action & CRM_Core_Action::ADD);
-  $renewMembershipContribution = $membershipContributionCreation && ($action & CRM_Core_Action::RENEW);
-
-  static $isUpfrontContribution = FALSE;
-  if (($newMembershipContribution || $renewMembershipContribution) && !$isUpfrontContribution) {
+  $isPaymentPlanPayment = _membershipextras_isPaymentPlanPayment();
+  
+  static $isFirstPaymentPlanContribution = TRUE;
+  $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
+  if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
-    $paymentPlanProcessor->process();
-    $isUpfrontContribution = TRUE;
+    $paymentPlanProcessor->createPaymentPlan();
+    $isFirstPaymentPlanContribution = FALSE;
   }
+
+  static $firstPaymentPlanContributionId = NULL;
+  $membershipPaymentCreation = ($objectName === 'MembershipPayment' && $op === 'create');
+  if ($membershipPaymentCreation && $isPaymentPlanPayment && empty($firstPaymentPlanContributionId)) {
+    $firstPaymentPlanContributionId = $params['contribution_id'];
+  }
+
+  $firstPaymentPlanContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && !empty($firstPaymentPlanContributionId) && $firstPaymentPlanContributionId == $params['contribution_id']);
+  if ($firstPaymentPlanContributionLineItemCreation) {
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanProcessor->alterLineItemParameters();
+  }
+}
+
+/**
+ * Determines if the membership is paid
+ * using payment plan option using more than
+ * one installment or not.
+ *
+ * @return bool
+ */
+function _membershipextras_isPaymentPlanPayment() {
+  $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
+  $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
+  $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
+
+  if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 /**
