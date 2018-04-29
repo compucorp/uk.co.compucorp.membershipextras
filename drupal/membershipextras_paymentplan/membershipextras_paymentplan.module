@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * Implements hook_webform_submission_insert.
+ *
+ * Creates the payment plan Remaining upfront contributions
+ * if the webform is configured to create a payment plan.
+ *
+ * @param $node
+ * @param $submission
+ */
+function membershipextras_paymentplan_webform_submission_insert($node, $submission) {
+  $contributionRecurId = _membershipextras_getPaymentPlanRecurContribution($node);
+
+  if (!empty($contributionRecurId)) {
+    civicrm_initialize();
+    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($contributionRecurId);
+    $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+  }
+}
+
+/**
+ * Gets the created recur contribution ID if there
+ * is any, otherwise return NULL;
+ *
+ * @param $node
+ *
+ * @return int|null
+ */
+function _membershipextras_getPaymentPlanRecurContribution($node) {
+  $civiWebformEntityProperty = _membershipextras_getCiviWebformPostprocessorPropertyValue($node, 'ent');
+
+  if (empty($civiWebformEntityProperty['contribution'][1]['id'])) {
+    return NULL;
+  }
+
+  $contributionId = $civiWebformEntityProperty['contribution'][1]['id'];
+
+  try {
+    $contributionRecurId = civicrm_api3('Contribution', 'getvalue', [
+      'return' => 'contribution_recur_id',
+      'id' => $contributionId,
+    ]);
+
+    return $contributionRecurId;
+  }
+  catch (Exception $e) {
+    return NULL;
+  }
+}
+
+/**
+ * Gets wf_crm_webform_postprocess class property
+ * value, whither its protected or private.
+ *
+ * Since we don't have control over wf_crm_webform_postprocess
+ * but we need some of its private/protected properties values,
+ * We are using the reflection here to achieve that.
+ *
+ * @param $node
+ * @param $propertyName
+ *
+ * @return mixed
+ */
+function _membershipextras_getCiviWebformPostprocessorPropertyValue($node, $propertyName) {
+  $civiWebformPostprocessor = wf_crm_webform_postprocess::singleton($node);
+  $civiWebformPostprocessorReflection = new ReflectionObject($civiWebformPostprocessor);
+  $entityReflectionObject = $civiWebformPostprocessorReflection->getProperty($propertyName);
+  $entityReflectionObject->setAccessible(true);
+  return $entityReflectionObject->getValue($civiWebformPostprocessor);
+}
