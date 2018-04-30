@@ -134,7 +134,9 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType->remove();
 
     $this->removeOfflineAutoRenewalScheduledJob();
-  }
+    $this->removeCustomExternalIDs();
+
+    }
 
   /**
    * Removes 'Renew offline auto-renewal memberships'
@@ -147,4 +149,19 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ]);
   }
 
+  private function removeCustomExternalIDs(){
+    $customGroupsToDelete = [
+      'recurring_contribution_external_id',
+      'contribution_external_id',
+      'membership_external_id',
+      'line_item_external_id',
+    ];
+
+    foreach ($customGroupsToDelete as $customGroup) {
+      civicrm_api3('CustomGroup', 'get', [
+        'name' => $customGroup,
+        'api.CustomGroup.delete' => ['id' => '$value.id'],
+      ]);
+    }
+  }
 }
