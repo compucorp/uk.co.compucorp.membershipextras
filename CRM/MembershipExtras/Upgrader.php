@@ -67,7 +67,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'name' => 'line_item_external_id',
         'title' => E::ts('Line Item External ID'),
         'table_name' => 'civicrm_value_line_item_ext_id',
-        'is_active' => 1,
+        'is_active' => 0,
         'style' => 'Inline',
         'is_multiple' => 0,
 
@@ -85,7 +85,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'data_type' => 'String',
         'html_type' => 'Text',
         'required' => 0,
-        'is_active' => 1,
+        'is_active' => 0,
         'is_searchable' => 1,
         'column_name' => 'external_id',
         'is_view' => 1
