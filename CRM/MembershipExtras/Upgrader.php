@@ -9,8 +9,10 @@ use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as Offlin
  */
 class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
-  public function Install() {
+  public function Install()
+  {
     $this->createOfflineAutoRenewalScheduledJob();
+    $this->createLineItemExternalIDCustomField();
   }
 
   /**
@@ -26,6 +28,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'api_action' => 'run',
     ]);
 
+
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->create();
 
@@ -33,7 +36,64 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessor->create();
   }
 
-  public function enable() {
+    /**
+     * Creates 'External ID' Custom Field for LineItem
+     */
+  private function createLineItemExternalIDCustomField()
+  {
+    $optionValues = civicrm_api3('OptionValue', 'get', [
+      'option_group_id' => 'cg_extend_objects',
+      'name' => 'civicrm_line_item'
+    ]);
+
+    if (!$optionValues['count']) {
+      civicrm_api3('OptionValue', 'create', [
+        'option_group_id' => 'cg_extend_objects',
+        'name' => 'civicrm_line_item',
+        'label' => ts('Line Item'),
+        'value' => 'LineItem',
+      ]);
+    }
+
+    $customGroups = civicrm_api3('CustomGroup', 'get', [
+      'extends' => 'LineItem',
+      'name' => 'recurring_contribution_external_id',
+    ]);
+
+    if (!$customGroups['count']) {
+      $customGroups = civicrm_api3('CustomGroup', 'create', [
+        'extends' => 'LineItem',
+        'name' => 'line_item_external_id',
+        'title' => E::ts('Line Item External ID'),
+        'table_name' => 'civicrm_value_line_item_ext_id',
+        'is_active' => 1,
+        'style' => 'Inline',
+        'is_multiple' => 0,
+
+      ]);
+    }
+
+    $customFields = civicrm_api3('CustomField', 'get', [
+      'custom_group_id' => $customGroups['id'],
+    ]);
+    if (!$customFields['count']) {
+      $customField = civicrm_api3('CustomField', 'create', [
+        'custom_group_id' => $customGroups['id'],
+        'name' => 'external_id',
+        'label' => E::ts('External ID'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'required' => 0,
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'column_name' => 'external_id',
+        'is_view' => 1
+
+      ]);
+    }
+  }
+
+    public function enable() {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
     $paymentProcessor->toggle(TRUE);
 
