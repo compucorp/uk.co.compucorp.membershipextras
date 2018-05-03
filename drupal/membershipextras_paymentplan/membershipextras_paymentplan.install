@@ -1,0 +1,5 @@
+<?php
+
+function membershipextras_paymentplan_install() {
+  db_query("UPDATE {system} SET weight = 1000 WHERE name = 'membershipextras_paymentplan'");
+}

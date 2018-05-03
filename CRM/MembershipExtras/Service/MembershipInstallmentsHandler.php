@@ -212,20 +212,20 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
         $entityID = $contribution->id;
       }
-
+      
       $lineItemParms = [
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,
         'contribution_id' => $contribution->id,
-        'price_field_id' => $lineItem['price_field_id'],
+        'price_field_id' => CRM_Utils_Array::value('price_field_id', $lineItem),
         'label' => $lineItem['label'],
         'qty' => $lineItem['qty'],
         'unit_price' => $lineItem['unit_price'],
         'line_total' => $lineItem['line_total'],
-        'price_field_value_id' => $lineItem['price_field_value_id'],
+        'price_field_value_id' => CRM_Utils_Array::value('price_field_value_id', $lineItem),
         'financial_type_id' => $lineItem['financial_type_id'],
         'non_deductible_amount' => $lineItem['non_deductible_amount'],
-        'tax_amount' => $lineItem['tax_amount'],
+        'tax_amount' => CRM_Utils_Array::value('tax_amount', $lineItem, 0),
       ];
       $newLineItem = CRM_Price_BAO_LineItem::create($lineItemParms);
 
