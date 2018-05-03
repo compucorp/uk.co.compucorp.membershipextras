@@ -76,10 +76,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'id' => $this->params['financial_type_id'],
     ]);
 
-    $paymentProcessorId = 'null';
-    if (!empty($this->params['payment_processor_id'])) {
-      $paymentProcessorId = $this->params['payment_processor_id'];
-    }
+    $payLaterPaymentProcessors = new CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution();
+    $payLaterPaymentProcessorsId = $payLaterPaymentProcessors->get()['id'];
+
+    $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->installmentsFrequencyUnit);
 
     $contributionRecurParams = [
       'sequential' => 1,
@@ -92,44 +92,14 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'start_date' => $this->params['receive_date'],
       'contribution_status_id' => 'Pending',
       'is_test' => $this->params['is_test'],
-      'cycle_day' => $this->calculateCycleDay(),
-      'payment_processor_id' => $paymentProcessorId,
+      'cycle_day' => $cycleDay,
+      'payment_processor_id' => $payLaterPaymentProcessorsId,
       'financial_type_id' =>  $financialType,
       'payment_instrument_id' => $PaymentInstrument,
       'campaign_id' => $this->params['campaign_id'],
     ];
 
     $this->recurringContribution = civicrm_api3('ContributionRecur', 'create', $contributionRecurParams)['values'][0];
-  }
-
-  /**
-   * Calculates the recurring contribution
-   * cycle day.
-   *
-   * The cycle day value may vary depending on the
-   * installments frequency interval and recurring
-   * contribution start date.
-   *
-   * @return int
-   */
-  private function calculateCycleDay() {;
-    $recurContStartDate = new DateTime($this->params['receive_date']);
-
-    switch ($this->installmentsFrequencyUnit) {
-      case 'week':
-        $cycleDay =  $recurContStartDate->format('N');
-        break;
-      case 'month':
-        $cycleDay =  $recurContStartDate->format('j');
-        break;
-      case 'year':
-        $cycleDay =  $recurContStartDate->format('z');
-        break;
-      default:
-        $cycleDay = 1;
-    }
-
-    return $cycleDay;
   }
 
   /**
