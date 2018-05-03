@@ -3,7 +3,7 @@
 class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
 
   /**
-   * @var \CRM_Member_Form_Membership
+   * @var \CRM_Member_Form
    *
    * Form object that is being altered.
    */
@@ -108,9 +108,9 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
    * @return int
    */
   private function createAutoRenewRecurContribution() {
-    $PaymentInstrument = 'null';
+    $paymentInstrument = 'null';
     if (!empty($this->formSubmittedValues['payment_instrument_id'])) {
-      $PaymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
+      $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
         'return' => 'name',
         'option_group_id' => 'payment_instrument',
         'value' => $this->formSubmittedValues['payment_instrument_id'],
@@ -145,7 +145,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
       'auto_renew' => 1,
       'payment_processor_id' => $payLaterPaymentProcessorsId,
       'financial_type_id' => $financialType,
-      'payment_instrument_id' => $PaymentInstrument,
+      'payment_instrument_id' => $paymentInstrument,
       'start_date' => $this->formSubmittedValues['receive_date'],
     ])['values'][0];
 
@@ -233,7 +233,6 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
   /**
    * Sets the recurring contribution auto_renew
    * field to true.
-   *
    *
    * @param $recurContributionID
    */

@@ -12,7 +12,7 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipOfflineAutoRenew {
   private $templatePath;
 
   /**
-   * @var \CRM_Member_Form_Membership
+   * @var \CRM_Member_Form
    *   Form object that is being altered.
    */
   private $form;
