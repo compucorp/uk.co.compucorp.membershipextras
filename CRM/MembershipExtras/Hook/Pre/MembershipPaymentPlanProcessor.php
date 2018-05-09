@@ -37,9 +37,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    */
   private $recurringContribution;
 
+  /**
+   * ID of default payment processor to be used for recurring contributions of a
+   * payment plan.
+   *
+   * @var int
+   */
+  private $defaultPaymentProcessor;
+
   public function __construct(&$params) {
     $this->params = &$params;
-
 
     $this->installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     $this->installmentsFrequency = CRM_Utils_Request::retrieve('installments_frequency', 'Int');
@@ -77,7 +84,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     ]);
 
     $payLaterPaymentProcessors = new CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution();
-    $payLaterPaymentProcessorsId = $payLaterPaymentProcessors->get()['id'];
+    $payLaterPaymentProcessorsId = $payLaterPaymentProcessors->getDefaultProcessor()['id'];
 
     $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->installmentsFrequencyUnit);
 

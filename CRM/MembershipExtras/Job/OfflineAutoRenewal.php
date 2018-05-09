@@ -2,6 +2,7 @@
 
 use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstallmentsHandler;
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringContribution;
 
 class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
@@ -192,14 +193,13 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $manualPaymentProcessorsIDs = implode(',', $manualPaymentProcessors);
 
     $query = 'SELECT ccr.id as contribution_recur_id, ccr.installments  
-              FROM civicrm_contribution_recur ccr 
-              LEFT JOIN  civicrm_membership cm 
-                ON ccr.id = cm.contribution_recur_id 
-              WHERE ccr.auto_renew = 1 
-                AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . '))
-                AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
-                AND cm.end_date <= CURDATE() 
-              GROUP BY ccr.id';
+                FROM civicrm_contribution_recur ccr 
+           LEFT JOIN civicrm_membership cm ON ccr.id = cm.contribution_recur_id 
+               WHERE ccr.auto_renew = 1 
+                 AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . '))
+                 AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
+                 AND cm.end_date <= CURDATE() 
+            GROUP BY ccr.id';
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
     $recurContributionsList = [];

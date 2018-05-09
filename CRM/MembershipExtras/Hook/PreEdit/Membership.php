@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
+
 /**
  * Called by membershipextras_civicrm_pre hook
  * before editing/renewing a membership

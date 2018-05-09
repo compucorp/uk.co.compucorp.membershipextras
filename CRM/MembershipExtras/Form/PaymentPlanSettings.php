@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
+
 /**
  * Payment Plan Settings form controller
  *
@@ -24,12 +26,28 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
 
     $settingFields  = $this->getSettingFields();
     $settingFieldNames = [];
+
     foreach ($settingFields  as $name => $field) {
+      $attributes = '';
+
+      switch (true) {
+        case $name == 'membershipextras_paymentplan_default_processor':
+          $attributes = array('' => ts('- select -')) + $this->getManualPaymentProcessors();
+          break;
+
+        case $field['html_type'] == 'select':
+          $functionName = CRM_Utils_Array::value('name', CRM_Utils_Array::value('pseudoconstant', $field));
+          if ($functionName) {
+            $attributes = array('' => ts('- select -')) + CRM_Contribute_PseudoConstant::$functionName();
+          }
+          break;
+      }
+
       $this->add(
         $field['html_type'],
         $name,
         ts($field['title']),
-        '',
+        $attributes,
         $field['is_required'],
         ''
       );
@@ -50,6 +68,26 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     ]);
 
     $this->assign('settingFields', $settingFieldNames);
+  }
+
+  /**
+   * Builds an array mapping manual payment processor id's to processor name.
+   *
+   * @return array
+   */
+  private function getManualPaymentProcessors() {
+    $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
+      'payment_processor_type_id' => ManualRecurringPaymentProcessorType::NAME,
+    ]);
+
+    $recPaymentProcessors = [];
+    if (!empty($offlineRecPaymentProcessors['values'])) {
+      foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
+        $recPaymentProcessors[$paymentProcessor['id']] = $paymentProcessor['name'];
+      }
+    }
+
+    return $recPaymentProcessors;
   }
 
   /**
