@@ -37,14 +37,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    */
   private $recurringContribution;
 
-  /**
-   * ID of default payment processor to be used for recurring contributions of a
-   * payment plan.
-   *
-   * @var int
-   */
-  private $defaultPaymentProcessor;
-
   public function __construct(&$params) {
     $this->params = &$params;
 
