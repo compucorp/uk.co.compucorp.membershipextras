@@ -76,18 +76,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @return array
    */
   private function getManualPaymentProcessors() {
-    $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
-      'payment_processor_type_id' => ManualRecurringPaymentProcessorType::NAME,
-    ]);
-
-    $recPaymentProcessors = [];
-    if (!empty($offlineRecPaymentProcessors['values'])) {
-      foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
-        $recPaymentProcessors[$paymentProcessor['id']] = $paymentProcessor['name'];
-      }
-    }
-
-    return $recPaymentProcessors;
+    return CRM_MembershipExtras_Service_ManualPaymentProcessors::getProcessorsIDNameMap();
   }
 
   /**

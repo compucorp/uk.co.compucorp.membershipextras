@@ -94,28 +94,6 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
   }
 
   /**
-   * Returns array with the ID's of payment processors that use the
-   * Payment_Manual processor type.
-   *
-   * @return array
-   */
-  public static function getManualPaymentProcessorIDs() {
-    $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
-      'sequential' => 1,
-      'payment_processor_type_id' => ManualRecurringPaymentProcessorType::NAME,
-    ]);
-
-    $recPaymentProcessors = [];
-    if (!empty($offlineRecPaymentProcessors['values'])) {
-      foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
-        $recPaymentProcessors[] = $paymentProcessor['id'];
-      }
-    }
-
-    return $recPaymentProcessors;
-  }
-
-  /**
    * Removes the payment processor.
    */
   public function remove() {

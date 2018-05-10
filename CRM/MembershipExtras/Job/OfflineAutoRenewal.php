@@ -2,7 +2,6 @@
 
 use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstallmentsHandler;
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
-use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringContribution;
 
 class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
