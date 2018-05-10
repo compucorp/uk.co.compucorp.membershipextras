@@ -187,15 +187,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $cancelledStatusID = $getContributionStatusesNameMap['Cancelled'];
     $refundedStatusID = $getContributionStatusesNameMap['Refunded'];
 
-    $payLaterPaymentProcessors = new CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution();
-    $payLaterPaymentProcessorsIDs = implode(',', [0, $payLaterPaymentProcessors->get()['id']]);
+    $payLaterProcessorID = 0;
+    $manualPaymentProcessors = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
+    $manualPaymentProcessorsIDs = implode(',', $manualPaymentProcessors);
 
     $query = 'SELECT ccr.id as contribution_recur_id, ccr.installments  
               FROM civicrm_contribution_recur ccr 
               LEFT JOIN  civicrm_membership cm 
                 ON ccr.id = cm.contribution_recur_id 
               WHERE ccr.auto_renew = 1 
-                AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $payLaterPaymentProcessorsIDs . '))
+                AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . '))
                 AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
                 AND cm.end_date <= CURDATE() 
               GROUP BY ccr.id';

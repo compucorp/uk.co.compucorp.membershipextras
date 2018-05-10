@@ -1,7 +1,5 @@
 <?php
 
-use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
-
 /**
  * Called by membershipextras_civicrm_pre hook
  * before editing/renewing a membership
@@ -123,9 +121,9 @@ class CRM_MembershipExtras_Hook_PreEdit_Membership {
     $isFirstPaidInstallment = $completedInstallmentsCount === 1;
     $isTherePendingInstallments = $completedInstallmentsCount !== $installmentsCount;
 
-    $offlineRecurringProcessors = $this->getOfflineRecurringPaymentProcessors();
+    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
     $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
-      in_array($recurringContribution['payment_processor_id'], $offlineRecurringProcessors);
+      in_array($recurringContribution['payment_processor_id'], $manualPaymentProcessors);
 
     if ($isFirstPaidInstallment && $isOfflineContribution) {
       return FALSE;
@@ -145,27 +143,6 @@ class CRM_MembershipExtras_Hook_PreEdit_Membership {
     ]);
 
     return $pendingContributions['count'];
-  }
-
-  /**
-   * Gets the list of offline Recurring Payment Processors
-   *
-   * @return array
-   */
-  private function getOfflineRecurringPaymentProcessors() {
-    $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
-      'sequential' => 1,
-      'payment_processor_type_id' => ManualRecurringPaymenProcessorType::NAME,
-    ]);
-
-    $recPaymentProcessors = [];
-    if (!empty($offlineRecPaymentProcessors['values'])) {
-      foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
-        $recPaymentProcessors[] = $paymentProcessor['id'];
-      }
-    }
-
-    return $recPaymentProcessors;
   }
 
 }
