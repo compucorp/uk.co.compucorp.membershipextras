@@ -125,9 +125,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
       ]);
     }
 
-    $payLaterPaymentProcessors = new CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution();
-    $payLaterPaymentProcessorsId = $payLaterPaymentProcessors->getDefaultProcessor()['id'];
-
+    $payLaterPaymentProcessorsId = CRM_MembershipExtras_SettingsManager::getDefaultProcessor();
     $minimumFrequencyData =  $this->calculateMinimumFrequencyUnitAndInterval();
 
     $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->formSubmittedValues['receive_date'], $minimumFrequencyData['unit']);

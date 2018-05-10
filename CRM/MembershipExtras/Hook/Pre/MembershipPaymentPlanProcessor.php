@@ -75,9 +75,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'id' => $this->params['financial_type_id'],
     ]);
 
-    $payLaterPaymentProcessors = new CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution();
-    $payLaterPaymentProcessorsId = $payLaterPaymentProcessors->getDefaultProcessor()['id'];
-
+    $payLaterPaymentProcessorsId = CRM_MembershipExtras_SettingsManager::getDefaultProcessor()['id'];
     $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->installmentsFrequencyUnit);
 
     $contributionRecurParams = [

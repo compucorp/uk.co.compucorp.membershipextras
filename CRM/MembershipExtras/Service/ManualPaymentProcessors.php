@@ -28,7 +28,7 @@ class CRM_MembershipExtras_Service_ManualPaymentProcessors {
    *
    * @return array
    */
-  public static function getProcessorsIDNameMap() {
+  public static function getIDNameMap() {
     $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
       'class_name' => 'Payment_Manual',
