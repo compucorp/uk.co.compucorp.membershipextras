@@ -1,4 +1,5 @@
 <?php
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 
 /**
  * Payment Plan Settings form controller
@@ -22,17 +23,15 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
   public function buildQuickForm() {
     CRM_Utils_System::setTitle(ts('Payment Plan Settings'));
 
-    $settingFields  = $this->getSettingFields();
     $settingFieldNames = [];
+    $settingFields  = $this->getSettingFields();
+
     foreach ($settingFields  as $name => $field) {
-      $this->add(
-        $field['html_type'],
-        $name,
-        ts($field['title']),
-        '',
-        $field['is_required'],
-        ''
-      );
+      if ($name == 'membershipextras_paymentplan_default_processor') {
+        $this->addDefaultProcessorField($field);
+      } else {
+        $this->addSettingField($field);
+      }
 
       $settingFieldNames[] = $name;
     }
@@ -50,6 +49,39 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     ]);
 
     $this->assign('settingFields', $settingFieldNames);
+  }
+
+  /**
+   * Adds default processor field to the form.
+   *
+   * @param array $defaultProcessorField
+   */
+  private function addDefaultProcessorField($defaultProcessorField) {
+    $processorOptions = array('' => ts('- select -')) + ManualPaymentProcessors::getIDNameMap();
+
+    $this->add(
+      $defaultProcessorField['html_type'],
+      $defaultProcessorField['name'],
+      ts($defaultProcessorField['title']),
+      $processorOptions,
+      $defaultProcessorField['is_required'],
+      ''
+    );
+  }
+
+  /**
+   * Adds a setting field to the form.
+   *
+   * @param array $field
+   */
+  private function addSettingField($field) {
+    $this->add(
+      $field['html_type'],
+      $field['name'],
+      ts($field['title']),
+      '',
+      $field['is_required']
+    );
   }
 
   /**
@@ -99,7 +131,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     }
 
     $this->settingFields =  civicrm_api3('setting', 'getfields',[
-      'filters' =>['group' => 'membershipextras_paymentplan'],
+      'filters' => ['group' => 'membershipextras_paymentplan'],
     ])['values'];
 
     return $this->settingFields;

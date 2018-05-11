@@ -40,7 +40,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   public function __construct(&$params) {
     $this->params = &$params;
 
-
     $this->installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     $this->installmentsFrequency = CRM_Utils_Request::retrieve('installments_frequency', 'Int');
     $this->installmentsFrequencyUnit = CRM_Utils_Request::retrieve('installments_frequency_unit', 'String');
@@ -76,9 +75,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'id' => $this->params['financial_type_id'],
     ]);
 
-    $payLaterPaymentProcessors = new CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution();
-    $payLaterPaymentProcessorsId = $payLaterPaymentProcessors->get()['id'];
-
+    $payLaterPaymentProcessorId = CRM_MembershipExtras_SettingsManager::getDefaultProcessorID();
     $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->installmentsFrequencyUnit);
 
     $contributionRecurParams = [
@@ -93,7 +90,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'contribution_status_id' => 'Pending',
       'is_test' => $this->params['is_test'],
       'cycle_day' => $cycleDay,
-      'payment_processor_id' => $payLaterPaymentProcessorsId,
+      'payment_processor_id' => $payLaterPaymentProcessorId,
       'financial_type_id' =>  $financialType,
       'payment_instrument_id' => $PaymentInstrument,
       'campaign_id' => $this->params['campaign_id'],

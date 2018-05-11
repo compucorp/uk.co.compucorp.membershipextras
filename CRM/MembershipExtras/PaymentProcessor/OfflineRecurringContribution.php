@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymenProcessorType;
+use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
 
 /**
  * 'Offline Recurring Contribution' payment processor.
@@ -13,8 +13,8 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
   const NAME = 'Offline_Recurring_Contribution';
 
   /**
-   * Creates 'Offline Recurring Contribution'
-   * payment processor if it does not exist.
+   * Creates 'Offline Recurring Contribution' payment processor if it does not
+   * exist, and sets it as default payment processor.
    *
    * @return array
    *   The details of the created payment processor.
@@ -31,7 +31,7 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
       'domain_id' => $domainID,
       'sequential' => 1,
       'name' => self::NAME,
-      'payment_processor_type_id' => ManualRecurringPaymenProcessorType::NAME,
+      'payment_processor_type_id' => ManualRecurringPaymentProcessorType::NAME,
       'is_active' => '1',
       'is_default' => '0',
       'is_test' => '0',
@@ -41,6 +41,13 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
     ];
 
     $paymentProcessor = civicrm_api3('PaymentProcessor', 'create', $params);
+
+    civicrm_api3(
+      'setting',
+      'create',
+      ['membershipextras_paymentplan_default_processor' => $paymentProcessor['values'][0]]['id']
+    );
+
     return $paymentProcessor['values'][0];
   }
 

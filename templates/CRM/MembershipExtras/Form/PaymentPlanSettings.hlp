@@ -1,0 +1,17 @@
+{htxt id="membershipextras_paymentplan_default_processor-title"}
+{ts}Offline payment processor for back office{/ts}
+{/htxt}
+{htxt id="membershipextras_paymentplan_default_processor"}
+{ts}Select the payment processor that should be used when creating payment plans
+  via CiviCRM admin interface such as new/ renew membership.{/ts}
+{/htxt}
+
+{htxt id="membershipextras_paymentplan_use_membership_latest_price-title"}
+  {ts}Use latest price when auto renew membership?{/ts}
+{/htxt}
+{htxt id="membershipextras_paymentplan_use_membership_latest_price"}
+  {ts}Check if when renewing memberships the price to be used should be the
+    latest price configured for the membership type. Otherwise it will be renewed
+    with the same price as the last membership.{/ts}
+{/htxt}
+
