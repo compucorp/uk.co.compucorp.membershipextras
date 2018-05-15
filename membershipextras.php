@@ -167,6 +167,13 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   $isPaymentPlanPayment = _membershipextras_isPaymentPlanPayment();
+
+  $isMembershipRenewal = ($op === 'edit' && $objectName === 'Membership')
+                         && (CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW);
+  if ($isMembershipRenewal && $isPaymentPlanPayment) {
+    $preEditMembershipHook = new CRM_MembershipExtras_Hook_PreEdit_Membership($id, $contributionID, $params);
+    $preEditMembershipHook->extendPendingPaymentPlanMembershipOnRenewal();
+  }
   
   static $isFirstPaymentPlanContribution = TRUE;
   $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
@@ -176,16 +183,13 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $isFirstPaymentPlanContribution = FALSE;
   }
 
-  static $firstPaymentPlanContributionId = NULL;
-  $membershipPaymentCreation = ($objectName === 'MembershipPayment' && $op === 'create');
-  if ($membershipPaymentCreation && $isPaymentPlanPayment && empty($firstPaymentPlanContributionId)) {
-    $firstPaymentPlanContributionId = $params['contribution_id'];
-  }
-
-  $firstPaymentPlanContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && !empty($firstPaymentPlanContributionId) && $firstPaymentPlanContributionId == $params['contribution_id']);
-  if ($firstPaymentPlanContributionLineItemCreation) {
+  static $firstPaymentPlanContributionId;
+  $firstPaymentPlanContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && !empty($params['contribution_id'])
+                                                  && (empty($firstPaymentPlanContributionId) || $firstPaymentPlanContributionId == $params['contribution_id']));
+  if ($firstPaymentPlanContributionLineItemCreation && $isPaymentPlanPayment) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanProcessor->alterLineItemParameters();
+    $firstPaymentPlanContributionId = $params['contribution_id'];
   }
 }
 

@@ -2,6 +2,7 @@
 
 use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstallmentsHandler;
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 
 class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
@@ -566,47 +567,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     ])['values'];
 
     foreach ($membershipPayments as $membershipPayment) {
-      $newEndDate = $this->calculateMembershipNewEndDate($membershipPayment['membership_id']);
-
       $membership = new CRM_Member_DAO_Membership();
       $membership->id = $membershipPayment['membership_id'];
-      $membership->end_date = $newEndDate;
+      $membership->end_date = MembershipEndDateCalculator::calculate($membershipPayment['membership_id']);
       $membership->save();
     }
-  }
-
-  /**
-   * Calculates the membership new end date
-   * for renewal.
-   *
-   * @param int $membershipId
-   *
-   * @return string
-   */
-  private function calculateMembershipNewEndDate($membershipId) {
-    $membershipDetails = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'return' => ['end_date', 'membership_type_id.duration_unit', 'membership_type_id.duration_interval'],
-      'id' => $membershipId,
-    ])['values'][0];
-
-    $currentEndDate = new DateTime($membershipDetails['end_date']);
-
-    switch ($membershipDetails['membership_type_id.duration_unit']) {
-      case 'month':
-        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] . 'M';
-        break;
-      case 'day':
-        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] .'D';
-        break;
-      case 'year':
-        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] .'Y';
-        break;
-    }
-
-    $currentEndDate->add(new DateInterval($interval));
-    $newEndDate = $currentEndDate->format('Ymd');
-    return $newEndDate;
   }
 
 }
