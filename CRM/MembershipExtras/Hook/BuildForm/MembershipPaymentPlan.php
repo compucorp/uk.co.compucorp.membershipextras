@@ -47,7 +47,7 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
 
     $this->form->add('select', 'installments_frequency_unit',
       ts('Installments Frequency Units'),
-      ['' => ts('- select -')] + CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
+      CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
       FALSE
     );
 

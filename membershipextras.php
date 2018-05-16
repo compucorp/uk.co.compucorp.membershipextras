@@ -249,6 +249,17 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   }
 }
 
+function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if (
+    (($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD))
+      || ($formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW)))
+    && _membershipextras_isPaymentPlanPayment()
+  ) {
+    $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
+    $paymentPlanValidateHook->validate();
+  }
+}
+
 /**
  * Implements hook_civicrm_alterCalculatedMembershipStatus()
  */
