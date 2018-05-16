@@ -10,7 +10,7 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
   /**
    * 'Offline Recurring Contribution' Payment Processor machine name.
    */
-  const NAME = 'Offline_Recurring_Contribution';
+  const NAME = 'Offline Recurring Contribution';
 
   /**
    * Creates 'Offline Recurring Contribution' payment processor if it does not
