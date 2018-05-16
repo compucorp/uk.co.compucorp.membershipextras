@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
+
 /**
  * Called by membershipextras_civicrm_pre hook
  * before editing/renewing a membership
@@ -103,9 +105,6 @@ class CRM_MembershipExtras_Hook_PreEdit_Membership {
    * Determines if the recurring
    * contribution is offline (pay later) and pending.
    *
-   * First payment made will not be count as pending
-   * even if there are still pending installments.
-   *
    * @param $recurringContributionID
    * @return bool
    */
@@ -118,16 +117,11 @@ class CRM_MembershipExtras_Hook_PreEdit_Membership {
     $installmentsCount = $recurringContribution['installments'];
     $completedInstallmentsCount = $this->getRecContributionCompletedInstallmentsCount($recurringContributionID);
 
-    $isFirstPaidInstallment = $completedInstallmentsCount === 1;
     $isTherePendingInstallments = $completedInstallmentsCount !== $installmentsCount;
 
     $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
     $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
       in_array($recurringContribution['payment_processor_id'], $manualPaymentProcessors);
-
-    if ($isFirstPaidInstallment && $isOfflineContribution) {
-      return FALSE;
-    }
 
     if ($isTherePendingInstallments && $isOfflineContribution) {
       return TRUE;
@@ -136,6 +130,14 @@ class CRM_MembershipExtras_Hook_PreEdit_Membership {
     return FALSE;
   }
 
+  /**
+   * Gets the count of completed (paid) installments
+   * for the specified recurring contribution.
+   *
+   * @param $recContributionID
+   *
+   * @return int
+   */
   private function getRecContributionCompletedInstallmentsCount($recContributionID) {
     $pendingContributions = civicrm_api3('Contribution', 'get', [
       'contribution_recur_id' => $recContributionID,
@@ -143,6 +145,30 @@ class CRM_MembershipExtras_Hook_PreEdit_Membership {
     ]);
 
     return $pendingContributions['count'];
+  }
+
+  /**
+   * Extends the membership at renewal if the selected
+   * payment status is pending.
+   *
+   * When renewing a membership through civicrm and selecting
+   * the payment status as pending, then the membership will not
+   * get extended unless you marked the first payment as complete,
+   * So this method make sure it get extended without the need to
+   * complete the first payment.
+   */
+  public function extendPendingPaymentPlanMembershipOnRenewal() {
+    $pendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => 'contribution_status',
+      'name' => 'Pending',
+    ]);
+    $isPaymentPending = (CRM_Utils_Request::retrieve('contribution_status_id', 'String') === $pendingStatusValue);
+    if (!$isPaymentPending) {
+      return;
+    }
+
+    $this->params['end_date'] = MembershipEndDateCalculator::calculate($this->id);
   }
 
 }
