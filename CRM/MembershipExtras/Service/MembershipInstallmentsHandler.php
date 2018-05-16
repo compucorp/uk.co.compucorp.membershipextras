@@ -158,6 +158,8 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       ]);
     }
 
+    $this->copyContributionCustomFields($contribution->id);
+
     return $contribution;
   }
 
@@ -195,6 +197,29 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
     }
 
     return $params;
+  }
+
+  /**
+   * Copies the contribution custom field values from
+   * the first contribution to the specified upfront contribution
+   *
+   * @param $contributionId
+   *   The upfront contribution Id
+   */
+  private function copyContributionCustomFields($contributionId) {
+    $customValues = CRM_Core_BAO_CustomValueTable::getEntityValues($this->lastContribution['id'], 'Contribution');
+    if (empty($customValues)) {
+      return;
+    }
+
+    foreach ($customValues as $key => $value) {
+      if (!empty($value)) {
+        $customParams["custom_{$key}"] = $value;
+      }
+    }
+    $customParams['id'] = $contributionId;
+
+    civicrm_api3('Contribution', 'create', $customParams);
   }
 
 
