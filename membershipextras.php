@@ -256,3 +256,13 @@ function membershipextras_civicrm_alterCalculatedMembershipStatus(&$calculatedSt
   $alterMembershipStatusHook = new CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus();
   $alterMembershipStatusHook->alterMembershipStatus($calculatedStatus, $arguments, $membership);
 }
+
+/**
+ * Implements hook_civicrm_links()
+ */
+function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
+  if ($op == 'contribution.selector.recurring' && $objectName == 'Contribution') {
+    $recurContribuLinksHook = new CRM_MembershipExtras_Hook_Links_RecurringContribution();
+    //$recurContribuLinksHook->alterLinks($links);
+  }
+}
