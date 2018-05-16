@@ -182,10 +182,13 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'is_test' => $this->lastContribution['is_test'],
       'contribution_status_id' => $this->contributionPendingStatusValue,
       'is_pay_later' => TRUE,
-      'tax_amount' => $this->lastContribution['tax_amount'],
       'skipLineItem' => 1,
       'contribution_recur_id' => $this->currentRecurContribution['id'],
     ];
+
+    if (!empty($this->lastContribution['tax_amount'])) {
+      $params['tax_amount'] = $this->lastContribution['tax_amount'];
+    }
 
     if (!empty($this->lastContribution['soft_credit'])) {
       $params['soft_credit'] = $this->lastContribution['soft_credit'];
@@ -225,8 +228,10 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
         'price_field_value_id' => CRM_Utils_Array::value('price_field_value_id', $lineItem),
         'financial_type_id' => $lineItem['financial_type_id'],
         'non_deductible_amount' => $lineItem['non_deductible_amount'],
-        'tax_amount' => CRM_Utils_Array::value('tax_amount', $lineItem, 0),
       ];
+      if (!empty($lineItem['tax_amount'])) {
+        $lineItemParms['tax_amount'] = $lineItem['tax_amount'];
+      }
       $newLineItem = CRM_Price_BAO_LineItem::create($lineItemParms);
 
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
