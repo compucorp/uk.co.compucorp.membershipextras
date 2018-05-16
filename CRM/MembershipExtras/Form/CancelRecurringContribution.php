@@ -108,7 +108,9 @@ class CRM_MembershipExtras_Form_CancelRecurringContribution extends CRM_Core_For
       'options' => ['limit' => 0],
       'api.Contribution.create' => array(
         'id' => '$value.id',
-        'contribution_status_id' => 'Cancelled'
+        'contribution_status_id' => 'Cancelled',
+        'cancel_date' => date('Y-m-d H:i:s'),
+        'cancel_reason' => 'Cancelled because related recurring contribution was cancelled.',
       ),
     ]);
   }

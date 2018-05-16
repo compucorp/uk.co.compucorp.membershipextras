@@ -263,6 +263,6 @@ function membershipextras_civicrm_alterCalculatedMembershipStatus(&$calculatedSt
 function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
   if ($op == 'contribution.selector.recurring' && $objectName == 'Contribution') {
     $recurContribuLinksHook = new CRM_MembershipExtras_Hook_Links_RecurringContribution();
-    //$recurContribuLinksHook->alterLinks($links);
+    $recurContribuLinksHook->alterLinks($links);
   }
 }
