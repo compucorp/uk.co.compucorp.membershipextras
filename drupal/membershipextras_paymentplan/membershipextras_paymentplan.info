@@ -1,6 +1,0 @@
-name = CiviCRM webform payment plan handler
-description = Support module for uk.co.compucorp.membershipextras that handle the creation of upfront contributions after submitting a civicrm webform.
-version = 1.0
-dependencies[] = webform_civicrm
-package = MembershipExtras
-core = 7.x
