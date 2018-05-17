@@ -284,7 +284,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         $entityID = 'null';
       }
 
-      $lineItemsList[] = [
+      $lineItemParams = [
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,
         'contribution_id' => 'null',
@@ -296,8 +296,13 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         'price_field_value_id' => $lineItem['price_field_value_id'],
         'financial_type_id' => $lineItem['financial_type_id'],
         'non_deductible_amount' => $lineItem['non_deductible_amount'],
-        'tax_amount' => $taxAmount,
       ];
+
+      if (!empty($taxAmount)) {
+        $lineItemParams['tax_amount'] = $taxAmount;
+      }
+
+      $lineItemsList[] = $lineItemParams;
     }
 
     $this->lineItems = $lineItemsList;
@@ -508,10 +513,13 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'is_test' => $this->lastContribution['is_test'],
       'contribution_status_id' => $this->contributionPendingStatusValue,
       'is_pay_later' => TRUE,
-      'tax_amount' => $this->totalTaxAmount,
       'skipLineItem' => 1,
       'contribution_recur_id' => $this->currentRecurContributionID,
     ];
+
+    if (!empty($this->totalTaxAmount)) {
+      $params['tax_amount'] = $this->totalTaxAmount;
+    }
 
     if (!empty($this->lastContribution['soft_credit'])) {
       $params['soft_credit'] = $this->lastContribution['soft_credit'];

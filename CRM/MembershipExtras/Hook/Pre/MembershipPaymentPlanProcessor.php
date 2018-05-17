@@ -112,7 +112,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     $this->params['contribution_recur_id'] =  $this->recurringContribution['id'];
     $this->params['total_amount'] =  $this->recurringContribution['amount'];
     $this->params['net_amount'] =  $this->recurringContribution['amount'];
-    $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+
+    if (!empty($this->params['tax_amount'])) {
+      $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+    }
   }
 
   /**
