@@ -42,11 +42,9 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
 
     $paymentProcessor = civicrm_api3('PaymentProcessor', 'create', $params);
 
-    civicrm_api3(
-      'setting',
-      'create',
-      ['membershipextras_paymentplan_default_processor' => $paymentProcessor['values'][0]]['id']
-    );
+    civicrm_api3('setting', 'create',[
+      'membershipextras_paymentplan_default_processor' => $paymentProcessor['values'][0]['id'],
+    ]);
 
     return $paymentProcessor['values'][0];
   }
