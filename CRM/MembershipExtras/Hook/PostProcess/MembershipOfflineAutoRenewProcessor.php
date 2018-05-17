@@ -9,6 +9,11 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
    */
   private $form;
 
+  /**
+   * The membership IDs that are created/renewed
+   */
+  private  $membershipIDs;
+
   /***
    * @var array
    *
@@ -19,6 +24,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
   public function __construct(&$form) {
     $this->form = $form;
     $this->formSubmittedValues = $this->form->exportValues();
+    $this->membershipIDs = $this->getMembershipFormProtectedPropertyValue('_membershipIDs');
   }
 
   /**
@@ -36,6 +42,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     }
     else {
       $recurContributionID = $this->createAutoRenewRecurContribution();
+      $this->updateContributionRecurringContribution($recurContributionID);
     }
 
     $this->setMembershipToAutoRenew($recurContributionID);
@@ -151,6 +158,29 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
   }
 
   /**
+   * Updates the contribution_recur_id field value for the
+   * membership contribution if it paid using "contribution" option
+   * to point to the auto-renew recurring contribution.
+   *
+   * @param $recurContributionID
+   */
+  private function updateContributionRecurringContribution($recurContributionID) {
+    $lastMembershipContribution = civicrm_api3('MembershipPayment', 'get', [
+      'sequential' => 1,
+      'return' => ['contribution_id'],
+      'membership_id' => $this->membershipIDs[0],
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ]);
+
+    if (!empty($lastMembershipContribution['values'][0])){
+      civicrm_api3('Contribution', 'create', array(
+        'id' => $lastMembershipContribution['values'][0]['contribution_id'],
+        'contribution_recur_id' => $recurContributionID,
+      ));
+    }
+  }
+
+  /**
    * If the membership is paid using PriceSet
    * that allows the creation of more than
    * one membership to be associated with
@@ -196,7 +226,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
    * @param $recurContributionID
    */
   private function setMembershipToAutoRenew($recurContributionID) {
-    foreach($this->getMembershipFormProtectedPropertyValue('_membershipIDs') as $membershipID) {
+    foreach($this->membershipIDs as $membershipID) {
       civicrm_api3('Membership', 'create', [
         'sequential' => 1,
         'id' => $membershipID,
