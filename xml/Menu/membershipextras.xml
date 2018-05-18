@@ -6,4 +6,10 @@
     <title>Payment Plan Settings</title>
     <access_arguments>administer CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/recurring-contribution/cancel</path>
+    <page_callback>CRM_MembershipExtras_Form_CancelRecurringContribution</page_callback>
+    <title>Cancel Recurring Contribution</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
 </menu>
