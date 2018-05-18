@@ -15,3 +15,9 @@
     with the same price as the last membership.{/ts}
 {/htxt}
 
+{htxt id="membershipextras_paymentplan_days_to_renew_in_advance-title"}
+{ts}Days to renew in advance{/ts}
+{/htxt}
+{htxt id="membershipextras_paymentplan_days_to_renew_in_advance"}
+{ts}Number of days in advance of membership end date should an offline auto-renew membership get renewed.{/ts}
+{/htxt}

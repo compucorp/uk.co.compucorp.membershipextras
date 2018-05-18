@@ -192,13 +192,15 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $manualPaymentProcessors = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
     $manualPaymentProcessorsIDs = implode(',', $manualPaymentProcessors);
 
-    $query = 'SELECT ccr.id as contribution_recur_id, ccr.installments  
+    $daysToRenewInAdvance = CRM_MembershipExtras_SettingsManager::getDaysToRenewInAdvance();
+
+    $query = 'SELECT ccr.id as contribution_recur_id, ccr.installments 
                 FROM civicrm_contribution_recur ccr 
            LEFT JOIN civicrm_membership cm ON ccr.id = cm.contribution_recur_id 
                WHERE ccr.auto_renew = 1 
-                 AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . '))
-                 AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
-                 AND cm.end_date <= CURDATE() 
+                 AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . ')) 
+                 AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ') 
+                 AND cm.end_date <= DATE_ADD(CURDATE(), INTERVAL ' . $daysToRenewInAdvance . ' DAY) 
             GROUP BY ccr.id';
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
@@ -393,8 +395,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $totalAmount = 0;
     $taxAmount = 0;
     foreach ($this->lineItems  as $lineItem) {
-      $totalAmount += $lineItem['line_total'] + $lineItem['tax_amount'];
-      $taxAmount += $lineItem['tax_amount'];
+      $totalAmount += $lineItem['line_total'];
+      if (!empty($lineItem['tax_amount'])) {
+        $totalAmount += $lineItem['tax_amount'];
+        $taxAmount += $lineItem['tax_amount'];
+      }
     }
 
     $this->totalAmount = $totalAmount;
