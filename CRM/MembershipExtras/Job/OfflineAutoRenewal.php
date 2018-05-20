@@ -278,7 +278,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $lineItemsList = [];
     foreach($lastContributionLineItems as $lineItem) {
       $unitPrice = $this->calculateLineItemUnitPrice($lineItem);
-      $lineTotal = floor(($unitPrice * $lineItem['qty']) * 100) / 100;
+      $lineTotal = round($unitPrice * $lineItem['qty'], 2);
       $taxAmount = $this->calculateLineItemTaxAmount($lineTotal, $lineItem['financial_type_id']);
 
       $entityID = $lineItem['entity_id'];
@@ -358,7 +358,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   private function calculateSingleInstallmentAmount($amount) {
     $resultAmount =  $amount;
     if ($this->currentInstallmentsNumber > 1) {
-      $resultAmount = floor(($amount / $this->currentInstallmentsNumber) * 100) / 100;
+      $resultAmount = round(($amount / $this->currentInstallmentsNumber), 2);
     }
 
     return $resultAmount;
