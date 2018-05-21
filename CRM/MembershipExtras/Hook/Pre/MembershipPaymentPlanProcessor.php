@@ -142,7 +142,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    * @return float
    */
   private function calculateSingleInstallmentAmount($amount) {
-    return floor(($amount / $this->installmentsCount) * 100) / 100;
+    return round($amount / $this->installmentsCount, 2);
   }
 
 }
