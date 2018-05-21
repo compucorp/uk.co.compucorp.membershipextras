@@ -166,7 +166,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
   }
 
-  $isPaymentPlanPayment = _membershipextras_isPaymentPlanPayment();
+  $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithMoreThanOneInstallment();
 
   $isMembershipRenewal = ($op === 'edit' && $objectName === 'Membership')
                          && (CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW);
@@ -200,7 +200,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
  *
  * @return bool
  */
-function _membershipextras_isPaymentPlanPayment() {
+function _membershipextras_isPaymentPlanWithMoreThanOneInstallment() {
   $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
   $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
   $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
@@ -249,14 +249,20 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   }
 }
 
+/**
+ * Implements hook_civicrm_validateForm()
+ */
 function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-  if (
-    (($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD))
-      || ($formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW)))
-    && _membershipextras_isPaymentPlanPayment()
-  ) {
-    $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
-    $paymentPlanValidateHook->validate();
+  $isNewMembershipForm = $formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD);
+  $isRenewMembershipForm = $formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW);
+
+  if ($isNewMembershipForm || $isRenewMembershipForm) {
+    $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
+
+    if ($contributionIsPaymentPlan) {
+      $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
+      $paymentPlanValidateHook->validate();
+    }
   }
 }
 

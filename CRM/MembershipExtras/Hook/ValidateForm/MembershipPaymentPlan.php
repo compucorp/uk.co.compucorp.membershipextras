@@ -39,6 +39,11 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
    * fields when renewing or creating memberships.
    */
   public function validate() {
+    $installmentsCount = CRM_Utils_Array::value('installments', $this->fields);
+    if (empty($installmentsCount)) {
+      $this->errors['installments'] = ts('"Installments" is a required field');
+    }
+
     $installmentsFrequency = CRM_Utils_Array::value('installments_frequency', $this->fields);
     if (empty($installmentsFrequency)) {
       $this->errors['installments_frequency'] = ts('"Installments Frequency" is a required field');
@@ -49,4 +54,5 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
       $this->errors['installments_frequency_unit'] = ts('"Installments Frequency Unit" is a required field');
     }
   }
+
 }

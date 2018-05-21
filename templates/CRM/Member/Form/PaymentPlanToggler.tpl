@@ -104,12 +104,14 @@
     </td>
   </tr>
   <tr id="installments_row">
-    <td nowrap>{$form.installments.label}</td>
+    <td nowrap>
+      {$form.installments.label} <span class="marker">*</span>
+    </td>
     <td nowrap>
       {$form.installments.html}
-      {$form.installments_frequency.label}
+      {$form.installments_frequency.label} <span class="marker">*</span>
       {$form.installments_frequency.html}
-      {$form.installments_frequency_unit.html}
+      {$form.installments_frequency_unit.html} <span class="marker">*</span>
     </td>
   </tr>
   <tr id="first_installment">
