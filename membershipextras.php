@@ -163,7 +163,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
 
   if ($op === 'edit' && $objectName === 'Membership' && $contributionID) {
     $preEditMembershipHook = new CRM_MembershipExtras_Hook_PreEdit_Membership($id, $contributionID, $params);
-    $preEditMembershipHook->preventExtendingOfflinePendingRecurringMembership();
+    $preEditMembershipHook->preventExtendingPaymentPlanMembership();
   }
 
   $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithMoreThanOneInstallment();
