@@ -9,13 +9,13 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipOfflineAutoRenew {
    * @var string
    *   Path where the template for the auto renew section is soted.
    */
-  private $templatePath;
+  protected $templatePath;
 
   /**
    * @var \CRM_Member_Form
    *   Form object that is being altered.
    */
-  private $form;
+  protected $form;
 
   /**
    * CRM_MembershipExtras_Hook_BuildForm_Membership constructor.
