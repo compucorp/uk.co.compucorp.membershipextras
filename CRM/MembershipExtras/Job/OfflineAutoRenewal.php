@@ -584,6 +584,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       $membership->id = $membershipPayment['membership_id'];
       $membership->end_date = MembershipEndDateCalculator::calculate($membershipPayment['membership_id']);
       $membership->save();
+
+      $nullObject = CRM_Utils_Hook::$_nullObject;
+      CRM_Utils_Hook::singleton()->invoke(
+        ['membershipId', 'recurContributionId'], $membershipPayment['membership_id'],
+        $this->currentRecurContributionID, $nullObject, $nullObject, $nullObject, $nullObject,
+        'membershipextras_postOfflineAutoRenewal');
     }
   }
 
