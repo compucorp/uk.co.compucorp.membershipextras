@@ -9,7 +9,7 @@ use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as Offlin
  */
 class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
-  public function Install(){
+  public function Install() {
     $this->createOfflineAutoRenewalScheduledJob();
     $this->createLineItemExternalIDCustomField();
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
@@ -28,7 +28,6 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'api_action' => 'run',
     ]);
 
-
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->create();
 
@@ -39,7 +38,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   /**
    * Creates 'External ID' Custom Field for LineItem
    */
-  private function createLineItemExternalIDCustomField(){
+  private function createLineItemExternalIDCustomField() {
     $optionValues = civicrm_api3('OptionValue', 'get', [
       'option_group_id' => 'cg_extend_objects',
       'name' => 'civicrm_line_item'
@@ -90,7 +89,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       ]);
     }
   }
-  
+
   public function enable() {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
     $paymentProcessor->toggle(TRUE);
@@ -133,7 +132,6 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     $this->removeOfflineAutoRenewalScheduledJob();
     $this->removeCustomExternalIDs();
-
   }
 
   /**
@@ -147,7 +145,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ]);
   }
 
-  private function removeCustomExternalIDs(){
+  private function removeCustomExternalIDs() {
     $customGroupsToDelete = [
       'recurring_contribution_external_id',
       'contribution_external_id',
