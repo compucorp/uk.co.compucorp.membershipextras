@@ -37,8 +37,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
-  	* Creates 'External ID' Custom Field for LineItem
-  	*/
+  * Creates 'External ID' Custom Field for LineItem
+  */
   private function createLineItemExternalIDCustomField()
   {
     $optionValues = civicrm_api3('OptionValue', 'get', [
