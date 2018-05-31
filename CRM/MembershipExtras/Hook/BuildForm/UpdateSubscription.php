@@ -5,15 +5,39 @@
  */
 class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
 
+  /**
+   * Form that needs to be altered.
+   *
+   * @var \CRM_Contribute_Form_UpdateSubscription
+   */
   private $form;
+
+  /**
+   * Path to where extension templates are physically stored.
+   *
+   * @var string
+   */
   private $templatePath;
+
+  /**
+   * Array with the data of the recurring contribution that is being updated.
+   *
+   * @var array
+   */
   private $recurringContribution;
 
   public function __construct(CRM_Contribute_Form_UpdateSubscription $form) {
     $this->form = $form;
     $this->templatePath = CRM_MembershipExtras_ExtensionUtil::path() . '/templates';
+    $this->loadRecurringContribution();
+  }
 
-    $recurringContributionID = CRM_Utils_Request::retrieve('crid', 'Integer', $this->form, FALSE);
+  /**
+   * Loads data for recurring contribution identified by 'crid' parameter in
+   * http request.
+   */
+  private function loadRecurringContribution() {
+    $recurringContributionID = CRM_Utils_Request::retrieve('crid', 'Integer', $this->form, TRUE);
     $this->recurringContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $recurringContributionID,
