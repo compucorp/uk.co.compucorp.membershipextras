@@ -193,6 +193,13 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 }
 
+function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef) {
+  if ($objectName === 'EntityFinancialTrxn') {
+    $entityFinancialTrxnHook = new CRM_MembershipExtras_Hook_Pre_EntityFinancialTrxn($objectRef);
+    $entityFinancialTrxnHook->updatePaymentPlanStatus();
+  }
+}
+
 /**
  * Determines if the membership is paid
  * using payment plan option using more than
