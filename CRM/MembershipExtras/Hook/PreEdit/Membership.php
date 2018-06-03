@@ -39,112 +39,87 @@ class CRM_MembershipExtras_Hook_PreEdit_Membership {
   }
 
   /**
-   * Prevents extending offline pending recurring Membership.
+   * Prevents extending offline payment plan Membership.
    *
-   * If a membership price will be paid in multiple
-   * installments, then each time an installment get
-   * paid then the membership will get extended.
+   * If a membership price will be paid using
+   * payment plan then each time an installment get
+   * paid the membership will get extended.
    * For example if you have 12 installments for
-   * 120 USD - 1 year membership, then each time an
+   * a 1 year membership, then each time an
    * installment get paid the membership will get extended
-   * by one year (it is how civicrm work!), this method
-   * prevent civicrm from doing that.
+   * by one year, this method prevent civicrm from doing that
+   * so the membership gets only extended once when you renew it.
    */
-  public function preventExtendingOfflinePendingRecurringMembership() {
-    if ($this->isOfflinePendingRecurringMembership()) {
+  public function preventExtendingPaymentPlanMembership() {
+    if ($this->isOfflinePaymentPlanMembership()) {
       unset($this->params['end_date']);
     }
   }
 
   /**
    * Determines if the payment for a membership
-   * subscription is offline (pay later), pending and recurring.
+   * subscription is offline (pay later) and paid
+   * as payment plan.
    *
    * @return bool
    */
-  private function isOfflinePendingRecurringMembership() {
-    $recContributionID = $this->getPaymentRecurringContribution();
+  private function isOfflinePaymentPlanMembership() {
+    $recContributionID = $this->getPaymentRecurringContributionID();
 
     if ($recContributionID === NULL) {
       return FALSE;
     }
 
-    return $this->isOfflinePendingRecurringContribution($recContributionID);
+    return $this->isOfflinePaymentPlanContribution($recContributionID);
   }
 
   /**
-   * Gets the associated recurring contribution for
-   * the membership payment(contribution)
-   * if it does exist.
+   * Gets the associated recurring contribution ID for
+   * the membership payment(contribution) if it does exist.
    *
    * @return int|null
    *   The recurring contribution ID or NULL
    *   if no recurring contribution exist.
    */
-  private function getPaymentRecurringContribution() {
+  private function getPaymentRecurringContributionID() {
     $paymentContribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
       'id' => $this->paymentContributionID,
       'return' => ['id', 'contribution_recur_id'],
     ]);
 
-    if (empty($paymentContribution['id'])) {
+    if (empty($paymentContribution['values'][0]['contribution_recur_id'])) {
       return NULL;
     }
 
-    $paymentContribution= $paymentContribution['values'][0];
-
-    if (empty($paymentContribution['contribution_recur_id'])) {
-      return NULL;
-    }
-
-    return $paymentContribution['contribution_recur_id'];
+    return $paymentContribution['values'][0]['contribution_recur_id'];
   }
 
   /**
-   * Determines if the recurring
-   * contribution is offline (pay later) and pending.
+   * Determines if the recurring contribution
+   * is offline (pay later) and is for
+   * a payment plan.
    *
    * @param $recurringContributionID
    * @return bool
    */
-  private function isOfflinePendingRecurringContribution($recurringContributionID) {
+  private function isOfflinePaymentPlanContribution($recurringContributionID) {
     $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $recurringContributionID,
     ])['values'][0];
 
-    $installmentsCount = $recurringContribution['installments'];
-    $completedInstallmentsCount = $this->getRecContributionCompletedInstallmentsCount($recurringContributionID);
-
-    $isTherePendingInstallments = $completedInstallmentsCount !== $installmentsCount;
+    $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
 
     $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
     $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
       in_array($recurringContribution['payment_processor_id'], $manualPaymentProcessors);
 
-    if ($isTherePendingInstallments && $isOfflineContribution) {
+    if ($isOfflineContribution && $isPaymentPlanRecurringContribution) {
       return TRUE;
     }
 
     return FALSE;
-  }
-
-  /**
-   * Gets the count of completed (paid) installments
-   * for the specified recurring contribution.
-   *
-   * @param $recContributionID
-   *
-   * @return int
-   */
-  private function getRecContributionCompletedInstallmentsCount($recContributionID) {
-    $pendingContributions = civicrm_api3('Contribution', 'get', [
-      'contribution_recur_id' => $recContributionID,
-      'contribution_status_id' => 'Completed',
-    ]);
-
-    return $pendingContributions['count'];
   }
 
   /**
