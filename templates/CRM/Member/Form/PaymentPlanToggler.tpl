@@ -51,12 +51,14 @@
       CRM.$('#trxn_id').parent().parent().show();
       CRM.$('#first_installment').hide();
     });
-    CRM.$('#plan_toggle').click(function() {
+
+    CRM.$('#payment_plan_toggle').click(function() {
       CRM.$('#total_amount').prop('readonly', true);
       CRM.$('#installments_row').show();
       CRM.$("label[for='receive_date']").html('Payment Plan Start Date');
       CRM.$('#trxn_id').parent().parent().hide();
       CRM.$('#first_installment').show();
+      CRM.$('#installments').change();
 
       if (CRM.$('#membership_type_id_1').val()) {
         CRM.$('#membership_type_id_1').change();
@@ -79,10 +81,12 @@
       }
     });
 
-    CRM.$('#installments, #installments_frequency, #installments_frequency_unit').change(function () {
+    CRM.$('#installments, #total_amount').change(function () {
       var currentAmount = parseFloat(CRM.$('#total_amount').val().replace(/[^0-9\.]+/g, ""));
       var amountPerPeriod = currentAmount / parseFloat(CRM.$('#installments').val());
-
+      console.log(CRM.$('#total_amount').val());
+      console.log(currentAmount);
+      console.log(amountPerPeriod);
       CRM.$('#amount_summary').html(amountPerPeriod.toFixed(2));
     });
   }
@@ -105,7 +109,7 @@
       <label for="contribution_toggle">Contribution</label>
       &nbsp;
       <input name="contribution_type_toggle" id="payment_plan_toggle" value="payment_plan" type="radio">
-      <label for="plan_toggle">Payment Plan</label>
+      <label for="payment_plan_toggle">Payment Plan</label>
     </td>
   </tr>
   <tr id="installments_row">
