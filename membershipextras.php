@@ -226,6 +226,11 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
     $offlineAutoRenewProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
     $offlineAutoRenewProcessor->process();
   }
+
+  if ($formName === 'CRM_Contribute_Form_UpdateSubscription') {
+    $postProcessFormHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription($form);
+    $postProcessFormHook->postProcess();
+  }
 }
 
 /**
@@ -246,6 +251,11 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName === 'CRM_Member_Form_MembershipStatus') {
     $membershipStatusHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipStatus();
     $membershipStatusHook->buildForm($form);
+  }
+
+  if ($formName === 'CRM_Contribute_Form_UpdateSubscription') {
+    $updateFormHook = new CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription($form);
+    $updateFormHook->buildForm();
   }
 }
 

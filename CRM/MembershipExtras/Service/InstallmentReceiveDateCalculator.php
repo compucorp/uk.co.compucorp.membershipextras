@@ -11,8 +11,25 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
    */
   private $recurContribution;
 
+  /**
+   * Initial date from which other dates are calculated.
+   *
+   * @var string
+   */
+  private $startDate;
+
   public function __construct($recurContribution) {
     $this->recurContribution = $recurContribution;
+    $this->startDate = $this->recurContribution['start_date'];
+  }
+
+  /**
+   * Sets initial date from which subsequent dates are calculated.
+   *
+   * @param $date
+   */
+  public function setStartDate($date) {
+    $this->startDate = $date;
   }
 
   /**
@@ -29,7 +46,7 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
    * @return string
    */
   public function calculate($contributionNumber = 1) {
-    $firstDate = $this->recurContribution['start_date'];
+    $firstDate = $this->startDate;
     $intervalFrequency = $this->recurContribution['frequency_interval'];
     $frequencyUnit = $this->recurContribution['frequency_unit'];
 
