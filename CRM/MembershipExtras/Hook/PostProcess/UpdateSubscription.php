@@ -30,14 +30,14 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
   public function __construct(CRM_Contribute_Form_UpdateSubscription $form) {
     $this->form = $form;
-    $this->loadRecurringContribution();
+    $this->setRecurringContribution();
   }
 
   /**
    * Loads data for recurring contribution identified by 'crid' parameter in
    * http request.
    */
-  private function loadRecurringContribution() {
+  private function setRecurringContribution() {
     $recurringContributionID = CRM_Utils_Request::retrieve('crid', 'Integer', $this->form, TRUE);
     $this->recurringContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
