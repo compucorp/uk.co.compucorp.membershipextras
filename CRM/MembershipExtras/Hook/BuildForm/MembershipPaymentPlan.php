@@ -46,6 +46,9 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
    * juggles around exiting ones.
    */
   private function addPaymentPlanSection() {
+    $paymentToggler = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String', $this->form, FALSE);
+    $this->form->assign('contribution_type_toggle', $paymentToggler);
+
     $this->form->add('text', 'installments', ts('Number of Installments'), '', FALSE);
     $this->form->addRule('installments', ts('Installments must be a number.'), 'numeric');
     $this->form->setDefaults(['installments' => self::DEFAULT_INSTALLMENTS_NUMBER]);

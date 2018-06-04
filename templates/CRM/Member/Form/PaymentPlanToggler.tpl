@@ -1,4 +1,6 @@
 <script type="text/javascript">
+  var togglerValue = '{$contribution_type_toggle}';
+
   {literal}
   /**
    * Perform changes on form to add payment plan as an option to pay for
@@ -20,6 +22,8 @@
     CRM.$('#recordContribution legend:first').html('Contribution and Payment Plan');
     CRM.$('#installments_row').insertAfter(CRM.$('#financial_type_id').parent().parent());
     CRM.$('#first_installment').insertAfter(CRM.$('#installments_row'));
+    CRM.$('span.crm-error').css('display', 'none');
+    CRM.$('label span.crm-error').css('display', 'inline');
   }
 
   /**
@@ -88,7 +92,8 @@
    * new events added.
    */
   function initializeMembershipForm() {
-    CRM.$('#contribution_toggle').click();
+    var idToggleOption = '#' + togglerValue + '_toggle';
+    CRM.$(idToggleOption).click();
     CRM.$('#invoice_date_summary').html(CRM.$('#receive_date').val());
   }
   {/literal}
@@ -99,7 +104,7 @@
       <input name="contribution_type_toggle" id="contribution_toggle" value="contribution" type="radio">
       <label for="contribution_toggle">Contribution</label>
       &nbsp;
-      <input name="contribution_type_toggle" id="plan_toggle" value="payment_plan" type="radio">
+      <input name="contribution_type_toggle" id="payment_plan_toggle" value="payment_plan" type="radio">
       <label for="plan_toggle">Payment Plan</label>
     </td>
   </tr>
@@ -111,7 +116,7 @@
       {$form.installments.html}
       {$form.installments_frequency.label} <span class="marker">*</span>
       {$form.installments_frequency.html}
-      {$form.installments_frequency_unit.html} <span class="marker">*</span>
+      {$form.installments_frequency_unit.html}
     </td>
   </tr>
   <tr id="first_installment">
