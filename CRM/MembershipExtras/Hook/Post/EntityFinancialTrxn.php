@@ -1,6 +1,6 @@
 <?php
 
-class CRM_MembershipExtras_Hook_Pre_EntityFinancialTrxn {
+class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
 
   /**
    * The created entity Financial Transaction object
@@ -46,6 +46,7 @@ class CRM_MembershipExtras_Hook_Pre_EntityFinancialTrxn {
         'contribution_status_id' => $newStatus,
       ]);
     }
+    $a = 5*5;
   }
 
   /**
@@ -118,7 +119,7 @@ class CRM_MembershipExtras_Hook_Pre_EntityFinancialTrxn {
     ]);
 
     $newStatus = NULL;
-    if ($paidInstallmentsCount == 1 || $partiallyPaidInstallmentsCount == 1) {
+    if ($paidInstallmentsCount >= 1 || $partiallyPaidInstallmentsCount >=  1) {
       $newStatus = 'In Progress';
     }
 
