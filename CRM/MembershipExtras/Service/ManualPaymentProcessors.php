@@ -24,11 +24,12 @@ class CRM_MembershipExtras_Service_ManualPaymentProcessors {
   }
 
   /**
-   * Builds an array mapping manual payment processor id's to processor name.
+   * Builds an array mapping manual payment processor id's to processor name and
+   * if it is a live or test processor.
    *
    * @return array
    */
-  public static function getIDNameMap() {
+  public static function getIDNameTestMap() {
     $offlineRecPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
       'class_name' => 'Payment_Manual',
@@ -38,7 +39,8 @@ class CRM_MembershipExtras_Service_ManualPaymentProcessors {
     $recPaymentProcessors = [];
     if (!empty($offlineRecPaymentProcessors['values'])) {
       foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
-        $recPaymentProcessors[$paymentProcessor['id']] = $paymentProcessor['name'];
+        $testOrLive = $paymentProcessor['is_test'] ? 'Test - ': 'Live - ';
+        $recPaymentProcessors[$paymentProcessor['id']] = $testOrLive . $paymentProcessor['name'];
       }
     }
 
