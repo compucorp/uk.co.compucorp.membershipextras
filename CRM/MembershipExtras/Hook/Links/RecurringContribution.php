@@ -5,16 +5,39 @@
  */
 class CRM_MembershipExtras_Hook_Links_RecurringContribution {
 
+  /**
+   * List of links for the current recurring contribution.
+   *
+   * @var array
+   */
   private $links;
+
+  /**
+   * ID for the current recurring contribution.
+   *
+   * @var int
+   */
+  private $recurringContributionID;
+
+  /**
+   * Bitmask being used to filter actions for the current recurring
+   * contribution.
+   *
+   * @var int
+   */
+  private $mask;
 
   /**
    * CRM_MembershipExtras_Hook_Links_RecurringContribution constructor.
    *
+   * @param int $contributionID
    * @param array $links
-   *   Array with the action links for the recurring contribution
+   * @param int $mask
    */
-  public function __construct(&$links) {
+  public function __construct($contributionID, &$links, &$mask) {
+    $this->recurringContributionID = $contributionID;
     $this->links = &$links;
+    $this->mask = &$mask;
   }
 
   /**
@@ -28,7 +51,32 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
         $actionLink['url'] = 'civicrm/recurring-contribution/cancel';
         $actionLink['qs'] = 'reset=1&crid=%%crid%%&cid=%%cid%%&context=contribution';
       }
+
+      if ($actionLink['name'] == 'Edit' && $this->isManualPaymentPlan()) {
+        $this->mask |= CRM_Core_Action::UPDATE;
+      }
     }
+  }
+
+  /**
+   * Checks if current recurring contribution is a manual payment plan.
+   *
+   * @return bool
+   */
+  private function isManualPaymentPlan() {
+    $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $this->recurringContributionID
+    ]);
+
+    $paymentProcessorID = $recurringContribution['payment_processor_id'];
+    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
+    $isOfflineContribution = in_array($paymentProcessorID, $manualPaymentProcessors);
+
+    if ($isOfflineContribution || empty($paymentProcessorID)) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
 }

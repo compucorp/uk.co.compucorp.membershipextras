@@ -28,6 +28,13 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    */
   private $receiveDateCalculator;
 
+  /**
+   * Due date of next contribution of the payment plan.
+   *
+   * @var string
+   */
+  private $nextContributionDate;
+
   public function __construct(CRM_Contribute_Form_UpdateSubscription $form) {
     $this->form = $form;
     $this->setRecurringContribution();
@@ -50,10 +57,83 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    * fields.
    */
   public function postProcess() {
-    $updateInstallments = CRM_Utils_Request::retrieve('update_installments', 'Integer', $this->form, FALSE);
-    $contributions = $this->getContributions();
+    $this->updateMembership();
+    $this->updateRelatedInstallments();
+    $this->updateRecurringContribution();
+  }
 
-    if (!$updateInstallments || count($contributions) < 1) {
+  /**
+   * Updates data for recurring contribution.
+   */
+  private function updateRecurringContribution() {
+    $autoRenew = $this->form->getElementValue('auto_renew');
+    $params = [
+      'id' => $this->recurringContribution['id'],
+      'auto_renew' => $autoRenew,
+    ];
+
+    if ($this->isUpdatedCycleDate()) {
+      $params['next_sched_contribution_date'] = $this->nextContributionDate;
+    }
+
+    civicrm_api3('ContributionRecur', 'create', $params);
+  }
+
+  /**
+   * Updates membership if necessary.
+   */
+  private function updateMembership() {
+    $autoRenew = $this->form->getElementValue('auto_renew');
+    $membershipID = $this->getRelatedMembershipID();
+
+    if ($autoRenew && $membershipID) {
+      civicrm_api3('Membership', 'create', [
+        'id' => $membershipID,
+        'contribution_recur_id' => $this->recurringContribution['id'],
+      ]);
+    } elseif (!$autoRenew) {
+      civicrm_api3('Membership', 'create', [
+        'id' => $membershipID,
+        'contribution_recur_id' => '',
+      ]);
+    }
+  }
+
+  /**
+   * Obtains membership ID of payments done with contributions related to
+   * current recurring contribution.
+   */
+  private function getRelatedMembershipID() {
+    $result = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->recurringContribution['id'],
+      'api.MembershipPayment.get' => ['contribution_id' => '$value.id'],
+      'options' => ['limit' => 0, 'sort' => 'id DESC'],
+    ]);
+
+    if ($result['count']) {
+      foreach ($result['values'] as $relatedContribution) {
+        $membershipPaymentResult = $relatedContribution['api.MembershipPayment.get'];
+
+        if ($membershipPaymentResult['count'] > 0) {
+          $paymentData = array_shift($membershipPaymentResult['values']);
+
+          return $paymentData['membership_id'];
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Updates related contributions with values set on the form.
+   */
+  private function updateRelatedInstallments() {
+    $contributions = $this->getContributions();
+    $updateInstallments = CRM_Utils_Request::retrieve('update_installments', 'Integer', $this->form, FALSE);
+
+    if (count($contributions) < 1 || !$updateInstallments) {
       return;
     }
 
@@ -90,7 +170,6 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
   private function getContributions() {
     $result = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'contribution_recur_id' => $this->recurringContribution['id'],
       'contribution_recur_id' => $this->recurringContribution['id'],
       'options' => ['limit' => 0, 'sort' => 'receive_date ASC'],
     ]);
@@ -142,6 +221,10 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
     if ($this->isUpdatedCycleDate()) {
       $params['receive_date'] = $this->receiveDateCalculator->calculate($installmentNumber);
+
+      if (empty($this->nextContributionDate)) {
+        $this->nextContributionDate = $params['receive_date'];
+      }
     }
 
     if ($this->isUpdatedPaymentInstrument()) {
