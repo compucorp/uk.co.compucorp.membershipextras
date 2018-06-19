@@ -57,7 +57,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @param array $defaultProcessorField
    */
   private function addDefaultProcessorField($defaultProcessorField) {
-    $processorOptions = array('' => ts('- select -')) + ManualPaymentProcessors::getIDNameTestMap();
+    $processorOptions = array('' => ts('- select -')) + ManualPaymentProcessors::getIDNameMap();
 
     $this->add(
       $defaultProcessorField['html_type'],
