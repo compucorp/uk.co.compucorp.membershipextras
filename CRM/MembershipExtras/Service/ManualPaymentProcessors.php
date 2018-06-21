@@ -38,7 +38,8 @@ class CRM_MembershipExtras_Service_ManualPaymentProcessors {
     $recPaymentProcessors = [];
     if (!empty($offlineRecPaymentProcessors['values'])) {
       foreach ($offlineRecPaymentProcessors['values'] as $paymentProcessor) {
-        $recPaymentProcessors[$paymentProcessor['id']] = $paymentProcessor['name'];
+        $testOrLive = $paymentProcessor['is_test'] ? 'Test - ': 'Live - ';
+        $recPaymentProcessors[$paymentProcessor['id']] = $testOrLive . $paymentProcessor['name'];
       }
     }
 
