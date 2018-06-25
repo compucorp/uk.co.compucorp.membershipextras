@@ -300,3 +300,16 @@ function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$
     $recurContribuLinksHook->alterLinks();
   }
 }
+
+function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$object) {
+  $snippet = CRM_Utils_Request::retrieve('snippet', 'Int');
+  $priceSetID = CRM_Utils_Request::retrieve('priceSetId', 'Int');
+
+  if ($tplName == 'CRM/Member/Page/Tab.tpl' && $snippet == CRM_Core_Smarty::PRINT_NOFORM && !empty($priceSetID)) {
+    $content = preg_replace(
+      '/cj\(\'#total_amount\'\)\.val\((.+)\);/',
+      'cj(\'#total_amount\').val(${1}).change();',
+      $content
+    );
+  }
+}

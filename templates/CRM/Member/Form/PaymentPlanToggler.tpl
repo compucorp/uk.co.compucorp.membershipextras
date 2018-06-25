@@ -45,7 +45,6 @@
    */
   function setupPayPlanTogglingEvents() {
     CRM.$('#contribution_toggle').click(function() {
-      CRM.$('#total_amount').prop('readonly', false);
       CRM.$('#installments_row').hide();
       CRM.$("label[for='receive_date']").html('Received');
       CRM.$('#trxn_id').parent().parent().show();
@@ -53,7 +52,6 @@
     });
 
     CRM.$('#payment_plan_toggle').click(function() {
-      CRM.$('#total_amount').prop('readonly', true);
       CRM.$('#installments_row').show();
       CRM.$("label[for='receive_date']").html('Payment Plan Start Date');
       CRM.$('#trxn_id').parent().parent().hide();
@@ -84,9 +82,6 @@
     CRM.$('#installments, #total_amount').change(function () {
       var currentAmount = parseFloat(CRM.$('#total_amount').val().replace(/[^0-9\.]+/g, ""));
       var amountPerPeriod = currentAmount / parseFloat(CRM.$('#installments').val());
-      console.log(CRM.$('#total_amount').val());
-      console.log(currentAmount);
-      console.log(amountPerPeriod);
       CRM.$('#amount_summary').html(amountPerPeriod.toFixed(2));
     });
   }
@@ -100,6 +95,11 @@
     CRM.$(idToggleOption).click();
     CRM.$('#invoice_date_summary').html(CRM.$('#receive_date').val());
   }
+
+  if (typeof buildAutoRenew !== 'function') {
+    function buildAutoRenew() {};
+  }
+
   {/literal}
 </script>
 <table id="payment_plan_fields">
