@@ -114,8 +114,22 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     $this->params['net_amount'] =  $this->recurringContribution['amount'];
 
     if (!empty($this->params['tax_amount'])) {
-      $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+      $this->params['tax_amount'] = $this->calculateInstallmentTax($this->params['total_amount']);
     }
+  }
+
+  /**
+   * Calculates tax amount for given amount.
+   *
+   * @param float $totalAmount
+   *
+   * @return float
+   */
+  private function calculateInstallmentTax($totalAmount) {
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+    $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
+
+    return ($totalAmount * ($rate / 100)) / (1 + ($rate / 100));
   }
 
   /**
