@@ -91,6 +91,7 @@ class CRM_MembershipExtras_Form_CancelRecurringContribution extends CRM_Core_For
       'api.Membership.create' => [
         'id' => '$value.membership_id',
         'is_override' => 1,
+        'status_override_end_date' => '',
         'status_id' => 'Cancelled',
       ],
     ]);
