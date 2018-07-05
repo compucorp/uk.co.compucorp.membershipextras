@@ -20,15 +20,15 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    $this->fixTaxAmount();
-    $this->fixLineItems();
+    $this->recalculateTaxAmount();
+    $this->recalculateLineItemsAmounts();
   }
 
   /**
    * Recalculates tax amount tax rate according to selected financial type, as
    * this can be broken if paying using payment plan or altering total value.
    */
-  private function fixTaxAmount() {
+  private function recalculateTaxAmount() {
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
 
@@ -40,7 +40,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
    * these can get broken when paying with a pyment plan or using a custom total
    * value.
    */
-  private function fixLineItems() {
+  private function recalculateLineItemsAmounts() {
     foreach ($this->params['lineItems'] as $types) {
       foreach ($types as &$line) {
         $total = $line['line_total'] + $line['tax_amount'];
