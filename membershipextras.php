@@ -302,15 +302,8 @@ function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$
  * Implements hook_civicrm_alterContent()
  */
 function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$object) {
-  $snippet = CRM_Utils_Request::retrieve('snippet', 'Int');
-  $priceSetID = CRM_Utils_Request::retrieve('priceSetId', 'Int');
-
-  if ($tplName == 'CRM/Member/Page/Tab.tpl' && $snippet == CRM_Core_Smarty::PRINT_NOFORM && !empty($priceSetID)) {
-    // Throw change event when total_amount is altered
-    $content = preg_replace(
-      '/cj\(\'#total_amount\'\)\.val\((.+)\);/',
-      'cj(\'#total_amount\').val(${1}).change();',
-      $content
-    );
+  if ($tplName == 'CRM/Member/Page/Tab.tpl') {
+    $memberTabPage  = new CRM_MembershipExtras_Hook_Alter_MemberTabPageContent($content);
+    $memberTabPage->alterContent();
   }
 }
