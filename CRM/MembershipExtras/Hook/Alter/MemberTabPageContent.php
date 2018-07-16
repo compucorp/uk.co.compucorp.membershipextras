@@ -16,15 +16,11 @@ class CRM_MembershipExtras_Hook_Alter_MemberTabPageContent {
     $this->appendJSCodeToWatchTotalAmountValueChanges();
   }
 
-  /**
-   * Appends a '.change()' to throw the event when the total amount is altered.
-   */
   private function appendJSCodeToWatchTotalAmountValueChanges() {
     $snippet = CRM_Utils_Request::retrieve('snippet', 'Int');
     $priceSetID = CRM_Utils_Request::retrieve('priceSetId', 'Int');
 
     if ($snippet == CRM_Core_Smarty::PRINT_NOFORM && !empty($priceSetID)) {
-      // Throw change event when total_amount is altered
       $this->content = preg_replace(
         '/cj\(\'#total_amount\'\)\.val\((.+)\);/',
         'cj(\'#total_amount\').val(${1}).change();',

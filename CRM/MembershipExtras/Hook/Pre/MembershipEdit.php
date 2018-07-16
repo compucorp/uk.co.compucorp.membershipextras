@@ -44,7 +44,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
 
     $isPaymentPlanPayment = $this->isPaymentPlanWithMoreThanOneInstallment();
     $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
-
     if ($isMembershipRenewal && $isPaymentPlanPayment) {
       $this->extendPendingPaymentPlanMembershipOnRenewal();
     }
