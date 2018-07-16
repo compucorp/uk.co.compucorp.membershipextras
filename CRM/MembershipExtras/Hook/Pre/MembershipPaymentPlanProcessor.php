@@ -113,9 +113,27 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     $this->params['total_amount'] =  $this->recurringContribution['amount'];
     $this->params['net_amount'] =  $this->recurringContribution['amount'];
 
-    if (!empty($this->params['tax_amount'])) {
+    $lineItemCount = $this->countLineITems();
+    if ($lineItemCount > 1 && !empty($this->params['tax_amount'])) {
+      $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+    }
+    elseif (!empty($this->params['tax_amount'])) {
       $this->params['tax_amount'] = $this->calculateInstallmentTax($this->params['total_amount']);
     }
+  }
+
+  /**
+   * Counts line items set in the parameters array, taking into account they're
+   * grouped by type.
+   */
+  private function countLineItems() {
+    $count = 0;
+
+    foreach ($this->params['line_item'] as $types) {
+      $count += count($types);
+    }
+
+    return $count;
   }
 
   /**
@@ -129,7 +147,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
 
-    return ($totalAmount * ($rate / 100)) / (1 + ($rate / 100));
+    return round(($totalAmount * ($rate / 100)) / (1 + ($rate / 100)), 2);
   }
 
   /**

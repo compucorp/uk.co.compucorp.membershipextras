@@ -33,6 +33,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
     $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
 
     $this->params['tax_amount'] = ($this->params['total_amount'] * ($rate / 100)) / (1 + ($rate / 100));
+    $this->params['tax_amount'] = round($this->params['tax_amount'], 2);
   }
 
   /**
@@ -44,9 +45,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
     foreach ($this->params['lineItems'] as $types) {
       foreach ($types as &$line) {
         $total = $line['line_total'] + $line['tax_amount'];
-        $line['tax_amount'] = ($total * ($line['tax_rate'] / 100)) / (1 + ($line['tax_rate'] / 100));
+        $line['tax_amount'] = round(($total * ($line['tax_rate'] / 100)) / (1 + ($line['tax_rate'] / 100)), 2);
         $line['line_total'] = $total - $line['tax_amount'];
-        $line['unit_price'] = $line['line_total'] / $line['qty'];
+        $line['unit_price'] = round($line['line_total'] / $line['qty'], 2);
       }
     }
   }
