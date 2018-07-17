@@ -113,8 +113,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     $this->params['total_amount'] =  $this->recurringContribution['amount'];
     $this->params['net_amount'] =  $this->recurringContribution['amount'];
 
-    $lineItemCount = $this->countLineITems();
-    if ($lineItemCount > 1 && !empty($this->params['tax_amount'])) {
+    if ($this->isUsingPriceSet() && !empty($this->params['tax_amount'])) {
       $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
     }
     elseif (!empty($this->params['tax_amount'])) {
@@ -123,17 +122,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   }
 
   /**
-   * Counts line items set in the parameters array, taking into account they're
-   * grouped by type.
+   * Checks if priceset was selected on the form to create the membership.
    */
-  private function countLineItems() {
-    $count = 0;
+  private function isUsingPriceSet() {
+    $priceSetID = CRM_Utils_Request::retrieve('price_set_id', 'Int');
 
-    foreach ($this->params['line_item'] as $types) {
-      $count += count($types);
+    if (!empty($priceSetID)) {
+      return TRUE;
     }
 
-    return $count;
+    return FALSE;
   }
 
   /**

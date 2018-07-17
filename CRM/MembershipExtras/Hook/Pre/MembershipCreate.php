@@ -25,15 +25,33 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
   }
 
   /**
-   * Recalculates tax amount tax rate according to selected financial type, as
-   * this can be broken if paying using payment plan or altering total value.
+   * Recalculates tax amount tax rate according to selected financial type, only
+   * if a price set is not used, as this can be broken if paying using payment
+   * plan and/or user edits default total value for the contribution.
    */
   private function recalculateTaxAmount() {
+    if ($this->isUsingPriceSet()) {
+      return;
+    }
+
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
 
     $this->params['tax_amount'] = ($this->params['total_amount'] * ($rate / 100)) / (1 + ($rate / 100));
     $this->params['tax_amount'] = round($this->params['tax_amount'], 2);
+  }
+
+  /**
+   * Checks if priceset was selected on the form to create the membership.
+   */
+  private function isUsingPriceSet() {
+    $priceSetID = CRM_Utils_Request::retrieve('price_set_id', 'Int');
+
+    if (!empty($priceSetID)) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**
