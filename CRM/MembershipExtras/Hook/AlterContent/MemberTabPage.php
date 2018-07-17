@@ -3,7 +3,7 @@
 /**
  * Alters Memberships Tab of Contact's detail view.
  */
-class CRM_MembershipExtras_Hook_Alter_MemberTabPageContent {
+class CRM_MembershipExtras_Hook_AlterContent_MemberTabPage {
 
   public function __construct(&$content) {
     $this->content = &$content;
