@@ -113,9 +113,39 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     $this->params['total_amount'] =  $this->recurringContribution['amount'];
     $this->params['net_amount'] =  $this->recurringContribution['amount'];
 
-    if (!empty($this->params['tax_amount'])) {
+    if ($this->isUsingPriceSet() && !empty($this->params['tax_amount'])) {
       $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
     }
+    elseif (!empty($this->params['tax_amount'])) {
+      $this->params['tax_amount'] = $this->calculateInstallmentTax($this->params['total_amount']);
+    }
+  }
+
+  /**
+   * Checks if priceset was selected on the form to create the membership.
+   */
+  private function isUsingPriceSet() {
+    $priceSetID = CRM_Utils_Request::retrieve('price_set_id', 'Int');
+
+    if (!empty($priceSetID)) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Calculates tax amount for given amount.
+   *
+   * @param float $totalAmount
+   *
+   * @return float
+   */
+  private function calculateInstallmentTax($totalAmount) {
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+    $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
+
+    return round(($totalAmount * ($rate / 100)) / (1 + ($rate / 100)), 2);
   }
 
   /**

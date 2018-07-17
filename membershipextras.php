@@ -161,21 +161,18 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $contributionID = $id;
   }
 
-  if ($op === 'edit' && $objectName === 'Membership' && $contributionID) {
-    $preEditMembershipHook = new CRM_MembershipExtras_Hook_PreEdit_Membership($id, $contributionID, $params);
-    $preEditMembershipHook->preventExtendingPaymentPlanMembership();
+  if ($objectName === 'Membership' && $op == 'create') {
+    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipCreate($params);
+    $membershipPreHook->preProcess();
   }
 
-  $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithMoreThanOneInstallment();
-
-  $isMembershipRenewal = ($op === 'edit' && $objectName === 'Membership')
-                         && (CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW);
-  if ($isMembershipRenewal && $isPaymentPlanPayment) {
-    $preEditMembershipHook = new CRM_MembershipExtras_Hook_PreEdit_Membership($id, $contributionID, $params);
-    $preEditMembershipHook->extendPendingPaymentPlanMembershipOnRenewal();
+  if ($objectName === 'Membership' && $op == 'edit') {
+    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID);
+    $membershipPreHook->preProcess();
   }
-  
+
   static $isFirstPaymentPlanContribution = TRUE;
+  $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithMoreThanOneInstallment();
   $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
   if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
@@ -190,13 +187,6 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanProcessor->alterLineItemParameters();
     $firstPaymentPlanContributionId = $params['contribution_id'];
-  }
-}
-
-function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef) {
-  if ($objectName === 'EntityFinancialTrxn') {
-    $entityFinancialTrxnHook = new CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn($objectRef);
-    $entityFinancialTrxnHook->updatePaymentPlanStatus();
   }
 }
 
@@ -217,6 +207,13 @@ function _membershipextras_isPaymentPlanWithMoreThanOneInstallment() {
   }
 
   return FALSE;
+}
+
+function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef) {
+  if ($objectName === 'EntityFinancialTrxn') {
+    $entityFinancialTrxnHook = new CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn($objectRef);
+    $entityFinancialTrxnHook->updatePaymentPlanStatus();
+  }
 }
 
 /**
@@ -301,15 +298,12 @@ function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$
   }
 }
 
+/**
+ * Implements hook_civicrm_alterContent()
+ */
 function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$object) {
-  $snippet = CRM_Utils_Request::retrieve('snippet', 'Int');
-  $priceSetID = CRM_Utils_Request::retrieve('priceSetId', 'Int');
-
-  if ($tplName == 'CRM/Member/Page/Tab.tpl' && $snippet == CRM_Core_Smarty::PRINT_NOFORM && !empty($priceSetID)) {
-    $content = preg_replace(
-      '/cj\(\'#total_amount\'\)\.val\((.+)\);/',
-      'cj(\'#total_amount\').val(${1}).change();',
-      $content
-    );
+  if ($tplName == 'CRM/Member/Page/Tab.tpl') {
+    $memberTabPage  = new CRM_MembershipExtras_Hook_AlterContent_MemberTabPage($content);
+    $memberTabPage->alterContent();
   }
 }

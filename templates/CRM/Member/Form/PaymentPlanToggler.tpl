@@ -1,5 +1,10 @@
 <script type="text/javascript">
   var togglerValue = '{$contribution_type_toggle}';
+  var membershipextras_allMembershipData = {$allMembershipInfo};
+  var membershipextras_taxRatesStr = '{$taxRates}';
+  var membershipextras_taxTerm = '{$taxTerm}';
+  var membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
+  var membershipextras_currency = '{$currency}';
 
   {literal}
   /**
@@ -79,10 +84,30 @@
       }
     });
 
-    CRM.$('#installments, #total_amount').change(function () {
+    CRM.$('#installments, #total_amount, #membership_type_id_1').change(function () {
       var currentAmount = parseFloat(CRM.$('#total_amount').val().replace(/[^0-9\.]+/g, ""));
       var amountPerPeriod = currentAmount / parseFloat(CRM.$('#installments').val());
-      CRM.$('#amount_summary').html(amountPerPeriod.toFixed(2));
+      var memType = parseInt(CRM.$('#membership_type_id_1').val());
+      var taxMessage = '';
+      var taxPerPeriodMessage = '';
+
+      // Check if a price set is being used
+      var isPriceSet = cj('#price_set_id').length > 0 && cj('#price_set_id').val();
+      if (!isPriceSet) {
+        var currentMembershipData = membershipextras_allMembershipData[memType];
+        var taxRate = membershipextras_taxRates[currentMembershipData['financial_type_id']];
+
+        if (taxRate != undefined) {
+          var taxAmount = (currentAmount * (taxRate / 100)) / (1 + (taxRate / 100));
+          taxAmount = isNaN (taxAmount) ? 0 : taxAmount.toFixed(2);
+          var taxPerPeriod = (taxAmount / parseFloat(CRM.$('#installments').val())).toFixed(2);
+          taxMessage = 'Includes ' + membershipextras_taxTerm + ' amount of ' + membershipextras_currency + ' ' + taxAmount;
+          taxPerPeriodMessage = 'Includes ' + membershipextras_taxTerm + ' amount of ' + membershipextras_currency + ' ' + taxPerPeriod;
+        }
+      }
+
+      CRM.$('.totaltaxAmount').html(taxMessage);
+      CRM.$('#amount_summary').html(membershipextras_currency + ' ' + amountPerPeriod.toFixed(2) + '<br/>' + taxPerPeriodMessage);
     });
   }
 
