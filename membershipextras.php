@@ -209,6 +209,9 @@ function _membershipextras_isPaymentPlanWithMoreThanOneInstallment() {
   return FALSE;
 }
 
+/**
+ * Implements hook_civicrm_post()
+ */
 function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef) {
   if ($objectName === 'EntityFinancialTrxn') {
     $entityFinancialTrxnHook = new CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn($objectRef);
@@ -220,15 +223,19 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
  * Implements hook_civicrm_postProcess()
  */
 function membershipextras_civicrm_postProcess($formName, &$form) {
+
+  $isAddAction = $form->getAction() & CRM_Core_Action::ADD;
+  $isRenewAction = $form->getAction() & CRM_Core_Action::RENEW;
   if (
-  ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD))
-    || ($formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW))
+    ($formName === 'CRM_Member_Form_Membership' && $isAddAction)
+    ||
+    ($formName === 'CRM_Member_Form_MembershipRenewal' && $isRenewAction)
   ) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor($form);
-    $paymentPlanProcessor->process();
+    $paymentPlanProcessor->postProcess();
 
     $offlineAutoRenewProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
-    $offlineAutoRenewProcessor->process();
+    $offlineAutoRenewProcessor->postProcess();
   }
 
   if ($formName === 'CRM_Contribute_Form_UpdateSubscription') {
