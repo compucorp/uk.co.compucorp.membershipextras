@@ -217,6 +217,11 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $entityFinancialTrxnHook = new CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn($objectRef);
     $entityFinancialTrxnHook->updatePaymentPlanStatus();
   }
+
+  if ($objectName == 'LineItem') {
+    $lineItemPostHook = new CRM_MembershipExtras_Hook_Post_LineItem($op, $objectId, $objectRef);
+    $lineItemPostHook->postProcess();
+  }
 }
 
 /**
