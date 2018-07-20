@@ -46,7 +46,6 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
         'contribution_status_id' => $newStatus,
       ]);
     }
-    $a = 5*5;
   }
 
   /**
