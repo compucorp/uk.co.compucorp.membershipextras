@@ -57,8 +57,9 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
   private function isFirstContributionLineItemForPaymentPlan() {
     $paymentData = $this->getPaymentData();
     $recurringContributionID = CRM_Utils_Array::value('contribution_id.contribution_recur_id', $paymentData, 0);
+    $processorID = CRM_Utils_Array::value('contribution_id.contribution_recur_id.payment_processor_id', $paymentData, 0);
 
-    if (!empty($recurringContributionID)) {
+    if (!empty($recurringContributionID) && $this->isManualPaymentPlan($processorID)) {
       $contributionCount = civicrm_api3('Contribution', 'getcount', [
         'contribution_recur_id' => $recurringContributionID,
       ]);
@@ -72,6 +73,24 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
   }
 
   /**
+   * Determines if the recurring contribution is offline (pay later) and is for
+   * a payment plan.
+   *
+   * @param int $processorID
+   *
+   * @return bool
+   */
+  private function isManualPaymentPlan($processorID) {
+    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
+
+    if (empty($processorID) || in_array($processorID, $manualPaymentProcessors)) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
    * Obtains information for the contribution and the recurring contribution
    * created for the payment plan.
    *
@@ -79,15 +98,22 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
    */
   private function getPaymentData() {
     $contributionKeys = array_keys(self::$contributions);
+    $contributionID = $this->lineItem->contribution_id;
 
-    if (!in_array($this->lineItem->contribution_id, $contributionKeys)) {
+    if (empty($contributionID)) {
+      return array();
+    }
+
+    if (!in_array($contributionID, $contributionKeys)) {
       $result = civicrm_api3('MembershipPayment', 'get', [
         'sequential' => 1,
-        'contribution_id' => $this->lineItem->contribution_id,
+        'contribution_id' => $contributionID,
         'contribution_id.contribution_recur_id' => ['IS NOT NULL' => 1],
         'return' => [
           'contribution_id.contribution_recur_id',
           'contribution_id.contribution_recur_id.start_date',
+          'contribution_id.contribution_recur_id.installments',
+          'contribution_id.contribution_recur_id.payment_processor_id',
           'contribution_id.contribution_recur_id.auto_renew',
           'contribution_id.id',
           'membership_id'
@@ -95,14 +121,14 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
       ]);
 
       if ($result['count'] > 0) {
-        self::$contributions[$this->lineItem->contribution_id] = $result['values'][0];
+        self::$contributions[$contributionID] = $result['values'][0];
       }
       else {
-        self::$contributions[$this->lineItem->contribution_id] = array();
+        self::$contributions[$contributionID] = array();
       }
     }
 
-    return self::$contributions[$this->lineItem->contribution_id];
+    return self::$contributions[$contributionID];
   }
 
   /**
@@ -114,7 +140,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
     unset($lineItemCopyParams['id']);
     unset($lineItemCopyParams['contribution_id']);
 
-    civicrm_api3('LineItem', 'create', $lineItemCopyParams);
+    $lineItemCopy = civicrm_api3('LineItem', 'create', $lineItemCopyParams);
 
     $paymentData = $this->getPaymentData();
     $startDate = date('YmdHis', strtotime($paymentData['contribution_id.contribution_recur_id.start_date']));
@@ -124,7 +150,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
     ';
     CRM_Core_DAO::executeQuery($q, [
       1 => [$paymentData['contribution_id.contribution_recur_id'], 'Integer'],
-      2 => [$this->lineItem->id, 'Integer'],
+      2 => [$lineItemCopy['id'], 'Integer'],
       3 => [$startDate, 'Timestamp'],
       4 => [$paymentData['contribution_id.contribution_recur_id.auto_renew'], 'Boolean'],
     ]);
