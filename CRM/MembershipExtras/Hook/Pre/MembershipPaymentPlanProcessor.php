@@ -64,7 +64,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   private function createRecurringContribution() {
     $amountPerInstallment = $this->calculateSingleInstallmentAmount($this->params['total_amount']);
 
-    $PaymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
+    $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'name',
       'option_group_id' => 'payment_instrument',
       'value' => $this->params['payment_instrument_id'],
@@ -92,7 +92,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'cycle_day' => $cycleDay,
       'payment_processor_id' => $payLaterPaymentProcessorId,
       'financial_type_id' =>  $financialType,
-      'payment_instrument_id' => $PaymentInstrument,
+      'payment_instrument_id' => $paymentInstrument,
       'campaign_id' => $this->params['campaign_id'],
     ];
 
