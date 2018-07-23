@@ -10,7 +10,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
    *
    * @var string
    */
-  private $op;
+  private $operation;
 
   /**
    * ID of line item.
@@ -33,8 +33,8 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
    */
   private static $contributions = [];
 
-  public function __construct($op, $objectId, CRM_Price_BAO_LineItem &$objectRef) {
-    $this->op = $op;
+  public function __construct($operation, $objectId, CRM_Price_BAO_LineItem &$objectRef) {
+    $this->operation = $operation;
     $this->id = $objectId;
     $this->lineItem = $objectRef;
   }
@@ -43,7 +43,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
    * Post processes the set line item object.
    */
   public function postProcess() {
-    if ($this->op == 'create' && $this->isFirstContributionLineItemForPaymentPlan()) {
+    if ($this->operation == 'create' && $this->isFirstContributionLineItemForPaymentPlan()) {
       $this->createLineItemForRecurringContribution();
     }
   }
