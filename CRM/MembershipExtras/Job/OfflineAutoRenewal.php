@@ -443,6 +443,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($currentRecurContribution);
     $this->paymentPlanStartDate = $installmentReceiveDateCalculator->calculate($currentRecurContribution['installments'] + 1);
 
+    $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
+
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
       'sequential' => 1,
       'contact_id' => $currentRecurContribution['contact_id'],
@@ -457,12 +459,20 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'cycle_day' => $currentRecurContribution['cycle_day'],
       'payment_processor_id' => $paymentProcessorID,
       'financial_type_id' => $this->financialTypesIDMap[$currentRecurContribution['financial_type_id']],
-      'payment_instrument_id' => 'EFT',
+      'payment_instrument_id' => $paymentInstrumentName,
       'start_date' => $this->paymentPlanStartDate,
     ])['values'][0];
 
     // The new recurring contribution is now the current one.
     $this->currentRecurContributionID = $newRecurringContribution['id'];
+  }
+
+  private function getPaymentMethodNameFromItsId($paymentMethodId) {
+    return civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'name',
+      'option_group_id' => 'payment_instrument',
+      'value' => $paymentMethodId,
+    ]);
   }
 
   /**
