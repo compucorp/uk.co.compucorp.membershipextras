@@ -460,7 +460,7 @@ function _membershipextras_civix_civicrm_entityTypes(&$entityTypes) {
     array (
       'name' => 'ContributionRecurLineItem',
       'class' => 'CRM_MembershipExtras_DAO_ContributionRecurLineItem',
-      'table' => 'civicrm_contributionrecurlineitem',
+      'table' => 'memberextras_contribrecur_lineitem',
     ),
   ));
 }

@@ -319,3 +319,7 @@ function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$
     $memberTabPage->alterContent();
   }
 }
+
+function membershipextras_civicrm_entityTypes(&$entityTypes) {
+  return _membershipextras_civix_civicrm_entityTypes($entityTypes);
+}

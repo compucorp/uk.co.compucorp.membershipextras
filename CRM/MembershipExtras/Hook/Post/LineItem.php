@@ -143,12 +143,13 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
     $lineItemCopy = civicrm_api3('LineItem', 'create', $lineItemCopyParams);
     $paymentData = $this->getPaymentData();
 
-    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+    civicrm_api3('ContributionRecurLineItem', 'create', [
       'contribution_recur_id' => $paymentData['contribution_id.contribution_recur_id'],
       'line_item_id' => $lineItemCopy['id'],
       'start_date' => $paymentData['contribution_id.contribution_recur_id.start_date'],
       'auto_renew' => $paymentData['contribution_id.contribution_recur_id.auto_renew'],
     ]);
+
   }
 
 }
