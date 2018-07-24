@@ -21,3 +21,8 @@
 {htxt id="membershipextras_paymentplan_days_to_renew_in_advance"}
 {ts}Number of days in advance of membership end date should an offline auto-renew membership get renewed.{/ts}
 {/htxt}
+
+{htxt id="membershipextras_customgroups_to_exclude_for_autorenew"}
+{ts}Custom groups to be excluded (ignored) from copying during the offline auto-renewal scheduled job running{/ts}
+{/htxt}
+

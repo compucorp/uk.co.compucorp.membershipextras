@@ -30,6 +30,30 @@ class CRM_MembershipExtras_SettingsManager {
     return $daysToRenewInAdvance;
   }
 
+  public static function getCustomFieldsIdsToExcludeForAutoRenew() {
+    $customGroupsIdsToExcludeForAutoRenew = self::getSettingValue('membershipextras_customgroups_to_exclude_for_autorenew');
+    if (empty($customGroupsIdsToExcludeForAutoRenew)) {
+      return [];
+    }
+
+    $customFieldsToExcludeForAutoRenew = civicrm_api3('CustomField', 'get', [
+      'return' => ['id'],
+      'sequential' => 1,
+      'custom_group_id' => ['IN' => $customGroupsIdsToExcludeForAutoRenew],
+      'options' => ['limit' => 0],
+    ]);
+    if (empty($customFieldsToExcludeForAutoRenew['values'])) {
+      return [];
+    }
+
+    $customFieldsIdsToExcludeForAutoRenew = [];
+    foreach($customFieldsToExcludeForAutoRenew['values'] as $customField) {
+      $customFieldsIdsToExcludeForAutoRenew[] = $customField['id'];
+    }
+
+    return $customFieldsIdsToExcludeForAutoRenew;
+  }
+
   private static function getSettingValue($settingName) {
     return civicrm_api3('Setting', 'get', [
       'sequential' => 1,

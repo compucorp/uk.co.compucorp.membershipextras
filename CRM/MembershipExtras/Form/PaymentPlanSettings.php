@@ -27,10 +27,16 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     $settingFields  = $this->getSettingFields();
 
     foreach ($settingFields  as $name => $field) {
-      if ($name == 'membershipextras_paymentplan_default_processor') {
-        $this->addDefaultProcessorField($field);
-      } else {
-        $this->addSettingField($field);
+      switch ($name) {
+        case 'membershipextras_paymentplan_default_processor':
+          $this->addDefaultProcessorField($field);
+          break;
+        case 'membershipextras_customgroups_to_exclude_for_autorenew':
+          $this->addCustomGroupsToExcludeField($field);
+          break;
+        default:
+          $this->addSettingField($field);
+          break;
       }
 
       $settingFieldNames[] = $name;
@@ -57,7 +63,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @param array $defaultProcessorField
    */
   private function addDefaultProcessorField($defaultProcessorField) {
-    $processorOptions = array('' => ts('- select -')) + ManualPaymentProcessors::getIDNameMap();
+    $processorOptions = ['' => ts('- select -')] + ManualPaymentProcessors::getIDNameMap();
 
     $this->add(
       $defaultProcessorField['html_type'],
@@ -67,6 +73,37 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
       $defaultProcessorField['is_required'],
       ''
     );
+  }
+
+  private function addCustomGroupsToExcludeField($field) {
+    $customGroups = ['' => ts('- select -')] + $this->getCustomGroupsToExcludeFieldOptions();
+
+    $this->add(
+      $field['html_type'],
+      $field['name'],
+      ts($field['title']),
+      $customGroups,
+      $field['is_required'],
+      $field['extra_attributes']
+    );
+  }
+
+  private function getCustomGroupsToExcludeFieldOptions() {
+    $customGroups = civicrm_api3('CustomGroup', 'get', [
+      'sequential' => 1,
+      'return' => ["id", "title"],
+      'extends' => ['IN' => ['Contribution', 'ContributionRecur']],
+      'options' => ['limit' => 0],
+    ]);
+
+    $customGroupsOptions = [];
+    if (!empty($customGroups['values'])) {
+      foreach ($customGroups['values'] as $customGroup) {
+        $customGroupsOptions[$customGroup['id']] = $customGroup['title'];
+      }
+    }
+
+    return $customGroupsOptions;
   }
 
   /**

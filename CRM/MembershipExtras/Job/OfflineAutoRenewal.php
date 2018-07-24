@@ -463,6 +463,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'start_date' => $this->paymentPlanStartDate,
     ])['values'][0];
 
+    CRM_MembershipExtras_Service_CustomFieldsCopier::copy(
+      $currentRecurContribution['id'],
+      $newRecurringContribution['id'],
+      'ContributionRecur'
+    );
+
     // The new recurring contribution is now the current one.
     $this->currentRecurContributionID = $newRecurringContribution['id'];
   }
@@ -550,6 +556,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       $contributionSoftParams['amount'] = $contribution->total_amount;
       CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
     }
+
+    CRM_MembershipExtras_Service_CustomFieldsCopier::copy(
+      $this->lastContribution['id'],
+      $contribution->id,
+      'Contribution'
+    );
 
     $membershipPayments = civicrm_api3('MembershipPayment', 'get', [
       'return' => 'membership_id',

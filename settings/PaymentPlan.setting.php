@@ -44,4 +44,20 @@ return [
     'description' => 'Number of days in advance of membership end date should an offline auto-renew membership get renewed.',
     'help_text' => 'Number of days in advance of membership end date should an offline auto-renew membership get renewed.',
   ],
+  'membershipextras_customgroups_to_exclude_for_autorenew' => [
+    'name' => 'membershipextras_customgroups_to_exclude_for_autorenew',
+    'group_name' => 'MembershipExtras: Payment Plan',
+    'group' => 'membershipextras_paymentplan',
+    'type' => 'Integer',
+    'quick_form_type' => 'Element',
+    'add' => '4.7',
+    'title' => 'Custom groups to be excluded when auto-renew"',
+    'html_type' => 'select',
+    'is_required' => FALSE,
+    'extra_attributes' => [
+      'class' => 'crm-select2',
+      'multiple' => 'multiple',
+      'placeholder' => ts('- select -'),
+    ],
+  ],
 ];
