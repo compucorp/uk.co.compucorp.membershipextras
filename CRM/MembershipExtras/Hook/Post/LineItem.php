@@ -141,18 +141,13 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
     unset($lineItemCopyParams['contribution_id']);
 
     $lineItemCopy = civicrm_api3('LineItem', 'create', $lineItemCopyParams);
-
     $paymentData = $this->getPaymentData();
-    $startDate = date('YmdHis', strtotime($paymentData['contribution_id.contribution_recur_id.start_date']));
-    $q = '
-      INSERT INTO membershipextras_contribution_recur_line_item (contribution_recur_id, line_item_id, start_date, end_date, auto_renew) 
-      VALUES (%1, %2, %3, NULL, %4)
-    ';
-    CRM_Core_DAO::executeQuery($q, [
-      1 => [$paymentData['contribution_id.contribution_recur_id'], 'Integer'],
-      2 => [$lineItemCopy['id'], 'Integer'],
-      3 => [$startDate, 'Timestamp'],
-      4 => [$paymentData['contribution_id.contribution_recur_id.auto_renew'], 'Boolean'],
+
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+      'contribution_recur_id' => $paymentData['contribution_id.contribution_recur_id'],
+      'line_item_id' => $lineItemCopy['id'],
+      'start_date' => $paymentData['contribution_id.contribution_recur_id.start_date'],
+      'auto_renew' => $paymentData['contribution_id.contribution_recur_id.auto_renew'],
     ]);
   }
 
