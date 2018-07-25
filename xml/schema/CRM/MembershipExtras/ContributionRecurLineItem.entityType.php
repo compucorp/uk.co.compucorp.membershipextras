@@ -6,6 +6,6 @@ return array (
   array (
     'name' => 'ContributionRecurLineItem',
     'class' => 'CRM_MembershipExtras_DAO_ContributionRecurLineItem',
-    'table' => 'memberextras_contribrecur_lineitem',
+    'table' => 'membershipextras_contribrecur_lineitem',
   ),
 );

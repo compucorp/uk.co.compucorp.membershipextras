@@ -3,7 +3,7 @@
 <table>
   <base>CRM/MembershipExtras</base>
   <class>ContributionRecurLineItem</class>
-  <name>memberextras_contribrecur_lineitem</name>
+  <name>membershipextras_contribrecur_lineitem</name>
   <comment>Implements a relationship between recurring contributions and line items, used to store the current values for pending installments.</comment>
   <add>5.0</add>
   <log>true</log>
