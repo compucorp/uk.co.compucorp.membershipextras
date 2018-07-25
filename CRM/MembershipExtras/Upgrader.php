@@ -160,4 +160,16 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       ]);
     }
   }
+
+  /**
+   * Adds membershipextras_contribution_recur_line_item table to DB.
+   *
+   * @return bool
+   */
+  public function upgrade_0001() {
+    $this->executeSqlFile('sql/auto_install.sql');
+
+    return TRUE;
+  }
+
 }

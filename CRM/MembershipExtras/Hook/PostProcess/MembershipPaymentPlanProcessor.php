@@ -21,7 +21,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * For now, it basically create the remaining installments
    * contributions upfront for the payment plan.
    */
-  public function process() {
+  public function postProcess() {
     if (!$this->isPaymentPlanPayment()) {
       return;
     }
