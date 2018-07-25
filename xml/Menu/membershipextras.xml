@@ -12,4 +12,10 @@
     <title>Cancel Recurring Contribution</title>
     <access_arguments>administer CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/recurring-contribution/edit-lineitems</path>
+    <page_callback>CRM_MembershipExtras_Page_EditContributionRecurLineItems</page_callback>
+    <title>EditContributionRecurLineItems</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>
