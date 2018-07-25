@@ -162,7 +162,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       $this->lastContribution['id'],
       $contribution->id,
       'Contribution'
-      );
+    );
 
     return $contribution;
   }

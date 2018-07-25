@@ -91,7 +91,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
   private function getCustomGroupsToExcludeFieldOptions() {
     $customGroups = civicrm_api3('CustomGroup', 'get', [
       'sequential' => 1,
-      'return' => ["id", "title"],
+      'return' => ['id', 'title', 'extends'],
       'extends' => ['IN' => ['Contribution', 'ContributionRecur']],
       'options' => ['limit' => 0],
     ]);
@@ -99,7 +99,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     $customGroupsOptions = [];
     if (!empty($customGroups['values'])) {
       foreach ($customGroups['values'] as $customGroup) {
-        $customGroupsOptions[$customGroup['id']] = $customGroup['title'];
+        $customGroupsOptions[$customGroup['id']] =  $customGroup['extends'] . ' : ' . $customGroup['title'];
       }
     }
 
