@@ -158,7 +158,11 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       ]);
     }
 
-    $this->copyContributionCustomFields($contribution->id);
+    CRM_MembershipExtras_Service_CustomFieldsCopier::copy(
+      $this->lastContribution['id'],
+      $contribution->id,
+      'Contribution'
+    );
 
     return $contribution;
   }
