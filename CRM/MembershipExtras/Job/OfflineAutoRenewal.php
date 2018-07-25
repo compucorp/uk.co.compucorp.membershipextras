@@ -14,6 +14,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   private $financialTypesIDMap = [];
 
   /**
+   * The ID of the previous recurring Contribution linked
+   * with the membership that after the renewal.
+   *
+   * @var int
+   */
+  private $previousRecurContributionID;
+
+  /**
    * The ID of the recurring Contribution linked
    * with the membership that currently
    * being renewed/processed.
@@ -143,6 +151,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   public function run() {
    $recurContributions = $this->getOfflineAutoRenewalRecurContributions();
    foreach ($recurContributions as $recurContribution) {
+     $this->previousRecurContributionID = $recurContribution['contribution_recur_id'];
      $this->currentRecurContributionID = $recurContribution['contribution_recur_id'];
 
      if (empty($recurContribution['installments'])) {
@@ -609,8 +618,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
       $nullObject = CRM_Utils_Hook::$_nullObject;
       CRM_Utils_Hook::singleton()->invoke(
-        ['membershipId', 'recurContributionId'], $membershipPayment['membership_id'],
-        $this->currentRecurContributionID, $nullObject, $nullObject, $nullObject, $nullObject,
+        ['membershipId', 'recurContributionId', 'previousRecurContributionId'], $membershipPayment['membership_id'],
+        $this->currentRecurContributionID, $this->previousRecurContributionID, $nullObject, $nullObject, $nullObject,
         'membershipextras_postOfflineAutoRenewal');
     }
   }
