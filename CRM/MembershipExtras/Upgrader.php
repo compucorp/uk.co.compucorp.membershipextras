@@ -11,6 +11,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   public function Install() {
     $this->createOfflineAutoRenewalScheduledJob();
+    $this->createPaymentProcessorType();
+    $this->createPaymentProcessor();
     $this->createLineItemExternalIDCustomField();
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
   }
@@ -27,12 +29,17 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'api_entity' => 'OfflineAutoRenewalJob',
       'api_action' => 'run',
     ]);
+  }
 
+  private function createPaymentProcessorType() {
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->create();
+  }
 
+  private function createPaymentProcessor() {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
-    $paymentProcessor->create();
+    $paymentProcessor->createIfNotExists();
+    $paymentProcessor->setAsDefaultPaymentPlanProcessor();
   }
 
   /**
