@@ -93,6 +93,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
       'sequential' => 1,
       'return' => ['id', 'title', 'extends'],
       'extends' => ['IN' => ['Contribution', 'ContributionRecur']],
+      'is_active' => 1,
       'options' => ['limit' => 0],
     ]);
 
