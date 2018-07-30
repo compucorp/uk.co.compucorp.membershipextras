@@ -56,6 +56,15 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
         $this->mask |= CRM_Core_Action::UPDATE;
       }
     }
+
+    if ($this->isManualPaymentPlan()) {
+      $this->links[] = [
+        'name' => 'View/Update Recurring Line Items',
+        'url' => 'civicrm/recurring-contribution/edit-lineitems',
+        'qs' => 'reset=1&crid=%%crid%%&cid=%%cid%%&context=contribution',
+        'title' => 'View/Update Recurring Line Items',
+      ];
+    }
   }
 
   /**
@@ -68,7 +77,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
       'id' => $this->recurringContributionID
     ]);
 
-    $paymentProcessorID = $recurringContribution['payment_processor_id'];
+    $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
     $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
     $isOfflineContribution = in_array($paymentProcessorID, $manualPaymentProcessors);
 
