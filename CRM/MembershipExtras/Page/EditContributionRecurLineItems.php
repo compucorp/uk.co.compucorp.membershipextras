@@ -35,7 +35,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   private function getRecurringContribution() {
     $recurringContributionID = CRM_Utils_Request::retrieveValue('crid', 'Positive', 0);
 
-    return $result = civicrm_api3('ContributionRecur', 'getsingle', [
+    return civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $recurringContributionID,
     ]);
   }
@@ -46,7 +46,9 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return array
    */
   private function getFinancialTypes() {
-    $financialTypes = civicrm_api3('FinancialType', 'get', []);
+    $financialTypes = civicrm_api3('FinancialType', 'get', [
+      'options' => ['limit' => 0],
+    ]);
 
     return $financialTypes['values'];
   }
@@ -55,7 +57,6 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @inheritdoc
    */
   public function run() {
-    // Example: Set the page-title dynamically; alternatively, declare a static title in xml/Menu/*.xml
     CRM_Utils_System::setTitle(E::ts('View/Update Recurring Line Items'));
 
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
