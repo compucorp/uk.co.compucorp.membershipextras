@@ -24,49 +24,7 @@
   </ul>
 
   <div id="current-subtab" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
-    <div class="right">
-      Period Start Date: {$periodStartDate|date_format}
-      &nbsp;&nbsp;&nbsp;
-      Period End Date: {$periodEndDate|date_format}
-    </div>
-    <table class="selector row-highlight">
-      <tbody>
-      <tr class="columnheader">
-        <th scope="col">{ts}Item{/ts}</th>
-        <th scope="col">{ts}Start Date{/ts}</th>
-        <th scope="col">{ts}End Date{/ts}</th>
-        <th scope="col">{ts}Renew Automatically{/ts}</th>
-        <th scope="col">{ts}Financial Type{/ts}</th>
-        <th scope="col">{ts}Tax{/ts}</th>
-        <th scope="col">{ts}Amount{/ts}</th>
-        <th scope="col">&nbsp;</th>
-      </tr>
-      {foreach from=$lineItems item='currentItem'}
-        <tr id="lineitem-{$currentItem.id}" data-action="cancel" class="crm-entity {cycle values="odd-row,even-row"}">
-          <td>{$currentItem.label}</td>
-          <td>{$currentItem.start_date|date_format}</td>
-          <td>{$currentItem.end_date|date_format}</td>
-          <td>{$currentItem.auto_renew}</td>
-          <td>{$currentItem.financial_type}</td>
-          <td>{$currentItem.tax_amount|crmMoney}</td>
-          <td>{$currentItem.line_total|crmMoney}</td>
-          <td>
-            <a class="delete" href="">
-              <span><i class="crm-i fa-trash"></i></span>
-            </a>
-          </td>
-        </tr>
-      {/foreach}
-      </tbody>
-    </table>
-    <div id="current_buttons">
-      <a class="button" href="">
-        <span><i class="crm-i fa-plus"></i>&nbsp; Add Membership</span>
-      </a>
-      <a class="button" href="">
-        <span><i class="crm-i fa-plus"></i>&nbsp; Add Other Amount</span>
-      </a>
-    </div>
+    {include file="CRM/MembershipExtras/Page/CurrentPeriodTab.tpl"}
   </div>
   <div id="next-subtab" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
     [ NEXT PERIOD ]
