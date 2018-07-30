@@ -3,7 +3,7 @@
     <CustomGroups>
         <CustomGroup>
             <name>offline_autorenew_option</name>
-            <title>Offline auto-renew option</title>
+            <title>Offline auto-renew pricing</title>
             <extends>Membership</extends>
             <style>Inline</style>
             <collapse_display>0</collapse_display>
