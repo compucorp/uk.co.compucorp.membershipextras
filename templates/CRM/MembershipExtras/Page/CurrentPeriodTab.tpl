@@ -27,7 +27,7 @@
       <td>{$currentItem.label}</td>
       <td>{$currentItem.start_date|date_format}</td>
       <td>{$currentItem.end_date|date_format}</td>
-      <td>{$currentItem.auto_renew}</td>
+      <td><input type="checkbox" disabled{if $currentItem.auto_renew} checked{/if} /></td>
       <td>{$currentItem.financial_type}</td>
       <td>{$currentItem.tax_amount|crmMoney}</td>
       <td>{$currentItem.line_total|crmMoney}</td>
