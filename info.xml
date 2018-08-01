@@ -14,7 +14,7 @@
   <compatibility>
     <ver>4.7</ver>
   </compatibility>
-  <comments></comments>
+  <comments/>
   <civix>
     <namespace>CRM/MembershipExtras</namespace>
   </civix>
