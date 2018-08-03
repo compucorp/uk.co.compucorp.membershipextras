@@ -20,7 +20,7 @@
     {if $autoRenewEnabled}
     <li id="tab_next" class="crm-tab-button ui-corner-all ui-tabs-tab ui-corner-top ui-state-default ui-tab">
       <a href="#next-subtab" title="{ts}Recurring Contributions{/ts}">
-        {ts}Next Period{/ts}
+        {ts}Next Period (Forecast){/ts}
       </a>
     </li>
     {/if}

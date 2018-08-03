@@ -59,30 +59,48 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   public function run() {
     CRM_Utils_System::setTitle(E::ts('View/Update Recurring Line Items'));
 
+    // Calculate next period start date: start_date + (installments * frequency_interval) frequency_unit
+    $installments = CRM_Utils_Array::value('frequency_interval', $this->contribRecur) * CRM_Utils_Array::value('installments', $this->contribRecur);
+    $nextPeriodStartsIn = $installments . ' ' . CRM_Utils_Array::value('frequency_unit', $this->contribRecur);
+    $nextPeriodStartDate = date('Y-m-d H:i:s', strtotime(
+      CRM_Utils_Array::value('start_date', $this->contribRecur) . ' + ' .  $nextPeriodStartsIn
+    ));
+
+    // Has line should be true if auto_renew is enabled and recurring
+    // contribution has at least one membership
+    $hasAutoRenewEnabled = CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur)) && count($this->getMemberships());
+
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
     $this->assign('lineItems', $this->getLineItems());
+    $this->assign('autoRenewEnabled', $hasAutoRenewEnabled);
+    $this->assign('nextPeriodStartDate', $nextPeriodStartDate);
+    $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => false]));
 
     parent::run();
   }
 
   /**
    * Obtains list of line items for the current recurring contribution.
+   * 
+   * @param array $conditions
    *
    * @return array
    */
-  private function getLineItems() {
+  private function getLineItems($conditions = []) {
     $lineItems = array();
 
-    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
+    $options = array_merge($conditions, [
       'sequential' => 1,
       'contribution_recur_id' => $this->contribRecur['id'],
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
         'entity_id' => ['IS NOT NULL' => 1]
-      ],
+      ]
     ]);
+
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', $options);
 
     if ($result['count'] > 0) {
       foreach ($result['values'] as $lineItemData) {
@@ -95,6 +113,18 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     }
 
     return $lineItems;
+  }
+
+  /**
+   * Gets the memberships associated with the current recurring contribution
+   * 
+   * @return array
+   */
+  private function getMemberships() {
+    return civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->contribRecur['id'],
+    ])['values'];
   }
 
   /**

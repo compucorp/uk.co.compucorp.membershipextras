@@ -1,15 +1,10 @@
 <div class="right">
-  Period Start Date: {$periodStartDate|date_format}
-  &nbsp;&nbsp;&nbsp;
-  Period End Date: {$periodEndDate|date_format}
+  Period Start Date: {$nextPeriodStartDate|date_format}
 </div>
 <table class="selector row-highlight">
   <tbody>
   <tr class="columnheader">
     <th scope="col">{ts}Item{/ts}</th>
-    <th scope="col">{ts}Start Date{/ts}</th>
-    <th scope="col">{ts}End Date{/ts}</th>
-    <th scope="col">{ts}Renew Automatically{/ts}</th>
     <th scope="col">{ts}Financial Type{/ts}</th>
     <th scope="col">{ts}Tax{/ts}</th>
     <th scope="col">{ts}Amount{/ts}</th>
@@ -19,15 +14,12 @@
   {assign var='taxTotal' value=0}
   {assign var='installmentTotal' value=0}
 
-  {foreach from=$lineItems item='currentItem'}
+  {foreach from=$nextPeriodLineItems item='currentItem'}
     {assign var='subTotal' value=$subtotal+$currentItem.line_total}
     {assign var='taxTotal' value=$taxTotal+$currentItem.tax_amount}
 
     <tr id="lineitem-{$currentItem.id}" data-action="cancel" class="crm-entity {cycle values="odd-row,even-row"}">
       <td>{$currentItem.label}</td>
-      <td>{$currentItem.start_date|date_format}</td>
-      <td>{$currentItem.end_date|date_format}</td>
-      <td><input type="checkbox" disabled{if $currentItem.auto_renew} checked{/if} /></td>
       <td>{$currentItem.financial_type}</td>
       <td>{$currentItem.tax_amount|crmMoney}</td>
       <td>{$currentItem.line_total|crmMoney}</td>
