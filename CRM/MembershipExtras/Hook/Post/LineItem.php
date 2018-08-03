@@ -147,7 +147,8 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
       'contribution_recur_id' => $paymentData['contribution_id.contribution_recur_id'],
       'line_item_id' => $lineItemCopy['id'],
       'start_date' => $paymentData['contribution_id.contribution_recur_id.start_date'],
-      'auto_renew' => $paymentData['contribution_id.contribution_recur_id.auto_renew'],
+      'end_date' => $paymentData['contribution_id.contribution_recur_id.end_date'],
+      'auto_renew' => CRM_Utils_String::strtobool($paymentData['contribution_id.contribution_recur_id.auto_renew']),
     ]);
   }
 
