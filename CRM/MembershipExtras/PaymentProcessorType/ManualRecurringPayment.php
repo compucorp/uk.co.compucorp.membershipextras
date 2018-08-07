@@ -37,6 +37,7 @@ class CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment {
       'is_recur' => '1',
       'payment_type' => CRM_Core_Payment::PAYMENT_TYPE_DIRECT_DEBIT,
       'payment_instrument_id' => 'EFT',
+      'user_name_label' => 'User Name',
     ];
 
     $processorType = civicrm_api3('PaymentProcessorType', 'create', $params);

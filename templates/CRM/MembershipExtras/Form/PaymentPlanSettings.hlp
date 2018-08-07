@@ -23,6 +23,7 @@
 {/htxt}
 
 {htxt id="membershipextras_customgroups_to_exclude_for_autorenew"}
-{ts}Custom groups to be excluded (ignored) from copying during the offline auto-renewal scheduled job running{/ts}
+{ts}Information in selected custom groups will not be copied over to any new installments 
+ of an existing payment plan when it auto-renew.{/ts}
 {/htxt}
 
