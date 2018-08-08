@@ -59,16 +59,27 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   public function run() {
     CRM_Utils_System::setTitle(E::ts('View/Update Recurring Line Items'));
 
-    $hasAutoRenewEnabled = CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur)) && count($this->getMemberships());
-
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
     $this->assign('lineItems', $this->getLineItems());
-    $this->assign('autoRenewEnabled', $hasAutoRenewEnabled);
+    $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
-    $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => false]));
+    $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => FALSE]));
 
     parent::run();
+  }
+
+  /**
+   * @return boolean
+   */
+  private function isAutoRenewEnabled() {
+    $isAutoRenew = CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur));
+  
+    if ($isAutoRenew && count($this->getMemberships())) {
+      return TRUE;
+    }
+  
+    return FALSE;
   }
 
   /**
