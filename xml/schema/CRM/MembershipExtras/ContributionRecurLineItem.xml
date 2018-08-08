@@ -74,7 +74,7 @@
 
   <field>
     <name>auto_renew</name>
-    <type>datetime</type>
+    <type>boolean</type>
     <required>false</required>
     <comment>If the line-item should be auto-renewed or not.</comment>
     <add>5.0</add>
