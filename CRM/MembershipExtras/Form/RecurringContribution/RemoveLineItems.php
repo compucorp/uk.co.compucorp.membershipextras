@@ -152,7 +152,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
     civicrm_api3('Membership', 'create', [
       'id' => $this->recurringLineItemData['entity_id'],
       'status_override_end_date' => '',
-      'contribution_recur_id' => 0,
+      'contribution_recur_id' => '',
       'end_date' => $endDate,
     ]);
   }
