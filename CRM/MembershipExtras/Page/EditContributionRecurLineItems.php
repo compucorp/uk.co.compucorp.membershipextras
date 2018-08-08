@@ -59,25 +59,42 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   public function run() {
     CRM_Utils_System::setTitle(E::ts('View/Update Recurring Line Items'));
 
-    // Calculate next period start date: start_date + (installments * frequency_interval) frequency_unit
-    $installments = CRM_Utils_Array::value('frequency_interval', $this->contribRecur) * CRM_Utils_Array::value('installments', $this->contribRecur);
-    $nextPeriodStartsIn = $installments . ' ' . CRM_Utils_Array::value('frequency_unit', $this->contribRecur);
-    $nextPeriodStartDate = date('Y-m-d H:i:s', strtotime(
-      CRM_Utils_Array::value('start_date', $this->contribRecur) . ' + ' .  $nextPeriodStartsIn
-    ));
-
-    // Has line should be true if auto_renew is enabled and recurring
-    // contribution has at least one membership
     $hasAutoRenewEnabled = CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur)) && count($this->getMemberships());
 
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
     $this->assign('lineItems', $this->getLineItems());
     $this->assign('autoRenewEnabled', $hasAutoRenewEnabled);
-    $this->assign('nextPeriodStartDate', $nextPeriodStartDate);
+    $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => false]));
 
     parent::run();
+  }
+
+  /**
+   * Calculates next period's start date
+   * 
+   * @return string
+   */
+  private function calculateNextPeriodStartDate() {
+    $nextPeriodStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
+    $intervalLength = CRM_Utils_Array::value('frequency_interval', $this->contribRecur) * CRM_Utils_Array::value('installments', $this->contribRecur);
+
+    switch (CRM_Utils_Array::value('frequency_unit', $this->contribRecur)) {
+      case 'month':
+        $interval = 'P' . $intervalLength . 'M';
+        break;
+      case 'day':
+        $interval = 'P' . $intervalLength .'D';
+        break;
+      case 'year':
+        $interval = 'P' . $intervalLength .'Y';
+        break;
+    }
+
+    $nextStartDate->add(new DateInterval($interval));
+
+    return $nextStartDate->format('Y-m-d');
   }
 
   /**
