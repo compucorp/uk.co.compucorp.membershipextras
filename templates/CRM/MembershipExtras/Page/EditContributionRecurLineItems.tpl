@@ -16,18 +16,24 @@
         {ts}Current Period{/ts}
       </a>
     </li>
+    {* Render next period button only if contribution has next period *}
+    {if $autoRenewEnabled}
     <li id="tab_next" class="crm-tab-button ui-corner-all ui-tabs-tab ui-corner-top ui-state-default ui-tab">
       <a href="#next-subtab" title="{ts}Recurring Contributions{/ts}">
-        {ts}Next Period{/ts}
+        {ts}Next Period (Forecast){/ts}
       </a>
     </li>
+    {/if}
   </ul>
 
   <div id="current-subtab" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
     {include file="CRM/MembershipExtras/Page/CurrentPeriodTab.tpl"}
   </div>
+  {* Render next period tab only if contribution has next period *}
+  {if $autoRenewEnabled}
   <div id="next-subtab" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
-    [ NEXT PERIOD ]
+    {include file="CRM/MembershipExtras/Page/NextPeriodTab.tpl"}
   </div>
+  {/if}
   <div class="clear"></div>
 </div>
