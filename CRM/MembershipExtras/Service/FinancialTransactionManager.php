@@ -30,10 +30,10 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
    *
    * @param array $lineItemBefore
    */
-  public static function insertFinancialItemOnDeletion($lineItemBefore) {
-    $lineItemAfter = civicrm_api3('LineItem', 'getsingle', array(
+  public static function insertFinancialItemOnLineItemDeletion($lineItemBefore) {
+    $lineItemAfter = civicrm_api3('LineItem', 'getsingle', [
       'id' => $lineItemBefore['id'],
-    ));
+    ]);
 
     $lineItemBefore['tax_amount'] = CRM_Utils_Array::value('tax_amount', $lineItemBefore, 0);
     $lineItemAfter['tax_amount'] = CRM_Utils_Array::value('tax_amount', $lineItemAfter, 0);
@@ -43,7 +43,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
 
     if ($deltaAmount != 0 || $deltaTaxAmount != 0) {
       $previousFinancialItem = CRM_Financial_BAO_FinancialItem::getPreviousFinancialItem($lineItemBefore['id']);
-      $financialItem = array(
+      $financialItem = [
         'transaction_date' => date('YmdHis'),
         'contact_id' => $previousFinancialItem['contact_id'],
         'description' => ($lineItemAfter['qty'] > 1 ? $lineItemAfter['qty'] . ' of ' : '') . $lineItemAfter['label'],
@@ -51,7 +51,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
         'financial_account_id' => $previousFinancialItem['financial_account_id'],
         'entity_id' => $lineItemBefore['id'],
         'entity_table' => 'civicrm_line_item',
-      );
+      ];
 
       self::recordChangeInAmount(
         $lineItemAfter['contribution_id'],
@@ -117,7 +117,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
       $isPayment = FALSE;
     }
 
-    $adjustedTrxnValues = array(
+    $adjustedTrxnValues = [
       'from_financial_account_id' => NULL,
       'to_financial_account_id' => $toFinancialAccount,
       'total_amount' => $amount,
@@ -128,7 +128,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
       'trxn_date' => date('YmdHis'),
       'currency' => $contribution['currency'],
       'is_payment' => $isPayment,
-    );
+    ];
     $adjustedTrxn = CRM_Core_BAO_FinancialTrxn::create($adjustedTrxnValues);
 
     return $adjustedTrxn->id;
@@ -175,7 +175,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
   public static function isMembership($lineItemID) {
     if ($lineItemID) {
       $result = civicrm_api3('LineItem', 'getsingle', [
-        'return' => array('price_field_value_id.membership_type_id'),
+        'return' => ['price_field_value_id.membership_type_id'],
         'id' => $lineItemID,
       ]);
 
@@ -197,7 +197,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
    */
   public static function createDeferredTrxn($contributionID, $lineItem, $context) {
     if (CRM_Contribute_BAO_Contribution::checkContributeSettings('deferred_revenue_enabled')) {
-      $lineItem = array($contributionID => array($lineItem['id'] => $lineItem));
+      $lineItem = [$contributionID => [$lineItem['id'] => $lineItem]];
 
       $contribution = new CRM_Contribute_BAO_Contribution();
       $contribution->id = $contributionID;

@@ -10,7 +10,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
 
   private $recurringContributionID;
   private $lineItemID;
-  private $recurringLineItemData = array();
+  private $recurringLineItemData = [];
 
   /**
    * @inheritdoc
@@ -25,9 +25,9 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * @inheritdoc
    */
   public function setDefaultValues() {
-    return array(
+    return [
       'end_date' => date('Y-m-d')
-    );
+    ];
   }
 
   /**
@@ -57,7 +57,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       return array_merge($lineItemData, $lineDetails);
     }
 
-    return array();
+    return [];
   }
 
   /**
@@ -97,6 +97,8 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * @inheritdoc
    */
   public function postProcess() {
+    $tx = new CRM_Core_Transaction();
+
     try {
       if ($this->isLineItemAMembership()) {
         $this->cancelMembership();
@@ -104,27 +106,27 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
 
       $this->adjustPendingContributions();
       $this->updateRecurringLineItem();
+
+      CRM_Core_Session::setStatus(
+        "{$this->recurringLineItemData['label']} has been removed from the active order.",
+        "Remove {$this->recurringLineItemData['label']}",
+        'success'
+      );
+
+      CRM_Core_Session::setStatus(
+        "{$this->recurringLineItemData['label']} should no longer be continued in the next period.",
+        "Remove {$this->recurringLineItemData['label']}",
+        'success'
+      );
     } catch (Exception $e) {
+      $tx->rollback();
+
       CRM_Core_Session::setStatus(
         "An error ocurred trying to remove {$this->recurringLineItemData['label']} from the current recurring contribution:" . $e->getMessage(),
         "Error Removing {$this->recurringLineItemData['label']}",
         'error'
       );
-
-      return;
     }
-
-    CRM_Core_Session::setStatus(
-      "{$this->recurringLineItemData['label']} has been removed from the active order.",
-      "Remove {$this->recurringLineItemData['label']}",
-      'success'
-    );
-
-    CRM_Core_Session::setStatus(
-      "{$this->recurringLineItemData['label']} should no longer be continued in the next period.",
-      "Remove {$this->recurringLineItemData['label']}",
-      'success'
-    );
   }
 
   /**
@@ -137,25 +139,50 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
   }
 
   /**
-   * Cancels membership identified by entity_id of line item.
+   * Cancels membership identified by entity_id of line item by setting selected
+   * date as the membership's end date.
    */
   private function cancelMembership() {
+    if ($this->getElementValue('adjust_end_date')) {
+      $endDate = $this->getElementValue('end_date');
+    } else {
+      $endDate = date('Y-m-d');
+    }
+
     civicrm_api3('Membership', 'create', [
       'id' => $this->recurringLineItemData['entity_id'],
-      'is_override' => 1,
       'status_override_end_date' => '',
-      'status_id' => 'Cancelled',
       'contribution_recur_id' => 0,
+      'end_date' => $endDate,
     ]);
   }
 
   /**
-   * Makes adjustment for remaining contributions for payment plan, removing
-   * line item and adjustinc amounts.
+   * Makes adjustment for remaining contributions for payment plan, cancelling
+   * line items and adjusting amounts.
    */
   private function adjustPendingContributions() {
     foreach ($this->getPendingContributions() as $contribution) {
-      $this->cancelContributionLineItem($contribution);
+      $lineItemBefore = $this->getCorrespondingContributionLineItem($contribution['id']);
+
+      // change total_price and qty of current line item to 0
+      civicrm_api3('LineItem', 'create', [
+        'id' => $lineItemBefore['id'],
+        'qty' => 0,
+        'participant_count' => 0,
+        'line_total' => 0.00,
+        'tax_amount' => 0.00,
+      ]);
+
+      // calculate balance, tax and paid amount later used to adjust transaction
+      $updatedAmount = CRM_Price_BAO_LineItem::getLineTotal($contribution['id']);
+      $taxAmount = CRM_MembershipExtras_Service_FinancialTransactionManager::calculateTaxAmountTotalFromContributionID($contribution['id']);
+
+      // Record adjusted amount by updating contribution info
+      $this->recordAdjustedAmount($contribution, $updatedAmount, $taxAmount);
+
+      // Record financial item on cancellation of lineitem
+      CRM_MembershipExtras_Service_FinancialTransactionManager::insertFinancialItemOnLineItemDeletion($lineItemBefore);
     }
   }
 
@@ -166,10 +193,17 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * @return array
    */
   private function getPendingContributions() {
+    if ($this->getElementValue('adjust_end_date')) {
+      $endDate = $this->getElementValue('end_date');
+    } else {
+      $endDate = date('Y-m-d');
+    }
+
     $result = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
       'contribution_recur_id' => $this->recurringContributionID,
       'contribution_status_id' => 'Pending',
+      'receive_date' => ['>=' => $endDate],
       'options' => ['limit' => 0],
     ]);
 
@@ -177,36 +211,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       return $result['values'];
     }
 
-    return array();
-  }
-
-  /**
-   * Executes actions on line item to remove it from its contribution and update
-   * its amounts.
-   *
-   * @param $contribution
-   */
-  private function cancelContributionLineItem($contribution) {
-    $lineItemBefore = $this->getCorrespondingContributionLineItem($contribution['id']);
-
-    // change total_price and qty of current line item to 0
-    civicrm_api3('LineItem', 'create', array(
-      'id' => $lineItemBefore['id'],
-      'qty' => 0,
-      'participant_count' => 0,
-      'line_total' => 0.00,
-      'tax_amount' => 0.00,
-    ));
-
-    // calculate balance, tax and paid amount later used to adjust transaction
-    $updatedAmount = CRM_Price_BAO_LineItem::getLineTotal($contribution['id']);
-    $taxAmount = CRM_MembershipExtras_Service_FinancialTransactionManager::calculateTaxAmountTotalFromContributionID($contribution['id']);
-
-    // Record adjusted amount by updating contribution info and create necessary financial trxns
-    $this->recordAdjustedAmount($contribution, $updatedAmount, $taxAmount);
-
-    // Record financial item on cancel of lineitem
-    CRM_MembershipExtras_Service_FinancialTransactionManager::insertFinancialItemOnDeletion($lineItemBefore);
+    return [];
   }
 
   /**
@@ -218,10 +223,10 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * @return array
    */
   private function getCorrespondingContributionLineItem($contributionID) {
-    $lineItem = civicrm_api3('LineItem', 'getsingle', array(
+    $lineItem = civicrm_api3('LineItem', 'getsingle', [
       'contribution_id' => $contributionID,
       'price_field_value_id' => $this->recurringLineItemData['price_field_value_id'],
-    ));
+    ]);
 
     return $lineItem;
   }
