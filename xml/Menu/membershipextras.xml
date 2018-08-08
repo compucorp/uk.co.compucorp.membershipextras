@@ -18,4 +18,10 @@
     <title>EditContributionRecurLineItems</title>
     <access_arguments>edit contributions</access_arguments>
   </item>
+  <item>
+    <path>civicrm/recurring-contribution/remove-lineitems</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems</page_callback>
+    <title>RecurringContribution_RemoveLineItems</title>
+    <access_arguments>edit contributions</access_arguments>
+  </item>
 </menu>

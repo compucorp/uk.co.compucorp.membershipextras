@@ -59,6 +59,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   public function run() {
     CRM_Utils_System::setTitle(E::ts('View/Update Recurring Line Items'));
 
+    $this->assign('recurringContributionID', $this->contribRecur['id']);
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
     $this->assign('lineItems', $this->getLineItems());
