@@ -5,7 +5,7 @@
   CRM.$(function () {
     CRM.$('.remove-line-button').each(function () {
       CRM.$(this).click(function () {
-        var itemID = CRM.$(this).attr('itemid');
+        var itemID = CRM.$(this).data('itemid');
         showLineItemRemovalConfirmation(itemID);
 
         return false;
@@ -75,7 +75,7 @@
       <td>{$currentItem.tax_amount|crmMoney}</td>
       <td>{$currentItem.line_total|crmMoney}</td>
       <td>
-        <a class="remove-line-button" href="#" itemid="{$currentItem.id}">
+        <a class="remove-line-button" href="#" data-itemid="{$currentItem.id}">
           <span><i class="crm-i fa-trash"></i></span>
         </a>
       </td>
