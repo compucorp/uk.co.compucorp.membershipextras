@@ -21,7 +21,7 @@
     <tr id="lineitem-{$currentItem.id}" data-action="cancel" class="crm-entity {cycle values="odd-row,even-row"}">
       <td>{$currentItem.label}</td>
       <td>{$currentItem.financial_type}</td>
-      <td>{$currentItem.tax_amount|crmMoney}</td>
+      <td>{$currentItem.tax_rate}</td>
       <td>{$currentItem.line_total|crmMoney}</td>
       <td>
         <a class="delete" href="">
