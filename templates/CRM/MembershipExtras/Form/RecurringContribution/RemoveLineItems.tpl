@@ -2,13 +2,18 @@
   {literal}
   CRM.$(function () {
     CRM.$('#adjust_end_date').click(function() {
+      console.log(CRM.$('#end_date_container').css('display'));
+      console.log(CRM.$('#end_date_container'));
       if(this.checked) {
-        CRM.$('#end_date').prop('disabled', false);
+        CRM.$('#end_date_container').css('display', 'inline');
       } else {
-        CRM.$('#end_date').prop('disabled', true);
+        CRM.$('#end_date_container').css('display', 'none');
       }
+      console.log(CRM.$('#end_date_container').css('display'));
+      console.log(CRM.$('#end_date_container'));
     });
-    CRM.$('#end_date').prop('disabled', true);
+
+    CRM.$('#end_date_container').css('display', 'none');
   });
   {/literal}
 </script>
@@ -23,11 +28,10 @@
 </p>
 <div class="crm-section">
   <div class="label">{$form.adjust_end_date.label}</div>
-  <div class="content">{$form.adjust_end_date.html}</div>
-  <div class="clear"></div>
-  <div class="label">{$form.end_date.label}</div>
-  <div class="content">{$form.end_date.html}</div>
-  <div class="clear"></div>
+  <div class="content">
+    {$form.adjust_end_date.html}
+    <div id="end_date_container">{$form.end_date.html}</div>
+  </div>
 </div>
 
 <div class="crm-submit-buttons">
