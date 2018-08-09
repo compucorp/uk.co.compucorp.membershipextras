@@ -15,7 +15,7 @@
   {assign var='installmentTotal' value=0}
 
   {foreach from=$nextPeriodLineItems item='currentItem'}
-    {assign var='subTotal' value=$subtotal+$currentItem.line_total}
+    {assign var='subTotal' value=$subTotal+$currentItem.line_total}
     {assign var='taxTotal' value=$taxTotal+$currentItem.tax_amount}
 
     <tr id="lineitem-{$currentItem.id}" data-action="cancel" class="crm-entity {cycle values="odd-row,even-row"}">
