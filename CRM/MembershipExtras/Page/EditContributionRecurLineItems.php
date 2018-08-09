@@ -103,9 +103,9 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
         break;
     }
 
-    $nextStartDate->add(new DateInterval($interval));
+    $nextPeriodStartDate->add(new DateInterval($interval));
 
-    return $nextStartDate->format('Y-m-d');
+    return $nextPeriodStartDate->format('Y-m-d');
   }
 
   /**
