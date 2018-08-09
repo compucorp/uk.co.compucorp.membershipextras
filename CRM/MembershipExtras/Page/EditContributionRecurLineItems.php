@@ -134,9 +134,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     if ($result['count'] > 0) {
       foreach ($result['values'] as $lineItemData) {
         $lineDetails = $lineItemData['api.LineItem.getsingle'];
-        unset($lineItemData['api.LineItem.getsingle']);
-
+        $lineDetails['tax_rate'] = $this->getTaxRateForFinancialType($lineDetails['financial_type_id']);
         $lineDetails['financial_type'] = $this->getFinancialTypeName($lineDetails['financial_type_id']);
+
+        unset($lineItemData['api.LineItem.getsingle']);
         $lineItems[] = array_merge($lineItemData, $lineDetails);
       }
     }
@@ -154,6 +155,20 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       'sequential' => 1,
       'contribution_recur_id' => $this->contribRecur['id'],
     ])['values'];
+  }
+
+  /**
+   * Returns tax rate used for given financial type ID.
+   *
+   * @param $financialTypeID
+   *
+   * @return double
+   */
+  private function getTaxRateForFinancialType($financialTypeID) {
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+    $rate = round(CRM_Utils_Array::value($financialTypeID, $taxRates, 0), 2);
+
+    return $rate;
   }
 
   /**

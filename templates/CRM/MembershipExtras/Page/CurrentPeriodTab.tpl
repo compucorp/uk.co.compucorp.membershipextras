@@ -62,8 +62,9 @@
   {assign var='installmentTotal' value=0}
 
   {foreach from=$lineItems item='currentItem'}
-    {assign var='subTotal' value=$subtotal+$currentItem.line_total}
+    {assign var='subTotal' value=$subTotal+$currentItem.line_total}
     {assign var='taxTotal' value=$taxTotal+$currentItem.tax_amount}
+
     <tr id="lineitem-{$currentItem.id}" data-action="cancel"
         class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
       <td>{$currentItem.label}</td>
@@ -72,7 +73,7 @@
       <td><input type="checkbox"
                  disabled{if $currentItem.auto_renew} checked{/if} /></td>
       <td>{$currentItem.financial_type}</td>
-      <td>{$currentItem.tax_amount|crmMoney}</td>
+      <td>{if $currentItem.tax_rate == 0}N/A{else}{$currentItem.tax_rate}%{/if}</td>
       <td>{$currentItem.line_total|crmMoney}</td>
       <td>
         <a class="remove-line-button" href="#" data-itemid="{$currentItem.id}">
