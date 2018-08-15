@@ -139,6 +139,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
         $lineDetails['tax_rate'] = $this->getTaxRateForFinancialType($lineDetails['financial_type_id']);
         $lineDetails['financial_type'] = $this->getFinancialTypeName($lineDetails['financial_type_id']);
 
+        unset($lineDetails['id']);
         unset($lineItemData['api.LineItem.getsingle']);
         $lineItems[] = array_merge($lineItemData, $lineDetails);
       }
