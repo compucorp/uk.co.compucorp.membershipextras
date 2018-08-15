@@ -13,6 +13,14 @@
     });
   });
 
+  CRM.$('.auto-renew-line-checkbox').change(function() {
+    if (!this.checked) {
+      var itemData = CRM.$(this).closest('tr').data('item-data');
+      console.log(itemData);
+      showNextPeriodLineItemRemovalConfirmation(itemData);
+    }
+  })
+
   function showLineItemRemovalConfirmation(lineItemID) {
     CRM.api3('ContributionRecurLineItem', 'getcount', {
       'contribution_recur_id': recurringContributionID,
@@ -65,13 +73,13 @@
     {assign var='subTotal' value=$subTotal+$currentItem.line_total}
     {assign var='taxTotal' value=$taxTotal+$currentItem.tax_amount}
 
-    <tr id="lineitem-{$currentItem.id}" data-action="cancel"
+    <tr id="lineitem-{$currentItem.id}" data-action="cancel" data-item-data='{$currentItem|@json_encode}'
         class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
       <td>{$currentItem.label}</td>
       <td>{$currentItem.start_date|date_format}</td>
       <td>{$currentItem.end_date|date_format}</td>
       <td><input type="checkbox"
-                 disabled{if $currentItem.auto_renew} checked{/if} /></td>
+            class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} /></td>
       <td>{$currentItem.financial_type}</td>
       <td>{if $currentItem.tax_rate == 0}N/A{else}{$currentItem.tax_rate}%{/if}</td>
       <td>{$currentItem.line_total|crmMoney}</td>
