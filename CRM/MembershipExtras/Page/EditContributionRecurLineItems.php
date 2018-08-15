@@ -67,7 +67,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
-    $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => FALSE]));
+    $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => TRUE]));
 
     parent::run();
   }
