@@ -15,7 +15,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @var array
    */
-  private $financialTypes;
+  private $financialTypes = array();
 
   /**
    * @inheritdoc
@@ -64,15 +64,35 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   }
 
   /**
+   * Returns list of availaable memberhip types to add to the current recurring
+   * contribution.
+   *
+   * @todo FILTER MEMBERSHIP TYPES ACCORDING TO SPECIFICATION!!
+   *
+   * @return array
+   */
+  private function getAvailableMembershipTypes() {
+    $memberhipTypes = civicrm_api3('MembershipType', 'get', [
+      'options' => ['limit' => 0],
+    ]);
+
+    return $memberhipTypes['values'];
+  }
+
+  /**
    * @inheritdoc
    */
   public function run() {
     CRM_Utils_System::setTitle(E::ts('Manage Installments'));
 
+    $this->assign('currentDate', date('Y-m-d'));
+    $this->assign('recurringContribution', $this->contribRecur);
     $this->assign('recurringContributionID', $this->contribRecur['id']);
+    $this->assign('membershipTypes', $this->getAvailableMembershipTypes());
 
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
+    $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate());
     $this->assign('lineItems', $this->getLineItems(['end_date' => ['IS NULL' => 1]]));
 
     $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled());
@@ -93,6 +113,30 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   }
 
   /**
+   * Returns largest end date for memberships associated to recurring
+   * contribution.
+   *
+   * @return string
+   */
+  private function getLargestMembershipEndDate() {
+    $latestDate = null;
+
+    foreach ($this->getMemberships() as $membership) {
+      $membershipDate = new DateTime($membership['end_date']);
+
+      if (!isset($latestDate)) {
+        $latestDate = $membershipDate;
+      } elseif ($latestDate < $membershipDate) {
+        $latestDate = $membershipDate;
+      }
+    }
+
+    return isset($latestDate) ? $latestDate->format('Y-m-d') : date('Y-m-d');
+  }
+
+  /**
+   * Checks if auto-renew is enabled for recurring contribution.
+   *
    * @return boolean
    */
   private function isAutoRenewEnabled() {

@@ -326,3 +326,13 @@ function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$
 function membershipextras_civicrm_entityTypes(&$entityTypes) {
   return _membershipextras_civix_civicrm_entityTypes($entityTypes);
 }
+
+/**
+ * Implements hook_civicrm_pageRun
+ */
+function membershipextras_civicrm_pageRun($page) {
+  if (get_class($page) === 'CRM_MembershipExtras_Page_EditContributionRecurLineItems') {
+    CRM_Core_Resources::singleton()
+      ->addStyleFile(CRM_MembershipExtras_ExtensionUtil::LONG_NAME, 'css/style.css', 1);
+  }
+}
