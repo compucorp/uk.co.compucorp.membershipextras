@@ -2,15 +2,11 @@
   {literal}
   CRM.$(function () {
     CRM.$('#adjust_end_date').click(function() {
-      console.log(CRM.$('#end_date_container').css('display'));
-      console.log(CRM.$('#end_date_container'));
       if(this.checked) {
         CRM.$('#end_date_container').css('display', 'inline');
       } else {
         CRM.$('#end_date_container').css('display', 'none');
       }
-      console.log(CRM.$('#end_date_container').css('display'));
-      console.log(CRM.$('#end_date_container'));
     });
 
     CRM.$('#end_date_container').css('display', 'none');
