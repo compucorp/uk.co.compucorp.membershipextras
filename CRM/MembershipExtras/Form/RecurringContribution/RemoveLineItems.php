@@ -179,7 +179,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       $taxAmount = CRM_MembershipExtras_Service_FinancialTransactionManager::calculateTaxAmountTotalFromContributionID($contribution['id']);
 
       // Record adjusted amount by updating contribution info
-      $this->recordAdjustedAmount($contribution, $updatedAmount, $taxAmount);
+      CRM_MembershipExtras_Service_FinancialTransactionManager::recordAdjustedAmount($contribution, $updatedAmount, $taxAmount);
 
       // Record financial item on cancellation of lineitem
       CRM_MembershipExtras_Service_FinancialTransactionManager::insertFinancialItemOnLineItemDeletion($lineItemBefore);
@@ -229,26 +229,6 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
     ]);
 
     return $lineItem;
-  }
-
-  /**
-   * Stores updated amounts for given contribution.
-   *
-   * @param array $contribution
-   * @param double $updatedAmount
-   * @param double $taxAmount
-   */
-  private function recordAdjustedAmount($contribution, $updatedAmount, $taxAmount = NULL) {
-    $updatedContributionDAO = new CRM_Contribute_BAO_Contribution();
-    $updatedContributionDAO->id = $contribution['id'];
-    $updatedContributionDAO->total_amount = $updatedAmount;
-    $updatedContributionDAO->net_amount = $updatedAmount - CRM_Utils_Array::value('fee_amount', $contribution, 0);
-
-    if ($taxAmount) {
-      $updatedContributionDAO->tax_amount = $taxAmount;
-    }
-
-    $updatedContributionDAO->save();
   }
 
   /**

@@ -18,9 +18,10 @@
 </div>
 
 <p>
-  <i>{$lineItem.label}</i> amount should be deducted from all remaining instalments after
+  <i>{$lineItem.label}</i>
+  {ts}amount should be deducted from all remaining instalments after
   the end date. Please note the changes should take effect immediately after
-  "Apply".
+  "Apply".{/ts}
 </p>
 <div class="crm-section">
   <div class="label">{$form.adjust_end_date.label}</div>

@@ -1,0 +1,14 @@
+.crm-container a:hover .crm-i.fa-check,
+.crm-container a:hover .crm-i.fa-times {
+  color: #8A1F11;
+}
+
+.crm-container a.disabled-click,
+.crm-container a.button.clickable.disabled-click {
+  pointer-events: none;
+  color: #ddd;
+}
+
+tr.disabled-row {
+  color: #ddd;
+}

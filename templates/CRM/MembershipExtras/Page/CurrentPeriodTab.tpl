@@ -36,7 +36,7 @@
       this.newMembershipRow = CRM.$('#new_membership_line_item', this.currentTab);
       this.newMembershipTypeField = CRM.$('#newline_membership_type', this.newMembershipRow);
       this.newMembershipStartDateField = CRM.$('#newline_start_date', this.newMembershipRow);
-      this.newMembershipEndDateField = CRM.$('#newline_membership_type', this.newMembershipRow);
+      this.newMembershipEndDateField = CRM.$('#newline_end_date', this.newMembershipRow);
       this.newMembershipAutoRenewField = CRM.$('#newline_auto_renew', this.newMembershipRow);
       this.newMembershipAmountField = CRM.$('#newline_amount', this.newMembershipRow);
 
@@ -81,6 +81,8 @@
 
       CRM.$('#apply_add_membership_btn', this.currentTab).click(function () {
         that.showMembershipLineItemAddConfirmation();
+
+        return false;
       });
     }
 

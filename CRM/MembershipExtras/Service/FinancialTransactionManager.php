@@ -25,6 +25,94 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
   }
 
   /**
+   * Stores updated amounts for given contribution.
+   *
+   * @param array $contribution
+   * @param double $updatedAmount
+   * @param double $taxAmount
+   */
+  public static function recordAdjustedAmount($contribution, $updatedAmount, $taxAmount = NULL) {
+    $updatedContributionDAO = new CRM_Contribute_BAO_Contribution();
+    $updatedContributionDAO->id = $contribution['id'];
+    $updatedContributionDAO->total_amount = $updatedAmount;
+    $updatedContributionDAO->net_amount = $updatedAmount - CRM_Utils_Array::value('fee_amount', $contribution, 0);
+
+    if ($taxAmount) {
+      $updatedContributionDAO->tax_amount = $taxAmount;
+    }
+
+    $updatedContributionDAO->save();
+  }
+
+  /**
+   * Creates financial transaction records for the addition of the given line
+   * item to its contribution.
+   *
+   * @param array $lineItem
+   */
+  public static function insertFinancialItemOnLineItemAddition($lineItem) {
+    $contribution = civicrm_api3('Contribution', 'getsingle', [
+      'id' => $lineItem['contribution_id']
+    ]);
+
+    $trxnId = ['id' => self::createFinancialTrxnEntry($contribution['id'], $lineItem['line_total'])];
+    $accountRelName = self::getFinancialAccountRelationship($contribution['id'], $lineItem['id']);
+    $revenueFinancialAccountID = CRM_Contribute_PseudoConstant::getRelationalFinancialAccount(
+      $lineItem['financial_type_id'],
+      $accountRelName
+    );
+
+    $newFinancialItem = array(
+      'transaction_date' => date('YmdHis'),
+      'contact_id' => $contribution['contact_id'],
+      'description' => ($lineItem['qty'] != 1 ? $lineItem['qty'] . ' of ' : '') . $lineItem['label'],
+      'amount' => $lineItem['line_total'],
+      'currency' => $contribution['currency'],
+      'financial_account_id' => $revenueFinancialAccountID,
+      'status_id' => array_search('Unpaid', CRM_Core_PseudoConstant::get('CRM_Financial_DAO_FinancialItem', 'status_id')),
+      'entity_table' => 'civicrm_line_item',
+      'entity_id' => $lineItem['id'],
+    );
+
+    // create financial item for added line item
+    $newFinancialItemDAO = CRM_Financial_BAO_FinancialItem::create($newFinancialItem, NULL, $trxnId);
+    if (!empty($lineItem['tax_amount']) && $lineItem['tax_amount'] != 0) {
+      $taxTerm = CRM_Utils_Array::value('tax_term', Civi::settings()->get('contribution_invoice_settings'));
+      $taxFinancialItemInfo = array_merge($newFinancialItem, array(
+        'amount' => $lineItem['tax_amount'],
+        'description' => $taxTerm,
+        'financial_account_id' => self::getTaxFinancialAccountId($lineItem['financial_type_id']),
+      ));
+      // create financial item for tax amount related to added line item
+      CRM_Financial_BAO_FinancialItem::create($taxFinancialItemInfo, NULL, $trxnId);
+    }
+
+    $lineItem['financial_item_id'] = $newFinancialItemDAO->id;
+    self::createDeferredTrxn($contribution['id'], $lineItem, 'addLineItem');
+  }
+
+  /**
+   * Get financial account id has 'Sales Tax Account is' account relationship
+   * with financial type.
+   *
+   * @param int $financialTypeId
+   *
+   * @return mixed
+   */
+  public static function getTaxFinancialAccountId($financialTypeId) {
+    $accountRel = key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' "));
+    $searchParams = array(
+      'entity_table' => 'civicrm_financial_type',
+      'entity_id' => $financialTypeId,
+      'account_relationship' => $accountRel,
+    );
+    $result = array();
+    CRM_Financial_BAO_FinancialTypeAccount::retrieve($searchParams, $result);
+
+    return CRM_Utils_Array::value('financial_account_id', $result);
+  }
+
+  /**
    * Inserts financial item to reflect change done on contribution on line item
    * deletion.
    *
@@ -63,7 +151,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
   }
 
   /**
-   * Stores financial transaction entry detailing a change in cmount to a
+   * Stores financial transaction entry detailing a change in amount to a
    * contribution.
    *
    * @param int $contributionId
