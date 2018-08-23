@@ -64,19 +64,66 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   }
 
   /**
-   * Returns list of availaable memberhip types to add to the current recurring
+   * Returns list of available membership types to add to the current recurring
    * contribution.
-   *
-   * @todo FILTER MEMBERSHIP TYPES ACCORDING TO SPECIFICATION!!
    *
    * @return array
    */
-  private function getAvailableMembershipTypes() {
+  private function getAvailableMembershipTypes($currentLineItems) {
     $memberhipTypes = civicrm_api3('MembershipType', 'get', [
       'options' => ['limit' => 0],
+    ])['values'];
+
+    $allowedTypes = [];
+    foreach ($memberhipTypes as $type) {
+      if ($this->isAllowedMembershipType($type, $currentLineItems)) {
+        $allowedTypes[] = $type;
+      }
+    }
+
+    return $allowedTypes;
+  }
+
+  /**
+   * Checks if given membership type's organization is already in a membership
+   * associated with the recurring contribution.
+   *
+   * @param $membershipType
+   * @param $currentLineItems
+   *
+   * @return bool
+   */
+  private function isAllowedMembershipType($membershipType, $currentLineItems) {
+    foreach ($currentLineItems as $lineItem) {
+      if ($lineItem['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      $lineItemMembershipType = $this->getMembershipTypeFromMembershipID($lineItem['entity_id']);
+      if ($membershipType['member_of_contact_id'] == $lineItemMembershipType['member_of_contact_id']) {
+        return FALSE;
+      }
+    }
+
+    return TRUE;
+  }
+
+  /**
+   * Obtains membership type data for the given membership ID.
+   *
+   * @param $membershipID
+   *
+   * @return array
+   */
+  private function getMembershipTypeFromMembershipID($membershipID) {
+    $result = civicrm_api3('Membership', 'getsingle', [
+      'id' => $membershipID,
+      'api.MembershipType.getsingle' => [
+        'id' => '$value.membership_type_id',
+      ],
     ]);
 
-    return $memberhipTypes['values'];
+    return $result['api.MembershipType.getsingle'];
   }
 
   /**
@@ -88,12 +135,14 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('currentDate', date('Y-m-d'));
     $this->assign('recurringContribution', $this->contribRecur);
     $this->assign('recurringContributionID', $this->contribRecur['id']);
-    $this->assign('membershipTypes', $this->getAvailableMembershipTypes());
 
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate());
-    $this->assign('lineItems', $this->getLineItems(['end_date' => ['IS NULL' => 1]]));
+
+    $currentPeriodLineItems = $this->getLineItems(['end_date' => ['IS NULL' => 1]]);
+    $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
+    $this->assign('lineItems', $currentPeriodLineItems);
 
     $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());

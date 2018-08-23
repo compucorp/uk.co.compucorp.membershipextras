@@ -222,15 +222,20 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $lineItemPostHook = new CRM_MembershipExtras_Hook_Post_LineItem($op, $objectId, $objectRef);
     $lineItemPostHook->postProcess();
   }
+
+  if ($objectName == 'MembershipPayment') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef);
+    $membershipPaymentPostHook->postProcess();
+  }
 }
 
 /**
  * Implements hook_civicrm_postProcess()
  */
 function membershipextras_civicrm_postProcess($formName, &$form) {
-
   $isAddAction = $form->getAction() & CRM_Core_Action::ADD;
   $isRenewAction = $form->getAction() & CRM_Core_Action::RENEW;
+
   if (
     ($formName === 'CRM_Member_Form_Membership' && $isAddAction)
     ||
