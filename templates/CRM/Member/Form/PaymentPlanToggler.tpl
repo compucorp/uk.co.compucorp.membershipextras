@@ -3,7 +3,10 @@
   var membershipextras_allMembershipData = {$allMembershipInfo};
   var membershipextras_taxRatesStr = '{$taxRates}';
   var membershipextras_taxTerm = '{$taxTerm}';
-  var membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
+  if (membershipextras_taxRatesStr != '') {
+    var membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
+  }
+
   var membershipextras_currency = '{$currency}';
 
   {literal}
