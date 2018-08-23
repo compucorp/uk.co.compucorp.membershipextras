@@ -123,7 +123,7 @@
             membership_type_id: that.newMembershipTypeField.val(),
             start_date: that.newMembershipStartDateField.val(),
             end_date: that.newMembershipEndDateField.val(),
-            auto_renew: that.newMembershipAutoRenewField.val(),
+            auto_renew: that.newMembershipAutoRenewField.prop('checked') === true ? 1 : 0,
             amount: that.newMembershipAmountField.val()
           }
         });

@@ -60,7 +60,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
    * value.
    */
   private function recalculateLineItemsAmounts() {
-    foreach ($this->params['lineItems'] as $types) {
+    foreach (CRM_Utils_Array::value('lineItems', $this->params, []) as $types) {
       foreach ($types as &$line) {
         $total = $line['line_total'] + $line['tax_amount'];
         $line['tax_amount'] = round(($total * ($line['tax_rate'] / 100)) / (1 + ($line['tax_rate'] / 100)), 2);

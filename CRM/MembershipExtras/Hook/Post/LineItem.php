@@ -137,6 +137,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
    */
   private function createLineItemForRecurringContribution() {
     $lineItemCopyParams = $this->lineItem->toArray();
+
     unset($lineItemCopyParams['id']);
     unset($lineItemCopyParams['contribution_id']);
 
