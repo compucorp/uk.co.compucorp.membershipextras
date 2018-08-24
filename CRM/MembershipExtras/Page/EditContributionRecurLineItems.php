@@ -78,9 +78,18 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
+    $this->assign('currencySymbol', $this->getCurrencySymbol());
     $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => TRUE]));
 
     parent::run();
+  }
+
+  /**
+   * @return string
+   */
+  private function getCurrencySymbol() {
+    $config = CRM_Core_Config::singleton();
+    return CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
   }
 
   /**

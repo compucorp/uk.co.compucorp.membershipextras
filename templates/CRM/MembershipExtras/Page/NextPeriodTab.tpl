@@ -76,54 +76,7 @@ var disableClicks = false;
         }
       }
 
-      CRM.confirm({
-        title: 'Add ' + label + '?',
-        message: 'Please note the changes should take effect immediately after "Apply".',
-        options: {
-          no: 'Cancel',
-          yes: 'Apply'
-        }
-      }).on('crmConfirm:yes', function() {
-        var financialType = getFinancialType(financial_type_id),
-            taxAmount = financialType.tax_rate * amount;
-
-        CRM.api3('LineItem', 'create', {
-          label: label,
-          entity_id: recurringContributionID,
-          qty: 1.0,
-          unit_price: amount,
-          line_total: amount,
-          tax_amount: taxAmount,
-          financial_type_id: financial_type_id,
-          entity_table: 'civicrm_contribution_recur',
-        }).done(function(lineItemResult) {
-          if (lineItemResult.is_error) {
-            CRM.alert(lineItemResult.error_message, null, 'error');
-            return;
-          }
-
-          var createdLineItemId = lineItemResult.id;
-          CRM.api3('ContributionRecurLineItem', 'create', {
-            contribution_recur_id: recurringContributionID,
-            line_item_id: createdLineItemId,
-            auto_renew: true,
-          }).done(function(result) {
-            if (result.is_error) {
-              CRM.alert(result.error_message, null, 'error');
-              return;
-            }
-
-            CRM.alert(
-              label + ' will now be continued in the next period.',
-              null,
-              'success'
-            );
-            CRM.refreshParent('#periodsContainer');
-          });
-        });
-      }).on('crmConfirm:no', function() {
-        return;
-      })
+      showAddOtherAmountConfirmation(label, amount, financial_type_id)
       
     });
   });
@@ -187,6 +140,57 @@ var disableClicks = false;
       return;
     });
   }
+
+  function showAddOtherAmountConfirmation(label, amount, financial_type_id) {
+    CRM.confirm({
+        title: 'Add ' + label + '?',
+        message: 'Please note the changes should take effect immediately after "Apply".',
+        options: {
+          no: 'Cancel',
+          yes: 'Apply'
+        }
+      }).on('crmConfirm:yes', function() {
+        var financialType = getFinancialType(financial_type_id),
+            taxAmount = financialType.tax_rate * amount;
+
+        CRM.api3('LineItem', 'create', {
+          label: label,
+          entity_id: recurringContributionID,
+          qty: 1.0,
+          unit_price: amount,
+          line_total: amount,
+          tax_amount: taxAmount,
+          financial_type_id: financial_type_id,
+          entity_table: 'civicrm_contribution_recur',
+        }).done(function(lineItemResult) {
+          if (lineItemResult.is_error) {
+            CRM.alert(lineItemResult.error_message, null, 'error');
+            return;
+          }
+
+          var createdLineItemId = lineItemResult.id;
+          CRM.api3('ContributionRecurLineItem', 'create', {
+            contribution_recur_id: recurringContributionID,
+            line_item_id: createdLineItemId,
+            auto_renew: true,
+          }).done(function(result) {
+            if (result.is_error) {
+              CRM.alert(result.error_message, null, 'error');
+              return;
+            }
+
+            CRM.alert(
+              label + ' will now be continued in the next period.',
+              null,
+              'success'
+            );
+            CRM.refreshParent('#periodsContainer');
+          });
+        });
+      }).on('crmConfirm:no', function() {
+        return;
+      });
+  }
 {/literal}
 </script>
 <div class="right">
@@ -237,7 +241,7 @@ var disableClicks = false;
     </td>
     <td id="financialTypeTaxRate">{if !empty($financialTypes[0].tax_rate)}{$financialTypes[0].tax_rate}{else}N/A{/if}</td>
     <td>
-      <input type="text" class="four crm-form-text" size="4" id="amount" />
+      {$currencySymbol}&nbsp; <input type="text" class="four crm-form-text" size="4" id="amount" />
     </td>
     <td>
       <a href="#" class="cancel-add-next-period-line-button">
