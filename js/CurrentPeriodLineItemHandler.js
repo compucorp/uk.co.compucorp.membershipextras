@@ -72,6 +72,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       that.newMembershipRow.css('display', 'table-row');
       CRM.$('.clickable').addClass('disabled-click');
       CRM.$('.rc-line-item').addClass('disabled-row');
+      CRM.$('.auto-renew-line-checkbox').attr('disabled', true);
 
       return false;
     });
@@ -80,6 +81,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       that.newMembershipRow.css('display', 'none');
       CRM.$('.clickable').removeClass('disabled-click');
       CRM.$('.rc-line-item').removeClass('disabled-row');
+      CRM.$('.auto-renew-line-checkbox').attr('disabled', false);
 
       return false;
     });
@@ -329,5 +331,3 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
   return CurrentPeriodLineItemHandler;
 })(CRM.$);
-
-

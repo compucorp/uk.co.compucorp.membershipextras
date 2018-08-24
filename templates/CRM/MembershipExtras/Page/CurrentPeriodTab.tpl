@@ -1,13 +1,10 @@
 <script>
-  var recurringContributionID = {$recurringContributionID};
-
   {literal}
   CRM.$(function () {
-    var formHandler = new CRM.RecurringContribution.CurrentPeriodLineItemHandler(recurringContributionID);
+    var formHandler = new CRM.RecurringContribution.CurrentPeriodLineItemHandler(CRM.$('#recurringContributionID').val());
     formHandler.initializeForm(CRM.$('#current-subtab'));
     formHandler.addEventHandlers();
   });
-
   {/literal}
 </script>
 <div id="confirmLineItemDeletion" style="display: none;"></div>
@@ -18,6 +15,7 @@
   Period End Date: {$periodEndDate|date_format}
 </div>
 <form>
+  <input name="recurringContributionID" id="recurringContributionID" value="{$recurringContributionID}" type="hidden" />
   <table class="selector row-highlight">
     <tbody>
     <tr class="columnheader">
