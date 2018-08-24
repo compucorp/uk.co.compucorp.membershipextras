@@ -19,6 +19,7 @@
       this.newMembershipEndDateField = null;
       this.newMembershipAutoRenewField = null;
       this.newMembershipAmountField = null;
+      this.clickedRow = false;
 
       this.membershipTypes = {};
       this.recurringContribution = {};
@@ -34,6 +35,7 @@
     CurrentPeriodLineItemHandler.prototype.initializeForm = function (currentTab) {
       this.currentTab = currentTab;
       this.newMembershipRow = CRM.$('#new_membership_line_item', this.currentTab);
+      this.newMembershipRowBGColor = this.newMembershipRow.css('backgroundColor');
       this.newMembershipTypeField = CRM.$('#newline_membership_type', this.newMembershipRow);
       this.newMembershipStartDateField = CRM.$('#newline_start_date', this.newMembershipRow);
       this.newMembershipEndDateField = CRM.$('#newline_end_date', this.newMembershipRow);
@@ -74,16 +76,72 @@
         return false;
       });
 
+      CRM.$(window).click(function () {
+        if (!that.clickedRow) {
+          var originalBg = that.newMembershipRowBGColor;
+          that.newMembershipRow
+            .stop()
+            .css('background-color', '#AAA')
+            .animate({backgroundColor: originalBg}, 1000);
+        }
+
+        that.clickedRow = false;
+      });
+
+      this.newMembershipRow.click(function (event) {
+        that.clickedRow = true;
+      });
+
       this.newMembershipTypeField.change(function () {
         var membershipTypeID = CRM.$(this).val();
         that.loadMembershipTypeData(membershipTypeID);
       });
 
       CRM.$('#apply_add_membership_btn', this.currentTab).click(function () {
-        that.showMembershipLineItemAddConfirmation();
+        if (that.validateNewMembership()) {
+          that.showMembershipLineItemAddConfirmation();
+        }
 
         return false;
       });
+    }
+
+    /**
+     * Validates new membership line item.
+     */
+    CurrentPeriodLineItemHandler.prototype.validateNewMembership = function () {
+      var errors = '';
+
+      if (!this.newMembershipTypeField.val().length) {
+        this.newMembershipTypeField.addClass('required');
+        errors += '<li>Membership type is required.</li>';
+      }
+
+      if (!this.newMembershipStartDateField.val().length) {
+        this.newMembershipStartDateField.addClass('required');
+        errors += '<li>Start date is required.</li>';
+      }
+
+      if (!this.newMembershipEndDateField.val().length) {
+        this.newMembershipEndDateField.addClass('required');
+        errors += '<li>End date is required.</li>';
+      }
+
+      if (!this.newMembershipAmountField.val().length) {
+        this.newMembershipAmountField.addClass('required');
+        errors += '<li>Amount is required.</li>';
+      } else if (isNaN(this.newMembershipAmountField.val())) {
+        this.newMembershipAmountField.addClass('required');
+        errors += '<li>Amount must be a valid number.</li>';
+      }
+
+      if (errors.length > 0) {
+        CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error');
+
+        return false;
+      }
+
+      return true;
     }
 
     /**
@@ -287,9 +345,9 @@
   &nbsp;&nbsp;&nbsp;
   Period End Date: {$periodEndDate|date_format}
 </div>
-
-<table class="selector row-highlight">
-  <tbody>
+<form>
+  <table class="selector row-highlight">
+    <tbody>
     <tr class="columnheader">
       <th scope="col">{ts}Item{/ts}</th>
       <th scope="col">{ts}Start Date{/ts}</th>
@@ -357,8 +415,9 @@
         </a>
       </td>
     </tr>
-  </tbody>
-</table>
+    </tbody>
+  </table>
+</form>
 
 <div>
   <a class="button clickable" href="" id="add_membership_btn">

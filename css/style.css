@@ -12,3 +12,7 @@
 tr.disabled-row {
   color: #ddd;
 }
+
+.required {
+  border: 2px solid #900;
+}
