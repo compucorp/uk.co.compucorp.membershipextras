@@ -28,6 +28,6 @@
     <path>civicrm/recurring-contribution/add-membership-lineitem</path>
     <page_callback>CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem</page_callback>
     <title>RecurringContribution_AddMembershipLineItem</title>
-    <access_arguments>access CiviCRM</access_arguments>
+    <access_arguments>edit contributions,edit memberships</access_arguments>
   </item>
 </menu>
