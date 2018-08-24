@@ -1,21 +1,138 @@
 <script>
 var recurringContributionID = {$recurringContributionID};
+var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
+var disableClicks = false;
 
 {literal}
   CRM.$(function () {
+
     CRM.$('.remove-next-period-line-button').each(function () {
       CRM.$(this).click(function (e) {
         e.preventDefault();
+        
+        if(!disableClicks) {
+          var itemData = CRM.$(this).closest('tr').data('item-data');
+          showNextPeriodLineItemRemovalConfirmation(itemData);
 
-        var itemData = CRM.$(this).closest('tr').data('item-data');
-        showNextPeriodLineItemRemovalConfirmation(itemData);
-
-        CRM.$('#periodsContainer').on('crmLoad', function(event, data) {
-          CRM.$('#tab_next a').click();
-        });
+          CRM.$('#periodsContainer').on('crmLoad', function(event, data) {
+            CRM.$('#tab_next a').click();
+          });
+        }
       });
     });
+
+    CRM.$('#next_buttons #addOtherAmount').on('click', function(e) {
+      e.preventDefault();
+
+      if (!disableClicks) {
+        CRM.$('#addLineItemRow').show();
+        CRM.$('#periodsContainer').find('*').not(CRM.$('#addLineItemRow').find('*')).css('cursor', 'not-allowed');
+        CRM.$('#addLineItemRow').css('cursor', 'auto');
+        CRM.$('#addLineItemRow').css('opacity', 1);
+
+        disableClicks = true;
+      }
+    });
+
+    CRM.$('.cancel-add-next-period-line-button').on('click', function(e) {
+      e.preventDefault();
+
+      CRM.$('#addLineItemRow').hide();
+      CRM.$('#periodsContainer').find('*').css('cursor', 'auto');
+    });
+
+    CRM.$('#financialType').on('change', function() {
+      var selectedId = CRM.$(this).val();
+      var financialType = getFinancialType(selectedId);
+
+      if (!financialType) {
+        throw new Error('Invalid financial type id passed');
+      }
+      
+      CRM.$('#financialTypeTaxRate').text(financialType.tax_rate || 'N/A');
+    });
+
+    CRM.$('.confirm-add-next-period-line-button').on('click', function(e) {
+      e.preventDefault();
+      
+      var label = CRM.$('#item').val(),
+          amount = CRM.$('#amount').val(),
+          financial_type_id = CRM.$('#financialType').val();
+
+      if (!label.length) {
+        CRM.alert('Item label is required', null, 'error');
+        return;
+      }
+
+      if (!amount.length) {
+        CRM.alert('Item amount is required', null, 'error');
+        return;
+      } else {
+        try {
+          amount = parseInt(amount);
+        } catch(error) {
+          CRM.alert('Amount you entered is not valid', null, 'error');
+          return;
+        }
+      }
+
+      CRM.confirm({
+        title: 'Add ' + label + '?',
+        message: 'Please note the changes should take effect immediately after "Apply".',
+        options: {
+          no: 'Cancel',
+          yes: 'Apply'
+        }
+      }).on('crmConfirm:yes', function() {
+        var financialType = getFinancialType(financial_type_id),
+            taxAmount = financialType.tax_rate * amount;
+
+        CRM.api3('LineItem', 'create', {
+          label: label,
+          entity_id: recurringContributionID,
+          qty: 1.0,
+          unit_price: amount,
+          line_total: amount,
+          tax_amount: taxAmount,
+          financial_type_id: financial_type_id,
+          entity_table: 'civicrm_contribution_recur',
+        }).done(function(lineItemResult) {
+          if (lineItemResult.is_error) {
+            CRM.alert(lineItemResult.error_message, null, 'error');
+            return;
+          }
+
+          var createdLineItemId = lineItemResult.id;
+          CRM.api3('ContributionRecurLineItem', 'create', {
+            contribution_recur_id: recurringContributionID,
+            line_item_id: createdLineItemId,
+            auto_renew: true,
+          }).done(function(result) {
+            if (result.is_error) {
+              CRM.alert(result.error_message, null, 'error');
+              return;
+            }
+
+            CRM.alert(
+              label + ' will now be continued in the next period.',
+              null,
+              'success'
+            );
+            CRM.refreshParent('#periodsContainer');
+          });
+        });
+      }).on('crmConfirm:no', function() {
+        return;
+      })
+      
+    });
   });
+
+  function getFinancialType(id) {
+    return financialTypes.filter(function(financialType) {
+      return financialType.id === id;
+    })[0];
+  }
 
   function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
     CRM.confirm({
@@ -75,7 +192,7 @@ var recurringContributionID = {$recurringContributionID};
 <div class="right">
   Period Start Date: {$nextPeriodStartDate|date_format}
 </div>
-<table class="selector row-highlight">
+<table class="selector row-highlight" id="nextPeriodLineItems">
   <tbody>
   <tr class="columnheader">
     <th scope="col">{ts}Item{/ts}</th>
@@ -100,22 +217,46 @@ var recurringContributionID = {$recurringContributionID};
       <td>{if !empty($currentItem.tax_rate)}{$currentItem.tax_rate}{else}N/A{/if}</td>
       <td>{$currentItem.line_total|crmMoney}</td>
       <td>
-        <a class="remove-next-period-line-button" href="#">
+        <a class="remove-next-period-line-button">
           <span><i class="crm-i fa-trash"></i></span>
         </a>
       </td>
     </tr>
   {/foreach}
   {assign var='installmentTotal' value=$subTotal+$taxTotal}
+  <tr id="addLineItemRow" style="display: none">
+    <td>
+      <input type="text" class="crm-form-text" id="item" />
+    </td>
+    <td>
+      <select class="crm-form-select" name="financial_type_id" id="financialType">
+        {foreach from=$financialTypes item='financialType'}
+        <option value={$financialType.id}>{$financialType.name}</option>
+        {/foreach}
+      </select>
+    </td>
+    <td id="financialTypeTaxRate">{if !empty($financialTypes[0].tax_rate)}{$financialTypes[0].tax_rate}{else}N/A{/if}</td>
+    <td>
+      <input type="text" class="four crm-form-text" size="4" id="amount" />
+    </td>
+    <td>
+      <a href="#" class="cancel-add-next-period-line-button">
+        <span><i class="crm-i fa-times crm-i-red"></i></span>
+      </a>
+      <a href="#" class="confirm-add-next-period-line-button">
+        <span><i class="crm-i fa-check crm-i-green"></i></span>
+      </a>
+    </td>
+  </tr>
   </tbody>
 </table>
-<div id="current_buttons">
-  <a class="button" href="">
+<div id="next_buttons">
+  <button class="crm-button" id="addMembership">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Membership</span>
-  </a>
-  <a class="button" href="">
+  </button>
+  <button class="crm-button" id="addOtherAmount">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Other Amount</span>
-  </a>
+  </button>
 </div>
 <div class="clear"></div>
 <div class="right">
