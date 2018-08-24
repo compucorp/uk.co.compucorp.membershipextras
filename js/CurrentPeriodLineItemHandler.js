@@ -51,6 +51,14 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
   CurrentPeriodLineItemHandler.prototype.addEventHandlers = function () {
     var that = this;
 
+    CRM.$('.auto-renew-line-checkbox', this.currentTab).change(function() {
+      if (!this.checked) {
+        var itemData = CRM.$(this).closest('tr').data('item-data');
+        console.log(itemData);
+        showNextPeriodLineItemRemovalConfirmation(itemData);
+      }
+    })
+
     CRM.$('.remove-line-button', this.currentTab).each(function () {
       CRM.$(this).click(function () {
         var itemID = CRM.$(this).data('itemid');

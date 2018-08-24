@@ -223,8 +223,16 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * @return array
    */
   private function getCorrespondingContributionLineItem($contributionID) {
+    $entityID = $this->recurringLineItemData['entity_table'] == 'civicrm_contribution' ?
+      $contributionID : $this->recurringLineItemData['entity_id']
+    ;
+
     $lineItem = civicrm_api3('LineItem', 'getsingle', [
+      'sequential' => 1,
+      'entity_table' => $this->recurringLineItemData['entity_table'],
       'contribution_id' => $contributionID,
+      'entity_id' => $entityID,
+      'price_field_id' => $this->recurringLineItemData['price_field_id'],
       'price_field_value_id' => $this->recurringLineItemData['price_field_value_id'],
     ]);
 

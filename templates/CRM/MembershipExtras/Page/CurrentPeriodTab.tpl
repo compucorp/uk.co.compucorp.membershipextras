@@ -6,14 +6,6 @@
     var formHandler = new CRM.RecurringContribution.CurrentPeriodLineItemHandler(recurringContributionID);
     formHandler.initializeForm(CRM.$('#current-subtab'));
     formHandler.addEventHandlers();
-
-    CRM.$('.auto-renew-line-checkbox').change(function() {
-      if (!this.checked) {
-        var itemData = CRM.$(this).closest('tr').data('item-data');
-        console.log(itemData);
-        showNextPeriodLineItemRemovalConfirmation(itemData);
-      }
-    })
   });
 
   {/literal}
@@ -55,7 +47,7 @@
         <td>{if $currentItem.tax_rate == 0}N/A{else}{$currentItem.tax_rate}%{/if}</td>
         <td>{$currentItem.line_total|crmMoney}</td>
         <td>
-          <a class="remove-line-button clickable" href="" data-itemid="{$currentItem.id}">
+          <a class="remove-line-button clickable" href="" data-itemid="{$currentItem.line_item_id}">
             <span><i class="crm-i fa-trash" title="Remove line item..."></i></span>
           </a>
         </td>
