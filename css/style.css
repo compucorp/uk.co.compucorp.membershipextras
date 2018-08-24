@@ -13,6 +13,7 @@ tr.disabled-row {
   color: #ddd;
 }
 
-.required {
-  border: 2px solid #900;
+input.required,
+#newline_membership_type.required {
+  border: 2px solid #900 !important;
 }

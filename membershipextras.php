@@ -337,7 +337,17 @@ function membershipextras_civicrm_entityTypes(&$entityTypes) {
  */
 function membershipextras_civicrm_pageRun($page) {
   if (get_class($page) === 'CRM_MembershipExtras_Page_EditContributionRecurLineItems') {
-    CRM_Core_Resources::singleton()
-      ->addStyleFile(CRM_MembershipExtras_ExtensionUtil::LONG_NAME, 'css/style.css', 1);
+    CRM_Core_Resources::singleton()->addStyleFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'css/style.css',
+      1
+    );
+
+    CRM_Core_Resources::singleton()->addScriptFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'js/CurrentPeriodLineItemHandler.js',
+      5,
+      'html-header'
+    );
   }
 }
