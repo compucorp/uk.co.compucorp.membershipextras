@@ -1,7 +1,6 @@
 <script>
 var recurringContributionID = {$recurringContributionID};
 var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
-var disableClicks = false;
 
 {literal}
   CRM.$(function () {
@@ -9,36 +8,27 @@ var disableClicks = false;
     CRM.$('.remove-next-period-line-button').each(function () {
       CRM.$(this).click(function (e) {
         e.preventDefault();
-        
-        if(!disableClicks) {
-          var itemData = CRM.$(this).closest('tr').data('item-data');
-          showNextPeriodLineItemRemovalConfirmation(itemData);
+        var itemData = CRM.$(this).closest('tr').data('item-data');
+        showNextPeriodLineItemRemovalConfirmation(itemData);
 
-          CRM.$('#periodsContainer').on('crmLoad', function(event, data) {
-            CRM.$('#tab_next a').click();
-          });
-        }
+        CRM.$('#periodsContainer').on('crmLoad', function(event, data) {
+          CRM.$('#tab_next a').click();
+        });
       });
     });
 
     CRM.$('#next_buttons #addOtherAmount').on('click', function(e) {
       e.preventDefault();
-
-      if (!disableClicks) {
-        CRM.$('#addLineItemRow').show();
-        CRM.$('#periodsContainer').find('*').not(CRM.$('#addLineItemRow').find('*')).css('cursor', 'not-allowed');
-        CRM.$('#addLineItemRow').css('cursor', 'auto');
-        CRM.$('#addLineItemRow').css('opacity', 1);
-
-        disableClicks = true;
-      }
+      CRM.$('#addLineItemRow').show();
+      CRM.$('#periodsContainer').find('tr').not(CRM.$('#addLineItemRow')).addClass('disabled-row');
+      CRM.$('#periodsContainer').find('a').not(CRM.$('#addLineItemRow').find('a')).addClass('disabled-click');
     });
 
     CRM.$('.cancel-add-next-period-line-button').on('click', function(e) {
       e.preventDefault();
-
       CRM.$('#addLineItemRow').hide();
-      CRM.$('#periodsContainer').find('*').css('cursor', 'auto');
+      CRM.$('#periodsContainer').find('tr').removeClass('disabled-row');
+      CRM.$('#periodsContainer').find('a').removeClass('disabled-click');
     });
 
     CRM.$('#financialType').on('change', function() {
@@ -61,23 +51,25 @@ var disableClicks = false;
 
       if (!label.length) {
         CRM.alert('Item label is required', null, 'error');
+        
         return;
       }
 
       if (!amount.length) {
         CRM.alert('Item amount is required', null, 'error');
+
         return;
       } else {
         try {
           amount = parseInt(amount);
         } catch(error) {
           CRM.alert('Amount you entered is not valid', null, 'error');
+
           return;
         }
       }
 
       showAddOtherAmountConfirmation(label, amount, financial_type_id)
-      
     });
   });
 
@@ -103,6 +95,7 @@ var disableClicks = false;
         
         if (lineRemovalRes.is_error) {
           CRM.alert('Cannot remove the last item in an order!', null, 'error');
+
           return;
         }
 
@@ -114,6 +107,7 @@ var disableClicks = false;
             
             if (membershipUnlinkRes.is_error) {
               CRM.alert('Cannot unlink the associated membership', null, 'alert');
+
               return;
             }
             
@@ -123,6 +117,7 @@ var disableClicks = false;
               null,
               'success'
             );
+
             return;
           });
         } else {
@@ -132,6 +127,7 @@ var disableClicks = false;
             null,
             'success'
           );
+
           return;
         }
 
@@ -165,6 +161,7 @@ var disableClicks = false;
         }).done(function(lineItemResult) {
           if (lineItemResult.is_error) {
             CRM.alert(lineItemResult.error_message, null, 'error');
+
             return;
           }
 
@@ -176,6 +173,7 @@ var disableClicks = false;
           }).done(function(result) {
             if (result.is_error) {
               CRM.alert(result.error_message, null, 'error');
+
               return;
             }
 
@@ -193,6 +191,31 @@ var disableClicks = false;
   }
 {/literal}
 </script>
+<style>
+  {literal}
+    .crm-container a:hover .crm-i.fa-check,
+    .crm-container a:hover .crm-i.fa-times,
+    .crm-container a:hover .crm-i.fa-trash {
+      color: #8A1F11;
+      cursor: pointer;
+    }
+
+    .crm-container a.disabled-click,
+    .crm-container a.button.clickable.disabled-click {
+      pointer-events: none;
+      color: #ddd;
+    }
+
+    tr.disabled-row {
+      color: #ddd;
+    }
+
+    input.required,
+    #newline_membership_type.required {
+      border: 2px solid #900 !important;
+    }
+  {/literal}
+</style>
 <div class="right">
   Period Start Date: {$nextPeriodStartDate|date_format}
 </div>
