@@ -67,7 +67,8 @@ var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
         }
       }
 
-      showAddOtherAmountConfirmation(label, amount, financial_type_id)
+      showAddOtherAmountConfirmation(label, amount, financial_type_id);
+      window.CompucorpMembershipExtras_selectedTab = 'next';
     });
   });
 
