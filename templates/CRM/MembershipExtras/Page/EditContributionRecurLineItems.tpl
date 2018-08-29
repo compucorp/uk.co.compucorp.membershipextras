@@ -1,6 +1,7 @@
 <div id="periodsContainer" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
   <script type="text/javascript">
-    var selectedTab  = 'current';
+    var selectedTab  = window.CompucorpMembershipExtras_selectedTab || 'current';
+    window.CompucorpMembershipExtras_selectedTab = 'current';
     {literal}
     CRM.$(function($) {
       var tabIndex = $('#tab_' + selectedTab).prevAll().length;
@@ -11,7 +12,7 @@
   </script>
 
   <ul class="ui-tabs-nav ui-corner-all ui-helper-reset ui-helper-clearfix ui-widget-header">
-    <li id="tab_current" class="crm-tab-button ui-corner-all ui-tabs-tab ui-corner-top ui-state-default ui-tab ui-tabs-active ui-state-active">
+    <li id="tab_current" class="crm-tab-button ui-corner-all ui-tabs-tab ui-corner-top ui-state-default ui-tab">
       <a href="#current-subtab" title="{ts}Contributions{/ts}">
         {ts}Current Period{/ts}
       </a>
