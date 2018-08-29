@@ -11,9 +11,7 @@ var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
         var itemData = CRM.$(this).closest('tr').data('item-data');
         showNextPeriodLineItemRemovalConfirmation(itemData);
 
-        CRM.$('#periodsContainer').on('crmLoad', function(event, data) {
-          CRM.$('#tab_next a').click();
-        });
+        window.CompucorpMembershipExtras_selectedTab = 'next';
       });
     });
 
