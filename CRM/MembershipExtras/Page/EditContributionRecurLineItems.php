@@ -46,11 +46,21 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return array
    */
   private function getFinancialTypes() {
-    $financialTypes = civicrm_api3('FinancialType', 'get', [
+    $financialTypes = array();
+
+    $result = civicrm_api3('FinancialType', 'get', [
       'options' => ['limit' => 0],
     ]);
 
-    return $financialTypes['values'];
+    if ($result['count'] > 0) {
+      foreach ($result['values'] as $financialType) {
+        $financialTypes[] = array_merge($financialType, array(
+          'tax_rate' => $this->getTaxRateForFinancialType($financialType['id']),
+        ));
+      }
+    }
+
+    return $financialTypes;
   }
 
   /**
@@ -67,9 +77,19 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
+    $this->assign('financialTypes', $this->financialTypes);
+    $this->assign('currencySymbol', $this->getCurrencySymbol());
     $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => TRUE]));
 
     parent::run();
+  }
+
+  /**
+   * @return string
+   */
+  private function getCurrencySymbol() {
+    $config = CRM_Core_Config::singleton();
+    return CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
   }
 
   /**
@@ -182,8 +202,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return string
    */
   private function getFinancialTypeName($id) {
-    if (in_array($id, array_keys($this->financialTypes))) {
-      return $this->financialTypes[$id]['name'];
+    foreach ($this->financialTypes as $financialType) {
+      if ($financialType['id'] === $id) {
+        return $financialType['name'];
+      }
     }
 
     return '';
