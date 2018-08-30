@@ -1,6 +1,7 @@
 <div id="periodsContainer" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
   <script type="text/javascript">
-    var selectedTab  = 'current';
+    var selectedTab  = window.CompucorpMembershipExtras_selectedTab || 'current';
+    window.CompucorpMembershipExtras_selectedTab = 'current';
     {literal}
     CRM.$(function($) {
       var tabIndex = $('#tab_' + selectedTab).prevAll().length;
