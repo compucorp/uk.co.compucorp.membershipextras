@@ -65,6 +65,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
 
     $this->add('checkbox', 'adjust_first_amount', ts('Adjust the amount of the first instalment?'), [], FALSE);
     $this->addMoney('first_installment_amount', ts('First Installment Amount'), FALSE, [], FALSE);
+    $this->assign('newLineItem', $this->lineItemParams);
 
     $this->addButtons([
       [

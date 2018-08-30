@@ -19,7 +19,7 @@
 </div>
 
 <p>
-  {ts}Please note the changes should take effect immediately after "Apply".{/ts}
+  {ts}Please note the new line will be added to all pending instalments starting from {$newLineItem.start_date|date_format} immediately after clicking "Apply".{/ts}
 </p>
 <div class="crm-section">
   <div>

@@ -138,9 +138,9 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
-    $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate());
 
     $currentPeriodLineItems = $this->getLineItems(['end_date' => ['IS NULL' => 1]]);
+    $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
     $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
     $this->assign('lineItems', $currentPeriodLineItems);
 
@@ -165,12 +165,19 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * Returns largest end date for memberships associated to recurring
    * contribution.
    *
+   * @param $lineItems
+   *
    * @return string
    */
-  private function getLargestMembershipEndDate() {
+  private function getLargestMembershipEndDate($lineItems) {
     $latestDate = null;
 
-    foreach ($this->getMemberships() as $membership) {
+    foreach ($lineItems as $line) {
+      if ($line['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      $membership = $this->getMembership($line['entity_id']);
       $membershipDate = new DateTime($membership['end_date']);
 
       if (!isset($latestDate)) {
@@ -180,7 +187,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       }
     }
 
-    return isset($latestDate) ? $latestDate->format('Y-m-d') : date('Y-m-d');
+    return isset($latestDate) ? $latestDate->format('Y-m-d') : '';
   }
 
   /**
@@ -191,7 +198,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   private function isAutoRenewEnabled() {
     $isAutoRenew = CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur));
   
-    if ($isAutoRenew && count($this->getMemberships())) {
+    if ($isAutoRenew && count($this->getMembership())) {
       return TRUE;
     }
   
@@ -262,15 +269,23 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   }
 
   /**
-   * Gets the memberships associated with the current recurring contribution
-   * 
+   * Gets the memberships identified by givenn ID.
+   *
+   * @param $membershipID
+   *
    * @return array
    */
-  private function getMemberships() {
-    return civicrm_api3('Membership', 'get', [
+  private function getMembership($membershipID) {
+    if (empty($membershipID)) {
+      return [];
+    }
+
+    $membership = civicrm_api3('Membership', 'getsingle', [
       'sequential' => 1,
-      'contribution_recur_id' => $this->contribRecur['id'],
-    ])['values'];
+      'id' => $membershipID,
+    ]);
+
+    return $membership;
   }
 
   /**
