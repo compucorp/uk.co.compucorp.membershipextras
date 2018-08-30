@@ -222,15 +222,20 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $lineItemPostHook = new CRM_MembershipExtras_Hook_Post_LineItem($op, $objectId, $objectRef);
     $lineItemPostHook->postProcess();
   }
+
+  if ($objectName == 'MembershipPayment') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef);
+    $membershipPaymentPostHook->postProcess();
+  }
 }
 
 /**
  * Implements hook_civicrm_postProcess()
  */
 function membershipextras_civicrm_postProcess($formName, &$form) {
-
   $isAddAction = $form->getAction() & CRM_Core_Action::ADD;
   $isRenewAction = $form->getAction() & CRM_Core_Action::RENEW;
+
   if (
     ($formName === 'CRM_Member_Form_Membership' && $isAddAction)
     ||
@@ -325,4 +330,24 @@ function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$
  */
 function membershipextras_civicrm_entityTypes(&$entityTypes) {
   return _membershipextras_civix_civicrm_entityTypes($entityTypes);
+}
+
+/**
+ * Implements hook_civicrm_pageRun
+ */
+function membershipextras_civicrm_pageRun($page) {
+  if (get_class($page) === 'CRM_MembershipExtras_Page_EditContributionRecurLineItems') {
+    CRM_Core_Resources::singleton()->addStyleFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'css/style.css',
+      1
+    );
+
+    CRM_Core_Resources::singleton()->addScriptFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'js/CurrentPeriodLineItemHandler.js',
+      1,
+      'page-header'
+    );
+  }
 }
