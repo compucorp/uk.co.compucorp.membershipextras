@@ -144,7 +144,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
     $this->assign('lineItems', $currentPeriodLineItems);
 
-    $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled());
+    $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled($currentPeriodLineItems));
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
     $this->assign('currencySymbol', $this->getCurrencySymbol());
@@ -198,7 +198,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   private function isAutoRenewEnabled() {
     $isAutoRenew = CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur));
   
-    if ($isAutoRenew && count($this->getMembership())) {
+    if ($isAutoRenew && count($this->getMemberships())) {
       return TRUE;
     }
   
@@ -286,6 +286,18 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     ]);
 
     return $membership;
+  }
+
+  /**
+   * Gets the memberships associated with the current recurring contribution
+   *
+   * @return array
+   */
+  private function getMemberships() {
+    return civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->contribRecur['id'],
+    ])['values'];
   }
 
   /**
