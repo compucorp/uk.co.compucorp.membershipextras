@@ -1,9 +1,16 @@
 <div id="periodsContainer" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
   <script type="text/javascript">
-    var selectedTab  = window.CompucorpMembershipExtras_selectedTab || 'current';
-    window.CompucorpMembershipExtras_selectedTab = 'current';
     {literal}
+    var selectedTab = CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab') || 'current';
     CRM.$(function($) {
+      $('#tab_current').click(function () {
+        window.CompucorpMembershipExtras_selectedTab = 'current';
+      });
+
+      $('#tab_next').click(function () {
+        window.CompucorpMembershipExtras_selectedTab = 'next';
+      });
+
       var tabIndex = $('#tab_' + selectedTab).prevAll().length;
       $("#periodsContainer").tabs({active: tabIndex});
       $(".crm-tab-button").addClass("ui-corner-bottom");

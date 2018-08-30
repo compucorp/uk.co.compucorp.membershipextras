@@ -11,7 +11,7 @@ var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
         var itemData = CRM.$(this).closest('tr').data('item-data');
         showNextPeriodLineItemRemovalConfirmation(itemData);
 
-        window.CompucorpMembershipExtras_selectedTab = 'next';
+        CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab', 'next');
       });
     });
 
@@ -68,7 +68,7 @@ var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
       }
 
       showAddOtherAmountConfirmation(label, amount, financial_type_id);
-      window.CompucorpMembershipExtras_selectedTab = 'next';
+      CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab', 'next');
     });
   });
 
