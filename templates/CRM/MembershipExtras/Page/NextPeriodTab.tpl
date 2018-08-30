@@ -11,9 +11,7 @@ var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
         var itemData = CRM.$(this).closest('tr').data('item-data');
         showNextPeriodLineItemRemovalConfirmation(itemData);
 
-        CRM.$('#periodsContainer').on('crmLoad', function(event, data) {
-          CRM.$('#tab_next a').click();
-        });
+        CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab', 'next');
       });
     });
 
@@ -69,7 +67,8 @@ var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
         }
       }
 
-      showAddOtherAmountConfirmation(label, amount, financial_type_id)
+      showAddOtherAmountConfirmation(label, amount, financial_type_id);
+      CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab', 'next');
     });
   });
 
