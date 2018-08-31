@@ -179,15 +179,4 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     return TRUE;
   }
 
-  /**
-   * Renames membershipextras_contribution_recur_line_item table to membershipextras_subscription_line;.
-   *
-   * @return bool
-   */
-  public function upgrade_0002() {
-    $this->executeSqlFile('sql/rename_table_and_add_field.sql');
-
-    return TRUE;
-  }
-
 }
