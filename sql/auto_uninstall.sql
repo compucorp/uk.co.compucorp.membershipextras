@@ -15,9 +15,9 @@ DROP TABLE IF EXISTS `civicrm_value_line_item_ext_id`;
 -- * and line items
 -- *******************************************************/
 DELETE FROM civicrm_line_item WHERE `id` IN (
-  SELECT membershipextras_contribrecur_lineitem.line_item_id
-  FROM membershipextras_contribrecur_lineitem
+  SELECT membershipextras_subscription_line.line_item_id
+  FROM membershipextras_subscription_line
 );
-DROP TABLE IF EXISTS `membershipextras_contribrecur_lineitem`;
+DROP TABLE IF EXISTS `membershipextras_subscription_line`;
 
 SET FOREIGN_KEY_CHECKS=1;
