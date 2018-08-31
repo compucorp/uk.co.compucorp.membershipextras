@@ -269,10 +269,10 @@ function _membershipextras_civix_civicrm_managed(&$entities) {
       if (empty($e['module'])) {
         $e['module'] = E::LONG_NAME;
       }
+      $entities[] = $e;
       if (empty($e['params']['version'])) {
         $e['params']['version'] = '3';
       }
-      $entities[] = $e;
     }
   }
 }
@@ -460,7 +460,7 @@ function _membershipextras_civix_civicrm_entityTypes(&$entityTypes) {
     array (
       'name' => 'ContributionRecurLineItem',
       'class' => 'CRM_MembershipExtras_DAO_ContributionRecurLineItem',
-      'table' => 'membershipextras_contribrecur_lineitem',
+      'table' => 'membershipextras_subscription_line',
     ),
   ));
 }
