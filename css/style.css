@@ -19,6 +19,6 @@ input.required,
   border: 2px solid #900 !important;
 }
 
-#newline_amount, #newline_item {
+#newline_amount, #newline_item, #newline_donation_amount, #newline_donation_item {
   width: 50%;
 }
