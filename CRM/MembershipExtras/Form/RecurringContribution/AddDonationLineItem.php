@@ -9,45 +9,58 @@ use CRM_MembershipExtras_ExtensionUtil as E;
  */
 class CRM_MembershipExtras_Form_RecurringContribution_AddDonationLineItem extends CRM_MembershipExtras_Form_RecurringContribution_AddLineItem {
 
+  /**
+   * @inheritdoc
+   */
   public function preProcess() {
     parent::preProcess();
   }
 
+  /**
+   * @inheritdoc
+   */
   public function buildQuickForm() {
     CRM_Utils_System::setTitle(E::ts('Add %1', ['1' => $this->lineItemParams['item']]) . '?');
 
     parent::buildQuickForm();
   }
 
-  public function postProcess() {
-    $tx = new CRM_Core_Transaction();
+  /**
+   * @inheritdoc
+   */
+  protected function processLineItemAddition() {
+    $recurringLineItem = $this->createRecurringLineItem();
+    $this->addLineItemToPendingContributions($recurringLineItem);
+  }
 
-    try {
-      $recurringLineItem = $this->createRecurringLineItem();
-      $this->addLineItemToPendingContributions($recurringLineItem);
+  /**
+   * @inheritdoc
+   */
+  protected function showOnSuccessNotifications() {
+    CRM_Core_Session::setStatus(
+      "{$this->lineItemParams['item']} has been added to the active order.",
+      "Add {$this->lineItemParams['item']}",
+      'success'
+    );
 
+    if ($this->lineItemParams['auto_renew']) {
       CRM_Core_Session::setStatus(
-        "{$this->membershipType['name']} has been added to the active order.",
-        "Add {$this->membershipType['name']}",
+        "{$this->lineItemParams['item']} will now be continued in the next period.",
+        "Add {$this->lineItemParams['item']}",
         'success'
       );
-
-      if ($this->lineItemParams['auto_renew']) {
-        CRM_Core_Session::setStatus(
-          "{$this->membershipType['name']} will now be continued in the next period.",
-          "Add {$this->membershipType['name']}",
-          'success'
-        );
-      }
-    } catch (Exception $e) {
-      $tx->rollback();
-
-      CRM_Core_Session::setStatus(
-        "An error ocurred trying to add {$this->membershipType['name']} to the current recurring contribution: " . $e->getMessage(),
-        "Error Adding {$this->membershipType['name']}",
-        'error'
-      );
     }
+  }
+
+  /**
+   * @inheritdoc
+   */
+  protected function showErrorNotification(Exception $e) {
+    CRM_Core_Session::setStatus(
+      "An error ocurred trying to add {$this->lineItemParams['item']} to the current recurring contribution: " . $e->getMessage(),
+      "Error Adding {$this->lineItemParams['item']}",
+      'error'
+    );
   }
 
   /**

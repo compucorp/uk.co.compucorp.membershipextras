@@ -49,42 +49,46 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   /**
    * @inheritdoc
    */
-  public function postProcess() {
-    $tx = new CRM_Core_Transaction();
+  protected function processLineItemAddition() {
+    if (!$this->membershipExists()) {
+      $membership = $this->createMembership();
+    } else {
+      $membership = $this->updateMembership();
+    }
 
-    try {
-      if (!$this->membershipExists()) {
-        $membership = $this->createMembership();
-      } else {
-        $membership = $this->updateMembership();
-      }
+    $recurringLineItem = $this->createRecurringLineItem($membership);
 
-      $recurringLineItem = $this->createRecurringLineItem($membership);
+    $this->addLineItemToPendingContributions($recurringLineItem);
+  }
 
-      $this->addLineItemToPendingContributions($recurringLineItem);
+  /**
+   * @inheritdoc
+   */
+  protected function showOnSuccessNotifications() {
+    CRM_Core_Session::setStatus(
+      "{$this->membershipType['name']} has been added to the active order.",
+      "Add {$this->membershipType['name']}",
+      'success'
+    );
 
+    if ($this->lineItemParams['auto_renew']) {
       CRM_Core_Session::setStatus(
-        "{$this->membershipType['name']} has been added to the active order.",
+        "{$this->membershipType['name']} will now be continued in the next period.",
         "Add {$this->membershipType['name']}",
         'success'
       );
-
-      if ($this->lineItemParams['auto_renew']) {
-        CRM_Core_Session::setStatus(
-          "{$this->membershipType['name']} will now be continued in the next period.",
-          "Add {$this->membershipType['name']}",
-          'success'
-        );
-      }
-    } catch (Exception $e) {
-      $tx->rollback();
-
-      CRM_Core_Session::setStatus(
-        "An error ocurred trying to add {$this->membershipType['name']} to the current recurring contribution: " . $e->getMessage(),
-        "Error Adding {$this->membershipType['name']}",
-        'error'
-      );
     }
+  }
+
+  /**
+   * @inheritdoc
+   */
+  protected function showErrorNotification(Exception $e) {
+    CRM_Core_Session::setStatus(
+      "An error ocurred trying to add {$this->membershipType['name']} to the current recurring contribution: " . $e->getMessage(),
+      "Error Adding {$this->membershipType['name']}",
+      'error'
+    );
   }
 
   /**
@@ -187,6 +191,15 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
     return array_shift($result['values']);
   }
 
+  /**
+   * Searches for membership type in contact's active memberships.
+   *
+   * @param $contactID
+   * @param $membershipTypeID
+   * @param bool $getCount
+   *
+   * @return array|int
+   */
   private function getMembershipForContact($contactID, $membershipTypeID, $getCount = false) {
     $action = $getCount ? 'getcount' : 'get';
 

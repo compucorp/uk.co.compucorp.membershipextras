@@ -6,25 +6,6 @@
 class CRM_MembershipExtras_Service_FinancialTransactionManager {
 
   /**
-   * Returns formatted amount for tax of a given contribution by calculating the
-   * sum for tax for each line item in that contribution.
-   *
-   * @param int $contributionID
-   *
-   * @return string
-   */
-  public static function calculateTaxAmountTotalFromContributionID($contributionID) {
-    $taxAmount = CRM_Core_DAO::singleValueQuery("
-      SELECT SUM(COALESCE(tax_amount,0)) 
-      FROM civicrm_line_item 
-      WHERE contribution_id = $contributionID 
-      AND qty > 0 
-    ");
-
-    return CRM_Utils_Money::format($taxAmount, NULL, NULL, TRUE);
-  }
-
-  /**
    * Stores updated amounts for given contribution.
    *
    * @param array $contribution

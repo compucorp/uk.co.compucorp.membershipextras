@@ -16,6 +16,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     this.clickedRow = false;
 
     this.newMembershipRow = null;
+    this.newMembershipRowBGColor = null;
     this.newMembershipTypeField = null;
     this.newMembershipStartDateField = null;
     this.newMembershipEndDateField = null;
