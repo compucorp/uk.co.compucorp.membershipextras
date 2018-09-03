@@ -43,7 +43,7 @@
         <td><input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} /></td>
         <td>{$currentItem.financial_type}</td>
         <td>{if $currentItem.tax_rate == 0}N/A{else}{$currentItem.tax_rate}%{/if}</td>
-        <td>{$currentItem.line_total|crmMoney}</td>
+        <td nowrap>{$currentItem.line_total|crmMoney}</td>
         <td>
           <a class="remove-line-button clickable" href="" data-itemid="{$currentItem.line_item_id}">
             <span><i class="crm-i fa-trash" title="Remove line item..."></i></span>
@@ -75,12 +75,46 @@
       </td>
       <td id="newline_financial_type"> - </td>
       <td id="newline_tax_rate" nowrap> - </td>
-      <td><input name="newline_amount" id="newline_amount"/></td>
+      <td><input name="newline_amount" id="newline_amount" class="crm-form-text"/></td>
       <td nowrap>
         <a class="line-apply-btn" href="" id="apply_add_membership_btn">
           <span><i class="crm-i fa-check" title="Add line item..."></i>&nbsp;</span>
         </a>
         <a class="line-apply-btn" href="" id="cancel_add_membership_btn">
+          <span><i class="crm-i fa-times" title="Cancel"></i></span>
+        </a>
+      </td>
+    </tr>
+    <tr id="new_donation_line_item" class="crm-entity rc-new-line-item {cycle values="odd-row,even-row"}">
+      <td>
+        <input name="newline_donation_item" id="newline_donation_item" class="crm-form-text"/>
+      </td>
+      <td nowrap>
+        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false{rdelim}" aria-label="Start Date" name="newline_donation_start_date" type="text" value="{$currentDate}" id="newline_donation_start_date" class="crm-form-text crm-hidden-date">
+      </td>
+      <td nowrap>
+        N/A
+      </td>
+      <td>
+        {if $recurringContribution.auto_renew}
+          <input name="newline_donation_auto_renew" id="newline_donation_auto_renew" type="checkbox" checked />
+        {/if}&nbsp;
+      </td>
+      <td>
+        <select class="crm-form-select" name="newline_donation_financial_type_id" id="newline_donation_financial_type_id">
+          <option value="">- {ts}select{/ts} -</option>
+          {foreach from=$financialTypes item='financialType'}
+            <option value={$financialType.id}>{$financialType.name}</option>
+          {/foreach}
+        </select>
+      </td>
+      <td id="newline_donation_tax_rate" nowrap> - </td>
+      <td><input name="newline_donation_amount" id="newline_donation_amount" class="crm-form-text"/></td>
+      <td nowrap>
+        <a class="line-apply-btn" href="" id="apply_add_donation_btn">
+          <span><i class="crm-i fa-check" title="Add line item..."></i>&nbsp;</span>
+        </a>
+        <a class="line-apply-btn" href="" id="cancel_add_donation_btn">
           <span><i class="crm-i fa-times" title="Cancel"></i></span>
         </a>
       </td>
@@ -93,7 +127,7 @@
   <a class="button clickable" href="" id="add_membership_btn">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Membership</span>
   </a>
-  <a class="button clickable" href="">
+  <a class="button clickable" href="" id="add_other_btn">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Other Amount</span>
   </a>
 </div>

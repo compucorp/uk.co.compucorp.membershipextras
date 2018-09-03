@@ -6,33 +6,22 @@ use CRM_MembershipExtras_ExtensionUtil as E;
  * Form controller class to confirm addition of a new membership as a line item
  * in a recurring contribution.
  */
-class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem extends CRM_Core_Form {
+class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem extends CRM_MembershipExtras_Form_RecurringContribution_AddLineItem {
 
-  private $recurringContribution;
-  private $lineItemParams;
+  /**
+   * Data for the membership type to be used to create the new line item.
+   *
+   * @var array
+   */
   private $membershipType;
 
   /**
    * @inheritdoc
    */
   public function preProcess() {
-    $recurringContributionID = CRM_Utils_Request::retrieve('contribution_recur_id', 'Text', $this);
-    $this->recurringContribution = $this->getRecurringContribution($recurringContributionID);
-    $this->lineItemParams = CRM_Utils_Request::retrieve('line_item', 'Text', $this);
-    $this->membershipType = $this->getMembershipType($this->lineItemParams['membership_type_id']);
-  }
+    parent::preProcess();
 
-  /**
-   * Returns information for the recurring contribution identified by $id.
-   *
-   * @param int $id
-   *
-   * @return array
-   */
-  private function getRecurringContribution($id) {
-    return civicrm_api3('ContributionRecur', 'getsingle', [
-      'id' => $id
-    ]);
+    $this->membershipType = $this->getMembershipType($this->lineItemParams['membership_type_id']);
   }
 
   /**
@@ -51,34 +40,10 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   /**
    * @inheritdoc
    */
-  public function setDefaultValues() {
-    return [
-      'first_installment_amount' => $this->lineItemParams['amount']
-    ];
-  }
-
-  /**
-   * @inheritdoc
-   */
   public function buildQuickForm() {
     CRM_Utils_System::setTitle(E::ts('Add %1', ['1' => $this->membershipType['name']]) . '?');
 
-    $this->add('checkbox', 'adjust_first_amount', ts('Adjust the amount of the first instalment?'), [], FALSE);
-    $this->addMoney('first_installment_amount', ts('First Installment Amount'), FALSE, [], FALSE);
-    $this->assign('newLineItem', $this->lineItemParams);
-
-    $this->addButtons([
-      [
-        'type' => 'submit',
-        'name' => E::ts('Apply'),
-        'isDefault' => TRUE,
-      ],
-      [
-        'type' => 'cancel',
-        'name' => E::ts('Cancel'),
-        'isDefault' => FALSE,
-      ],
-    ]);
+    parent::buildQuickForm();
   }
 
   /**
@@ -96,7 +61,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
 
       $recurringLineItem = $this->createRecurringLineItem($membership);
 
-      $this->addLineItemToPendingContributions($membership, $recurringLineItem);
+      $this->addLineItemToPendingContributions($recurringLineItem);
 
       CRM_Core_Session::setStatus(
         "{$this->membershipType['name']} has been added to the active order.",
@@ -123,60 +88,13 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   }
 
   /**
-   * Adds new line item to pending contributions and updates their amounts,
-   * recording appropriate financial transactions.
-   *
-   * @param $membership
-   * @param $recurringLineItem
-   */
-  private function addLineItemToPendingContributions($membership, $recurringLineItem) {
-    $firstContribution = TRUE;
-
-    foreach ($this->getPendingContributions() as $contribution) {
-      $lineItemParams = $recurringLineItem;
-      $lineItemParams['contribution_id'] = $contribution['id'];
-      unset($lineItemParams['id']);
-
-      if ($firstContribution && $this->getElementValue('adjust_first_amount')) {
-        $firstAmountTotal = $this->getElementValue('first_installment_amount');
-        $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-        $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
-
-        $lineItemParams['tax_amount'] = round(($firstAmountTotal * ($rate / 100)) / (1 + ($rate / 100)), 2);
-        $lineItemParams['unit_price'] = round($firstAmountTotal - $lineItemParams['tax_amount'], 2);
-        $lineItemParams['line_total'] = $lineItemParams['unit_price'];
-
-        $firstContribution = FALSE;
-      }
-
-      $existingLineItem = $this->findExistingLineItemForContribution($lineItemParams);
-      if (CRM_Utils_Array::value('id', $existingLineItem, FALSE)) {
-        $lineItemParams['id'] = $existingLineItem['id'];
-      }
-
-      $lineItemCreateResult = civicrm_api3('LineItem', 'create', $lineItemParams);
-      $lineItem = array_shift($lineItemCreateResult['values']);
-
-      // calculate balance, tax and paid amount later used to adjust transaction
-      $updatedAmount = CRM_Price_BAO_LineItem::getLineTotal($contribution['id']);
-      $taxAmount = CRM_MembershipExtras_Service_FinancialTransactionManager::calculateTaxAmountTotalFromContributionID($contribution['id']);
-
-      // Record adjusted amount by updating contribution info
-      CRM_MembershipExtras_Service_FinancialTransactionManager::recordAdjustedAmount($contribution, $updatedAmount, $taxAmount);
-
-      // Record financial item on adding of line item
-      CRM_MembershipExtras_Service_FinancialTransactionManager::insertFinancialItemOnLineItemAddition($lineItem);
-    }
-  }
-
-  /**
    * Checks if line item exists for the contribution and returns it.
    *
    * @param $lineItemParams
    *
    * @return array
    */
-  private function findExistingLineItemForContribution($lineItemParams) {
+  protected function findExistingLineItemForContribution($lineItemParams) {
     $result = civicrm_api3('LineItem', 'get', [
       'sequential' => 1,
       'entity_table' => $lineItemParams['entity_table'],
@@ -195,35 +113,13 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   }
 
   /**
-   * Returns an array with the information of pending recurring contributions
-   * after selected start date.
-   *
-   * @return array
-   */
-  private function getPendingContributions() {
-    $result = civicrm_api3('Contribution', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $this->recurringContribution['id'],
-      'contribution_status_id' => 'Pending',
-      'receive_date' => ['>=' => $this->lineItemParams['start_date']],
-      'options' => ['limit' => 0],
-    ]);
-
-    if ($result['count'] > 0) {
-      return $result['values'];
-    }
-
-    return [];
-  }
-
-  /**
    * Creates new line item associaated to the rcurring contribution.
    *
    * @param array $membership
    *
    * @return array
    */
-  private function createRecurringLineItem($membership) {
+  protected function createRecurringLineItem($membership = []) {
     $priceFieldValue = $this->getDefaultPriceFieldValueForMembershipType($membership['membership_type_id']);
     $taxRate = $this->getTaxRateForFinancialType($priceFieldValue['financial_type_id']);
     $taxAmount = round($this->lineItemParams['amount'] * $taxRate / 100, 2);
@@ -250,20 +146,6 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
     ]);
 
     return array_shift($lineItem['values']);
-  }
-
-  /**
-   * Returns tax rate used for given financial type ID.
-   *
-   * @param $financialTypeID
-   *
-   * @return double
-   */
-  private function getTaxRateForFinancialType($financialTypeID) {
-    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-    $rate = round(CRM_Utils_Array::value($financialTypeID, $taxRates, 0), 2);
-
-    return $rate;
   }
 
   /**

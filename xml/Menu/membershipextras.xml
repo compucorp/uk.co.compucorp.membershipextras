@@ -30,4 +30,10 @@
     <title>RecurringContribution_AddMembershipLineItem</title>
     <access_arguments>edit contributions,edit memberships</access_arguments>
   </item>
+  <item>
+    <path>civicrm/recurring-contribution/add-donation-lineitem</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_AddDonationLineItem</page_callback>
+    <title>RecurringContribution_AddDonationLineItem</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>
