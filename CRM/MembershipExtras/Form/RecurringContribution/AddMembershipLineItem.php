@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_ExtensionUtil as E;
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
  * Form controller class to confirm addition of a new membership as a line item
@@ -126,7 +127,9 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   protected function createRecurringLineItem($membership = []) {
     $priceFieldValue = $this->getDefaultPriceFieldValueForMembershipType($membership['membership_type_id']);
     $taxRate = $this->getTaxRateForFinancialType($priceFieldValue['financial_type_id']);
-    $taxAmount = round($this->lineItemParams['amount'] * $taxRate / 100, 2);
+    $taxAmount = MoneyUtilities::roundToCurrencyPrecision(
+      $this->lineItemParams['amount'] * $taxRate / 100
+    );
 
     $lineItem = civicrm_api3('LineItem', 'create', [
       'sequential' => 1,

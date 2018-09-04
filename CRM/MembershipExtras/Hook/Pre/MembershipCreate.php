@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+
 /**
  * Implements hook to be run before a membership is created/edited.
  */
@@ -37,8 +39,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
 
-    $this->params['tax_amount'] = ($this->params['total_amount'] * ($rate / 100)) / (1 + ($rate / 100));
-    $this->params['tax_amount'] = round($this->params['tax_amount'], 2);
+    $this->params['tax_amount'] = MoneyUtilities::roundToCurrencyPrecision(
+      ($this->params['total_amount'] * ($rate / 100)) / (1 + ($rate / 100))
+    );
   }
 
   /**
@@ -56,16 +59,20 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
 
   /**
    * Recalculates line total, unit price and tax amount for each line item, as
-   * these can get broken when paying with a pyment plan or using a custom total
-   * value.
+   * these can get broken when paying with a payment plan or using a custom
+   * total value.
    */
   private function recalculateLineItemsAmounts() {
     foreach (CRM_Utils_Array::value('lineItems', $this->params, []) as $types) {
       foreach ($types as &$line) {
         $total = $line['line_total'] + $line['tax_amount'];
-        $line['tax_amount'] = round(($total * ($line['tax_rate'] / 100)) / (1 + ($line['tax_rate'] / 100)), 2);
+        $line['tax_amount'] = MoneyUtilities::roundToCurrencyPrecision(
+          ($total * ($line['tax_rate'] / 100)) / (1 + ($line['tax_rate'] / 100))
+        );
         $line['line_total'] = $total - $line['tax_amount'];
-        $line['unit_price'] = round($line['line_total'] / $line['qty'], 2);
+        $line['unit_price'] = MoneyUtilities::roundToCurrencyPrecision(
+          $line['line_total'] / $line['qty']
+        );
       }
     }
   }

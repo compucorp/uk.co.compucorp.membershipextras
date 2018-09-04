@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_ExtensionUtil as E;
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
  * Abstract class defining methods used to add a new line item to a recurring
@@ -98,7 +99,10 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    */
   protected function getTaxRateForFinancialType($financialTypeID) {
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-    $rate = round(CRM_Utils_Array::value($financialTypeID, $taxRates, 0), 2);
+    $rate = MoneyUtilities::roundToPrecision(
+      CRM_Utils_Array::value($financialTypeID, $taxRates, 0),
+      2
+    );
 
     return $rate;
   }
@@ -122,8 +126,12 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
         $taxRates = CRM_Core_PseudoConstant::getTaxRates();
         $rate = CRM_Utils_Array::value($recurringLineItem['financial_type_id'], $taxRates, 0);
 
-        $lineItemParams['tax_amount'] = round(($firstAmountTotal * ($rate / 100)) / (1 + ($rate / 100)), 2);
-        $lineItemParams['unit_price'] = round($firstAmountTotal - $lineItemParams['tax_amount'], 2);
+        $lineItemParams['tax_amount'] = MoneyUtilities::roundToCurrencyPrecision(
+          ($firstAmountTotal * ($rate / 100)) / (1 + ($rate / 100))
+        );
+        $lineItemParams['unit_price'] = MoneyUtilities::roundToCurrencyPrecision(
+          $firstAmountTotal - $lineItemParams['tax_amount']
+        );
         $lineItemParams['line_total'] = $lineItemParams['unit_price'];
 
         $firstContribution = FALSE;

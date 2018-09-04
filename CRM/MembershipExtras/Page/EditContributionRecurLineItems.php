@@ -1,5 +1,6 @@
 <?php
 use CRM_MembershipExtras_ExtensionUtil as E;
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_Page {
 
@@ -309,7 +310,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    */
   private function getTaxRateForFinancialType($financialTypeID) {
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-    $rate = round(CRM_Utils_Array::value($financialTypeID, $taxRates, 0), 2);
+    $rate = MoneyUtilities::roundToPrecision(
+      CRM_Utils_Array::value($financialTypeID, $taxRates, 0),
+      2
+    );
 
     return $rate;
   }
