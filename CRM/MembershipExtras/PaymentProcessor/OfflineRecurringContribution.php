@@ -93,15 +93,7 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
       'class_name' => 'Payment_Manual',
       'is_recur' => '1',
       'payment_instrument_id' => 'EFT',
-      'financial_account_id' => $this->getDepositBankAccountId(),
     ];
-  }
-
-  private function getDepositBankAccountId() {
-    return civicrm_api3('FinancialAccount', 'getvalue', [
-      'return' => 'id',
-      'name' => 'Deposit Bank Account',
-    ]);
   }
 
   public function setAsDefaultPaymentPlanProcessor() {
