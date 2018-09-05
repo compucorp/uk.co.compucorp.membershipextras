@@ -29,14 +29,6 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddDonationLineItem extend
   /**
    * @inheritdoc
    */
-  protected function processLineItemAddition() {
-    $recurringLineItem = $this->createRecurringLineItem();
-    $this->addLineItemToPendingContributions($recurringLineItem);
-  }
-
-  /**
-   * @inheritdoc
-   */
   protected function showOnSuccessNotifications() {
     CRM_Core_Session::setStatus(
       "{$this->lineItemParams['item']} has been added to the active order.",

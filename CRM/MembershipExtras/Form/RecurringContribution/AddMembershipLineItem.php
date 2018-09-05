@@ -50,21 +50,6 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   /**
    * @inheritdoc
    */
-  protected function processLineItemAddition() {
-    if (!$this->membershipExists()) {
-      $membership = $this->createMembership();
-    } else {
-      $membership = $this->updateMembership();
-    }
-
-    $recurringLineItem = $this->createRecurringLineItem($membership);
-
-    $this->addLineItemToPendingContributions($recurringLineItem);
-  }
-
-  /**
-   * @inheritdoc
-   */
   protected function showOnSuccessNotifications() {
     CRM_Core_Session::setStatus(
       "{$this->membershipType['name']} has been added to the active order.",
@@ -120,11 +105,11 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   /**
    * Creates new line item associaated to the rcurring contribution.
    *
-   * @param array $membership
-   *
    * @return array
    */
-  protected function createRecurringLineItem($membership = []) {
+  protected function createRecurringLineItem() {
+    $membership = $this->saveMembership();
+
     $priceFieldValue = $this->getDefaultPriceFieldValueForMembershipType($membership['membership_type_id']);
     $taxRate = $this->getTaxRateForFinancialType($priceFieldValue['financial_type_id']);
     $taxAmount = MoneyUtilities::roundToCurrencyPrecision(
@@ -153,6 +138,22 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
     ]);
 
     return array_shift($lineItem['values']);
+  }
+
+  /**
+   * If membership for the membership type doesn't exist, it creates it. If it
+   * does, it updates it.
+   *
+   * @return mixed
+   */
+  private function saveMembership() {
+    if (!$this->membershipExists()) {
+      $membership = $this->createMembership();
+    } else {
+      $membership = $this->updateMembership();
+    }
+
+    return $membership;
   }
 
   /**

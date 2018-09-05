@@ -81,13 +81,59 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    */
   public function postProcess() {
     $tx = new CRM_Core_Transaction();
+
     try {
-      $this->processLineItemAddition();
+      $recurringLineItem = $this->createRecurringLineItem();
+      $this->updateRecurringContributionAmount();
+      $this->addLineItemToPendingContributions($recurringLineItem);
       $this->showOnSuccessNotifications();
     } catch (Exception $e) {
       $tx->rollback();
       $this->showErrorNotification($e);
     }
+  }
+
+  /**
+   * Updates the amount of the recurring contribution checking list of line
+   * items associated to it.
+   */
+  private function updateRecurringContributionAmount() {
+    $totalAmount = $this->calculateRecurringContributionTotalAmount();
+
+    civicrm_api3('ContributionRecur', 'create', [
+      'sequential' => 1,
+      'amount' => $totalAmount,
+      'id' => $this->recurringContribution['id'],
+    ]);
+  }
+
+  /**
+   * Calculates amount for current recurring contribution from related line
+   * items.
+   */
+  private function calculateRecurringContributionTotalAmount() {
+    $totalAmount = 0;
+
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->recurringContribution['id'],
+      'start_date' => ['IS NOT NULL' => 1],
+      'end_date' => ['IS NULL' => 1],
+      'api.LineItem.getsingle' => [
+        'id' => '$value.line_item_id',
+        'entity_table' => ['IS NOT NULL' => 1],
+        'entity_id' => ['IS NOT NULL' => 1],
+      ],
+    ]);
+
+    if ($result['count'] > 0) {
+      foreach ($result['values'] as $lineItemData) {
+        $totalAmount += $lineItemData['api.LineItem.getsingle']['line_total'];
+        $totalAmount += $lineItemData['api.LineItem.getsingle']['tax_amount'];
+      }
+    }
+
+    return MoneyUtilities::roundToCurrencyPrecision($totalAmount);
   }
 
   /**
@@ -147,7 +193,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
 
       // calculate balance, tax and paid amount later used to adjust transaction
       $updatedAmount = CRM_Price_BAO_LineItem::getLineTotal($contribution['id']);
-      $taxAmount = $this->calculateTaxAmountTotalFromContributionID($contribution['id']);
+      $taxAmount = CRM_MembershipExtras_Service_FinancialTransactionManager::calculateTaxAmountTotalFromContributionID($contribution['id']);
 
       // Record adjusted amount by updating contribution info
       CRM_MembershipExtras_Service_FinancialTransactionManager::recordAdjustedAmount($contribution, $updatedAmount, $taxAmount);
@@ -155,25 +201,6 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
       // Record financial item on adding of line item
       CRM_MembershipExtras_Service_FinancialTransactionManager::insertFinancialItemOnLineItemAddition($lineItem);
     }
-  }
-
-  /**
-   * Returns formatted amount for tax of a given contribution by calculating the
-   * sum for tax for each line item in that contribution.
-   *
-   * @param int $contributionID
-   *
-   * @return string
-   */
-  private static function calculateTaxAmountTotalFromContributionID($contributionID) {
-    $taxAmount = CRM_Core_DAO::singleValueQuery("
-      SELECT SUM(COALESCE(tax_amount,0)) 
-      FROM civicrm_line_item 
-      WHERE contribution_id = $contributionID 
-      AND qty > 0 
-    ");
-
-    return CRM_Utils_Money::format($taxAmount, NULL, NULL, TRUE);
   }
 
   /**
@@ -213,14 +240,6 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    * @return array
    */
   abstract protected function findExistingLineItemForContribution($lineItemParams);
-
-  /**
-   * Implements creation of recurring line item and adds copies of the line item
-   * to all pending contributions after start date, modifying contribution
-   * amounts and creating financial transactions to record the change in amount
-   * for each altered contribution.
-   */
-  abstract protected function processLineItemAddition();
 
   /**
    * Shows notifications after all entities have been created and updated

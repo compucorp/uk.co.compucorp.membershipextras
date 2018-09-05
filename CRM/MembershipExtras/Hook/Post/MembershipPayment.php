@@ -100,11 +100,16 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
 
     if ($recurringLineItems['count'] > 0) {
       foreach ($recurringLineItems['values'] as $lineItem) {
-        $priceFieldValue = civicrm_api3('PriceFieldValue', 'getsingle', [
+        $priceFieldValueID = CRM_Utils_Array::value('price_field_value_id', $lineItem['api.LineItem.getsingle'], 0);
+        if (!$priceFieldValueID) {
+          continue;
+        }
+
+        $priceFieldValueData = civicrm_api3('PriceFieldValue', 'getsingle', [
           'id' => $lineItem['api.LineItem.getsingle']['price_field_value_id'],
         ]);
 
-        if (CRM_Utils_Array::value('membership_type_id', $priceFieldValue, 0) == $membershipTypeID) {
+        if (CRM_Utils_Array::value('membership_type_id', $priceFieldValueData, 0) == $membershipTypeID) {
           return $lineItem['api.LineItem.getsingle'];
         }
       }
