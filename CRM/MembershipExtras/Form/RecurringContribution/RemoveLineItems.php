@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_ExtensionUtil as E;
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
  * Form controller class to allow removal of line items from a recurring
@@ -106,6 +107,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
 
       $this->adjustPendingContributions();
       $this->updateRecurringLineItem();
+      $this->updateRecurringContributionAmount();
 
       CRM_Core_Session::setStatus(
         "{$this->recurringLineItemData['label']} has been removed from the active order.",
@@ -127,6 +129,49 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
         'error'
       );
     }
+  }
+
+  /**
+   * Updates the amount of the recurring contribution checking list of line
+   * items associated to it.
+   */
+  private function updateRecurringContributionAmount() {
+    $totalAmount = $this->calculateRecurringContributionTotalAmount();
+
+    civicrm_api3('ContributionRecur', 'create', [
+      'sequential' => 1,
+      'amount' => $totalAmount,
+      'id' => $this->recurringContributionID,
+    ]);
+  }
+
+  /**
+   * Calculates amount for current recurring contribution from related line
+   * items.
+   */
+  private function calculateRecurringContributionTotalAmount() {
+    $totalAmount = 0;
+
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->recurringContributionID,
+      'start_date' => ['IS NOT NULL' => 1],
+      'end_date' => ['IS NULL' => 1],
+      'api.LineItem.getsingle' => [
+        'id' => '$value.line_item_id',
+        'entity_table' => ['IS NOT NULL' => 1],
+        'entity_id' => ['IS NOT NULL' => 1],
+      ],
+    ]);
+
+    if ($result['count'] > 0) {
+      foreach ($result['values'] as $lineItemData) {
+        $totalAmount += $lineItemData['api.LineItem.getsingle']['line_total'];
+        $totalAmount += $lineItemData['api.LineItem.getsingle']['tax_amount'];
+      }
+    }
+
+    return MoneyUtilities::roundToCurrencyPrecision($totalAmount);
   }
 
   /**
@@ -164,6 +209,9 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
   private function adjustPendingContributions() {
     foreach ($this->getPendingContributions() as $contribution) {
       $lineItemBefore = $this->getCorrespondingContributionLineItem($contribution['id']);
+      if (!isset($lineItemBefore['id']) || empty($lineItemBefore['id'])) {
+        continue;
+      }
 
       // change total_price and qty of current line item to 0
       civicrm_api3('LineItem', 'create', [
@@ -227,14 +275,18 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       $contributionID : $this->recurringLineItemData['entity_id']
     ;
 
-    $lineItem = civicrm_api3('LineItem', 'getsingle', [
-      'sequential' => 1,
-      'entity_table' => $this->recurringLineItemData['entity_table'],
-      'contribution_id' => $contributionID,
-      'entity_id' => $entityID,
-      'price_field_id' => $this->recurringLineItemData['price_field_id'],
-      'price_field_value_id' => $this->recurringLineItemData['price_field_value_id'],
-    ]);
+    try {
+      $lineItem = civicrm_api3('LineItem', 'getsingle', [
+        'sequential' => 1,
+        'entity_table' => $this->recurringLineItemData['entity_table'],
+        'contribution_id' => $contributionID,
+        'entity_id' => $entityID,
+        'price_field_id' => $this->recurringLineItemData['price_field_id'],
+        'price_field_value_id' => $this->recurringLineItemData['price_field_value_id'],
+      ]);
+    } catch (Exception $e) {
+      $lineItem = [];
+    }
 
     return $lineItem;
   }

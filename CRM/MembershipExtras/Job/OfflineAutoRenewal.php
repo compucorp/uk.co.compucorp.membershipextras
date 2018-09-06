@@ -3,6 +3,7 @@
 use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstallmentsHandler;
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
@@ -287,7 +288,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $lineItemsList = [];
     foreach($lastContributionLineItems as $lineItem) {
       $unitPrice = $this->calculateLineItemUnitPrice($lineItem);
-      $lineTotal = round($unitPrice * $lineItem['qty'], 2);
+      $lineTotal = MoneyUtilities::roundToCurrencyPrecision($unitPrice * $lineItem['qty']);
       $taxAmount = $this->calculateLineItemTaxAmount($lineTotal, $lineItem['financial_type_id']);
 
       $entityID = $lineItem['entity_id'];
@@ -367,7 +368,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   private function calculateSingleInstallmentAmount($amount) {
     $resultAmount =  $amount;
     if ($this->currentInstallmentsNumber > 1) {
-      $resultAmount = round(($amount / $this->currentInstallmentsNumber), 2);
+      $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->currentInstallmentsNumber));
     }
 
     return $resultAmount;
@@ -386,10 +387,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   private function calculateLineItemTaxAmount($lineTotal, $financialTypeId) {
     $taxAmount = 0;
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+
     if (!empty($taxRates[$financialTypeId])) {
       $taxRate = $taxRates[$financialTypeId];
       $taxAmount = CRM_Contribute_BAO_Contribution_Utils::calculateTaxAmount($lineTotal, $taxRate);
-      $taxAmount = round($taxAmount['tax_amount'], 2);
+      $taxAmount = MoneyUtilities::roundToCurrencyPrecision($taxAmount['tax_amount']);
     }
 
     return $taxAmount;

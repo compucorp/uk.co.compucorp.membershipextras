@@ -14,10 +14,11 @@ tr.disabled-row {
 }
 
 input.required,
-#newline_membership_type.required {
+#newline_membership_type.required,
+#newline_donation_financial_type_id.required {
   border: 2px solid #900 !important;
 }
 
-#newline_amount {
+#newline_amount, #newline_item, #newline_donation_amount, #newline_donation_item {
   width: 50%;
 }
