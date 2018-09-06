@@ -8,7 +8,7 @@
   </item>
   <item>
     <path>civicrm/recurring-contribution/cancel</path>
-    <page_callback>CRM_MembershipExtras_Form_CancelRecurringContribution</page_callback>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_Cancel</page_callback>
     <title>Cancel Recurring Contribution</title>
     <access_arguments>edit contributions,edit memberships</access_arguments>
   </item>
