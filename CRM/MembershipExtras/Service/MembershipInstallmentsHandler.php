@@ -189,6 +189,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'contribution_status_id' => $this->contributionPendingStatusValue,
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
+      'skipCleanMoney' => TRUE,
       'contribution_recur_id' => $this->currentRecurContribution['id'],
     ];
 

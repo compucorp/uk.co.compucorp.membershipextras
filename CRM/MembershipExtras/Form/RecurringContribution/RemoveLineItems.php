@@ -299,6 +299,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
     $params = [
       'id' => $this->recurringLineItemData['id'],
       'auto_renew' => false,
+      'is_removed' => true,
     ];
 
     if ($this->getElementValue('adjust_end_date')) {

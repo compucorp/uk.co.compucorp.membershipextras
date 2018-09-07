@@ -118,7 +118,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
       'sequential' => 1,
       'contribution_recur_id' => $this->recurringContribution['id'],
       'start_date' => ['IS NOT NULL' => 1],
-      'end_date' => ['IS NULL' => 1],
+      'is_removed' => 0,
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
