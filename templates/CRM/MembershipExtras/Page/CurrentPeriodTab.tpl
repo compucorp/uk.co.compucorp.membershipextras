@@ -39,8 +39,13 @@
       <tr id="lineitem-{$currentItem.id}" data-item-data='{$currentItem|@json_encode}' class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
         <td>{$currentItem.label}</td>
         <td>{$currentItem.start_date|date_format}</td>
-        <td>{$currentItem.end_date|date_format}</td>
-        <td><input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} /></td>
+        <td>{$largestMembershipEndDate|date_format}</td>
+        <td>
+          {if $recurringContribution.auto_renew}
+            <input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} />
+          {/if}
+          &nbsp;
+        </td>
         <td>{$currentItem.financial_type}</td>
         <td>{if $currentItem.tax_rate == 0}N/A{else}{$currentItem.tax_rate}%{/if}</td>
         <td nowrap>{$currentItem.line_total|crmMoney}</td>
@@ -72,6 +77,7 @@
         {if $recurringContribution.auto_renew}
           <input name="newline_auto_renew" id="newline_auto_renew" type="checkbox" checked />
         {/if}&nbsp;
+        &nbsp;
       </td>
       <td id="newline_financial_type"> - </td>
       <td id="newline_tax_rate" nowrap> - </td>
@@ -98,7 +104,8 @@
       <td>
         {if $recurringContribution.auto_renew}
           <input name="newline_donation_auto_renew" id="newline_donation_auto_renew" type="checkbox" checked />
-        {/if}&nbsp;
+        {/if}
+        &nbsp;
       </td>
       <td>
         <select class="crm-form-select" name="newline_donation_financial_type_id" id="newline_donation_financial_type_id">
