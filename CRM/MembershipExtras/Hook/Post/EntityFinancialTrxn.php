@@ -40,18 +40,20 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
 
     $newStatus = $this->generatePaymentPlanNewStatus();
-    if ($newStatus !== NULL) {
-      $params = [
-        'id' => $this->recurContribution['id'],
-        'contribution_status_id' => $newStatus,
-      ];
-      
-      if ($newStatus === 'Completed') {
-        $params['end_date'] = date('Y-m-d H:i:s');
-      }
-      
-      civicrm_api3('ContributionRecur', 'create', $params);
+    if ($newStatus == NULL) {
+      return;
     }
+
+    $updateParams = [
+      'id' => $this->recurContribution['id'],
+      'contribution_status_id' => $newStatus,
+    ];
+
+    if ($newStatus == 'Completed') {
+      $updateParams['end_date'] = $this->generateNewPaymentPlanEndDate();
+    }
+
+    civicrm_api3('ContributionRecur', 'create', $updateParams);
   }
 
   /**
@@ -133,6 +135,22 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
 
     return $newStatus;
+  }
+
+  private function generateNewPaymentPlanEndDate() {
+    $lastPaymentPlanContribution = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['receive_date'],
+      'contribution_recur_id' => $this->recurContribution['id'],
+      'options' => ['sort' => 'id DESC', 'limit' => 1],
+    ]);
+
+    $endDate = NULL;
+    if (!empty($lastPaymentPlanContribution['values'][0]['receive_date'])) {
+      $endDate = $lastPaymentPlanContribution['values'][0]['receive_date'];
+    }
+
+    return $endDate;
   }
 
 }
