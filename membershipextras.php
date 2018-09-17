@@ -348,9 +348,7 @@ function membershipextras_civicrm_pageRun($page) {
       'js/CurrentPeriodLineItemHandler.js',
       1,
       'page-header'
-    );
-
-    CRM_Core_Resources::singleton()->addScriptFile(
+    )->addScriptFile(
       CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
       'js/NextPeriodLineItemHandler.js',
       1,
