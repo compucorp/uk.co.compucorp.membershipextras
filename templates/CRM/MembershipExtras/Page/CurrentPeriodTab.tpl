@@ -1,8 +1,11 @@
 <script>
+  var currentFinancialTypes = JSON.parse('{$financialTypes|@json_encode}');
+
   {literal}
   CRM.$(function () {
     var formHandler = new CRM.RecurringContribution.CurrentPeriodLineItemHandler(CRM.$('#recurringContributionID').val());
     formHandler.initializeForm(CRM.$('#current-subtab'));
+    formHandler.set('financialTypes', currentFinancialTypes);
     formHandler.addEventHandlers();
   });
   {/literal}
@@ -68,10 +71,10 @@
         </select>
       </td>
       <td nowrap>
-        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false{rdelim}" aria-label="Start Date" name="newline_start_date" type="text" value="{$currentDate}" id="newline_start_date" class="crm-form-text crm-hidden-date">
+        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false, &quot;allowClear&quot;:false{rdelim}" aria-label="Start Date" name="newline_start_date" type="text" value="{$currentDate}" id="newline_start_date" class="crm-form-text crm-hidden-date">
       </td>
       <td nowrap>
-        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false{rdelim}" aria-label="End Date" name="newline_end_date" type="text" value="{$largestMembershipEndDate}" id="newline_end_date" class="crm-form-text crm-hidden-date">
+        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false, &quot;allowClear&quot;:false{rdelim}" aria-label="End Date" name="newline_end_date" type="text" value="{$largestMembershipEndDate}" id="newline_end_date" class="crm-form-text crm-hidden-date">
       </td>
       <td>
         {if $recurringContribution.auto_renew}
@@ -82,7 +85,7 @@
       <td id="newline_financial_type"> - </td>
       <td id="newline_tax_rate" nowrap> - </td>
       <td><input name="newline_amount" id="newline_amount" class="crm-form-text"/></td>
-      <td nowrap>
+      <td nowrap class="confirmation-icons">
         <a class="line-apply-btn" href="" id="apply_add_membership_btn">
           <span><i class="crm-i fa-check" title="Add line item..."></i>&nbsp;</span>
         </a>
@@ -96,7 +99,7 @@
         <input name="newline_donation_item" id="newline_donation_item" class="crm-form-text"/>
       </td>
       <td nowrap>
-        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false{rdelim}" aria-label="Start Date" name="newline_donation_start_date" type="text" value="{$currentDate}" id="newline_donation_start_date" class="crm-form-text crm-hidden-date">
+        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false, &quot;allowClear&quot;:false{rdelim}" aria-label="Start Date" name="newline_donation_start_date" type="text" value="{$currentDate}" id="newline_donation_start_date" class="crm-form-text crm-hidden-date">
       </td>
       <td nowrap>
         N/A
@@ -115,9 +118,9 @@
           {/foreach}
         </select>
       </td>
-      <td id="newline_donation_tax_rate" nowrap> - </td>
+      <td id="newline_donation_tax_rate" nowrap> N/A </td>
       <td><input name="newline_donation_amount" id="newline_donation_amount" class="crm-form-text"/></td>
-      <td nowrap>
+      <td nowrap class="confirmation-icons">
         <a class="line-apply-btn" href="" id="apply_add_donation_btn">
           <span><i class="crm-i fa-check" title="Add line item..."></i>&nbsp;</span>
         </a>
@@ -160,7 +163,7 @@
       </td>
     </tr>
     <tr>
-      <td class="contriTotalLeft right">{ts}Total per Installment:{/ts}</td>
+      <td class="contriTotalLeft right">{ts}Total per Instalment:{/ts}</td>
       <td>{$installmentTotal|crmMoney}</td>
     </tr>
   </table>

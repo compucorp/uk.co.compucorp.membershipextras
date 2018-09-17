@@ -131,7 +131,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @inheritdoc
    */
   public function run() {
-    CRM_Utils_System::setTitle(E::ts('Manage Installments'));
+    CRM_Utils_System::setTitle(E::ts('Manage Instalment'));
 
     $this->assign('currentDate', date('Y-m-d'));
     $this->assign('recurringContribution', $this->contribRecur);
@@ -145,7 +145,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
     $this->assign('lineItems', $currentPeriodLineItems);
 
-    $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled($currentPeriodLineItems));
+    $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
     $this->assign('currencySymbol', $this->getCurrencySymbol());
