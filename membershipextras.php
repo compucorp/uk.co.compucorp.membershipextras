@@ -349,5 +349,12 @@ function membershipextras_civicrm_pageRun($page) {
       1,
       'page-header'
     );
+
+    CRM_Core_Resources::singleton()->addScriptFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'js/NextPeriodLineItemHandler.js',
+      1,
+      'page-header'
+    );
   }
 }
