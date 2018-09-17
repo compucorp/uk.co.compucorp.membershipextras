@@ -89,10 +89,14 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
     // Shows removal confirmation dialog.
     CRM.$('.auto-renew-line-checkbox', this.currentTab).change(function() {
+      var itemData = CRM.$(this).closest('tr').data('item-data');
       if (!this.checked) {
-        var itemData = CRM.$(this).closest('tr').data('item-data');
-        console.log(itemData);
         showNextPeriodLineItemRemovalConfirmation(itemData);
+      } else {
+        if (Number(itemData.auto_renew)) {
+          CRM.alert(ts('This membership type is already enrolled in next period.'), null, 'warning');
+        }
+        showAddLineItemConfirmation(itemData.label, Number(itemData.line_total), itemData.financial_type_id);
       }
     });
 
