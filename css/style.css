@@ -1,6 +1,8 @@
 .crm-container a:hover .crm-i.fa-check,
-.crm-container a:hover .crm-i.fa-times {
+.crm-container a:hover .crm-i.fa-times,
+.crm-container a:hover .crm-i.fa-trash {
   color: #8A1F11;
+  cursor: pointer;
 }
 
 .crm-container a.disabled-click,
