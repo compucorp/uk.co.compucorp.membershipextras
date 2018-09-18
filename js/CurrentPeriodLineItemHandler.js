@@ -32,6 +32,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     this.newDonationAmountField = null;
 
     this.membershipTypes = {};
+    this.financialTypes = [];
     this.recurringContribution = {};
   }
 
@@ -67,7 +68,6 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     this.newDonationAutoRenewField = CRM.$('#newline_donation_auto_renew', this.newDonationRow);
     this.newDonationFinancialTypeField = CRM.$('#newline_donation_financial_type_id', this.newDonationRow);
     this.newDonationAmountField = CRM.$('#newline_donation_amount', this.newDonationRow);
-
     this.newDonationRow.css('display', 'none');
   };
 
@@ -213,6 +213,23 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       return false;
     });
 
+    // Shows tax rate if set when changing financial type.
+    this.newDonationFinancialTypeField.on('change', function() {
+      var selectedId = CRM.$(this).val();
+      var financialType = that.getFinancialType(selectedId);
+
+      if (!financialType) {
+        throw new Error('Invalid financial type id passed');
+      }
+
+      var rate = financialType.tax_rate || 'N/A';
+      if (rate != 'N/A') {
+        rate += ' %';
+      }
+
+      CRM.$('#newline_donation_tax_rate').text(rate);
+    });
+
     // Hides new row to add new donation.
     CRM.$('#cancel_add_donation_btn', this.currentTab).click(function () {
       that.newDonationRow.css('display', 'none');
@@ -244,6 +261,18 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
       return false;
     });
+  };
+
+  /**
+   * Returns financial type data for given ID.
+   * @param id
+   *
+   * @return (object)
+   */
+  CurrentPeriodLineItemHandler.prototype.getFinancialType = function(id) {
+    return financialTypes.filter(function(financialType) {
+      return financialType.id === id;
+    })[0];
   };
 
   /**
