@@ -24,7 +24,7 @@
         {ts}Current Period{/ts}
       </a>
     </li>
-    {if $autoRenewEnabled}
+    {if $showNextPeriodTab}
     <li id="tab_next" class="crm-tab-button ui-corner-all ui-tabs-tab ui-corner-top ui-state-default ui-tab">
       <a href="#next-subtab" title="{ts}Recurring Contributions{/ts}">
         {ts}Next Period (Forecast){/ts}
@@ -36,7 +36,7 @@
   <div id="current-subtab" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
     {include file="CRM/MembershipExtras/Page/CurrentPeriodTab.tpl"}
   </div>
-  {if $autoRenewEnabled}
+  {if $showNextPeriodTab}
   <div id="next-subtab" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
     {include file="CRM/MembershipExtras/Page/NextPeriodTab.tpl"}
   </div>
