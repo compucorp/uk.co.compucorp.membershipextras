@@ -313,7 +313,8 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
 
   /**
    * Checks if membership is in arrears, by checking if any pending payments
-   * associated to a payment plan land before the adjusted reference date.
+   * associated to a payment plan land before the adjusted reference date and
+   * no payment is cancelled.
    *
    * @param string $referenceDateString
    *   Date to use as reference to check if membership is in arrears
@@ -362,15 +363,17 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
       FROM civicrm_membership_payment
       INNER JOIN civicrm_contribution ON civicrm_membership_payment.contribution_id = civicrm_contribution.id
       INNER JOIN civicrm_contribution_recur ON civicrm_contribution.contribution_recur_id = civicrm_contribution_recur.id
-      WHERE civicrm_membership_payment.membership_id = %1
-      AND civicrm_contribution.contribution_status_id = %2
-      AND civicrm_contribution.receive_date <= %3
+      WHERE civicrm_membership_payment.membership_id = %1 
+      AND civicrm_contribution.contribution_status_id = %2 
+      AND civicrm_contribution.receive_date <= %3 
+      AND civicrm_contribution_recur.contribution_status_id != %4 
       AND civicrm_contribution_recur.installments > 0
     ";
     $pendingContributionsResult = CRM_Core_DAO::executeQuery($query, [
       1 => [$this->membership['id'], 'Integer'],
       2 => [self::$contributionStatusValueMap['Pending'], 'String'],
       3 => [$adjustedReferenceDate, 'String'],
+      4 => [self::$contributionStatusValueMap['Cancelled'], 'String'],
     ]);
     $pendingContributionsResult->fetch();
 
