@@ -140,7 +140,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
 
-    $currentPeriodLineItems = $this->getLineItems(['is_removed' => 0]);
+    $currentPeriodLineItems = $this->getLineItems([
+      'is_removed' => 0,
+      'start_date' => ['IS NOT NULL' => 1],
+    ]);
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
     $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
     $this->assign('lineItems', $currentPeriodLineItems);
