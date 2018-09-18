@@ -145,11 +145,11 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
     $this->assign('lineItems', $currentPeriodLineItems);
 
-    $this->assign('autoRenewEnabled', $this->isAutoRenewEnabled($currentPeriodLineItems));
+    $this->assign('showNextPeriodTab', $this->showNextPeriodTab($currentPeriodLineItems));
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
     $this->assign('currencySymbol', $this->getCurrencySymbol());
-    $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => TRUE]));
+    $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => TRUE, 'is_removed' => 0]));
 
     parent::run();
   }
@@ -196,14 +196,8 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @return boolean
    */
-  private function isAutoRenewEnabled() {
-    $isAutoRenew = CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur));
-  
-    if ($isAutoRenew && count($this->getMemberships())) {
-      return TRUE;
-    }
-  
-    return FALSE;
+  private function showNextPeriodTab() {
+    return CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur)) && count($this->getMemberships());
   }
 
   /**
