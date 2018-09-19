@@ -22,7 +22,7 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
   {assign var='installments' value=$recurringContribution.installments|intval}
 
   {foreach from=$nextPeriodLineItems item='currentItem'}
-    {if ($installments || !$currentItem.end_date)}
+    {if ($installments || (!$installments && !$currentItem.end_date))}
       {assign var='subTotal' value=$subTotal+$currentItem.line_total}
       {assign var='taxTotal' value=$taxTotal+$currentItem.tax_amount}
 
