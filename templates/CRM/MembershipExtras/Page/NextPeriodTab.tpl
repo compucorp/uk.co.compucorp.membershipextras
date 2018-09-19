@@ -89,12 +89,12 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
   </tbody>
 </table>
 <div id="next_buttons">
-  <button class="crm-button" id="addMembership">
+  <a class="button clickable" href="" id="addMembership">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Membership</span>
-  </button>
-  <button class="crm-button" id="addOtherAmount">
+  </a>
+  <a class="button clickable" href="" id="addOtherAmount">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Other Amount</span>
-  </button>
+  </a>
 </div>
 <div class="clear"></div>
 <div class="right">
