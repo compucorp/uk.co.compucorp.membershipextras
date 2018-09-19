@@ -15,12 +15,16 @@ tr.disabled-row {
   color: #ddd;
 }
 
-input.required,
+tr.rc-new-line-item input.required,
 #newline_membership_type.required,
 #newline_donation_financial_type_id.required {
   border: 2px solid #900 !important;
 }
 
-#newline_amount, #newline_item, #newline_donation_amount, #newline_donation_item {
+#newline_amount, #newline_donation_amount {
   width: 50%;
+}
+
+tr.rc-new-line-item td, td.confirmation-icons {
+  vertical-align: middle;
 }
