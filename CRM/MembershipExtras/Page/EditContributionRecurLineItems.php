@@ -140,7 +140,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
 
-    $currentPeriodLineItems = $this->getLineItems(['is_removed' => 0]);
+    $currentPeriodLineItems = $this->getCurrentPeriodLineItems();
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
     $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
     $this->assign('lineItems', $currentPeriodLineItems);
@@ -152,6 +152,26 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('nextPeriodLineItems', $this->getLineItems(['auto_renew' => TRUE]));
 
     parent::run();
+  }
+
+  /**
+   * Obtains list of line items for the current period.
+   *
+   * @return array
+   */
+  private function getCurrentPeriodLineItems() {
+    $conditions = [
+      'is_removed' => 0,
+      'start_date' => ['IS NOT NULL' => 1],
+    ];
+
+    if (!$this->contribRecur['installments']) {
+      $conditions['end_date'] = ['IS NULL' => 1];
+    }
+
+    $currentPeriodLineItems = $this->getLineItems($conditions);
+
+    return $currentPeriodLineItems;
   }
 
   /**

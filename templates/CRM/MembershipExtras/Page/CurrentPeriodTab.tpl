@@ -25,7 +25,9 @@
       <th scope="col">{ts}Item{/ts}</th>
       <th scope="col">{ts}Start Date{/ts}</th>
       <th scope="col">{ts}End Date{/ts}</th>
-      <th scope="col">{ts}Renew Automatically{/ts}</th>
+      {if $recurringContribution.auto_renew}
+        <th scope="col">{ts}Renew Automatically{/ts}</th>
+      {/if}
       <th scope="col">{ts}Financial Type{/ts}</th>
       <th scope="col">{ts}Tax{/ts}</th>
       <th scope="col">{ts}Amount{/ts}</th>
@@ -43,12 +45,11 @@
         <td>{$currentItem.label}</td>
         <td>{$currentItem.start_date|date_format}</td>
         <td>{$largestMembershipEndDate|date_format}</td>
-        <td>
-          {if $recurringContribution.auto_renew}
-            <input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} />
-          {/if}
-          &nbsp;
-        </td>
+        {if $recurringContribution.auto_renew}
+          <td>
+              <input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} />
+          </td>
+        {/if}&nbsp;
         <td>{$currentItem.financial_type}</td>
         <td>{if $currentItem.tax_rate == 0}N/A{else}{$currentItem.tax_rate}%{/if}</td>
         <td nowrap>{$currentItem.line_total|crmMoney}</td>
@@ -76,12 +77,11 @@
       <td nowrap>
         <input data-crm-datepicker="{ldelim}&quot;time&quot;:false, &quot;allowClear&quot;:false{rdelim}" aria-label="End Date" name="newline_end_date" type="text" value="{$largestMembershipEndDate}" id="newline_end_date" class="crm-form-text crm-hidden-date">
       </td>
-      <td>
-        {if $recurringContribution.auto_renew}
-          <input name="newline_auto_renew" id="newline_auto_renew" type="checkbox" checked />
-        {/if}&nbsp;
-        &nbsp;
-      </td>
+      {if $recurringContribution.auto_renew}
+        <td>
+            <input name="newline_auto_renew" id="newline_auto_renew" type="checkbox" checked />&nbsp;
+        </td>
+      {/if}&nbsp;
       <td id="newline_financial_type"> - </td>
       <td id="newline_tax_rate" nowrap> - </td>
       <td><input name="newline_amount" id="newline_amount" class="crm-form-text"/></td>
@@ -104,12 +104,11 @@
       <td nowrap>
         N/A
       </td>
-      <td>
-        {if $recurringContribution.auto_renew}
-          <input name="newline_donation_auto_renew" id="newline_donation_auto_renew" type="checkbox" checked />
-        {/if}
-        &nbsp;
-      </td>
+      {if $recurringContribution.auto_renew}
+        <td>
+            <input name="newline_donation_auto_renew" id="newline_donation_auto_renew" type="checkbox" checked />&nbsp;
+        </td>
+      {/if}
       <td>
         <select class="crm-form-select" name="newline_donation_financial_type_id" id="newline_donation_financial_type_id">
           <option value="">- {ts}select{/ts} -</option>
