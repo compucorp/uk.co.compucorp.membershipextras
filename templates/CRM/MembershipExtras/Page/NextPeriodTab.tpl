@@ -19,24 +19,27 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
   {assign var='subTotal' value=0}
   {assign var='taxTotal' value=0}
   {assign var='installmentTotal' value=0}
+  {assign var='installments' value=$recurringContribution.installments|intval}
 
   {foreach from=$nextPeriodLineItems item='currentItem'}
-    {assign var='subTotal' value=$subTotal+$currentItem.line_total}
-    {assign var='taxTotal' value=$taxTotal+$currentItem.tax_amount}
+    {if ($installments || (!$installments && !$currentItem.end_date))}
+      {assign var='subTotal' value=$subTotal+$currentItem.line_total}
+      {assign var='taxTotal' value=$taxTotal+$currentItem.tax_amount}
 
-    <tr id="lineitem-{$currentItem.id}" data-action="cancel"
-        data-item-data='{$currentItem|@json_encode}'
-        class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
-      <td>{$currentItem.label}</td>
-      <td>{$currentItem.financial_type}</td>
-      <td>{if !empty($currentItem.tax_rate)}{$currentItem.tax_rate}{else}N/A{/if}</td>
-      <td>{$currentItem.line_total|crmMoney}</td>
-      <td>
-        <a class="remove-next-period-line-button">
-          <span><i class="crm-i fa-trash"></i></span>
-        </a>
-      </td>
-    </tr>
+      <tr id="lineitem-{$currentItem.id}" data-action="cancel"
+          data-item-data='{$currentItem|@json_encode}'
+          class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
+        <td>{$currentItem.label}</td>
+        <td>{$currentItem.financial_type}</td>
+        <td>{if !empty($currentItem.tax_rate)}{$currentItem.tax_rate} %{else}N/A{/if}</td>
+        <td>{$currentItem.line_total|crmMoney}</td>
+        <td>
+          <a class="remove-next-period-line-button">
+            <span><i class="crm-i fa-trash"></i></span>
+          </a>
+        </td>
+      </tr>
+    {/if}
   {/foreach}
   {assign var='installmentTotal' value=$subTotal+$taxTotal}
   <tr id="addLineItemRow" style="display: none">
