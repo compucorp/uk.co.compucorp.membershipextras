@@ -56,7 +56,7 @@
             <help_post></help_post>
             <weight>10</weight>
             <is_active>1</is_active>
-            <table_name>civicrm_value_related_payme_21</table_name>
+            <table_name>civicrm_value_payment_plan_periods</table_name>
             <is_multiple>0</is_multiple>
             <collapse_adv_display>0</collapse_adv_display>
             <created_date>2018-09-20 10:46:12</created_date>
@@ -131,7 +131,7 @@
             <custom_group_name>membership_external_id</custom_group_name>
         </CustomField>
         <CustomField>
-            <name>previous_payment_plan_period</name>
+            <name>previous_period</name>
             <label>Previous Payment Plan Period</label>
             <data_type>Int</data_type>
             <html_type>Text</html_type>
@@ -144,12 +144,12 @@
             <text_length>255</text_length>
             <note_columns>60</note_columns>
             <note_rows>4</note_rows>
-            <column_name>previous_payment_plan_period_24</column_name>
+            <column_name>previous_period</column_name>
             <in_selector>0</in_selector>
             <custom_group_name>related_payment_plan_periods</custom_group_name>
         </CustomField>
         <CustomField>
-            <name>next_payment_plan_period</name>
+            <name>next_period</name>
             <label>Next Payment Plan Period</label>
             <data_type>Int</data_type>
             <html_type>Text</html_type>
@@ -162,7 +162,7 @@
             <text_length>255</text_length>
             <note_columns>60</note_columns>
             <note_rows>4</note_rows>
-            <column_name>next_payment_plan_period_25</column_name>
+            <column_name>next_period</column_name>
             <in_selector>0</in_selector>
             <custom_group_name>related_payment_plan_periods</custom_group_name>
         </CustomField>

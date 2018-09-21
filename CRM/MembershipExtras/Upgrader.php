@@ -180,7 +180,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'collapse_display' => 1,
       'weight' => 10,
       'is_active' => 0,
-      'table_name' => 'civicrm_value_related_payme_21',
+      'table_name' => 'civicrm_value_payment_plan_periods',
       'is_multiple' => 0,
       'collapse_adv_display' => 0,
       'is_reserved' => 0,
@@ -188,7 +188,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'api.CustomField.create' => [
         [
           'custom_group_id' => '$value.id',
-          'name' => 'previous_payment_plan_period',
+          'name' => 'previous_period',
           'label' => E::ts('Previous Payment Plan Period'),
           'data_type' => 'Int',
           'html_type' => 'Text',
@@ -199,10 +199,10 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
           'is_view' => 1,
           'is_selector' => 0,
           'custom_group_name' => 'related_payment_plan_periods',
-          'column_name' => 'previous_payment_plan_period',
+          'column_name' => 'previous_period',
         ], [
           'custom_group_id' => '$value.id',
-          'name' => 'next_payment_plan_period',
+          'name' => 'next_period',
           'label' => E::ts('Next Payment Plan Period'),
           'data_type' => 'Int',
           'html_type' => 'Text',
@@ -213,7 +213,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
           'is_view' => 1,
           'is_selector' => 0,
           'custom_group_name' => 'related_payment_plan_periods',
-          'column_name' => 'next_payment_plan_period',
+          'column_name' => 'next_period',
         ]
       ],
     ]);
