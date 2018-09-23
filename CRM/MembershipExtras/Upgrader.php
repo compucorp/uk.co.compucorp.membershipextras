@@ -169,12 +169,64 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
+   * Add Related Payment Plan Periods' Custom Fields
+   */
+  private function createPeriodLinkCustomFields() {
+    civicrm_api3('CustomGroup', 'create', [
+      'name' => 'related_payment_plan_periods',
+      'title' => E::ts('Related Payment Plan Periods'),
+      'extends' => 'ContributionRecur',
+      'style' => 'Inline',
+      'collapse_display' => 1,
+      'weight' => 10,
+      'is_active' => 0,
+      'table_name' => 'civicrm_value_payment_plan_periods',
+      'is_multiple' => 0,
+      'collapse_adv_display' => 0,
+      'is_reserved' => 0,
+      'is_public' => 1,
+      'api.CustomField.create' => [
+        [
+          'custom_group_id' => '$value.id',
+          'name' => 'previous_period',
+          'label' => E::ts('Previous Payment Plan Period'),
+          'data_type' => 'Int',
+          'html_type' => 'Text',
+          'is_required' => 0,
+          'is_searchable' => 0,
+          'weight' => 2,
+          'is_active' => 0,
+          'is_view' => 1,
+          'is_selector' => 0,
+          'custom_group_name' => 'related_payment_plan_periods',
+          'column_name' => 'previous_period',
+        ], [
+          'custom_group_id' => '$value.id',
+          'name' => 'next_period',
+          'label' => E::ts('Next Payment Plan Period'),
+          'data_type' => 'Int',
+          'html_type' => 'Text',
+          'is_required' => 0,
+          'is_searchable' => 0,
+          'weight' => 2,
+          'is_active' => 0,
+          'is_view' => 1,
+          'is_selector' => 0,
+          'custom_group_name' => 'related_payment_plan_periods',
+          'column_name' => 'next_period',
+        ]
+      ],
+    ]);
+  }
+
+  /**
    * Adds membershipextras_contribution_recur_line_item table to DB.
    *
    * @return bool
    */
   public function upgrade_0001() {
     $this->executeSqlFile('sql/auto_install.sql');
+    $this->createPeriodLinkCustomFields();
 
     return TRUE;
   }
