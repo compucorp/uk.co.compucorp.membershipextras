@@ -163,7 +163,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
      }
 
      $this->setLastContribution();
-
      $this->buildLineItemsParams();
      $this->setTotalAndTaxAmount();
 
@@ -182,15 +181,20 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    * Gets the list of offline auto-renewal Recurring Contributions
    * to be renewed, the following conditions should Apply:
    *
-   * 1- The Recurring Contribution has at least one linked membership.
-   * 2- the payment processor used is pay later (aka : no payment processor used)
-   *   or an equivalent payment processor.
-   * 3- The recurring contribution is not cancelled or refunded.
-   * 4- Any of the linked memberships end date is less or equal than today.
+   * 1- is using an offline payment processor (payment manual class).
+   * 2- has an end date.
+   * 3- is set to auto-renew
+   * 4- is not in status cancelled
+   * 5- "Next Payment Plan Period" is empty
+   * 6- has any linked membership that meets the following conditions:
+   *    - end date is equal to or smaller than today
+   *    - the membership's type matches with any
+   *      "membershipextras_subscription_line" that is auto-renew and not
+   *      is_removed.
    *
    * @return array
    *   Each row Contains :
-   *   - The  recurring contribution (contribution_recur_id)
+   *   - The recurring contribution (contribution_recur_id)
    *   - The number of the recurring contribution installments (installments)
    */
   private function getOfflineAutoRenewalRecurContributions() {
@@ -204,14 +208,33 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
     $daysToRenewInAdvance = CRM_MembershipExtras_SettingsManager::getDaysToRenewInAdvance();
 
-    $query = 'SELECT ccr.id as contribution_recur_id, ccr.installments 
-                FROM civicrm_contribution_recur ccr 
-           LEFT JOIN civicrm_membership cm ON ccr.id = cm.contribution_recur_id 
-               WHERE ccr.auto_renew = 1 
-                 AND (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . ')) 
-                 AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ') 
-                 AND cm.end_date <= DATE_ADD(CURDATE(), INTERVAL ' . $daysToRenewInAdvance . ' DAY) 
-            GROUP BY ccr.id';
+    $query = '
+      SELECT ccr.id as contribution_recur_id, ccr.installments 
+        FROM civicrm_contribution_recur ccr 
+   LEFT JOIN civicrm_membership cm ON ccr.id = cm.contribution_recur_id 
+       WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . '))
+         AND ccr.end_date IS NOT NULL
+         AND ccr.auto_renew = 1 
+         AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
+         
+         -- Missing logic for ["Next Payment Plan Period" is empty] condition
+          
+         AND (
+          cm.end_date <= DATE_ADD(CURDATE(), INTERVAL ' . $daysToRenewInAdvance . ' DAY)
+          OR (
+            cm.membership_type_id IN (
+              SELECT cpfv.membership_type_id
+              FROM membershipextras_subscription_line msl, civicrm_line_item cli, civicrm_price_field_value cpfv
+              WHERE msl.contribution_recur_id = ccr.id
+              AND cli.id = msl.line_item_id
+              AND cli.price_field_value_id = cpfv.id
+              AND msl.auto_renew = 1
+              AND msl.is_removed = 0
+            )
+          )
+         )  
+    GROUP BY ccr.id
+    ';
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
     $recurContributionsList = [];
