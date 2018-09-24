@@ -102,35 +102,126 @@ CRM.$(function () {
 
   CRM.$('.confirm-add-next-period-membership-button').on('click', function(e) {
     e.preventDefault();
-    
-    var membershipTypeId = CRM.$('#newMembershipItem').val(),
-        membershipType = getMembershipType(membershipTypeId),
-        newMembershipAmount = CRM.$('#newMembershipAmount').val();
 
-    if (!membershipTypeId || !membershipTypeId.length) {
-      CRM.alert(ts('Item label is required'), null, 'error');
-      
-      return;
+    if (validateNewMembershipLineItem()) {
+      showMembershipAddLineItemConfirmation();
     }
 
-    if (!newMembershipAmount.length) {
-      CRM.alert(ts('Item amount is required'), null, 'error');
-
-      return;
-    } else {
-      try {
-        newMembershipAmount = parseInt(newMembershipAmount);
-      } catch(error) {
-        CRM.alert(ts('Amount you entered is not valid'), null, 'error');
-
-        return;
-      }
-    }
-
-    showAddLineItemConfirmation(membershipType.name, newMembershipAmount, membershipType.financial_type_id);
     CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab', 'next');
   });
 });
+
+/**
+ * Validates the data being used to create a neww membership.
+ *
+ * @return {boolean}
+ */
+function validateNewMembershipLineItem() {
+  var membershipTypeId = CRM.$('#newMembershipItem').val(),
+    newMembershipAmount = CRM.$('#newMembershipAmount').val();
+
+  if (!membershipTypeId || !membershipTypeId.length) {
+    CRM.alert(ts('Item label is required'), null, 'error');
+
+    return false;
+  }
+
+  if (!newMembershipAmount.length) {
+    CRM.alert(ts('Item amount is required'), null, 'error');
+
+    return false;
+  } else {
+    try {
+      newMembershipAmount = parseInt(newMembershipAmount);
+    } catch(error) {
+      CRM.alert(ts('Amount you entered is not valid'), null, 'error');
+
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function showMembershipAddLineItemConfirmation() {
+  var membershipTypeId = CRM.$('#newMembershipItem').val();
+  var membershipType = getMembershipType(membershipTypeId);
+
+  CRM.confirm({
+    title: ts('Add ' + membershipType.name + '?'),
+    message: ts('Please note the changes should take effect immediately after "Apply".'),
+    options: {
+      no: ts('Cancel'),
+      yes: ts('Apply')
+    }
+  }).on('crmConfirm:yes', function() {
+    var membershipTypeId = CRM.$('#newMembershipItem').val(),
+      newMembershipAmount = CRM.$('#newMembershipAmount').val();
+
+    var membershipType = getMembershipType(membershipTypeId),
+      priceFieldValue = getDefaultPriceFieldValueForMembershipType(membershipTypeId),
+      financialType = getFinancialType(membershipType.financial_type_id),
+      taxAmount = Number(financialType.tax_rate) * amount;
+
+    CRM.api3('PriceFieldValue', 'get', {
+      sequential: 1,
+      membership_type_id: membershipTypeId,
+      'price_field_id.price_set_id.name': 'default_membership_type_amount'
+    }).done(function(priceFieldValueResult) {
+      if (priceFieldValueResult.count > 0) {
+        priceFieldValue = priceFieldValueResult.values[0];
+
+        createLineItem({
+          label: membershipType.name,
+          entity_id: recurringContributionID,
+          qty: 1.0,
+          unit_price: newMembershipAmount,
+          line_total: newMembershipAmount,
+          tax_amount: taxAmount,
+          financial_type_id: membershipType.financial_type_id,
+          price_field_id: priceFieldValue.price_field_id,
+          price_field_value_id: priceFieldValue.id,
+          entity_table: 'civicrm_contribution_recur',
+        });
+      } else {
+        CRM.alert('Could not determine price field value for the select membership type.', null, 'error');
+      }
+    });
+  }).on('crmConfirm:no', function() {
+    return;
+  });
+}
+
+function createLineItem(params) {
+  CRM.api3('LineItem', 'create', params).done(function(lineItemResult) {
+    if (lineItemResult.is_error) {
+      CRM.alert(lineItemResult.error_message, null, 'error');
+
+      return;
+    }
+
+    var createdLineItemId = lineItemResult.id;
+    CRM.api3('ContributionRecurLineItem', 'create', {
+      contribution_recur_id: recurringContributionID,
+      line_item_id: createdLineItemId,
+      auto_renew: true,
+    }).done(function(contribRecurResult) {
+      if (contribRecurResult.is_error) {
+        CRM.alert(contribRecurResult.error_message, null, 'error');
+
+        return;
+      }
+
+      CRM.alert(
+        ts(createdLineItemId.label + ' will now be continued in the next period.'),
+        null,
+        'success'
+      );
+
+      CRM.refreshParent('#periodsContainer');
+    });
+  });
+}
 
 function getFinancialType(finTypeId) {
   return financialTypes.filter(function(financialType) {
@@ -210,52 +301,26 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
 
 function showAddLineItemConfirmation(label, amount, finTypeId) {
   CRM.confirm({
-      title: ts('Add ' + label + '?'),
-      message: ts('Please note the changes should take effect immediately after "Apply".'),
-      options: {
-        no: ts('Cancel'),
-        yes: ts('Apply')
-      }
-    }).on('crmConfirm:yes', function() {
-      var financialType = getFinancialType(finTypeId),
-          taxAmount = Number(financialType.tax_rate) * amount;
-      CRM.api3('LineItem', 'create', {
-        label: label,
-        entity_id: recurringContributionID,
-        qty: 1.0,
-        unit_price: amount,
-        line_total: amount,
-        tax_amount: taxAmount,
-        financial_type_id: finTypeId,
-        entity_table: 'civicrm_contribution_recur',
-      }).done(function(lineItemResult) {
-        if (lineItemResult.is_error) {
-          CRM.alert(lineItemResult.error_message, null, 'error');
-
-          return;
-        }
-
-        var createdLineItemId = lineItemResult.id;
-        CRM.api3('ContributionRecurLineItem', 'create', {
-          contribution_recur_id: recurringContributionID,
-          line_item_id: createdLineItemId,
-          auto_renew: true,
-        }).done(function(contribRecurResult) {
-          if (contribRecurResult.is_error) {
-            CRM.alert(contribRecurResult.error_message, null, 'error');
-
-            return;
-          }
-
-          CRM.alert(
-            ts(label + ' will now be continued in the next period.'),
-            null,
-            'success'
-          );
-          CRM.refreshParent('#periodsContainer');
-        });
-      });
-    }).on('crmConfirm:no', function() {
-      return;
+    title: ts('Add ' + label + '?'),
+    message: ts('Please note the changes should take effect immediately after "Apply".'),
+    options: {
+      no: ts('Cancel'),
+      yes: ts('Apply')
+    }
+  }).on('crmConfirm:yes', function () {
+    var financialType = getFinancialType(finTypeId),
+      taxAmount = Number(financialType.tax_rate) * amount;
+    createLineItem({
+      label: label,
+      entity_id: recurringContributionID,
+      qty: 1.0,
+      unit_price: amount,
+      line_total: amount,
+      tax_amount: taxAmount,
+      financial_type_id: finTypeId,
+      entity_table: 'civicrm_contribution_recur',
     });
+  }).on('crmConfirm:no', function () {
+    return;
+  });
 }
