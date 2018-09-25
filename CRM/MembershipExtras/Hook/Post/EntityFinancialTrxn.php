@@ -52,6 +52,7 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
           }
         }
       }
+
       civicrm_api3('ContributionRecur', 'create', [
         'id' => $this->recurContribution['id'],
         'contribution_status_id' => $newStatus,
@@ -59,6 +60,11 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
   }
 
+  /**
+   * Returns LineItems associated to a recurring contribution
+   * 
+   * @return array
+   */
   private function getSubscriptionLines() {
     $lines = civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
