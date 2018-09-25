@@ -41,11 +41,31 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
 
     $newStatus = $this->generatePaymentPlanNewStatus();
     if ($newStatus !== NULL) {
+      if ($newStatus === 'Completed') {
+        $subscriptionLines = $this->getSubscriptionLines();
+        foreach($subscriptionLines as $line) {
+          if (!empty($line['start_date']) && empty($line['end_date'])) {
+            civicrm_api3('ContributionRecurLineItem', 'create', [
+              'id' => $line['id'],
+              'end_date' => $this->recurContribution['end_date'],
+            ]);
+          }
+        }
+      }
       civicrm_api3('ContributionRecur', 'create', [
         'id' => $this->recurContribution['id'],
         'contribution_status_id' => $newStatus,
       ]);
     }
+  }
+
+  private function getSubscriptionLines() {
+    $lines = civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution' => $this->recurContribution['id'],
+    ]);
+
+    return $lines;
   }
 
   /**
