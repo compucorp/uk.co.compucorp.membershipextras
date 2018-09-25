@@ -42,15 +42,7 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     $newStatus = $this->generatePaymentPlanNewStatus();
     if ($newStatus !== NULL) {
       if ($newStatus === 'Completed') {
-        $subscriptionLines = $this->getSubscriptionLines();
-        foreach($subscriptionLines as $line) {
-          if (!empty($line['start_date']) && empty($line['end_date'])) {
-            civicrm_api3('ContributionRecurLineItem', 'create', [
-              'id' => $line['id'],
-              'end_date' => $this->recurContribution['end_date'],
-            ]);
-          }
-        }
+        $this->updateSubscriptionLinesEndDate();
       }
 
       civicrm_api3('ContributionRecur', 'create', [
@@ -61,17 +53,38 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
   }
 
   /**
+   * Updates subscription line items end date
+   */
+  private function updateSubscriptionLinesEndDate() {
+    $subscriptionLines = $this->getSubscriptionLines();
+    foreach($subscriptionLines as $line) {
+      if (!empty($line['start_date']) && empty($line['end_date'])) {
+        civicrm_api3('ContributionRecurLineItem', 'create', [
+          'id' => $line['id'],
+          'end_date' => $this->recurContribution['end_date'],
+        ]);
+      }
+    }
+  }
+
+  /**
    * Returns LineItems associated to a recurring contribution
    * 
    * @return array
    */
   private function getSubscriptionLines() {
-    $lines = civicrm_api3('ContributionRecurLineItem', 'get', [
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
       'contribution' => $this->recurContribution['id'],
+      'options' => ['limit' => 0],
     ]);
 
-    return $lines;
+    $subscriptionLines = [];
+    if ($result['count']) {
+      $subscriptionLines = $result['values'];
+    }
+    
+    return $subscriptionLines;
   }
 
   /**
