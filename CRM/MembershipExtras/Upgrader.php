@@ -28,6 +28,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'description' => ts('Automatically renew any offline/paylater membership that is configured to be auto-renewed'),
       'api_entity' => 'OfflineAutoRenewalJob',
       'api_action' => 'run',
+      'is_active' => 0,
     ]);
   }
 
