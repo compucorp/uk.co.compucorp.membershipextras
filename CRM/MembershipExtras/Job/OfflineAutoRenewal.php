@@ -150,32 +150,32 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    * @return True
    */
   public function run() {
-   $recurContributions = $this->getOfflineAutoRenewalRecurContributions();
+    $recurContributions = $this->getOfflineAutoRenewalRecurContributions();
 
-   foreach ($recurContributions as $recurContribution) {
-     $this->previousRecurContributionID = $recurContribution['contribution_recur_id'];
-     $this->currentRecurContributionID = $recurContribution['contribution_recur_id'];
+    foreach ($recurContributions as $recurContribution) {
+      $this->previousRecurContributionID = $recurContribution['contribution_recur_id'];
+      $this->currentRecurContributionID = $recurContribution['contribution_recur_id'];
 
-     if (empty($recurContribution['installments'])) {
-       $this->currentInstallmentsNumber = 1;
-     }
-     else {
-       $this->currentInstallmentsNumber = $recurContribution['installments'];
-     }
+      if (empty($recurContribution['installments'])) {
+        $this->currentInstallmentsNumber = 1;
+      }
+      else {
+        $this->currentInstallmentsNumber = $recurContribution['installments'];
+      }
 
-     $this->setLastContribution();
+      $this->setLastContribution();
 
-     if ($this->currentInstallmentsNumber > 1) {
-       $this->renewWithInstallmentsPaymentPlan();
-     }
-     else {
-       $this->renewNoInstallmentsPaymentPlan();
-     }
+      if ($this->currentInstallmentsNumber > 1) {
+        $this->renewWithInstallmentsPaymentPlan();
+      }
+      else {
+        $this->renewNoInstallmentsPaymentPlan();
+      }
 
-     $this->dispatchMembershipRenewalHook();
-   }
+      $this->dispatchMembershipRenewalHook();
+    }
 
-   return TRUE;
+    return TRUE;
   }
 
   /**
