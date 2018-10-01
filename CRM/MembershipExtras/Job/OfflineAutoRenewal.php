@@ -543,7 +543,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
       'sequential' => 1,
       'contact_id' => $currentRecurContribution['contact_id'],
-      'amount' => $this->totalAmount,
+      'amount' => 0,
       'currency' => $currentRecurContribution['currency'],
       'frequency_unit' => $currentRecurContribution['frequency_unit'],
       'frequency_interval' => $currentRecurContribution['frequency_interval'],
@@ -553,7 +553,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'auto_renew' => 1,
       'cycle_day' => $currentRecurContribution['cycle_day'],
       'payment_processor_id' => $paymentProcessorID,
-      'financial_type_id' => $this->financialTypesIDMap[$currentRecurContribution['financial_type_id']],
+      'financial_type_id' => $currentRecurContribution['financial_type_id'],
       'payment_instrument_id' => $paymentInstrumentName,
       'start_date' => $this->paymentPlanStartDate,
     ])['values'][0];
@@ -565,9 +565,53 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     );
     $this->updateFieldsLinkingPeriods($currentRecurContribution['id'], $newRecurringContribution['id']);
     $this->copyRecurringLineItems($currentRecurContribution, $newRecurringContribution);
+    $this->updateRecurringContributionAmount($newRecurringContribution['id']);
 
     // The new recurring contribution is now the current one.
     $this->currentRecurContributionID = $newRecurringContribution['id'];
+  }
+
+  /**
+   * Updates amount on recurring contribution by calculating from associated line
+   * items.
+   *
+   * @param $recurringContributionID
+   */
+  private function updateRecurringContributionAmount($recurringContributionID) {
+    $totalAmount = $this->calculateRecurringContributionTotalAmount($recurringContributionID);
+    civicrm_api3('ContributionRecur', 'create', [
+      'id' => $recurringContributionID,
+      'amount' => $totalAmount,
+    ]);
+  }
+
+  /**
+   * Calculates amount for current recurring contribution from related line
+   * items.
+   */
+  private function calculateRecurringContributionTotalAmount($recorringContributionID) {
+    $totalAmount = 0;
+
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $recorringContributionID,
+      'start_date' => ['IS NOT NULL' => 1],
+      'is_removed' => 0,
+      'api.LineItem.getsingle' => [
+        'id' => '$value.line_item_id',
+        'entity_table' => ['IS NOT NULL' => 1],
+        'entity_id' => ['IS NOT NULL' => 1],
+      ],
+    ]);
+
+    if ($result['count'] > 0) {
+      foreach ($result['values'] as $lineItemData) {
+        $totalAmount += $lineItemData['api.LineItem.getsingle']['line_total'];
+        $totalAmount += $lineItemData['api.LineItem.getsingle']['tax_amount'];
+      }
+    }
+
+    return MoneyUtilities::roundToCurrencyPrecision($totalAmount);
   }
 
   /**
