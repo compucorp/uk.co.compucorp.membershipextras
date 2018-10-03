@@ -604,6 +604,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         'entity_table' => ['IS NOT NULL' => 1],
         'entity_id' => ['IS NOT NULL' => 1],
       ],
+      'options' => ['limit' => 0],
     ]);
 
     if ($result['count'] > 0) {
@@ -731,6 +732,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         'entity_table' => ['IS NOT NULL' => 1],
         'entity_id' => ['IS NOT NULL' => 1]
       ],
+      'options' => ['limit' => 0],
     ]);
 
     foreach ($lineItems['values'] as $line) {
