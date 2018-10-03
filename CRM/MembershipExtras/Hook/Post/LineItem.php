@@ -101,7 +101,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
     $contributionID = $this->lineItem->contribution_id;
 
     if (empty($contributionID)) {
-      return array();
+      return [];
     }
 
     if (!in_array($contributionID, $contributionKeys)) {
@@ -124,7 +124,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
         self::$contributions[$contributionID] = $result['values'][0];
       }
       else {
-        self::$contributions[$contributionID] = array();
+        self::$contributions[$contributionID] = [];
       }
     }
 
