@@ -172,7 +172,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   static $isFirstPaymentPlanContribution = TRUE;
-  $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithMoreThanOneInstallment();
+  $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithAtLeastOneInstallment();
   $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
   if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
@@ -191,18 +191,17 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
 }
 
 /**
- * Determines if the membership is paid
- * using payment plan option using more than
- * one installment or not.
+ * Determines if the membership is paid using payment plan option having at
+ * least one instalment.
  *
  * @return bool
  */
-function _membershipextras_isPaymentPlanWithMoreThanOneInstallment() {
+function _membershipextras_isPaymentPlanWithAtLeastOneInstallment() {
   $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
   $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
   $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-  if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+  if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 0) {
     return TRUE;
   }
 

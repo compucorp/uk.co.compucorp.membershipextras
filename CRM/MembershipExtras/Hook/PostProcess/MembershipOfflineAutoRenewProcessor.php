@@ -84,7 +84,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 0) {
       return TRUE;
     }
 
