@@ -217,21 +217,24 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . '))
          AND ccr.end_date IS NOT NULL
          AND ccr.auto_renew = 1 
-         AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
+         AND (
+          ccr.contribution_status_id != ' . $cancelledStatusID . ' 
+          OR  ccr.contribution_status_id != ' . $refundedStatusID . '
+         )
          AND ppp.next_period IS NULL
          AND (
-          cm.end_date <= DATE_ADD(CURDATE(), INTERVAL ' . $daysToRenewInAdvance . ' DAY)
-          OR (
-            cm.membership_type_id IN (
-              SELECT cpfv.membership_type_id
-              FROM membershipextras_subscription_line msl, civicrm_line_item cli, civicrm_price_field_value cpfv
-              WHERE msl.contribution_recur_id = ccr.id
-              AND cli.id = msl.line_item_id
-              AND cli.price_field_value_id = cpfv.id
-              AND msl.auto_renew = 1
-              AND msl.is_removed = 0
-            )
-          )
+           cm.end_date <= DATE_ADD(CURDATE(), INTERVAL ' . $daysToRenewInAdvance . ' DAY)
+           OR (
+             cm.membership_type_id IN (
+               SELECT cpfv.membership_type_id
+                 FROM membershipextras_subscription_line msl, civicrm_line_item cli, civicrm_price_field_value cpfv
+                WHERE msl.contribution_recur_id = ccr.id
+                  AND cli.id = msl.line_item_id
+                  AND cli.price_field_value_id = cpfv.id
+                  AND msl.auto_renew = 1
+                  AND msl.is_removed = 0
+             )
+           )
          )
     GROUP BY ccr.id
     ';
@@ -630,6 +633,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     if (count($recurringLineItems)) {
       foreach ($recurringLineItems as $lineItem) {
         unset($lineItem['id']);
+        $lineItem['unit_price'] = $this->calculateLineItemUnitPrice($lineItem);
+        $lineItem['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItem['unit_price'] * $lineItem['qty']);
+        $lineItem['tax_amount'] = $this->calculateLineItemTaxAmount($lineItem['line_total'], $lineItem['financial_type_id']);
 
         $newLineItem = civicrm_api3('LineItem', 'create', $lineItem);
         CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
@@ -727,6 +733,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'contribution_recur_id' => $recurringContributionID,
       'auto_renew' => 1,
       'is_removed' => 0,
+      'end_date' => ['IS NULL' => 1],
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
@@ -738,6 +745,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     foreach ($lineItems['values'] as $line) {
       $lineItemParams = $line['api.LineItem.getsingle'];
       unset($lineItemParams['id']);
+      $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($line);
+      $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
+      $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
+
       $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
 
       $newStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
