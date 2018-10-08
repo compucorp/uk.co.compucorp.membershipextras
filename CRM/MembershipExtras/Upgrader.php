@@ -15,7 +15,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->createPaymentProcessor();
     $this->createLineItemExternalIDCustomField();
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
-    $this->createOfflineSubLineItemsForPaymentPlans();
+    $this->updatePaymentPlans();
   }
 
   /**
@@ -343,7 +343,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * Finds all payment plans and populate the offline recurring contribution
    * line item for the payment plans using an offline payment processor
    */
-  private function createOfflineSubLineItemsForPaymentPlans() {
+  private function updatePaymentPlans() {
     $recurContributions = $this->getAllPaymentPlans();
 
     foreach ($recurringContributions as $paymentPlan) {
@@ -385,6 +385,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   public function upgrade_0001() {
     $this->executeSqlFile('sql/auto_install.sql');
     $this->createPeriodLinkCustomFields();
+    $this->updatePaymentPlans();
 
     return TRUE;
   }
