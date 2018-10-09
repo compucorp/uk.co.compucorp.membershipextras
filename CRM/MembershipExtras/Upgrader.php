@@ -222,29 +222,14 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
-   * Checks if a payment plan id is a manual payment
-   * 
-   * @param string $paymentProcessorID
-   * @return bool
-   */
-  private function isManualPaymentPlan($paymentProcessorID) {
-    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
-    $isOfflineContribution = in_array($paymentProcessorID, $manualPaymentProcessors);
-
-    if ($isOfflineContribution || empty($paymentProcessorID)) {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-  /**
-   * Returns all existing payment plans
+   * Returns all existing manual payment plans
    * 
    * @return array
    */
-  private function getAllPaymentPlans() {
+  private function getManualPaymentPlans() {
+    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
     $result = civicrm_api3('ContributionRecur', 'get', [
+      'payment_processor_id' => ['IN' => $manualPaymentProcessors],
       'options' => ['limit' => 0],
     ]);
 
@@ -264,7 +249,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * @return array
    */
   private function getLastInstalmentForPaymentPlan($paymentPlanId) {
-    if (empty($membershipID)) {
+    if (empty($paymentPlanId)) {
       return [];
     }
 
@@ -275,6 +260,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
+   * Get the contributions associated to a contribution id
+   * 
    * @param string $contributionId
    * 
    * @return array
@@ -295,7 +282,11 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
+   * Copy a payment plan's line items and create subscription
+   * lines for each copied line item
    * 
+   * @param array $paymentPlan
+   * @param array $lineItems
    */
   private function copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems) {
     foreach ($lineItems as $lineItem) {
@@ -344,21 +335,17 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * line item for the payment plans using an offline payment processor
    */
   private function updatePaymentPlans() {
-    $recurContributions = $this->getAllPaymentPlans();
+    $manualRecurContributions = $this->getManualPaymentPlans();
 
-    foreach ($recurringContributions as $paymentPlan) {
-      if ($this->isManualPaymentPlan($paymentPlan['payment_processor_id'])) {
-        $lastInstalment = $this->getLastInstalmentForPaymentPlan($paymentPlan['id']);
-        $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
+    foreach ($$manualRecurContributions as $paymentPlan) {
+      $lastInstalment = $this->getLastInstalmentForPaymentPlan($paymentPlan['id']);
+      $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
 
-        $this->copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems);
-      }
+      $this->copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems);
 
       $isMatch = (
-        $this->isManualPaymentPlan($paymentPlan['payment_processor_id']) &&
-        !empty($this->getLastInstalmentForPaymentPlan($paymentPlan['id'])) &&
-        !empty($paymentPlan['end_date']) && $this->isMoreThanOneMonthOld($paymentPlan['end_date']) &&
-        $paymentPlan['auto_renew']
+        ($paymentPlan['installments'] > 0) && $paymentPlan['auto_renew'] &&
+        $this->isMoreThanOneMonthOld($paymentPlan['end_date'])
       );
       if ($isMatch) {
         $this->createCustomValueForPaymentPlan($paymentPlan['id']);
@@ -373,8 +360,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * 
    * @return bool
    */
-  private function isMoreThanOneMonthOld($date) {
-    return strtotime($date) < strtotime('-30 days');
+  private function isMoreThanOneMonthOld($date = null) {
+    return $date && (strtotime($date) < strtotime('-30 days'));
   }
 
   /**
