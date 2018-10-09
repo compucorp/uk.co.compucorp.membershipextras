@@ -254,7 +254,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     }
 
     $result = civicrm_api3('Contribution', 'getsingle', [
-      'options' => ['sort' => 'id DESC'],
+      'options' => ['sort' => 'id DESC', 'limit' => 1],
       'contribution_recur_id' => $paymentPlanId,
     ]);
   }
