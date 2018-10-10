@@ -183,6 +183,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
         throw new Exception($message);
       }
+
+      $transaction->commit();
     }
 
     return TRUE;
