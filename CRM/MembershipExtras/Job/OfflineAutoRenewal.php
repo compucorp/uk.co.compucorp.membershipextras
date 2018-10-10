@@ -165,8 +165,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         $this->currentInstallmentsNumber = $recurContribution['installments'];
       }
 
-      $tx = new CRM_Core_Transaction();
-
+      $transaction = new CRM_Core_Transaction();
       try {
         $this->setLastContribution();
 
@@ -179,14 +178,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
         $this->dispatchMembershipRenewalHook();
       } catch (Exception $e) {
-        $tx->rollback();
-        $message = "An error ocurred renewing a payment plan with id({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
-
-        CRM_Core_Session::setStatus(
-          $message,
-          "Error Renewing Payment Plan",
-          'error'
-        );
+        $transaction->rollback();
+        $message = "An error occurred renewing a payment plan with id({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
 
         throw new Exception($message);
       }
