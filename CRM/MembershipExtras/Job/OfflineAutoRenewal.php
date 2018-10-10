@@ -236,7 +236,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
          AND ccr.auto_renew = 1 
          AND (
           ccr.contribution_status_id != ' . $cancelledStatusID . ' 
-          OR  ccr.contribution_status_id != ' . $refundedStatusID . '
+          AND ccr.contribution_status_id != ' . $refundedStatusID . '
          )
          AND ppp.next_period IS NULL
          AND (
