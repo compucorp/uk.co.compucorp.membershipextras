@@ -148,6 +148,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    * auto-renewal memberships.
    *
    * @return True
+   *
+   * @throws \Exception
    */
   public function run() {
     $recurContributions = $this->getOfflineAutoRenewalRecurContributions();
@@ -163,16 +165,31 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         $this->currentInstallmentsNumber = $recurContribution['installments'];
       }
 
-      $this->setLastContribution();
+      $tx = new CRM_Core_Transaction();
 
-      if ($this->currentInstallmentsNumber > 1) {
-        $this->renewWithInstallmentsPaymentPlan();
-      }
-      else {
-        $this->renewNoInstallmentsPaymentPlan();
-      }
+      try {
+        $this->setLastContribution();
 
-      $this->dispatchMembershipRenewalHook();
+        if ($this->currentInstallmentsNumber > 1) {
+          $this->renewWithInstallmentsPaymentPlan();
+        }
+        else {
+          $this->renewNoInstallmentsPaymentPlan();
+        }
+
+        $this->dispatchMembershipRenewalHook();
+      } catch (Exception $e) {
+        $tx->rollback();
+        $message = "An error ocurred renewing a payment plan with id({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
+
+        CRM_Core_Session::setStatus(
+          $message,
+          "Error Renewing Payment Plan",
+          'error'
+        );
+
+        throw new Exception($message);
+      }
     }
 
     return TRUE;
@@ -330,12 +347,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,
         'contribution_id' => 'null',
-        'price_field_id' => $lineItem['price_field_id'],
+        'price_field_id' => isset($lineItem['price_field_id']) ? $lineItem['price_field_id'] : NULL,
         'label' => $lineItem['label'],
         'qty' => $lineItem['qty'],
         'unit_price' => $unitPrice,
         'line_total' => $lineTotal,
-        'price_field_value_id' => $lineItem['price_field_value_id'],
+        'price_field_value_id' => isset($lineItem['price_field_value_id']) ? $lineItem['price_field_value_id'] : NULL,
         'financial_type_id' => $lineItem['financial_type_id'],
         'non_deductible_amount' => $lineItem['non_deductible_amount'],
       ];
@@ -385,41 +402,21 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   }
 
   /**
-   * Calculates the unit price for
-   * the line item.
+   * Calculates the unit price for the line item, checking if it is a membership
+   * that requires its price to be updated to latest.
    *
    * @param array $lineItem
    *
    * @return float
    */
   private function calculateLineItemUnitPrice($lineItem) {
-    if ($lineItem['entity_table'] === 'civicrm_contribution') {
+    $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
+    if (!$this->isMembershipLineItem($lineItem, $priceFieldValue)) {
       return  $lineItem['unit_price'];
     }
 
-    $optoutUsingLastPriceFieldID = civicrm_api3('CustomField', 'getvalue', [
-      'return' => 'id',
-      'custom_group_id' => 'offline_autorenew_option',
-      'name' => 'optout_last_price_offline_autorenew',
-    ]);
-
-    $lineItemMembership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'return' => ["custom_$optoutUsingLastPriceFieldID", 'membership_type_id.minimum_fee'],
-      'id' => $lineItem['entity_id'],
-    ]);
-
-    if (!empty($lineItemMembership['values'][0]['membership_type_id.minimum_fee'])) {
-      $membershipMinimumFee = $lineItemMembership['values'][0]['membership_type_id.minimum_fee'];
-    }
-
-    $isOptoutUsingLastPrice = FALSE;
-    if (!empty($lineItemMembership['values'][0]["custom_$optoutUsingLastPriceFieldID"])) {
-      $isOptoutUsingLastPrice = TRUE;
-    }
-
-
-    if ($this->useMembershipLatestPrice && !$isOptoutUsingLastPrice) {
+    $membershipMinimumFee = $this->getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue);
+    if ($this->isUseLatestPriceForMembership($lineItem)) {
       $unitPrice = $this->calculateSingleInstallmentAmount($membershipMinimumFee);
     }
     else {
@@ -427,6 +424,62 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     }
 
     return $unitPrice;
+  }
+
+  /**
+   * Checks if the given line item, that should correspond to an existing
+   * membership, requires its price to be updated oon renewal or not.
+   *
+   * @param array $lineItem
+   *
+   * @return bool
+   */
+  private function isUseLatestPriceForMembership($lineItem) {
+    $isOptoutUsingLastPrice = FALSE;
+    $optoutUsingLastPriceFieldID = civicrm_api3('CustomField', 'getvalue', [
+      'return' => 'id',
+      'custom_group_id' => 'offline_autorenew_option',
+      'name' => 'optout_last_price_offline_autorenew',
+    ]);
+    if ($lineItem['entity_table'] == 'civicrm_membership') {
+      $lineItemMembership = civicrm_api3('Membership', 'get', [
+        'sequential' => 1,
+        'return' => ["custom_$optoutUsingLastPriceFieldID"],
+        'id' => $lineItem['entity_id'],
+      ]);
+
+      if (!empty($lineItemMembership['values'][0]["custom_$optoutUsingLastPriceFieldID"])) {
+        $isOptoutUsingLastPrice = TRUE;
+      }
+    }
+
+    return $this->useMembershipLatestPrice && !$isOptoutUsingLastPrice;
+  }
+
+  /**
+   * Obtains the minimum fee for a membership from the given line item, takiing
+   * into account the membership might not exist yet if it corresponds for a
+   * line item added for next period.
+   *
+   * @param array $lineItem
+   * @param array $priceFieldValue
+   *
+   * @return mixed
+   */
+  private function getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue) {
+    if ($lineItem['entity_table'] == 'civicrm_membership') {
+      $membershipTypeID = civicrm_api3('Membership', 'getsingle', [
+        'id' => $lineItem['entity_id'],
+      ])['membership_type_id'];
+    } else {
+      $membershipTypeID = $priceFieldValue['membership_type_id'];
+    }
+
+    $membershipType = civicrm_api3('MembershipType', 'getsingle', [
+      'id' => $membershipTypeID,
+    ]);
+
+    return $membershipType['minimum_fee'];
   }
 
   private function calculateSingleInstallmentAmount($amount) {
@@ -745,7 +798,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     foreach ($lineItems['values'] as $line) {
       $lineItemParams = $line['api.LineItem.getsingle'];
       unset($lineItemParams['id']);
-      $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($line);
+      $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams);
       $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
       $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
 
@@ -805,6 +858,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'contribution_status_id' => $this->contributionPendingStatusValue,
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
+      'skipCleanMoney' => TRUE,
       'contribution_recur_id' => $this->currentRecurContributionID,
     ];
 
@@ -854,7 +908,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       $newLineItem = CRM_Price_BAO_LineItem::create($lineItem);
 
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
-      if (!empty($contribution->tax_amount)) {
+      if (!empty($contribution->tax_amount) && !empty($newLineItem->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
       }
     }
