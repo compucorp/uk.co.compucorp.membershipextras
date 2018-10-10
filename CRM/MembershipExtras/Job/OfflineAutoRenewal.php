@@ -148,6 +148,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    * auto-renewal memberships.
    *
    * @return True
+   *
+   * @throws \Exception
    */
   public function run() {
     $recurContributions = $this->getOfflineAutoRenewalRecurContributions();
@@ -163,16 +165,26 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         $this->currentInstallmentsNumber = $recurContribution['installments'];
       }
 
-      $this->setLastContribution();
+      $transaction = new CRM_Core_Transaction();
+      try {
+        $this->setLastContribution();
 
-      if ($this->currentInstallmentsNumber > 1) {
-        $this->renewWithInstallmentsPaymentPlan();
-      }
-      else {
-        $this->renewNoInstallmentsPaymentPlan();
+        if ($this->currentInstallmentsNumber > 1) {
+          $this->renewWithInstallmentsPaymentPlan();
+        }
+        else {
+          $this->renewNoInstallmentsPaymentPlan();
+        }
+
+        $this->dispatchMembershipRenewalHook();
+      } catch (Exception $e) {
+        $transaction->rollback();
+        $message = "An error occurred renewing a payment plan with id({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
+
+        throw new Exception($message);
       }
 
-      $this->dispatchMembershipRenewalHook();
+      $transaction->commit();
     }
 
     return TRUE;
@@ -217,21 +229,24 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN (' . $manualPaymentProcessorsIDs . '))
          AND ccr.end_date IS NOT NULL
          AND ccr.auto_renew = 1 
-         AND (ccr.contribution_status_id != ' . $cancelledStatusID . ' OR  ccr.contribution_status_id != ' . $refundedStatusID . ')
+         AND (
+          ccr.contribution_status_id != ' . $cancelledStatusID . ' 
+          AND ccr.contribution_status_id != ' . $refundedStatusID . '
+         )
          AND ppp.next_period IS NULL
          AND (
-          cm.end_date <= DATE_ADD(CURDATE(), INTERVAL ' . $daysToRenewInAdvance . ' DAY)
-          OR (
-            cm.membership_type_id IN (
-              SELECT cpfv.membership_type_id
-              FROM membershipextras_subscription_line msl, civicrm_line_item cli, civicrm_price_field_value cpfv
-              WHERE msl.contribution_recur_id = ccr.id
-              AND cli.id = msl.line_item_id
-              AND cli.price_field_value_id = cpfv.id
-              AND msl.auto_renew = 1
-              AND msl.is_removed = 0
-            )
-          )
+           cm.end_date <= DATE_ADD(CURDATE(), INTERVAL ' . $daysToRenewInAdvance . ' DAY)
+           OR (
+             cm.membership_type_id IN (
+               SELECT cpfv.membership_type_id
+                 FROM membershipextras_subscription_line msl, civicrm_line_item cli, civicrm_price_field_value cpfv
+                WHERE msl.contribution_recur_id = ccr.id
+                  AND cli.id = msl.line_item_id
+                  AND cli.price_field_value_id = cpfv.id
+                  AND msl.auto_renew = 1
+                  AND msl.is_removed = 0
+             )
+           )
          )
     GROUP BY ccr.id
     ';
@@ -327,12 +342,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,
         'contribution_id' => 'null',
-        'price_field_id' => $lineItem['price_field_id'],
+        'price_field_id' => isset($lineItem['price_field_id']) ? $lineItem['price_field_id'] : NULL,
         'label' => $lineItem['label'],
         'qty' => $lineItem['qty'],
         'unit_price' => $unitPrice,
         'line_total' => $lineTotal,
-        'price_field_value_id' => $lineItem['price_field_value_id'],
+        'price_field_value_id' => isset($lineItem['price_field_value_id']) ? $lineItem['price_field_value_id'] : NULL,
         'financial_type_id' => $lineItem['financial_type_id'],
         'non_deductible_amount' => $lineItem['non_deductible_amount'],
       ];
@@ -382,41 +397,21 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   }
 
   /**
-   * Calculates the unit price for
-   * the line item.
+   * Calculates the unit price for the line item, checking if it is a membership
+   * that requires its price to be updated to latest.
    *
    * @param array $lineItem
    *
    * @return float
    */
   private function calculateLineItemUnitPrice($lineItem) {
-    if ($lineItem['entity_table'] === 'civicrm_contribution') {
+    $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
+    if (!$this->isMembershipLineItem($lineItem, $priceFieldValue)) {
       return  $lineItem['unit_price'];
     }
 
-    $optoutUsingLastPriceFieldID = civicrm_api3('CustomField', 'getvalue', [
-      'return' => 'id',
-      'custom_group_id' => 'offline_autorenew_option',
-      'name' => 'optout_last_price_offline_autorenew',
-    ]);
-
-    $lineItemMembership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'return' => ["custom_$optoutUsingLastPriceFieldID", 'membership_type_id.minimum_fee'],
-      'id' => $lineItem['entity_id'],
-    ]);
-
-    if (!empty($lineItemMembership['values'][0]['membership_type_id.minimum_fee'])) {
-      $membershipMinimumFee = $lineItemMembership['values'][0]['membership_type_id.minimum_fee'];
-    }
-
-    $isOptoutUsingLastPrice = FALSE;
-    if (!empty($lineItemMembership['values'][0]["custom_$optoutUsingLastPriceFieldID"])) {
-      $isOptoutUsingLastPrice = TRUE;
-    }
-
-
-    if ($this->useMembershipLatestPrice && !$isOptoutUsingLastPrice) {
+    $membershipMinimumFee = $this->getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue);
+    if ($this->isUseLatestPriceForMembership($lineItem)) {
       $unitPrice = $this->calculateSingleInstallmentAmount($membershipMinimumFee);
     }
     else {
@@ -424,6 +419,62 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     }
 
     return $unitPrice;
+  }
+
+  /**
+   * Checks if the given line item, that should correspond to an existing
+   * membership, requires its price to be updated oon renewal or not.
+   *
+   * @param array $lineItem
+   *
+   * @return bool
+   */
+  private function isUseLatestPriceForMembership($lineItem) {
+    $isOptoutUsingLastPrice = FALSE;
+    $optoutUsingLastPriceFieldID = civicrm_api3('CustomField', 'getvalue', [
+      'return' => 'id',
+      'custom_group_id' => 'offline_autorenew_option',
+      'name' => 'optout_last_price_offline_autorenew',
+    ]);
+    if ($lineItem['entity_table'] == 'civicrm_membership') {
+      $lineItemMembership = civicrm_api3('Membership', 'get', [
+        'sequential' => 1,
+        'return' => ["custom_$optoutUsingLastPriceFieldID"],
+        'id' => $lineItem['entity_id'],
+      ]);
+
+      if (!empty($lineItemMembership['values'][0]["custom_$optoutUsingLastPriceFieldID"])) {
+        $isOptoutUsingLastPrice = TRUE;
+      }
+    }
+
+    return $this->useMembershipLatestPrice && !$isOptoutUsingLastPrice;
+  }
+
+  /**
+   * Obtains the minimum fee for a membership from the given line item, takiing
+   * into account the membership might not exist yet if it corresponds for a
+   * line item added for next period.
+   *
+   * @param array $lineItem
+   * @param array $priceFieldValue
+   *
+   * @return mixed
+   */
+  private function getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue) {
+    if ($lineItem['entity_table'] == 'civicrm_membership') {
+      $membershipTypeID = civicrm_api3('Membership', 'getsingle', [
+        'id' => $lineItem['entity_id'],
+      ])['membership_type_id'];
+    } else {
+      $membershipTypeID = $priceFieldValue['membership_type_id'];
+    }
+
+    $membershipType = civicrm_api3('MembershipType', 'getsingle', [
+      'id' => $membershipTypeID,
+    ]);
+
+    return $membershipType['minimum_fee'];
   }
 
   private function calculateSingleInstallmentAmount($amount) {
@@ -630,6 +681,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     if (count($recurringLineItems)) {
       foreach ($recurringLineItems as $lineItem) {
         unset($lineItem['id']);
+        $lineItem['unit_price'] = $this->calculateLineItemUnitPrice($lineItem);
+        $lineItem['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItem['unit_price'] * $lineItem['qty']);
+        $lineItem['tax_amount'] = $this->calculateLineItemTaxAmount($lineItem['line_total'], $lineItem['financial_type_id']);
 
         $newLineItem = civicrm_api3('LineItem', 'create', $lineItem);
         CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
@@ -727,6 +781,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'contribution_recur_id' => $recurringContributionID,
       'auto_renew' => 1,
       'is_removed' => 0,
+      'end_date' => ['IS NULL' => 1],
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
@@ -738,6 +793,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     foreach ($lineItems['values'] as $line) {
       $lineItemParams = $line['api.LineItem.getsingle'];
       unset($lineItemParams['id']);
+      $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams);
+      $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
+      $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
+
       $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
 
       $newStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
@@ -794,6 +853,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'contribution_status_id' => $this->contributionPendingStatusValue,
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
+      'skipCleanMoney' => TRUE,
       'contribution_recur_id' => $this->currentRecurContributionID,
     ];
 
@@ -843,7 +903,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       $newLineItem = CRM_Price_BAO_LineItem::create($lineItem);
 
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
-      if (!empty($contribution->tax_amount)) {
+      if (!empty($contribution->tax_amount) && !empty($newLineItem->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
       }
     }
