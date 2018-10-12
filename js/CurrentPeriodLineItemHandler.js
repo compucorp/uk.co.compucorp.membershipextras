@@ -121,6 +121,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     // Shows new line in table to add new membership.
     CRM.$('#add_membership_btn', this.currentTab).click(function () {
       that.newMembershipRow.css('display', 'table-row');
+      CRM.$('#periodsContainer').tabs({ disabled: true });
       CRM.$('.clickable').addClass('disabled-click');
       CRM.$('.rc-line-item').addClass('disabled-row');
       CRM.$('.auto-renew-line-checkbox').attr('disabled', true);
@@ -131,6 +132,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     // Hides line in table to add new membership.
     CRM.$('#cancel_add_membership_btn', this.currentTab).click(function () {
       that.newMembershipRow.css('display', 'none');
+      CRM.$('#periodsContainer').tabs({ disabled: false });
       CRM.$('.clickable').removeClass('disabled-click');
       CRM.$('.rc-line-item').removeClass('disabled-row');
       CRM.$('.auto-renew-line-checkbox').attr('disabled', false);
@@ -206,6 +208,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     // Show new row on table to add donation.
     CRM.$('#add_other_btn', this.currentTab).click(function () {
       that.newDonationRow.css('display', 'table-row');
+      CRM.$('#periodsContainer').tabs({ disabled: true });
       CRM.$('.clickable').addClass('disabled-click');
       CRM.$('.rc-line-item').addClass('disabled-row');
       CRM.$('.auto-renew-line-checkbox').attr('disabled', true);
@@ -233,6 +236,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     // Hides new row to add new donation.
     CRM.$('#cancel_add_donation_btn', this.currentTab).click(function () {
       that.newDonationRow.css('display', 'none');
+      CRM.$('#periodsContainer').tabs({ disabled: false });
       CRM.$('.clickable').removeClass('disabled-click');
       CRM.$('.rc-line-item').removeClass('disabled-row');
       CRM.$('.auto-renew-line-checkbox').attr('disabled', false);

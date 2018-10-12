@@ -13,6 +13,7 @@ CRM.$(function () {
   CRM.$('#next_buttons #addOtherAmount').on('click', function(e) {
     e.preventDefault();
     CRM.$('#addLineItemRow').show();
+    CRM.$('#periodsContainer').tabs({ disabled: true });
     CRM.$('#periodsContainer').find('tr').not(CRM.$('#addLineItemRow')).addClass('disabled-row');
     CRM.$('#periodsContainer').find('a').not(CRM.$('#addLineItemRow').find('a')).addClass('disabled-click');
   });
@@ -20,6 +21,7 @@ CRM.$(function () {
   CRM.$('#next_buttons #addMembership').on('click', function(e) {
     e.preventDefault();
     CRM.$('#addMembershipRow').show();
+    CRM.$('#periodsContainer').tabs({ disabled: true });
     CRM.$('#periodsContainer').find('tr').not(CRM.$('#addMembershipRow')).addClass('disabled-row');
     CRM.$('#periodsContainer').find('a').not(CRM.$('#addMembershipRow').find('a')).addClass('disabled-click');
   });
@@ -27,6 +29,7 @@ CRM.$(function () {
   CRM.$('.cancel-add-next-period-line-button').on('click', function(e) {
     e.preventDefault();
     CRM.$('#addLineItemRow').hide();
+    CRM.$('#periodsContainer').tabs({ disabled: false });
     CRM.$('#periodsContainer').find('tr').removeClass('disabled-row');
     CRM.$('#periodsContainer').find('a').removeClass('disabled-click');
   });
@@ -34,6 +37,7 @@ CRM.$(function () {
   CRM.$('.cancel-add-next-period-membership-button').on('click', function(e) {
     e.preventDefault();
     CRM.$('#addMembershipRow').hide();
+    CRM.$('#periodsContainer').tabs({ disabled: false });
     CRM.$('#periodsContainer').find('tr').removeClass('disabled-row');
     CRM.$('#periodsContainer').find('a').removeClass('disabled-click');
   });
