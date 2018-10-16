@@ -11,19 +11,21 @@ CRM.$(function () {
   });
 
   CRM.$('#next_buttons #addOtherAmount').on('click', function(e) {
-    e.preventDefault();
     CRM.$('#addLineItemRow').show();
     CRM.$('#periodsContainer').tabs({ disabled: true });
     CRM.$('#periodsContainer').find('tr').not(CRM.$('#addLineItemRow')).addClass('disabled-row');
     CRM.$('#periodsContainer').find('a').not(CRM.$('#addLineItemRow').find('a')).addClass('disabled-click');
+
+    return false;
   });
 
   CRM.$('#next_buttons #addMembership').on('click', function(e) {
-    e.preventDefault();
     CRM.$('#addMembershipRow').show();
     CRM.$('#periodsContainer').tabs({ disabled: true });
     CRM.$('#periodsContainer').find('tr').not(CRM.$('#addMembershipRow')).addClass('disabled-row');
     CRM.$('#periodsContainer').find('a').not(CRM.$('#addMembershipRow').find('a')).addClass('disabled-click');
+
+    return false;
   });
 
   CRM.$('.cancel-add-next-period-line-button').on('click', function(e) {
@@ -163,7 +165,6 @@ function showMembershipAddLineItemConfirmation() {
       newMembershipAmount = CRM.$('#newMembershipAmount').val();
 
     var membershipType = getMembershipType(membershipTypeId),
-      priceFieldValue = getDefaultPriceFieldValueForMembershipType(membershipTypeId),
       financialType = getFinancialType(membershipType.financial_type_id),
       taxAmount = Number(financialType.tax_rate) * amount;
 
@@ -173,7 +174,7 @@ function showMembershipAddLineItemConfirmation() {
       'price_field_id.price_set_id.name': 'default_membership_type_amount'
     }).done(function(priceFieldValueResult) {
       if (priceFieldValueResult.count > 0) {
-        priceFieldValue = priceFieldValueResult.values[0];
+        var priceFieldValue = priceFieldValueResult.values[0];
 
         createLineItem({
           label: membershipType.name,
@@ -217,7 +218,7 @@ function createLineItem(params) {
       }
 
       CRM.alert(
-        ts(createdLineItemId.label + ' will now be continued in the next period.'),
+        ts(params.label + ' will now be continued in the next period.'),
         null,
         'success'
       );
@@ -241,8 +242,21 @@ function roundUp(num, decimalPlaces) {
   return +(Math.round(num + "e+" + decimalPlaces)  + "e-" + decimalPlaces);
 }
 
+/**
+ * @param {string} memTypeId 
+ * 
+ * @returns {Object}
+ */
 function getMembershipType(memTypeId) { 
-  return membershipTypes[memTypeId];
+  var result = CRM.$.grep(membershipTypes, function(membershipType){
+    return membershipType.id == memTypeId;
+  });
+  
+  if (result.length === 0) {
+    return {};
+  }
+
+  return result[0];
 }
 
 function showNextPeriodLineItemRemovalConfirmation(lineItemData) {

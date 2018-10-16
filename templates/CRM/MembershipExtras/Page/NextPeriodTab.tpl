@@ -49,11 +49,11 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
     <td>
       <select class="crm-form-select" name="financial_type_id" id="financialType">
         {foreach from=$financialTypes item='financialType'}
-        <option value={$financialType.id}>{$financialType.name}</option>
+          <option value={$financialType.id}>{$financialType.name}</option>
         {/foreach}
       </select>
     </td>
-    <td id="financialTypeTaxRate">{if !empty($financialTypes[0].tax_rate)}{$financialTypes[0].tax_rate}{else}N/A{/if}</td>
+    <td id="financialTypeTaxRate" nowrap>{if !empty($financialTypes[0].tax_rate)}{$financialTypes[0].tax_rate}{else}N/A{/if}</td>
     <td>
       {$currencySymbol}&nbsp; <input type="text" class="four crm-form-text" size="4" id="amount" />
     </td>
@@ -80,24 +80,24 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
     <td>
       {$currencySymbol}&nbsp; <input type="text" class="four crm-form-text" size="4" id="newMembershipAmount" />
     </td>
-    <td>
+    <td nowrap class="confirmation-icons">
       <a href="#" class="cancel-add-next-period-membership-button">
-        <span><i class="crm-i fa-times crm-i-red"></i></span>
+        <span><i class="crm-i fa-times"></i></span>
       </a>
       <a href="#" class="confirm-add-next-period-membership-button">
-        <span><i class="crm-i fa-check crm-i-green"></i></span>
+        <span><i class="crm-i fa-check"></i></span>
       </a>
     </td>
   </tr>
   </tbody>
 </table>
 <div id="next_buttons">
-  <button class="crm-button" id="addMembership">
+  <a href="" class="button clickable" id="addMembership">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Membership</span>
-  </button>
-  <button class="crm-button" id="addOtherAmount">
+  </a>
+  <a href="" class="button clickable" id="addOtherAmount">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Other Amount</span>
-  </button>
+  </a>
 </div>
 <div class="clear"></div>
 <div class="right">
