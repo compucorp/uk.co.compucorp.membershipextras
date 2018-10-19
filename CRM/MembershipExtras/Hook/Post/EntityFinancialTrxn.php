@@ -35,33 +35,39 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
 
     $this->setRecurContribution();
-    if (empty($this->recurContribution) || !$this->isPaymentPlanTransaction()) {
+    if (empty($this->recurContribution) || !$this->isPaymentPlanTransactionWithMoreThanOneInstallment()) {
       return;
     }
 
     $newStatus = $this->generatePaymentPlanNewStatus();
     if ($newStatus !== NULL) {
-      if ($newStatus === 'Completed') {
-        $this->updateSubscriptionLinesEndDate();
-      }
-
-      civicrm_api3('ContributionRecur', 'create', [
+      $params = [
         'id' => $this->recurContribution['id'],
         'contribution_status_id' => $newStatus,
-      ]);
+      ];
+
+      if ($newStatus === 'Completed') {
+        $params['end_date'] = date('Y-m-d H:i:s');
+        $this->updateSubscriptionLinesEndDate($params['end_date']);
+      }
+
+      civicrm_api3('ContributionRecur', 'create', $params);
     }
   }
 
   /**
-   * Updates subscription line items end date
+   * Updates subscription line items end date.
+   *
+   * @param string $date
    */
-  private function updateSubscriptionLinesEndDate() {
+  private function updateSubscriptionLinesEndDate($date) {
     $subscriptionLines = $this->getSubscriptionLines();
+
     foreach($subscriptionLines as $line) {
       if (!empty($line['start_date']) && empty($line['end_date'])) {
         civicrm_api3('ContributionRecurLineItem', 'create', [
           'id' => $line['id'],
-          'end_date' => $this->recurContribution['end_date'],
+          'end_date' => $date,
         ]);
       }
     }
@@ -75,7 +81,7 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
   private function getSubscriptionLines() {
     $result = civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
-      'contribution' => $this->recurContribution['id'],
+      'contribution_recur_id' => $this->recurContribution['id'],
       'options' => ['limit' => 0],
     ]);
 
@@ -129,7 +135,7 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
    *
    * @return bool
    */
-  private function isPaymentPlanTransaction() {
+  private function isPaymentPlanTransactionWithMoreThanOneInstallment() {
     $payLaterProcessorID = 0;
     $manualPaymentProcessorsIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
 
