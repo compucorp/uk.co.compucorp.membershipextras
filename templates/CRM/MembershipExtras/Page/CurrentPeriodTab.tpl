@@ -132,7 +132,7 @@
   </table>
 </form>
 
-<div>
+<div id="current_buttons">
   <a class="button clickable" href="" id="add_membership_btn">
     <span><i class="crm-i fa-plus"></i>&nbsp; Add Membership</span>
   </a>
