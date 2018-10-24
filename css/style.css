@@ -8,11 +8,13 @@
 .crm-container a.disabled-click,
 .crm-container a.button.clickable.disabled-click {
   pointer-events: none;
-  color: #ddd;
+  color: #ddd !important;
+
 }
 
-tr.disabled-row {
-  color: #ddd;
+tr.disabled-row th,
+tr.disabled-row td {
+  color: #ddd !important;
 }
 
 tr.rc-new-line-item input.required,
@@ -27,4 +29,9 @@ tr.rc-new-line-item input.required,
 
 tr.rc-new-line-item td, td.confirmation-icons {
   vertical-align: middle;
+}
+
+#current_buttons,
+#next_buttons {
+  padding-top: 8px !important;
 }
