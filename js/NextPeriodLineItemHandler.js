@@ -155,7 +155,7 @@ function showMembershipAddLineItemConfirmation() {
 
   CRM.confirm({
     title: ts('Add ' + membershipType.name + '?'),
-    message: ts('Please note the changes should take effect immediately after "Apply".'),
+    message: ts('Please note the changes should take effect immediately after \`Apply\'.'),
     options: {
       no: ts('Cancel'),
       yes: ts('Apply')
@@ -222,7 +222,7 @@ function createLineItem(params) {
         null,
         'success'
       );
-
+      createActivity('Update Payment Plan Next Period', 'Update Payment Plan Next Period');
       CRM.refreshParent('#periodsContainer');
     });
   });
@@ -291,12 +291,13 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
             return;
           }
           
-          CRM.refreshParent('#periodsContainer');
           CRM.alert(
             ts(lineItemData.label + ' should no longer be continued in the next period.'),
             null,
             'success'
           );
+          createActivity('Update Payment Plan Next Period', 'Update Payment Plan Next Period');
+          CRM.refreshParent('#periodsContainer');
 
           return;
         });
@@ -339,6 +340,20 @@ function showAddLineItemConfirmation(label, amount, finTypeId) {
       entity_table: 'civicrm_contribution_recur',
     });
   }).on('crmConfirm:no', function () {
+    return;
+  });
+}
+
+function createActivity(subject, typeId) {
+  CRM.api3('Activity', 'create', {
+    'source_contact_id': 'user_contact_id',
+    'source_record_id': recurringContributionID,
+    'target_id': recurringContribution.contact_id,
+    'activity_type_id': typeId,
+    'subject': subject,
+    'added_by': 'admin',
+  }).done(function (res) {
+    console.log(res);
     return;
   });
 }
