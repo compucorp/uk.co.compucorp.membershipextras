@@ -3,9 +3,9 @@
   var membershipextras_allMembershipData = {$allMembershipInfo};
   var membershipextras_taxRatesStr = '{$taxRates}';
   var membershipextras_taxTerm = '{$taxTerm}';
-  if (membershipextras_taxRatesStr != '') {
+  if (membershipextras_taxRatesStr != '') {ldelim}
     var membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
-  }
+  {rdelim}
 
   var membershipextras_currency = '{$currency}';
 
