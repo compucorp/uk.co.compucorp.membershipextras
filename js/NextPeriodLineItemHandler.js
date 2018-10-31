@@ -155,7 +155,7 @@ function showMembershipAddLineItemConfirmation() {
 
   CRM.confirm({
     title: ts('Add ' + membershipType.name + '?'),
-    message: ts('Please note the changes should take effect immediately after \`Apply\'.'),
+    message: ts('Please note the changes should take effect immediately after \'Apply\'.'),
     options: {
       no: ts('Cancel'),
       yes: ts('Apply')
