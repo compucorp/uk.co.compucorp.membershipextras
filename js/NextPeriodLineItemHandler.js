@@ -353,7 +353,6 @@ function createActivity(subject, typeId) {
     'subject': subject,
     'added_by': 'admin',
   }).done(function (res) {
-    console.log(res);
     return;
   });
 }
