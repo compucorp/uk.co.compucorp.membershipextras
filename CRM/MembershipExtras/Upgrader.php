@@ -368,15 +368,14 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   private function createManageInstallmentActivityTypes() {
     civicrm_api3('OptionValue', 'create', [
-      [
-        'option_group_id' => 'activity_type',
-        'name' => 'update_payment_plan_next_period',
-        'label' => 'Update Payment Plan Next Period',
-      ], [
+      'option_group_id' => 'activity_type',
+      'name' => 'update_payment_plan_next_period',
+      'label' => 'Update Payment Plan Next Period',
+      'api.OptionValue.create' => [
         'option_group_id' => 'activity_type',
         'name' => 'update_payment_plan_current_period',
         'label' => 'Update Payment Plan Current Period',
-      ]
+      ],
     ]);
   }
 
