@@ -222,7 +222,7 @@ function createLineItem(params) {
         null,
         'success'
       );
-      createActivity('Update Payment Plan Next Period', 'Update Payment Plan Next Period');
+      createActivity('Update Payment Plan Next Period', 'update_payment_plan_next_period');
       CRM.refreshParent('#periodsContainer');
     });
   });
@@ -296,7 +296,7 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
             null,
             'success'
           );
-          createActivity('Update Payment Plan Next Period', 'Update Payment Plan Next Period');
+          createActivity('Update Payment Plan Next Period', 'update_payment_plan_next_period');
           CRM.refreshParent('#periodsContainer');
 
           return;
@@ -353,6 +353,7 @@ function createActivity(subject, typeId) {
     'subject': subject,
     'added_by': 'admin',
   }).done(function (res) {
+    console.log(res);
     return;
   });
 }
