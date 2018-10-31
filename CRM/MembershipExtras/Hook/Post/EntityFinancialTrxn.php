@@ -35,18 +35,23 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
 
     $this->setRecurContribution();
-    if (empty($this->recurContribution) || !$this->isPaymentPlanTransaction()) {
+    if (empty($this->recurContribution) || !$this->isPaymentPlanTransactionWithMoreThanOneInstallment()) {
       return;
     }
 
     $newStatus = $this->generatePaymentPlanNewStatus();
     if ($newStatus !== NULL) {
-      civicrm_api3('ContributionRecur', 'create', [
+      $params = [
         'id' => $this->recurContribution['id'],
         'contribution_status_id' => $newStatus,
-      ]);
+      ];
+      
+      if ($newStatus === 'Completed') {
+        $params['end_date'] = date('Y-m-d H:i:s');
+      }
+      
+      civicrm_api3('ContributionRecur', 'create', $params);
     }
-    $a = 5*5;
   }
 
   /**
@@ -91,7 +96,7 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
    *
    * @return bool
    */
-  private function isPaymentPlanTransaction() {
+  private function isPaymentPlanTransactionWithMoreThanOneInstallment() {
     $payLaterProcessorID = 0;
     $manualPaymentProcessorsIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
 
