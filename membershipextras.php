@@ -188,6 +188,11 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $paymentPlanProcessor->alterLineItemParameters();
     $firstPaymentPlanContributionId = $params['contribution_id'];
   }
+
+  if ($objectName == 'ContributionRecur') {
+    $contributionRecurPreHook = new CRM_MembershipExtras_Hook_Pre_ContributionRecur($op, $id, $params);
+    $contributionRecurPreHook->preProcess();
+  }
 }
 
 /**
