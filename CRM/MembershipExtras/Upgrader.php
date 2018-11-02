@@ -16,6 +16,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->createLineItemExternalIDCustomField();
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
     $this->updatePaymentPlans();
+    $this->createManageInstallmentActivityTypes();
   }
 
   /**
@@ -141,6 +142,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     $this->removeOfflineAutoRenewalScheduledJob();
     $this->removeCustomExternalIDs();
+    $this->removeManageInstallmentActivityTypes();
   }
 
   /**
@@ -364,6 +366,31 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     return $date && (strtotime($date) < strtotime('-30 days'));
   }
 
+  private function createManageInstallmentActivityTypes() {
+    civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => 'activity_type',
+      'name' => 'update_payment_plan_next_period',
+      'label' => 'Update Payment Plan Next Period',
+      'api.OptionValue.create' => [
+        'option_group_id' => 'activity_type',
+        'name' => 'update_payment_plan_current_period',
+        'label' => 'Update Payment Plan Current Period',
+      ],
+    ]);
+  }
+
+  private function removeManageInstallmentActivityTypes() {
+    civicrm_api3('OptionValue', 'get', [
+      [
+        'option_group_id' => 'activity_type',
+        'name' => [
+          'IN' => ['update_payment_plan_next_period', 'update_payment_plan_current_period'],
+        ],
+        'api.OptionValue.delete' => ['id' => '$value.id'],
+      ]
+    ]);
+  }
+
   /**
    * Adds membershipextras_contribution_recur_line_item table to DB.
    *
@@ -373,6 +400,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->executeSqlFile('sql/auto_install.sql');
     $this->createPeriodLinkCustomFields();
     $this->updatePaymentPlans();
+    $this->createManageInstallmentActivityTypes();
 
     return TRUE;
   }

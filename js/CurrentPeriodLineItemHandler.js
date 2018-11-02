@@ -317,6 +317,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       CRM.loadForm(formURL, {
         dialog: {width: 480, height: 0}
       }).on('crmFormSuccess', function () {
+        createActivity('Update Payment Plan Current Period', 'update_payment_plan_current_period')
         CRM.refreshParent('#periodsContainer');
       });
     });
@@ -433,6 +434,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       CRM.loadForm(formUrl, {
         dialog: {width: 480, height: 0}
       }).on('crmFormSuccess', function () {
+        createActivity('Update Payment Plan Current Period', 'update_payment_plan_current_period');
         CRM.refreshParent('#periodsContainer');
       });
     });
