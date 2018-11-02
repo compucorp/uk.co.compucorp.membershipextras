@@ -1,0 +1,37 @@
+.crm-container a:hover .crm-i.fa-check,
+.crm-container a:hover .crm-i.fa-times,
+.crm-container a:hover .crm-i.fa-trash {
+  color: #8A1F11;
+  cursor: pointer;
+}
+
+.crm-container a.disabled-click,
+.crm-container a.button.clickable.disabled-click {
+  pointer-events: none;
+  color: #ddd !important;
+
+}
+
+tr.disabled-row th,
+tr.disabled-row td {
+  color: #ddd !important;
+}
+
+tr.rc-new-line-item input.required,
+#newline_membership_type.required,
+#newline_donation_financial_type_id.required {
+  border: 2px solid #900 !important;
+}
+
+#newline_amount, #newline_donation_amount {
+  width: 50%;
+}
+
+tr.rc-new-line-item td, td.confirmation-icons {
+  vertical-align: middle;
+}
+
+#current_buttons,
+#next_buttons {
+  padding-top: 8px !important;
+}

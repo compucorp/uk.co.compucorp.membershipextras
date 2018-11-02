@@ -189,6 +189,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'contribution_status_id' => $this->contributionPendingStatusValue,
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
+      'skipCleanMoney' => TRUE,
       'contribution_recur_id' => $this->currentRecurContribution['id'],
     ];
 
@@ -264,7 +265,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       $newLineItem = CRM_Price_BAO_LineItem::create($lineItemParms);
 
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
-      if (!empty((float) $contribution->tax_amount)) {
+      if (!empty((float) $contribution->tax_amount) && !empty($newLineItem->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
       }
     }

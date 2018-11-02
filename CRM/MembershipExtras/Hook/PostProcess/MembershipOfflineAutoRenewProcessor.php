@@ -49,6 +49,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
 
     if ($isPaymentPlanPayment) {
       $this->setRecurContributionAutoRenew($recurContributionID);
+      $this->setRecurringLineItemsAsAutoRenew($recurContributionID);
     }
   }
 
@@ -83,7 +84,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 0) {
       return TRUE;
     }
 
@@ -268,6 +269,19 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     civicrm_api3('ContributionRecur', 'create', [
       'id' => $recurContributionID,
       'auto_renew' => 1,
+    ]);
+  }
+
+  /**
+   * Sets recurring contribution's line items' auto_renew field to true.
+   *
+   * @param $recurContributionID
+   */
+  private function setRecurringLineItemsAsAutoRenew($recurContributionID) {
+    civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $recurContributionID,
+      'api.ContributionRecurLineItem.create' => ['id' => '$value.id', 'auto_renew' => 1],
     ]);
   }
 

@@ -3,7 +3,7 @@
 <table>
   <base>CRM/MembershipExtras</base>
   <class>ContributionRecurLineItem</class>
-  <name>membershipextras_contribrecur_lineitem</name>
+  <name>membershipextras_subscription_line</name>
   <comment>Implements a relationship between recurring contributions and line items, used to store the current values for pending installments.</comment>
   <add>5.0</add>
   <log>true</log>
@@ -74,9 +74,19 @@
 
   <field>
     <name>auto_renew</name>
-    <type>datetime</type>
-    <required>false</required>
+    <type>boolean</type>
+    <required>true</required>
+    <default>false</default>
     <comment>If the line-item should be auto-renewed or not.</comment>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>is_removed</name>
+    <type>boolean</type>
+    <required>true</required>
+    <default>false</default>
+    <comment>If the line-item has been marked as removed or not.</comment>
     <add>5.0</add>
   </field>
 

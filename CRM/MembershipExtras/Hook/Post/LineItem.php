@@ -43,23 +43,25 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
    * Post processes the set line item object.
    */
   public function postProcess() {
-    if ($this->operation == 'create' && $this->isFirstContributionLineItemForPaymentPlan()) {
+    if ($this->operation == 'create' && $this->isFirstContributionLineItemForFirstPaymentPlan()) {
       $this->createLineItemForRecurringContribution();
     }
   }
 
   /**
    * Checks if the current line item is being created for the first contribution
-   * of a payment plan.
+   * of a payment plan, and if that payment plan is the first (ie, is not a
+   * renewal).
    *
    * @return bool
    */
-  private function isFirstContributionLineItemForPaymentPlan() {
+  private function isFirstContributionLineItemForFirstPaymentPlan() {
     $paymentData = $this->getPaymentData();
     $recurringContributionID = CRM_Utils_Array::value('contribution_id.contribution_recur_id', $paymentData, 0);
     $processorID = CRM_Utils_Array::value('contribution_id.contribution_recur_id.payment_processor_id', $paymentData, 0);
+    $previousPeriod = CRM_Utils_Array::value('contribution_id.contribution_recur_id.previous_period', $paymentData, 0);
 
-    if (!empty($recurringContributionID) && $this->isManualPaymentPlan($processorID)) {
+    if (!empty($recurringContributionID) && $this->isManualPaymentPlan($processorID) && $previousPeriod == 0) {
       $contributionCount = civicrm_api3('Contribution', 'getcount', [
         'contribution_recur_id' => $recurringContributionID,
       ]);
@@ -101,7 +103,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
     $contributionID = $this->lineItem->contribution_id;
 
     if (empty($contributionID)) {
-      return array();
+      return [];
     }
 
     if (!in_array($contributionID, $contributionKeys)) {
@@ -122,13 +124,44 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
 
       if ($result['count'] > 0) {
         self::$contributions[$contributionID] = $result['values'][0];
+
+        $previousPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'previous_period');
+        $previousPeriod = civicrm_api3('ContributionRecur', 'get', [
+          'sequential' => 1,
+          'id' => self::$contributions[$contributionID]['contribution_id.contribution_recur_id'],
+          'return' => ['custom_' . $previousPeriodFieldID],
+        ]);
+        $previousPeriodID = CRM_Utils_Array::value('custom_' . $previousPeriodFieldID, $previousPeriod['values'][0], NULL);
+        self::$contributions[$contributionID]['contribution_id.contribution_recur_id.previous_period'] = $previousPeriodID;
       }
       else {
-        self::$contributions[$contributionID] = array();
+        self::$contributions[$contributionID] = [];
       }
     }
 
     return self::$contributions[$contributionID];
+  }
+
+  /**
+   * Obtains ID for custom field name in given group.
+   *
+   * @param $fieldGroup
+   * @param $fieldName
+   *
+   * @return int
+   */
+  private function getCustomFieldID($fieldGroup, $fieldName) {
+    $result = civicrm_api3('CustomField', 'get', [
+      'sequential' => 1,
+      'custom_group_id' => $fieldGroup,
+      'name' => $fieldName,
+    ]);
+
+    if ($result['count'] > 0) {
+      return $result['values'][0]['id'];
+    }
+
+    return 0;
   }
 
   /**
@@ -137,6 +170,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
    */
   private function createLineItemForRecurringContribution() {
     $lineItemCopyParams = $this->lineItem->toArray();
+
     unset($lineItemCopyParams['id']);
     unset($lineItemCopyParams['contribution_id']);
 
@@ -147,7 +181,7 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
       'contribution_recur_id' => $paymentData['contribution_id.contribution_recur_id'],
       'line_item_id' => $lineItemCopy['id'],
       'start_date' => $paymentData['contribution_id.contribution_recur_id.start_date'],
-      'auto_renew' => $paymentData['contribution_id.contribution_recur_id.auto_renew'],
+      'auto_renew' => CRM_Utils_String::strtobool($paymentData['contribution_id.contribution_recur_id.auto_renew']),
     ]);
   }
 
