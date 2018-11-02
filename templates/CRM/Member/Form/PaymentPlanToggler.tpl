@@ -3,7 +3,10 @@
   var membershipextras_allMembershipData = {$allMembershipInfo};
   var membershipextras_taxRatesStr = '{$taxRates}';
   var membershipextras_taxTerm = '{$taxTerm}';
-  var membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
+  if (membershipextras_taxRatesStr != '') {
+    var membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
+  }
+
   var membershipextras_currency = '{$currency}';
 
   {literal}
@@ -129,12 +132,14 @@
 </script>
 <table id="payment_plan_fields">
   <tr id="contributionTypeToggle">
-    <td colspan="2" align="center">
-      <input name="contribution_type_toggle" id="contribution_toggle" value="contribution" type="radio">
-      <label for="contribution_toggle">Contribution</label>
-      &nbsp;
-      <input name="contribution_type_toggle" id="payment_plan_toggle" value="payment_plan" type="radio">
-      <label for="payment_plan_toggle">Payment Plan</label>
+    <td colspan="2">
+      <p>
+        <input name="contribution_type_toggle" id="contribution_toggle" value="contribution" type="radio">
+        <label for="contribution_toggle">Contribution</label>
+        &nbsp;
+        <input name="contribution_type_toggle" id="payment_plan_toggle" value="payment_plan" type="radio">
+        <label for="payment_plan_toggle">Payment Plan</label>
+      </p>
     </td>
   </tr>
   <tr id="installments_row">
