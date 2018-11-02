@@ -30,7 +30,7 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
   /**
    * CRM_MembershipExtras_Hook_Pre_ContributionRecur constructor.
    *
-   * @param sting $op
+   * @param string $op
    * @param int $id
    * @param array $params
    */
@@ -41,7 +41,25 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
   }
 
   /**
-   * Preprocesses the parameters ebing used to create or update the recurring
+   * Loads the data for the given recurring contribution ID and returns it.
+   *
+   * @param int $id
+   *
+   * @return array
+   */
+  private function getRecurringContribution($id) {
+    if (empty($id)) {
+      return [];
+    }
+
+    return civicrm_api3('ContributionRecur', 'getsingle', [
+      'sequential' => 1,
+      'id' => $id,
+    ]);
+  }
+
+  /**
+   * Pre-processes the parameters being used to create or update the recurring
    * contribution.
    */
   public function preProcess() {
@@ -135,24 +153,6 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     }
 
     return FALSE;
-  }
-
-  /**
-   * Loads the data for the given recurring contribution ID and returns it.
-   *
-   * @param int $id
-   *
-   * @return array
-   */
-  private function getRecurringContribution($id) {
-    if (empty($id)) {
-      return [];
-    }
-
-    return civicrm_api3('ContributionRecur', 'getsingle', [
-      'sequential' => 1,
-      'id' => $id,
-    ]);
   }
 
 }
