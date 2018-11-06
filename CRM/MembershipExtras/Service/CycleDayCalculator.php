@@ -26,7 +26,7 @@ class CRM_MembershipExtras_Service_CycleDayCalculator {
         $cycleDay =  $recurContStartDate->format('j');
         break;
       case 'year':
-        $cycleDay =  $recurContStartDate->format('z');
+        $cycleDay =  (int) $recurContStartDate->format('z') + 1;
         break;
       default:
         $cycleDay = 1;
