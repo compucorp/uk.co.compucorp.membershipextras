@@ -264,7 +264,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       $newLineItem = CRM_Price_BAO_LineItem::create($lineItemParms);
 
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
-      if (!empty((float) $contribution->tax_amount)) {
+      if (!empty((float) $newLineItem->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
       }
     }
