@@ -63,7 +63,7 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
    * contribution.
    */
   public function preProcess() {
-    if ($this->operation == 'edit') {
+    if ($this->operation == 'edit' && $this->isManualPaymentPlan()) {
       $this->rectifyPaymentPlanStatus();
     }
   }
