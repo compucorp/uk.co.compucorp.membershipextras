@@ -63,30 +63,9 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
    * contribution.
    */
   public function preProcess() {
-    if ($this->operation == 'edit' && $this->isPaymentPlanStatusChange()) {
+    if ($this->operation == 'edit') {
       $this->rectifyPaymentPlanStatus();
     }
-  }
-
-  /**
-   * Checks if the recurring contribution is a payment plan and if its status is
-   * being changed.
-   *
-   * @return bool
-   */
-  private function isPaymentPlanStatusChange() {
-    if (!$this->isManualPaymentPlan()) {
-      return FALSE;
-    }
-
-    $oldStatus = CRM_Utils_Array::value('contribution_status_id', $this->recurringContribution);
-    $newStatus = CRM_Utils_Array::value('contribution_status_id', $this->params);
-
-    if ($newStatus && $newStatus != $oldStatus) {
-      return TRUE;
-    }
-
-    return FALSE;
   }
 
   /**
@@ -100,8 +79,29 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     $this->params['contribution_status_id'] = $statusID;
 
     if ($status === 'Completed' && $this->recurringContribution['installments'] > 1) {
-      $this->params['end_date'] = date('Y-m-d H:i:s');
+      $this->params['end_date'] = $this->generateNewPaymentPlanEndDate();
     }
+  }
+
+  /**
+   * Generates end date for recurring contribution from last paid contribution.
+   *
+   * @return string
+   */
+  private function generateNewPaymentPlanEndDate() {
+    $lastPaymentPlanContribution = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['receive_date'],
+      'contribution_recur_id' => $this->recurringContribution['id'],
+      'options' => ['sort' => 'id DESC', 'limit' => 1],
+    ]);
+
+    $endDate = NULL;
+    if (!empty($lastPaymentPlanContribution['values'][0]['receive_date'])) {
+      $endDate = $lastPaymentPlanContribution['values'][0]['receive_date'];
+    }
+
+    return $endDate;
   }
 
   /**
