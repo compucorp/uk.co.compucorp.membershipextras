@@ -125,7 +125,7 @@ function membershipextras_civicrm_alterSettingsFolders(&$metaDataFolders = NULL)
 }
 
 /**
- * Implements hook_civicrm_pre().
+ * Implements hook_civicrm_navigationMenu().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu/
  */
