@@ -143,12 +143,13 @@
     </td>
   </tr>
   <tr id="installments_row">
-    <td nowrap>
-      {$form.installments.label} <span class="marker">*</span>
+    <td class="label" nowrap>
+      {$form.installments.label}<span class="crm-marker">*</span>
     </td>
     <td nowrap>
       {$form.installments.html}
-      {$form.installments_frequency.label} <span class="marker">*</span>
+      &nbsp;
+      {$form.installments_frequency.label} <span class="crm-marker">*</span>
       {$form.installments_frequency.html}
       {$form.installments_frequency_unit.html}
     </td>
