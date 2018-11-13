@@ -62,7 +62,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     $customGroups = civicrm_api3('CustomGroup', 'get', [
       'extends' => 'LineItem',
-      'name' => 'recurring_contribution_external_id',
+      'name' => 'line_item_external_id',
     ]);
 
     if (!$customGroups['count']) {
