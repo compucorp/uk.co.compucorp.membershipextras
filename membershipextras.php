@@ -125,7 +125,7 @@ function membershipextras_civicrm_alterSettingsFolders(&$metaDataFolders = NULL)
 }
 
 /**
- * Implements hook_civicrm_pre().
+ * Implements hook_civicrm_navigationMenu().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu/
  */
@@ -187,6 +187,11 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanProcessor->alterLineItemParameters();
     $firstPaymentPlanContributionId = $params['contribution_id'];
+  }
+
+  if ($objectName == 'ContributionRecur') {
+    $contributionRecurPreHook = new CRM_MembershipExtras_Hook_Pre_ContributionRecur($op, $id, $params);
+    $contributionRecurPreHook->preProcess();
   }
 }
 
