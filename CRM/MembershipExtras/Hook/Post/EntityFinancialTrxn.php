@@ -102,7 +102,7 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     $payLaterProcessorID = 0;
     $manualPaymentProcessorsIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
 
-    if ($this->recurContribution['installments'] > 1 && in_array($this->recurContribution['payment_processor_id'], $manualPaymentProcessorsIDs)) {
+    if (in_array($this->recurContribution['payment_processor_id'], $manualPaymentProcessorsIDs)) {
       return TRUE;
     }
 
@@ -130,7 +130,8 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
       $newStatus = 'In Progress';
     }
 
-    if ($paidInstallmentsCount >= $this->recurContribution['installments']) {
+    $arePaymentsCompleted = $paidInstallmentsCount >= $this->recurContribution['installments'];
+    if ($arePaymentsCompleted && $this->recurContribution['installments'] > 1) {
       $newStatus = 'Completed';
     }
 
