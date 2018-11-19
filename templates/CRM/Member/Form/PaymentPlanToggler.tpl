@@ -3,13 +3,14 @@
   var membershipextras_allMembershipData = {$allMembershipInfo};
   var membershipextras_taxRatesStr = '{$taxRates}';
   var membershipextras_taxTerm = '{$taxTerm}';
-  if (membershipextras_taxRatesStr != '') {ldelim}
-    var membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
-  {rdelim}
-
   var membershipextras_currency = '{$currency}';
+  var membershipextras_taxRates = [];
 
   {literal}
+  if (membershipextras_taxRatesStr != '') {
+    membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
+  }
+
   /**
    * Perform changes on form to add payment plan as an option to pay for
    * membership.
