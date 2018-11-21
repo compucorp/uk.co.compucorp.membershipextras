@@ -411,7 +411,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * @return bool
    */
   public function upgrade_0002() {
-    $this->executeSqlFile('sql/create_membership_period.sql');
+    $this->executeSqlFile('sql/Upgrader/0002_create_membership_period.sql');
 
     return true;
   }
