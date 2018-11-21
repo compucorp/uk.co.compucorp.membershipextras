@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/MembershipExtras</base>
+  <class>MembershipPeriod</class>
+  <name>membershipextras_membership_period</name>
+  <comment>Stores information for each period a membership is active.</comment>
+  <add>5.0</add>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique MembershipPeriod ID</comment>
+    <add>5.0</add>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>membership_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of the membership.</comment>
+    <add>5.0</add>
+  </field>
+  <foreignKey>
+    <name>membership_id</name>
+    <table>civicrm_membership</table>
+    <key>id</key>
+    <add>5.0</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>start_date</name>
+    <type>datetime</type>
+    <required>true</required>
+    <comment>Start date of the period for the membership/recurring contribution.</comment>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>end_date</name>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>End date of the period for the membership/recurring contribution.</comment>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>payment_entity_table</name>
+    <type>varchar</type>
+    <length>64</length>
+    <comment>Either civicrm_contribution or civicrm_contribution_recur.</comment>
+    <required>true</required>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>entity_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of the payment entity.</comment>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>is_active</name>
+    <type>boolean</type>
+    <required>true</required>
+    <default>false</default>
+    <comment>Whether the period has taken effect or not.</comment>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>is_historic</name>
+    <type>boolean</type>
+    <required>true</required>
+    <default>false</default>
+    <comment>Whether it is an historical period created before the membership extras is installed.</comment>
+    <add>5.0</add>
+  </field>
+
+</table>

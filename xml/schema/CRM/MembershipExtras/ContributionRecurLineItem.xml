@@ -12,7 +12,7 @@
     <name>id</name>
     <type>int unsigned</type>
     <required>true</required>
-    <comment>Discount Item ID</comment>
+    <comment>Item ID</comment>
     <add>5.0</add>
   </field>
   <primaryKey>

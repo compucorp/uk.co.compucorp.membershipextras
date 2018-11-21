@@ -405,4 +405,15 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     return TRUE;
   }
 
+  /**
+   * Adds resources required for managing membership periods.
+   *
+   * @return bool
+   */
+  public function upgrade_0002() {
+    $this->executeSqlFile('sql/Upgrader/0002_create_membership_period.sql');
+
+    return true;
+  }
+
 }
