@@ -324,7 +324,7 @@ function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$
  */
 function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$object) {
   if ($tplName == 'CRM/Member/Page/Tab.tpl') {
-    $memberTabPage  = new CRM_MembershipExtras_Hook_AlterContent_MemberTabPage($content);
+    $memberTabPage  = new CRM_MembershipExtras_Hook_AlterContent_MemberTabPage($content, $object);
     $memberTabPage->alterContent();
   }
 }
