@@ -339,7 +339,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   private function updatePaymentPlans() {
     $manualRecurContributions = $this->getManualPaymentPlans();
 
-    foreach ($$manualRecurContributions as $paymentPlan) {
+    foreach ($manualRecurContributions as $paymentPlan) {
       $lastInstalment = $this->getLastInstalmentForPaymentPlan($paymentPlan['id']);
       $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
 
