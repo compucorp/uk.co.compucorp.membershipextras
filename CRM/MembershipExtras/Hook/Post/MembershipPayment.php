@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Post processes membership payments after cretion or update.
+ * Post processes membership payments after creation or update.
  */
 class CRM_MembershipExtras_Hook_Post_MembershipPayment {
 
@@ -26,10 +26,39 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    */
   private $membershipPayment;
 
+  /**
+   * Array with the membership's data.
+   *
+   * @var array
+   */
+  private $membership;
+
+  /**
+   * Array with the contribution's data.
+   *
+   * @var array
+   */
+  private $contribution;
+
+  /**
+   * CRM_MembershipExtras_Hook_Post_MembershipPayment constructor.
+   *
+   * @param $operation
+   * @param $objectId
+   * @param \CRM_Member_DAO_MembershipPayment $objectRef
+   */
   public function __construct($operation, $objectId, CRM_Member_DAO_MembershipPayment $objectRef) {
     $this->operation = $operation;
     $this->id = $objectId;
     $this->membershipPayment = $objectRef;
+
+    $this->membership = civicrm_api3('Membership', 'getsingle', [
+      'id' => $this->membershipPayment->membership_id,
+    ]);
+
+    $this->contribution = civicrm_api3('Contribution', 'getsingle', [
+      'id' => $this->membershipPayment->contribution_id,
+    ]);
   }
 
   /**
@@ -38,6 +67,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   public function postProcess() {
     if ($this->operation == 'create') {
       $this->fixRecurringLineItemMembershipReferences();
+      $this->updateMembershipPeriod();
     }
   }
 
@@ -78,15 +108,8 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    * @return array
    */
   private function getRelatedRecurringLineItem() {
-    $membershipTypeID = civicrm_api3('Membership', 'getvalue', [
-      'id' => $this->membershipPayment->membership_id,
-      'return' => 'membership_type_id',
-    ]);
-
-    $recurringContributionID = civicrm_api3('Contribution', 'getvalue', [
-      'id' => $this->membershipPayment->contribution_id,
-      'return' => 'contribution_recur_id',
-    ]);
+    $membershipTypeID = $this->membership['membership_type_id'];
+    $recurringContributionID = $this->contribution['contribution_recur_id'];
 
     $recurringLineItems = civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
@@ -118,4 +141,45 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
     return [];
   }
 
+  /**
+   * Creates membership Period and associates it to appropriate payment entity.
+   */
+  private function updateMembershipPeriod() {
+    if ($this->periodExistsForMembershipPayment()) {
+      return;
+    }
+
+    $isSinglePayment = empty($this->contribution['contribution_recur_id']);
+
+    $paymentTable = $isSinglePayment
+      ? 'civicrm_contribution'
+      : 'civicrm_contribution_recur';
+
+    $entityID = $isSinglePayment
+      ? $this->contribution['id']
+      : $this->contribution['contribution_recur_id'];
+
+    CRM_MembershipExtras_BAO_MembershipPeriod::create([
+      'membership_id' => $this->membershipPayment->membership_id,
+      'start_date' => $this->membership['start_date'],
+      'end_date' => $this->membership['end_date'],
+      'payment_entity_table' => $paymentTable,
+      'entity_id' => $entityID,
+    ]);
+  }
+
+  /**
+   * Checks if the period already exists for the payment entity.
+   *
+   * @return bool
+   */
+  private function periodExistsForMembershipPayment() {
+    $paymentEntityID = $this->contribution['contribution_recur_id'] ?: $this->contribution['id'];
+
+    $membershipPeriod = new CRM_MembershipExtras_BAO_MembershipPeriod();
+    $membershipPeriod->membership_id = $this->membershipPayment->membership_id;
+    $membershipPeriod->entity_id = $paymentEntityID;
+
+    return $membershipPeriod->find() > 0;
+  }
 }
