@@ -67,7 +67,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   public function postProcess() {
     if ($this->operation == 'create') {
       $this->fixRecurringLineItemMembershipReferences();
-      $this->updateMembershipPeriod();
+      $this->createNewMembershipPeriod();
     }
   }
 
@@ -144,28 +144,38 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   /**
    * Creates membership Period and associates it to appropriate payment entity.
    */
-  private function updateMembershipPeriod() {
+  private function createNewMembershipPeriod() {
     if ($this->periodExistsForMembershipPayment()) {
       return;
     }
-
-    $isSinglePayment = empty($this->contribution['contribution_recur_id']);
-
-    $paymentTable = $isSinglePayment
-      ? 'civicrm_contribution'
-      : 'civicrm_contribution_recur';
-
-    $entityID = $isSinglePayment
-      ? $this->contribution['id']
-      : $this->contribution['contribution_recur_id'];
 
     CRM_MembershipExtras_BAO_MembershipPeriod::create([
       'membership_id' => $this->membershipPayment->membership_id,
       'start_date' => $this->membership['start_date'],
       'end_date' => $this->membership['end_date'],
-      'payment_entity_table' => $paymentTable,
-      'entity_id' => $entityID,
+      'payment_entity_table' => $this->getPaymentEntityTable(),
+      'entity_id' => $this->getPaymentEntityID(),
     ]);
+  }
+
+  /**
+   * Calculates the payment table for the current membership period.
+   *
+   * @return string
+   */
+  private function getPaymentEntityTable() {
+    return empty($this->contribution['contribution_recur_id'])
+      ? 'civicrm_contribution'
+      : 'civicrm_contribution_recur';
+  }
+
+  /**
+   * Calculates the ID of the payment entity used to pay for the membership.
+   *
+   * @return int
+   */
+  private function getPaymentEntityID() {
+    return $this->contribution['contribution_recur_id'] ?: $this->contribution['id'];
   }
 
   /**
@@ -174,11 +184,10 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    * @return bool
    */
   private function periodExistsForMembershipPayment() {
-    $paymentEntityID = $this->contribution['contribution_recur_id'] ?: $this->contribution['id'];
-
     $membershipPeriod = new CRM_MembershipExtras_BAO_MembershipPeriod();
     $membershipPeriod->membership_id = $this->membershipPayment->membership_id;
-    $membershipPeriod->entity_id = $paymentEntityID;
+    $membershipPeriod->payment_entity_table = $this->getPaymentEntityTable();
+    $membershipPeriod->entity_id = $this->getPaymentEntityID();
 
     return $membershipPeriod->find() > 0;
   }
