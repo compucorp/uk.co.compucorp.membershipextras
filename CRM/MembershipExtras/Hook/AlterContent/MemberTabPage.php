@@ -5,8 +5,13 @@
  */
 class CRM_MembershipExtras_Hook_AlterContent_MemberTabPage {
 
-  public function __construct(&$content) {
+  private $content;
+
+  private $pageObject;
+
+  public function __construct(&$content, &$pageObject) {
     $this->content = &$content;
+    $this->pageObject = &$pageObject;
   }
 
   /**
@@ -14,6 +19,7 @@ class CRM_MembershipExtras_Hook_AlterContent_MemberTabPage {
    */
   public function alterContent() {
     $this->appendJSCodeToWatchTotalAmountValueChanges();
+    $this->appendJSCodeToHideDateFieldsFromEditForm();
   }
 
   private function appendJSCodeToWatchTotalAmountValueChanges() {
@@ -27,6 +33,21 @@ class CRM_MembershipExtras_Hook_AlterContent_MemberTabPage {
         $this->content
       );
     }
+  }
+
+  private function appendJSCodeToHideDateFieldsFromEditForm() {
+    $isEditAction= $this->pageObject->_action & CRM_Core_Action::UPDATE;
+    if (!$isEditAction) {
+      return;
+    }
+
+    $this->content .=
+      '<script>
+        CRM.$("[id^=start_date_display_]").attr("disabled","disabled");
+        CRM.$(".crm-membership-form-block-start_date a").hide();
+        CRM.$("[id^=end_date_display_]").attr("disabled","disabled");
+        CRM.$(".crm-membership-form-block-end_date a").hide();
+      </script>';
   }
 
 }
