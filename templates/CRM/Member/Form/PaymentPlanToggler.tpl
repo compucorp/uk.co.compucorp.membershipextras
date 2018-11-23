@@ -3,13 +3,14 @@
   var membershipextras_allMembershipData = {$allMembershipInfo};
   var membershipextras_taxRatesStr = '{$taxRates}';
   var membershipextras_taxTerm = '{$taxTerm}';
-  if (membershipextras_taxRatesStr != '') {
-    var membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
-  }
-
   var membershipextras_currency = '{$currency}';
+  var membershipextras_taxRates = [];
 
   {literal}
+  if (membershipextras_taxRatesStr != '') {
+    membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
+  }
+
   /**
    * Perform changes on form to add payment plan as an option to pay for
    * membership.
@@ -100,7 +101,7 @@
         var currentMembershipData = membershipextras_allMembershipData[memType];
         var taxRate = membershipextras_taxRates[currentMembershipData['financial_type_id']];
 
-        if (taxRate != undefined) {
+        if (typeof taxRate != undefined) {
           var taxAmount = (currentAmount * (taxRate / 100)) / (1 + (taxRate / 100));
           taxAmount = isNaN (taxAmount) ? 0 : taxAmount.toFixed(2);
           var taxPerPeriod = (taxAmount / parseFloat(CRM.$('#installments').val())).toFixed(2);
