@@ -10,12 +10,13 @@
 
 .periods-nested-view-no-right-border td {
   border-right: 0 !important;
+  text-align: left;
 }
 
-.membership-period-inactive {
-  color: #FF0000;
+.membership-period-inactive td{
+  color: #FF0000 !important;
 }
 
-.membership-period-in-past {
-  color: #c2c2c2;
+.membership-period-in-past td{
+  color: #c2c2c2 !important;
 }
