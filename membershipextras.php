@@ -359,4 +359,13 @@ function membershipextras_civicrm_pageRun($page) {
       'page-header'
     );
   }
+
+  if (get_class($page) === 'CRM_Member_Page_Tab') {
+    _membershipextras_civicrm_addMembershipPeriodsNestedViewToMembershipTab();
+  }
+}
+
+function _membershipextras_civicrm_addMembershipPeriodsNestedViewToMembershipTab() {
+  Civi::resources()->addStyleFile('uk.co.compucorp.membershipextras', 'css/membershipPeriodsNestedView.css');
+  Civi::resources()->addScriptFile('uk.co.compucorp.membershipextras', 'js/membershipPeriodsNestedView.js');
 }

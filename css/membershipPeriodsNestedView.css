@@ -1,0 +1,21 @@
+.membership-period-collapse-icon:before {
+  content: '► ';
+  cursor: pointer;
+}
+
+.membership-period-expand-icon:before {
+  content: '▼ ';
+  cursor: pointer;
+}
+
+.periods-nested-view-no-right-border td {
+  border-right: 0 !important;
+}
+
+.membership-period-inactive {
+  color: #FF0000;
+}
+
+.membership-period-in-past {
+  color: #c2c2c2;
+}
