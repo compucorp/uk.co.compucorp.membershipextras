@@ -1,22 +1,42 @@
 .membership-period-collapse-icon:before {
-  content: '► ';
+  content: '\f054';
+  font-family: 'FontAwesome';
+  font-weight: normal;
+  margin-right: 13px;
+  color: #4d4d69;
   cursor: pointer;
 }
+
+
 
 .membership-period-expand-icon:before {
-  content: '▼ ';
+  content: '\f078';
+  font-family: 'FontAwesome';
+  font-weight: normal;
+  margin-right: 13px;
+  color: #4d4d69;
   cursor: pointer;
 }
 
-.periods-nested-view-no-right-border td {
-  border-right: 0 !important;
+.periods-nested-view-table td {
+  border-right: 1px !important;
   text-align: left;
 }
 
+.periods-nested-view-table th{
+  background:#f3f6f7 !important;
+}
+
 .membership-period-inactive td{
-  color: #FF0000 !important;
+  color: #cf3458 !important;
 }
 
 .membership-period-in-past td{
   color: #c2c2c2 !important;
+}
+
+.periods-table-container {
+  padding-top: 0 !important;
+  border: 1px !important;
+  border-color: #0a0a0a !important;
 }

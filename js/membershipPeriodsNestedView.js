@@ -57,6 +57,7 @@ function handleMembershipRowClick(selectedMembershipRowReference, membershipData
       'options': {'sort':'start_date ASC','limit':0}
     }).done(function(periodsAPIResponse) {
       selectedMembershipDataTableRow.child(formatMembershipPeriodsTable(periodsAPIResponse)).show();
+      CRM.$(".periods-nested-view-table").closest('td').addClass('periods-table-container');
       selectedMembershipRowReference.removeClass('membership-period-collapse-icon');
       selectedMembershipRowReference.addClass('membership-period-expand-icon');
     });
@@ -64,7 +65,7 @@ function handleMembershipRowClick(selectedMembershipRowReference, membershipData
 }
 
 function formatMembershipPeriodsTable(periodsAPIResponse) {
-  var periodTableMarkup = '<table class="periods-nested-view-no-right-border">';
+  var periodTableMarkup = '<table class="periods-nested-view-table">';
   periodTableMarkup += '<tr><th>Term</th><th>Start Date</th><th>End Date</th><th>Actions</th></tr>';
 
   for(var i=0; i < periodsAPIResponse.count; i++) {
