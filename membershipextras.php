@@ -359,4 +359,9 @@ function membershipextras_civicrm_pageRun($page) {
       'page-header'
     );
   }
+
+  if (get_class($page) === 'CRM_Member_Page_Tab') {
+    Civi::resources()->addStyleFile('uk.co.compucorp.membershipextras', 'css/membershipPeriodsNestedView.css');
+  }
 }
+

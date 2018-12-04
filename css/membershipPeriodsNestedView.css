@@ -1,0 +1,39 @@
+.membership-period-collapse-icon:before {
+  font-family: 'FontAwesome';
+  font-style: normal;
+  text-rendering: auto;
+  font-size: 13px;
+  margin-right: 13px;
+  content: '\f054';
+  color: #4d4d69;
+}
+
+.membership-period-collapse-icon.period-extended:before {
+  font-family: 'FontAwesome';
+  font-style: normal;
+  text-rendering: auto;
+  font-size: 13px;
+  margin-right: 13px;
+  content: '\f078';
+  color: #4d4d69;
+}
+
+#memberships .periods-nested-view-table th,#inactive-memberships .periods-nested-view-table th {
+  background:#f3f6f7 !important;
+}
+
+#memberships .periods-nested-view-table td,#inactive-memberships .periods-nested-view-table td {
+  text-align: left;
+}
+
+#memberships .crm-child-row td:first-child,#inactive-memberships .crm-child-row td:first-child{
+  padding-top: 0 !important;
+}
+
+.membership-period-inactive td{
+  color: #cf3458 !important;
+}
+
+.membership-period-in-past td{
+  color: #c2c2c2 !important;
+}
