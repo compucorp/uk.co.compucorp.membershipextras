@@ -1,5 +1,4 @@
 <?php
-use CRM_MembershipExtras_ExtensionUtil as E;
 
 class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO_MembershipPeriod {
 
@@ -20,6 +19,17 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     CRM_Utils_Hook::post($hook, 'MembershipPeriod', $instance->id, $instance);
 
     return $instance;
+  }
+
+  public static function getOrderedMembershipPeriods($membershipId) {
+    $membershipPeriod = new self();
+    $membershipPeriod->membership_id = $membershipId;
+    $membershipPeriod->orderBy('start_date ASC');
+    if ($membershipPeriod->find() > 0) {
+      return $membershipPeriod;
+    }
+
+    return NULL;
   }
 
 }
