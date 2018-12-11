@@ -87,12 +87,45 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $contributionPendingStatusValue;
 
   /**
-   * CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan constructor.
+   * Maps contribution status names to their corresponding ID's.
    *
-   * @param int $recurContributionID
+   * @var array
    */
-  public function __construct($recurContributionID) {
-    $this->currentRecurContributionID = $recurContributionID;
+  protected $contributionStatusesNameMap;
+
+  /**
+   * Number of days in advance a membership shuld be renewed.
+   *
+   * @var int
+   */
+  protected $daysToRenewInAdvance;
+
+  /**
+   * ID's for payment processors that are considered to be manual.
+   *
+   * @var array
+   */
+  protected $manualPaymentProcessorIDs;
+
+  /**
+   * CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan constructor.
+   */
+  public function __construct() {
+    $this->setUseMembershipLatestPrice();
+    $this->setContributionPendingStatusValue();
+    $this->setContributionStatusesNameMap();
+    $this->setManualPaymentProcessorIDs();
+    $this->setDaysToRenewInAdvance();
+  }
+
+  /**
+   * Sets given recurring contribution ID as the current one and loads its data
+   * into a clss attribute.
+   *
+   * @param $recurringContributionID
+   */
+  private function setCurrentRecurringContribution($recurringContributionID) {
+    $this->currentRecurContributionID = $recurringContributionID;
     $this->currentRecurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $this->currentRecurContributionID,
     ]);
@@ -101,16 +134,96 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Sets the value for the flag to determine if latest membership price should
    * be used or not on renewal.
-   *
-   * @param boolean $useLatestPrice
    */
-  public function setUseMembershipLatestPrice($useLatestPrice) {
-    $this->useMembershipLatestPrice = $useLatestPrice;
+  private function setUseMembershipLatestPrice() {
+    $settingFieldName = 'membershipextras_paymentplan_use_membership_latest_price';
+    $useMembershipLatestPrice = civicrm_api3('Setting', 'get', [
+      'sequential' => 1,
+      'return' => [$settingFieldName],
+    ]);
+
+    if (!empty($useMembershipLatestPrice['values'][0][$settingFieldName])) {
+      $this->useMembershipLatestPrice = TRUE;
+    }
   }
 
-  public function setContributionPendingStatusValue($statusValue) {
-    $this->contributionPendingStatusValue = $statusValue;
+  /**
+   * Loads value for Pending contribution status into a class attribute.
+   */
+  private function setContributionPendingStatusValue() {
+    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => 'contribution_status',
+      'name' => 'Pending',
+    ]);
   }
+
+  /**
+   * Gets contribution Statuses Name to value Mapping
+   *
+   * @return array $contributionStatusesNameMap
+   */
+  private function setContributionStatusesNameMap() {
+    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
+      'sequential' => 1,
+      'return' => ['name', 'value'],
+      'option_group_id' => 'contribution_status',
+      'options' => ['limit' => 0],
+    ])['values'];
+
+    $contributionStatusesNameMap = [];
+    foreach ($contributionStatuses as $status) {
+      $contributionStatusesNameMap[$status['name']] = $status['value'];
+    }
+
+    $this->contributionStatusesNameMap = $contributionStatusesNameMap;
+  }
+
+  /**
+   * Loads setting and assigns it to a class attribute.
+   */
+  private function setDaysToRenewInAdvance() {
+    $this->daysToRenewInAdvance = CRM_MembershipExtras_SettingsManager::getDaysToRenewInAdvance();
+  }
+
+  /**
+   * Loads list of manual payment processors into an array as a class attribute.
+   */
+  private function setManualPaymentProcessorIDs() {
+    $payLaterProcessorID = 0;
+    $this->manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
+  }
+
+  /**
+   * Renews the given payment plan.
+   */
+  public function run() {
+    $paymentPlans = $this->getRecurringContributions();
+
+    foreach ($paymentPlans as $recurContribution) {
+      $transaction = new CRM_Core_Transaction();
+      try {
+        $this->setCurrentRecurringContribution($recurContribution['contribution_recur_id']);
+        $this->setLastContribution();
+        $this->renew();
+        $this->dispatchMembershipRenewalHook();
+      } catch (Exception $e) {
+        $transaction->rollback();
+        $message = "An error occurred renewing a payment plan with id({$this->currentRecurringContribution['contribution_recur_id']}): " . $e->getMessage();
+
+        throw new Exception($message);
+      }
+
+      $transaction->commit();
+    }
+  }
+  
+  /**
+   * Retunrs an array of recurring contributions that need to be renewed.
+   *
+   * @return array
+   */
+  abstract protected function getRecurringContributions();
 
   /**
    * Renews the current payment plan.
@@ -158,25 +271,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return array
    */
   abstract protected function getNewPaymentPlanActiveLineItems();
-
-  /**
-   * Renews the given payment plan.
-   */
-  public function run() {
-    $transaction = new CRM_Core_Transaction();
-    try {
-      $this->setLastContribution();
-      $this->renew();
-      $this->dispatchMembershipRenewalHook();
-    } catch (Exception $e) {
-      $transaction->rollback();
-      $message = "An error occurred renewing a payment plan with id({$this->currentRecurringContribution['contribution_recur_id']}): " . $e->getMessage();
-
-      throw new Exception($message);
-    }
-
-    $transaction->commit();
-  }
 
   /**
    * Sets $lastContribution
