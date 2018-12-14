@@ -8,9 +8,9 @@
     <author>Compucorp Ltd.</author>
     <email>info@compucorp.co.uk</email>
   </maintainer>
-  <releaseDate>2018-09-30</releaseDate>
-  <version>v1.0alpha1</version>
-  <develStage>alpha</develStage>
+  <releaseDate>2018-12-14</releaseDate>
+  <version>v1.0beta</version>
+  <develStage>beta</develStage>
   <compatibility>
     <ver>4.7</ver>
   </compatibility>
