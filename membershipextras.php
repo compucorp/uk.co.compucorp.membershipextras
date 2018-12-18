@@ -250,11 +250,19 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
 
     $offlineAutoRenewProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
     $offlineAutoRenewProcessor->postProcess();
+
+    $periodProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPeriodCreator($form);
+    $periodProcessor->postProcess();
   }
 
   if ($formName === 'CRM_Contribute_Form_UpdateSubscription') {
     $postProcessFormHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription($form);
     $postProcessFormHook->postProcess();
+  }
+
+  if ($formName === 'CRM_Contribute_Form_Contribution_Confirm') {
+    $contributionPageProcessor = new CRM_MembershipExtras_Hook_PostProcess_ContributionConfirm($form);
+    $contributionPageProcessor->postProcess();
   }
 }
 

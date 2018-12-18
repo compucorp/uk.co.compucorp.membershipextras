@@ -122,8 +122,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $this->setTotalAndTaxAmount();
     $this->paymentPlanStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
 
-    $this->recordPaymentPlanFirstContribution();
     $this->renewPaymentPlanMemberships();
+    $this->recordPaymentPlanFirstContribution();
   }
 
   /**
