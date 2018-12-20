@@ -243,7 +243,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         continue;
       }
 
-      $existingMembershipID = $this->getExistingMembershipForLineItem($lineItem, $priceFieldValue);
+      $existingMembershipID = $this->getExistingMembershipIDForLineItem($lineItem, $priceFieldValue);
       CRM_MembershipExtras_BAO_MembershipPeriod::createPeriodForMembership($existingMembershipID);
     }
   }
@@ -534,7 +534,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         continue;
       }
 
-      $existingMembershipID = $this->getExistingMembershipForLineItem($lineItem, $priceFieldValue);
+      $existingMembershipID = $this->getExistingMembershipIDForLineItem($lineItem, $priceFieldValue);
 
       if ($existingMembershipID) {
         $this->extendExistingMembership($existingMembershipID);
@@ -558,7 +558,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @return int
    */
-  private function getExistingMembershipForLineItem($lineItem, $priceFieldValue) {
+  private function getExistingMembershipIDForLineItem($lineItem, $priceFieldValue) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       return $lineItem['entity_id'];
     } else {

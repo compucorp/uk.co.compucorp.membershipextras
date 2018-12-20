@@ -26,7 +26,11 @@ class CRM_MembershipExtras_Hook_PostProcess_ContributionConfirm {
    * Postprocesses form to creaate membership periods.
    */
   public function postProcess() {
-    $membershipID = $this->form->_params['membershipID'];
+    $membershipID = CRM_Utils_Array::value(
+      'membershipID',
+      $this->form->_params,
+      NULL
+    );
 
     if (!empty($membershipID)) {
       CRM_MembershipExtras_BAO_MembershipPeriod::createPeriodForMembership($membershipID);
