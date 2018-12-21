@@ -24,6 +24,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
   public function preProcess() {
     $this->recalculateTaxAmount();
     $this->recalculateLineItemsAmounts();
+    $this->updateOrCreateMembership();
   }
 
   /**
@@ -75,6 +76,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
         );
       }
     }
+  }
+
+  private function updateOrCreateMembership() {
+    
   }
 
 }
