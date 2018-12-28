@@ -44,6 +44,12 @@
     <access_arguments>access CiviMember</access_arguments>
   </item>
   <item>
+    <path>civicrm/membership/period/view</path>
+    <page_callback>CRM_MembershipExtras_Page_MembershipPeriod_ViewPeriod</page_callback>
+    <title>View Membership Period</title>
+    <access_arguments>access CiviMember</access_arguments>
+  </item>
+  <item>
     <path>civicrm/membership/period/edit</path>
     <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_EditPeriod</page_callback>
     <title>Edit Membership Period</title>
