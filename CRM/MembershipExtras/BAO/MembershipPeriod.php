@@ -46,6 +46,36 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     ]);
   }
 
+  public static function getMembershipPeriodById($periodId) {
+    $membershipPeriod = new self();
+    $membershipPeriod->id = $periodId;
+    if ($membershipPeriod->find(TRUE) > 0) {
+      return $membershipPeriod;
+    }
+
+    return NULL;
+  }
+
+  /**
+   * Returns an array with the information for the first active period for the
+   * given membership.
+   *
+   * @param int $membershipID
+   *
+   * @return array
+   */
+  public static function getFirstActivePeriod($membershipID) {
+    $membershipPeriod = new self();
+    $membershipPeriod->membership_id = $membershipID;
+    $membershipPeriod->is_active = TRUE;
+    $membershipPeriod->orderBy('end_date ASC');
+    if ($membershipPeriod->find(TRUE) > 0) {
+      return $membershipPeriod->toArray();
+    }
+
+    return [];
+  }
+
   /**
    * Returns an array with the information for the latest active period for the
    * given membership.
@@ -151,6 +181,75 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     }
 
     return NULL;
+  }
+
+  /**
+   * Updates the membership period as well as its
+   * related membership dates in case the period
+   * does not overlap with other active periods for the
+   * same membership.
+   *
+   * @param $params
+   *
+   * @throws CRM_Core_Exception
+   */
+  public static function updatePeriod($params) {
+    if (self::doesOverlapWithOtherActivePeriods($params)) {
+      throw new CRM_Core_Exception('The new end date of this membership period overlaps with
+       another activated membership period. please review your changes');
+    }
+
+    $transaction = new CRM_Core_Transaction();
+    try {
+      $membershipPeriod = self::create($params);
+      $membershipPeriod->find(TRUE);
+      self::updateMembershipDates($membershipPeriod);
+    }
+    catch (CRM_Core_Exception $exception) {
+      $transaction->rollback();
+      throw $exception;
+    }
+    $transaction->commit();
+  }
+
+  /**
+   * Checks if the given period overlaps
+   * with other active periods within the same membership.
+   *
+   * @param $periodParams
+   * @return bool
+   */
+  private static function doesOverlapWithOtherActivePeriods($periodParams) {
+    $membershipPeriod = self::getMembershipPeriodById($periodParams['id']);
+
+    $periodNewStartDate = $periodParams['start_date'];
+    $periodNewEndDate = $periodParams['end_date'];
+
+    $overlappedMembershipPeriods = new self();
+    $overlappedMembershipPeriods->membership_id = $membershipPeriod->membership_id;
+    $overlappedMembershipPeriods->is_active = TRUE;
+    $overlappedMembershipPeriods->whereAdd('"' . $periodNewStartDate . '" <= end_date');
+    $overlappedMembershipPeriods->whereAdd('"' . $periodNewEndDate . '" >= start_date');
+    $overlappedMembershipPeriods->whereAdd('id != ' . $periodParams['id']);
+    if ($overlappedMembershipPeriods->find()) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  private static function updateMembershipDates($membershipPeriod) {
+    $membershipId = $membershipPeriod->membership_id;
+    $joinDate = $startDate = self::getFirstActivePeriod($membershipId)['start_date'];
+    $endDate = self::getLastActivePeriod($membershipId)['end_date'];
+
+    civicrm_api3('Membership', 'create', [
+      'id' => $membershipId,
+      'join_date' => $joinDate,
+      'start_date' => $startDate,
+      'end_date' => $endDate,
+      'skipStatusCal' => 0,
+    ]);
   }
 
 }
