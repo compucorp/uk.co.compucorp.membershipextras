@@ -52,6 +52,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     if ($membershipPeriod->find(TRUE) > 0) {
       return $membershipPeriod;
     }
+
     return NULL;
   }
 
@@ -183,7 +184,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
   }
 
   /**
-   * Updates the membership period as wel as its
+   * Updates the membership period as well as its
    * related membership dates in case the period
    * does not overlap with other active periods for the
    * same membership.
