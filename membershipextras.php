@@ -373,3 +373,6 @@ function membershipextras_civicrm_pageRun($page) {
   }
 }
 
+function membershipextras_civicrm_permission(&$permissions) {
+  $permissions['delete membership period'] = ts('Delete Membership Period');
+}

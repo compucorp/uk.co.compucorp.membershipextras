@@ -252,4 +252,62 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     ]);
   }
 
+  public static function deleteById($id) {
+    $membershipPeriod = self::getMembershipPeriodById($id);
+    $membershipId = $membershipPeriod->membership_id;
+
+    if (!$membershipPeriod) {
+      throw new CRM_Core_Exception('Membership period Id could not be found');
+    }
+
+    if (self::periodLinkedToPayment($membershipPeriod)) {
+      throw new CRM_Core_Exception('This membership period is linked to a payment, it cannot be deleted.');
+    }
+
+    $isLastPeriodOfMembership = self::isLastPeriodOfMembership($id);
+
+    if ($isLastPeriodOfMembership && self::membershipLinkedToPayment($membershipId)) {
+      throw new CRM_Core_Exception('The membership associated with this period is linked to a payment, it cannot be deleted.');
+    }
+
+    $transaction = new CRM_Core_Transaction();
+    $membershipPeriod->delete();
+
+    if ($isLastPeriodOfMembership) {
+      self::deleteMembership($membershipId);
+    }
+
+    $transaction->commit();
+  }
+
+  private static function periodLinkedToPayment($membershipPeriod) {
+    if (!empty($membershipPeriod->entity_id)) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  private static function membershipLinkedToPayment($membershipId) {
+    $membershipPaymentsCount = civicrm_api3('MembershipPayment', 'getcount', [
+      'membership_id' => $membershipId,
+    ]);
+
+    return $membershipPaymentsCount;
+  }
+
+  public static function isLastPeriodOfMembership($periodId) {
+    $membershipPeriod = self::getMembershipPeriodById($periodId);
+
+    $periodsOfMembership = new self();
+    $periodsOfMembership->membership_id = $membershipPeriod->membership_id;
+    return $periodsOfMembership->find() === 1;
+  }
+
+  private static function deleteMembership($membershipId) {
+    civicrm_api3('Membership', 'delete', [
+      'id' => $membershipId,
+    ]);
+  }
+
 }

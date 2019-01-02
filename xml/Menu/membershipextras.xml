@@ -55,4 +55,10 @@
     <title>Edit Membership Period</title>
     <access_arguments>edit memberships</access_arguments>
   </item>
+  <item>
+    <path>civicrm/membership/period/delete</path>
+    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_DeletePeriod</page_callback>
+    <title>Delete Membership Period</title>
+    <access_arguments>delete membership period</access_arguments>
+  </item>
 </menu>
