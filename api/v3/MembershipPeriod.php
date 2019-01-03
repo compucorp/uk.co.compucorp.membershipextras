@@ -12,8 +12,6 @@ use CRM_MembershipExtras_ExtensionUtil as E;
 function _civicrm_api3_membership_period_create_spec(&$spec) {
   $spec['membership_id']['api.required'] = 1;
   $spec['start_date']['api.required'] = 1;
-  $spec['payment_entity_table']['api.required'] = 1;
-  $spec['entity_id']['api.required'] = 1;
 }
 
 /**

@@ -36,12 +36,19 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     $lastActivePeriod = self::getLastActivePeriod($membershipID);
     $lastPayment = self::getMembershipLastContribution($membershipID);
 
+    $paymentEntityTable = NULL;
+    $entityId = NULL;
+    if (!empty($lastPayment)) {
+      $paymentEntityTable = self::calculateEntityTableForContribution($lastPayment);
+      $entityId = self::calculateEntityIDForContribution($lastPayment);
+    }
+
     return self::create([
       'membership_id' => $membershipID,
       'start_date' => self::calculateStartDate($membership, $lastActivePeriod),
       'end_date' => $membership['end_date'],
-      'payment_entity_table' => self::calculateEntityTableForContribution($lastPayment),
-      'entity_id' => self::calculateEntityIDForContribution($lastPayment),
+      'payment_entity_table' => $paymentEntityTable,
+      'entity_id' => $entityId,
       'is_active' => TRUE,
     ]);
   }
@@ -107,7 +114,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     $result = civicrm_api3('MembershipPayment', 'get', [
       'sequential' => 1,
       'membership_id' => $membershipID,
-      'api.Contribution.getsingle' => ['id' => '$value.contribution_id'],
+      'api.Contribution.get' => ['id' => '$value.contribution_id'],
       'options' => [
         'sort' => 'contribution_id DESC',
         'limit' => 1
@@ -115,7 +122,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     ]);
 
     if ($result['count'] > 0) {
-      return $result['values'][0]['api.Contribution.getsingle'];
+      return $result['values'][0]['api.Contribution.get']['values'][0];
     }
 
     return [];
