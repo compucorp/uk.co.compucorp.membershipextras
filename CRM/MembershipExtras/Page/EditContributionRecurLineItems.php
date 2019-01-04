@@ -131,7 +131,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @inheritdoc
    */
   public function run() {
-    CRM_Utils_System::setTitle(E::ts('Manage Instalment'));
+    CRM_Utils_System::setTitle(E::ts('Manage Installments'));
 
     $this->assign('currentDate', date('Y-m-d'));
     $this->assign('recurringContribution', $this->contribRecur);
