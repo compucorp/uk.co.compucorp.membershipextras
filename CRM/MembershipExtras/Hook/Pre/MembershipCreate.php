@@ -24,6 +24,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
   public function preProcess() {
     $this->recalculateTaxAmount();
     $this->recalculateLineItemsAmounts();
+    $this->updateOrCreateMembership();
   }
 
   /**
@@ -75,6 +76,42 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
         );
       }
     }
+  }
+
+  /**
+   * Checks if a membership of the same type already exists for the contact and
+   * if it does, retrieves the ID so that the membership gets updated instead.
+   */
+  private function updateOrCreateMembership() {
+    $contactID = $this->params['contact_id'];
+    $membershipTypeID = $this->params['membership_type_id'];
+
+    $membershipID = $this->getLastMembershipID([
+      'contact_id' => $contactID,
+      'membership_type_id' => $membershipTypeID,
+    ]);
+
+    if ($membershipID) {
+      $this->params['id'] = $membershipID;
+    }
+  }
+
+  /**
+   * Returns the last membership based on the conditions passed
+   * 
+   * @param mixed[] $conditions
+   */
+  private function getLastMembershipID($conditions) {
+    $result = civicrm_api3('Membership', 'get', array_merge($conditions, [
+      'sequential' => 1,
+    ]));
+
+    if (!empty($result['values'])) {
+      $largestIndex = count($result['values']) - 1;
+      return $result['values'][$largestIndex]['id'];
+    }
+
+    return FALSE;
   }
 
 }
