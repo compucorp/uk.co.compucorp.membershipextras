@@ -13,7 +13,7 @@ class CRM_MembershipExtras_Form_MembershipPeriod_DeletePeriod extends CRM_Core_F
   }
 
   public function buildQuickForm() {
-    $this->assign('isLastPeriod', MembershipPeriod::isLastPeriodOfMembership($this->id));
+    $this->assign('isTheOnlyPeriodOfMembership', MembershipPeriod::isTheOnlyPeriodOfMembership($this->id));
 
     $this->addButtons([
       [

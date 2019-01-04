@@ -1,6 +1,6 @@
 <div class="crm-block crm-form-block">
     <div class="messages status no-popup crm-membershipextras-delete-membership-period">
-        {if $isLastPeriod}
+        {if $isTheOnlyPeriodOfMembership}
             <div>
                 <span class="icon inform-icon"></span>
                 <strong class="font-red"> WARNING - Please note deleting the last membership

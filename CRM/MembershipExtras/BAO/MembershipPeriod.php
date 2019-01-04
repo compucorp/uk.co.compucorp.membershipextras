@@ -271,16 +271,16 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
       throw new CRM_Core_Exception('This membership period is linked to a payment, it cannot be deleted.');
     }
 
-    $isLastPeriodOfMembership = self::isLastPeriodOfMembership($id);
+    $isTheOnlyPeriodOfMembership = self::isTheOnlyPeriodOfMembership($id);
 
-    if ($isLastPeriodOfMembership && self::membershipLinkedToPayment($membershipId)) {
+    if ($isTheOnlyPeriodOfMembership && self::membershipLinkedToPayment($membershipId)) {
       throw new CRM_Core_Exception('The membership associated with this period is linked to a payment, it cannot be deleted.');
     }
 
     $transaction = new CRM_Core_Transaction();
     $membershipPeriod->delete();
 
-    if ($isLastPeriodOfMembership) {
+    if ($isTheOnlyPeriodOfMembership) {
       self::deleteMembership($membershipId);
     }
 
@@ -303,7 +303,15 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     return $membershipPaymentsCount;
   }
 
-  public static function isLastPeriodOfMembership($periodId) {
+  /**
+   * Determines if the period is the only
+   * period of the membership it is associated with.
+   *
+   * @param $periodId
+   *
+   * @return bool
+   */
+  public static function isTheOnlyPeriodOfMembership($periodId) {
     $membershipPeriod = self::getMembershipPeriodById($periodId);
 
     $periodsOfMembership = new self();
