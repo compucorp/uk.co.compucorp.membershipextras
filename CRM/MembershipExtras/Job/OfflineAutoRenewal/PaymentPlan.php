@@ -448,8 +448,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function calculateSingleInstallmentAmount($amount) {
     $resultAmount =  $amount;
 
-    if ($this->newRecurringContribution['installments'] > 1) {
-      $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->newRecurringContribution['installments']));
+    if ($this->currentRecurringContribution['installments'] > 1) {
+      $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->currentRecurringContribution['installments']));
     }
 
     return $resultAmount;

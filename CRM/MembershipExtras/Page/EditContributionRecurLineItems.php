@@ -148,11 +148,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
     $this->assign('currencySymbol', $this->getCurrencySymbol());
-    $this->assign('nextPeriodLineItems', $this->getLineItems([
-      'auto_renew' => TRUE,
-      'end_date' => ['IS NULL' => 1],
-      'is_removed' => 0,
-    ]));
+    $this->assign('nextPeriodLineItems', $this->getNextPeriodLineItems());
 
     parent::run();
   }
@@ -166,16 +162,31 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $conditions = [
       'is_removed' => 0,
       'start_date' => ['IS NOT NULL' => 1],
-      'end_date' => ['IS NULL' => 1],
     ];
 
-    if (!$this->contribRecur['installments']) {
+    if (!$this->contribRecur['installments'] || $this->contribRecur['installments'] <= 1) {
       $conditions['end_date'] = ['IS NULL' => 1];
     }
 
-    $currentPeriodLineItems = $this->getLineItems($conditions);
+    return $this->getLineItems($conditions);
+  }
 
-    return $currentPeriodLineItems;
+  /**
+   * Obtains list of line items for the next period.
+   *
+   * @return array
+   */
+  private function getNextPeriodLineItems() {
+    $conditions = [
+      'auto_renew' => TRUE,
+      'is_removed' => 0,
+    ];
+
+    if (!$this->contribRecur['installments'] || $this->contribRecur['installments'] <= 1) {
+      $conditions['end_date'] = ['IS NULL' => 1];
+    }
+
+    return $this->getLineItems($conditions);
   }
 
   /**
