@@ -189,7 +189,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Loads list of manual payment processors into an array as a class attribute.
    */
-  private function setManualPaymentProcessorIDs() {
+    private function setManualPaymentProcessorIDs() {
     $payLaterProcessorID = 0;
     $this->manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
   }

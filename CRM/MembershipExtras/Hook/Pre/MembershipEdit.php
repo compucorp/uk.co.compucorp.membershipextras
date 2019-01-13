@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 
 /**
  * Implements hook to be run before a membership is created/edited.
@@ -99,11 +100,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     ])['values'][0];
 
     $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
-
-    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
-    $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
-      in_array($recurringContribution['payment_processor_id'], $manualPaymentProcessors);
-
+    $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor($recurringContribution['payment_processor_id']);
     if ($isOfflineContribution && $isPaymentPlanRecurringContribution) {
       return TRUE;
     }
