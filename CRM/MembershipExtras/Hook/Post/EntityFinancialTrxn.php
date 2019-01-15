@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+
 class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
 
   /**
@@ -34,8 +36,9 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
       return;
     }
 
+    $isManualPaymentPlanTransaction = ManualPaymentProcessors::isManualPaymentProcessor($this->recurContribution['payment_processor_id']);
     $this->setRecurContribution();
-    if (empty($this->recurContribution) || !$this->isManualPaymentPlanTransaction()) {
+    if (empty($this->recurContribution) || !$isManualPaymentPlanTransaction) {
       return;
     }
 
@@ -129,23 +132,6 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
 
     $this->recurContribution =  $recurContribution['values'][0];
-  }
-
-  /**
-   * Determines if the transaction is a payment
-   * plan transaction.
-   *
-   * @return bool
-   */
-  private function isManualPaymentPlanTransaction() {
-    $payLaterProcessorID = 0;
-    $manualPaymentProcessorsIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
-
-    if (in_array($this->recurContribution['payment_processor_id'], $manualPaymentProcessorsIDs)) {
-      return TRUE;
-    }
-
-    return FALSE;
   }
 
   /**

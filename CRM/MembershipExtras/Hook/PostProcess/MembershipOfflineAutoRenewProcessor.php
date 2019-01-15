@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+
 class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
 
   /**
@@ -43,6 +45,9 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     else {
       $recurContributionID = $this->createAutoRenewRecurContribution();
       $this->updateContributionRecurringContribution($recurContributionID);
+
+      $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
+      $lineItemCreator->create();
     }
 
     $this->setMembershipToAutoRenew($recurContributionID);

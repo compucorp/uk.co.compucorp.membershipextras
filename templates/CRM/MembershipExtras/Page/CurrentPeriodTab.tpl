@@ -13,9 +13,9 @@
 <div id="confirmLineItemDeletion" style="display: none;"></div>
 
 <div class="right">
-  Period Start Date: {$periodStartDate|date_format}
+  Period Start Date: {$periodStartDate|date_format:"%Y-%m-%d"|crmDate}
   &nbsp;&nbsp;&nbsp;
-  Period End Date: {$periodEndDate|date_format}
+  Period End Date: {$periodEndDate|crmDate}
 </div>
 <form>
   <input name="recurringContributionID" id="recurringContributionID" value="{$recurringContributionID}" type="hidden" />
@@ -43,8 +43,8 @@
 
       <tr id="lineitem-{$currentItem.id}" data-item-data='{$currentItem|@json_encode}' class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
         <td>{$currentItem.label}</td>
-        <td>{$currentItem.start_date|date_format}</td>
-        <td>{$largestMembershipEndDate|date_format}</td>
+        <td>{$currentItem.start_date|date_format:"%Y-%m-%d"|crmDate}</td>
+        <td>{$largestMembershipEndDate|crmDate}</td>
         {if $recurringContribution.auto_renew}
           <td>
               <input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} />

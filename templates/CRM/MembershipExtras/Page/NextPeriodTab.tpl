@@ -5,7 +5,7 @@ var membershipTypes = JSON.parse('{$membershipTypes|@json_encode}');
 var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
 </script>
 <div class="right">
-  Period Start Date: {$nextPeriodStartDate|date_format}
+  Period Start Date: {$nextPeriodStartDate|date_format:"%Y-%m-%d"|crmDate}
 </div>
 <table class="selector row-highlight" id="nextPeriodLineItems">
   <tbody>

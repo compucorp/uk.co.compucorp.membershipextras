@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+
 /**
  * Post-processes Line items.
  */
@@ -61,7 +63,8 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
     $processorID = CRM_Utils_Array::value('contribution_id.contribution_recur_id.payment_processor_id', $paymentData, 0);
     $previousPeriod = CRM_Utils_Array::value('contribution_id.contribution_recur_id.previous_period', $paymentData, 0);
 
-    if (!empty($recurringContributionID) && $this->isManualPaymentPlan($processorID) && $previousPeriod == 0) {
+    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($processorID);
+    if (!empty($recurringContributionID) && $isManualPaymentPlan && $previousPeriod == 0) {
       $contributionCount = civicrm_api3('Contribution', 'getcount', [
         'contribution_recur_id' => $recurringContributionID,
       ]);
@@ -72,24 +75,6 @@ class CRM_MembershipExtras_Hook_Post_LineItem {
     }
 
     return false;
-  }
-
-  /**
-   * Determines if the recurring contribution is offline (pay later) and is for
-   * a payment plan.
-   *
-   * @param int $processorID
-   *
-   * @return bool
-   */
-  private function isManualPaymentPlan($processorID) {
-    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
-
-    if (empty($processorID) || in_array($processorID, $manualPaymentProcessors)) {
-      return TRUE;
-    }
-
-    return FALSE;
   }
 
   /**
