@@ -15,7 +15,7 @@
 <div class="right">
   Period Start Date: {$periodStartDate|date_format:"%Y-%m-%d"|crmDate}
   &nbsp;&nbsp;&nbsp;
-  Period End Date: {$periodEndDate|crmDate}
+  Period End Date: {$periodEndDate|date_format:"%Y-%m-%d"|crmDate}
 </div>
 <form>
   <input name="recurringContributionID" id="recurringContributionID" value="{$recurringContributionID}" type="hidden" />
