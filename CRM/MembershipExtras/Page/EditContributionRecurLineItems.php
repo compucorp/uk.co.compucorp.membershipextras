@@ -164,7 +164,9 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       'start_date' => ['IS NOT NULL' => 1],
     ];
 
-    if (!$this->contribRecur['installments'] || $this->contribRecur['installments'] <= 1) {
+    $installments = CRM_Utils_Array::value('installments', $this->contribRecur, 0);
+
+    if ($installments <= 1) {
       $conditions['end_date'] = ['IS NULL' => 1];
     }
 
@@ -182,7 +184,9 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       'is_removed' => 0,
     ];
 
-    if (!$this->contribRecur['installments'] || $this->contribRecur['installments'] <= 1) {
+    $installments = CRM_Utils_Array::value('installments', $this->contribRecur, 0);
+
+    if ($installments <= 1) {
       $conditions['end_date'] = ['IS NULL' => 1];
     }
 
