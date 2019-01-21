@@ -61,7 +61,8 @@ CRM.$(function () {
     if (selectedId) {
       var membershipType = getMembershipType(selectedId);
       var financialType = getFinancialType(membershipType.financial_type_id);
-      var defaultAmount = Number(membershipType.minimum_fee) / Number(recurringContribution.installments);
+      var installments = getNumberOfInstallments(recurringContribution);
+      var defaultAmount = Number(membershipType.minimum_fee) / Number(installments);
 
       if (!financialType) {
         throw new Error(ts('Invalid financial type id passed'));
@@ -116,6 +117,24 @@ CRM.$(function () {
     CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab', 'next');
   });
 });
+
+/**
+ * Returns number of installments in given recurring contribution, or 1 if no
+ * installments.
+ *
+ * @param recurringContribution
+ *
+ * @return {number}
+ */
+function getNumberOfInstallments(recurringContribution) {
+  var numberOfInstallments = 1;
+
+  if (typeof recurringContribution.installments !== 'undefined') {
+    numberOfInstallments = parseInt(recurringContribution.installments);
+  }
+
+  return numberOfInstallments > 0 ? numberOfInstallments : 1;
+}
 
 /**
  * Validates the data being used to create a neww membership.
@@ -284,13 +303,13 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
           'id': lineItemData.entity_id,
           'contribution_recur_id': '',
         }).done(function (membershipUnlinkRes) {
-          
+
           if (membershipUnlinkRes.is_error) {
             CRM.alert(ts('Cannot unlink the associated membership'), null, 'alert');
 
             return;
           }
-          
+
           CRM.alert(
             ts(lineItemData.label + ' should no longer be continued in the next period.'),
             null,
