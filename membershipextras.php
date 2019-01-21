@@ -222,6 +222,11 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $entityFinancialTrxnHook->updatePaymentPlanStatus();
   }
 
+  if ($objectName === 'ContributionRecur') {
+    $contributionRecurPostHook = new CRM_MembershipExtras_Hook_Post_ContributionRecur($objectRef);
+    $contributionRecurPostHook->postProcess();
+  }
+
   if ($objectName == 'LineItem') {
     $lineItemPostHook = new CRM_MembershipExtras_Hook_Post_LineItem($op, $objectId, $objectRef);
     $lineItemPostHook->postProcess();
