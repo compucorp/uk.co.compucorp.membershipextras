@@ -19,7 +19,7 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
    * @param \CRM_Contribute_BAO_ContributionRecur $contributionBAO
    */
   public function __construct(CRM_Contribute_BAO_ContributionRecur $contributionBAO) {
-    $this->contributionRecurBAO = $contributionBAO;
+    $this->contributionRecurBAO = CRM_Contribute_BAO_ContributionRecur::findById($contributionBAO->id);
   }
 
   /**
@@ -60,7 +60,7 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
   private function getSubscriptionLines() {
     $result = civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
-      'contribution_recur_id' => $this->contributionRecurBAO['id'],
+      'contribution_recur_id' => $this->contributionRecurBAO->id,
       'options' => ['limit' => 0],
     ]);
 
