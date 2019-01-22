@@ -1,4 +1,5 @@
 <?php
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 
 /**
  * Implements post-process hooks on ContributionRecur entity.
@@ -25,7 +26,10 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
    * Post processes recurring contribution entity.
    */
   public function postProcess() {
-    $this->updateLineItemEndDates();
+    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($this->contributionRecurBAO->payment_processor_id);
+    if ($isManualPaymentPlan) {
+      $this->updateLineItemEndDates();
+    }
   }
 
   /**
