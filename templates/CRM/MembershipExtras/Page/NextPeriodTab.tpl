@@ -76,16 +76,16 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
       </select>
     </td>
     <td id="newMembershipFinancialType">{ts}select a membership type{/ts}</td>
-    <td id="newMembershipFinTypeTaxRate">N/A</td>
+    <td id="newMembershipFinTypeTaxRate">-</td>
     <td>
       {$currencySymbol}&nbsp; <input type="text" class="four crm-form-text" size="4" id="newMembershipAmount" />
     </td>
     <td nowrap class="confirmation-icons">
-      <a href="#" class="cancel-add-next-period-membership-button">
-        <span><i class="crm-i fa-times"></i></span>
-      </a>
       <a href="#" class="confirm-add-next-period-membership-button">
         <span><i class="crm-i fa-check"></i></span>
+      </a>
+      <a href="#" class="cancel-add-next-period-membership-button">
+        <span><i class="crm-i fa-times"></i></span>
       </a>
     </td>
   </tr>

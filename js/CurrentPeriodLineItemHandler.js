@@ -85,7 +85,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    */
   CurrentPeriodLineItemHandler.prototype.addEventHandlers = function () {
     this.setUpRowFlashingOnOutClick();
-    this.setLineItemRemovalEvents();
+    this.setLineItemEvents();
     this.setNewMembershipEvents();
     this.setNewDonationEvents();
   };
@@ -93,7 +93,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
   /**
    * Adds events to the form to handle line item removal.
    */
-  CurrentPeriodLineItemHandler.prototype.setLineItemRemovalEvents = function () {
+  CurrentPeriodLineItemHandler.prototype.setLineItemEvents = function () {
     var that = this;
 
     // Processes auto-renew check-box events.
@@ -132,25 +132,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       return;
     }
 
-    var params = {
-      'sequential': 1,
-      'contribution_recur_id': itemData.contribution_recur_id,
-      'auto_renew': true,
-      'is_removed': 0,
-      'api.LineItem.get': {
-        'sequential': 1,
-        'id': '$value.line_item_id',
-        'entity_table': {'IS NOT NULL': 1},
-        'entity_id': {'IS NOT NULL': 1},
-        'api.PriceFieldValue.getsingle': {
-          'id': '$value.price_field_value_id'
-        }
-      }
-    };
-
-    if (typeof this.recurringContribution.installments === 'undefined' || this.recurringContribution.installments <= 1) {
-      params.end_date = {'IS NULL': 1};
-    }
+    var params = this.buildNextPeriodLineItemCallParameters();
 
     var apiCalls = {
       'nextPeriodLineItems': ['ContributionRecurLineItem', 'get', params],
@@ -161,14 +143,14 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     CRM.api3(apiCalls)
     .done(function (results) {
       var isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
-        itemData,
-        results.membership,
+        results.membership.membership_type_id,
         results.nextPeriodLineItems
       );
 
       that.currentTab.unblock();
       if (itemData.entity_table === 'civicrm_membership' && isMembershipTypeOnNextPeriod) {
         CRM.alert(ts('This membership type is already enrolled in next period.'), 'Duplicate Membership Type in Next Period', 'alert');
+        CRM.refreshParent('#periodsContainer');
       } else {
         that.showLineItemAutoRenewConfirmation(itemData);
       }
@@ -208,20 +190,18 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * Checks if the membership type for the membership already exists on given
    * list of line items.
    *
-   * @param currentLineItem
-   * @param membership
+   * @param lineMembershipTypeID
    * @param lineItemsResult
    *
    * @returns {boolean}
    */
-  CurrentPeriodLineItemHandler.prototype.isMembershipTypeOnNextPeriod = function (currentLineItem, membership, lineItemsResult) {
-    var lineMembershipType = membership.membership_type_id;
-    var currentLineMembershipType, currentLine, currentPriceFieldValue;
-    var nextPeriodLineItems = lineItemsResult.values;
-
-    if (lineItemsResult.count == 0) {
+  CurrentPeriodLineItemHandler.prototype.isMembershipTypeOnNextPeriod = function (lineMembershipTypeID, lineItemsResult) {
+    if (lineItemsResult.count === 0) {
       return false;
     }
+
+    var currentLineMembershipType, currentLine, currentPriceFieldValue;
+    var nextPeriodLineItems = lineItemsResult.values;
 
     for (var i = 0; i < nextPeriodLineItems.length; i++) {
       if (nextPeriodLineItems[i]['api.LineItem.get']['count'] === 0) {
@@ -232,7 +212,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       currentPriceFieldValue = currentLine['api.PriceFieldValue.getsingle'];
       currentLineMembershipType = currentPriceFieldValue.membership_type_id;
 
-      if (lineMembershipType == currentLineMembershipType) {
+      if (lineMembershipTypeID == currentLineMembershipType) {
         return true;
       }
     }
@@ -280,6 +260,37 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
     // Adds line item to recurring contribution and all pending installments.
     CRM.$('#apply_add_membership_btn', this.currentTab).click(function () {
+      that.processMembershipCreation();
+
+      return false;
+    });
+  };
+
+  CurrentPeriodLineItemHandler.prototype.processMembershipCreation = function () {
+    this.currentTab.block({message: null});
+
+    var that = this;
+    var params = this.buildNextPeriodLineItemCallParameters();
+
+    CRM.api3('ContributionRecurLineItem', 'get', params)
+    .done(function (nextPeriodLineItemsResult) {
+      that.currentTab.unblock();
+
+      var isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
+        that.newMembershipTypeField.val(),
+        nextPeriodLineItemsResult
+      );
+
+      if (isMembershipTypeOnNextPeriod && that.newMembershipAutoRenewField.prop('checked')) {
+        CRM.alert(
+          ts('This membership type is already enrolled in next period. If you want to create it, please unset the check-box to auto-renew. Otherwise, delete the line item on next period tab and try again.'),
+          ts('Duplicate Membership Type Found on Next Period'),
+          'alert'
+        );
+
+        return;
+      }
+
       if (that.validateNewMembership()) {
         that.callNewLineConfirmationForm('civicrm/recurring-contribution/add-membership-lineitem', {
           reset: 1,
@@ -293,8 +304,6 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
           }
         });
       }
-
-      return false;
     });
   };
 
@@ -598,6 +607,30 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
         that.showMembershipTypeInfo(that.membershipTypes[typeID]);
       });
     }
+  };
+
+  CurrentPeriodLineItemHandler.prototype.buildNextPeriodLineItemCallParameters = function () {
+    var params = {
+      'sequential': 1,
+      'contribution_recur_id': this.recurringContribution.id,
+      'auto_renew': true,
+      'is_removed': 0,
+      'api.LineItem.get': {
+        'sequential': 1,
+        'id': '$value.line_item_id',
+        'entity_table': {'IS NOT NULL': 1},
+        'entity_id': {'IS NOT NULL': 1},
+        'api.PriceFieldValue.getsingle': {
+          'id': '$value.price_field_value_id'
+        }
+      }
+    };
+
+    if (typeof this.recurringContribution.installments === 'undefined' || this.recurringContribution.installments <= 1) {
+      params.end_date = {'IS NULL': 1};
+    }
+
+    return params;
   };
 
   /**
