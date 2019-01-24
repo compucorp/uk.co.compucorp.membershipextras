@@ -1,3 +1,5 @@
+var NOTIFICATION_EXPIRE_TIME_IN_MS = 5000;
+
 CRM.$(function () {
 
   CRM.$('.remove-next-period-line-button').each(function () {
@@ -89,20 +91,20 @@ CRM.$(function () {
         financial_type_id = CRM.$('#financialType').val();
 
     if (!label.length) {
-      CRM.alert(ts('Item label is required'), null, 'error');
+      CRM.alert(ts('Item label is required'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return;
     }
 
     if (!amount.length) {
-      CRM.alert(ts('Item amount is required'), null, 'error');
+      CRM.alert(ts('Item amount is required'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return;
     } else {
       try {
         amount = parseInt(amount);
       } catch(error) {
-        CRM.alert(ts('Amount you entered is not valid'), null, 'error');
+        CRM.alert(ts('Amount you entered is not valid'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
         return;
       }
@@ -151,20 +153,20 @@ function validateNewMembershipLineItem() {
     newMembershipAmount = CRM.$('#newMembershipAmount').val();
 
   if (!membershipTypeId || !membershipTypeId.length) {
-    CRM.alert(ts('Item label is required'), null, 'error');
+    CRM.alert(ts('Item label is required'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
     return false;
   }
 
   if (!newMembershipAmount.length) {
-    CRM.alert(ts('Item amount is required'), null, 'error');
+    CRM.alert(ts('Item amount is required'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
     return false;
   } else {
     try {
       newMembershipAmount = parseInt(newMembershipAmount);
     } catch(error) {
-      CRM.alert(ts('Amount you entered is not valid'), null, 'error');
+      CRM.alert(ts('Amount you entered is not valid'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return false;
     }
@@ -213,7 +215,7 @@ function showMembershipAddLineItemConfirmation() {
           entity_table: 'civicrm_contribution_recur',
         });
       } else {
-        CRM.alert('Could not determine price field value for the select membership type.', null, 'error');
+        CRM.alert('Could not determine price field value for the select membership type.', null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
       }
     });
   }).on('crmConfirm:no', function() {
@@ -224,7 +226,7 @@ function showMembershipAddLineItemConfirmation() {
 function createLineItem(params) {
   CRM.api3('LineItem', 'create', params).done(function(lineItemResult) {
     if (lineItemResult.is_error) {
-      CRM.alert(lineItemResult.error_message, null, 'error');
+      CRM.alert(lineItemResult.error_message, null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return;
     }
@@ -236,7 +238,7 @@ function createLineItem(params) {
       auto_renew: true,
     }).done(function(contribRecurResult) {
       if (contribRecurResult.is_error) {
-        CRM.alert(contribRecurResult.error_message, null, 'error');
+        CRM.alert(contribRecurResult.error_message, null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
         return;
       }
@@ -244,7 +246,8 @@ function createLineItem(params) {
       CRM.alert(
         ts(params.label + ' will now be continued in the next period.'),
         null,
-        'success'
+        'success',
+        {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
       );
       createActivity('Update Payment Plan Next Period', 'update_payment_plan_next_period');
       CRM.refreshParent('#periodsContainer');
@@ -298,7 +301,7 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
     }).done(function (lineRemovalRes) {
       
       if (lineRemovalRes.is_error) {
-        CRM.alert(ts('Cannot remove the last item in an order!'), null, 'error');
+        CRM.alert(ts('Cannot remove the last item in an order!'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
         return;
       }
@@ -310,7 +313,7 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
         }).done(function (membershipUnlinkRes) {
 
           if (membershipUnlinkRes.is_error) {
-            CRM.alert(ts('Cannot unlink the associated membership'), null, 'alert');
+            CRM.alert(ts('Cannot unlink the associated membership'), null, 'alert', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
             return;
           }
@@ -318,7 +321,8 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
           CRM.alert(
             ts(lineItemData.label + ' should no longer be continued in the next period.'),
             null,
-            'success'
+            'success',
+            {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
           );
           createActivity('Update Payment Plan Next Period', 'update_payment_plan_next_period');
           CRM.refreshParent('#periodsContainer');
@@ -330,7 +334,8 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
         CRM.alert(
           ts(lineItemData.label + ' should no longer be continued in the next period.'),
           null,
-          'success'
+          'success',
+          {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
         );
 
         return;

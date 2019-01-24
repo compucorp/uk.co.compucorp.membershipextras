@@ -1,5 +1,7 @@
 CRM.RecurringContribution = CRM.RecurringContribution || {};
 
+var NOTIFICATION_EXPIRE_TIME_IN_MS = 5000;
+
 /**
  * This class handles front-end events and logic associated to managing line
  * items for a recurring contribution.
@@ -149,7 +151,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
       that.currentTab.unblock();
       if (itemData.entity_table === 'civicrm_membership' && isMembershipTypeOnNextPeriod) {
-        CRM.alert(ts('This membership type is already enrolled in next period.'), 'Duplicate Membership Type in Next Period', 'alert');
+        CRM.alert(ts('This membership type is already enrolled in next period.'), 'Duplicate Membership Type in Next Period', 'alert', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
         CRM.refreshParent('#periodsContainer');
       } else {
         that.showLineItemAutoRenewConfirmation(itemData);
@@ -285,7 +287,8 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
         CRM.alert(
           ts('This membership type is already enrolled in next period. If you want to create it, please unset the check-box to auto-renew. Otherwise, delete the line item on next period tab and try again.'),
           ts('Duplicate Membership Type Found on Next Period'),
-          'alert'
+          'alert',
+          {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
         );
 
         return;
@@ -445,7 +448,8 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
           '<li>(optional) Create the membership or contribution outside the recurring order.</li>' +
           '</ul>',
           null,
-          'alert'
+          'alert',
+          {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
         );
 
         return;
@@ -493,7 +497,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }
 
     if (errors.length > 0) {
-      CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error');
+      CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return false;
     }
@@ -533,7 +537,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }
 
     if (errors.length > 0) {
-      CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error');
+      CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return false;
     }
@@ -558,7 +562,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       that.currentTab.unblock();
 
       if (result.result < 2) {
-        CRM.alert('Cannot remove the last item in an order!', null, 'alert');
+        CRM.alert('Cannot remove the last item in an order!', null, 'alert', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
         return;
       }
