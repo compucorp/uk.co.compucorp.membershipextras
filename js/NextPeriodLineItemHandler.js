@@ -52,7 +52,12 @@ CRM.$(function () {
       throw new Error(ts('Invalid financial type id passed'));
     }
 
-    CRM.$('#financialTypeTaxRate').text(financialType.tax_rate || 'N/A');
+    var taxRate = financialType.tax_rate || 'N/A';
+    if (taxRate != 'N/A') {
+      taxRate += ' %';
+    }
+
+    CRM.$('#financialTypeTaxRate').text(taxRate);
   });
 
   CRM.$('#newMembershipItem').on('change', function() {
