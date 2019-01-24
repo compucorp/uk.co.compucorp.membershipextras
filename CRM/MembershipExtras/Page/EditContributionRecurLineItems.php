@@ -144,11 +144,13 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
     $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
     $this->assign('lineItems', $currentPeriodLineItems);
+
+    $nextPeriodLineItems = $this->getNextPeriodLineItems();
     $this->assign('showNextPeriodTab', $this->showNextPeriodTab());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
     $this->assign('currencySymbol', $this->getCurrencySymbol());
-    $this->assign('nextPeriodLineItems', $this->getNextPeriodLineItems());
+    $this->assign('nextPeriodLineItems', $nextPeriodLineItems);
 
     parent::run();
   }
@@ -234,7 +236,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return boolean
    */
   private function showNextPeriodTab() {
-    return CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur)) && count($this->getMemberships());
+    return CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur));
   }
 
   /**
@@ -298,38 +300,6 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     }
 
     return $lineItems;
-  }
-
-  /**
-   * Gets the memberships identified by givenn ID.
-   *
-   * @param $membershipID
-   *
-   * @return array
-   */
-  private function getMembership($membershipID) {
-    if (empty($membershipID)) {
-      return [];
-    }
-
-    $membership = civicrm_api3('Membership', 'getsingle', [
-      'sequential' => 1,
-      'id' => $membershipID,
-    ]);
-
-    return $membership;
-  }
-
-  /**
-   * Gets the memberships associated with the current recurring contribution
-   *
-   * @return array
-   */
-  private function getMemberships() {
-    return civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $this->contribRecur['id'],
-    ])['values'];
   }
 
   /**
