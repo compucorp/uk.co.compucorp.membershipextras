@@ -231,6 +231,24 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   }
 
   /**
+   * Gets the memberships identified by givenn ID.
+   *
+   * @param $membershipID
+   *
+   * @return array
+   */
+  private function getMembership($membershipID) {
+    if (empty($membershipID)) {
+      return [];
+    }
+    $membership = civicrm_api3('Membership', 'getsingle', [
+      'sequential' => 1,
+      'id' => $membershipID,
+    ]);
+    return $membership;
+  }
+
+  /**
    * Checks if auto-renew is enabled for recurring contribution.
    *
    * @return boolean
