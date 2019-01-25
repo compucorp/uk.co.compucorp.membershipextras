@@ -57,12 +57,12 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
     <td>
       {$currencySymbol}&nbsp; <input type="text" class="four crm-form-text" size="4" id="amount" />
     </td>
-    <td>
-      <a href="#" class="cancel-add-next-period-line-button">
-        <span><i class="crm-i fa-times crm-i-red"></i></span>
-      </a>
+    <td nowrap class="confirmation-icons">
       <a href="#" class="confirm-add-next-period-line-button">
         <span><i class="crm-i fa-check crm-i-green"></i></span>
+      </a>
+      <a href="#" class="cancel-add-next-period-line-button">
+        <span><i class="crm-i fa-times crm-i-red"></i></span>
       </a>
     </td>
   </tr>
