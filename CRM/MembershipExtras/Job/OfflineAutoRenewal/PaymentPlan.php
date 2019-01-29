@@ -196,6 +196,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Renews the given payment plan.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function run() {
     $exceptions = [];
@@ -219,7 +221,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     }
 
     if (count($exceptions)) {
-      throw new Exception(implode(";\n", $exceptions));
+      throw new CRM_Core_Exception(implode(";\n", $exceptions));
     }
   }
   

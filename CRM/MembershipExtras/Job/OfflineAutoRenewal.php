@@ -8,7 +8,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    *
    * @return True
    *
-   * @throws \Exception
+   * @throws \CRM_Core_Exception
    */
   public function run() {
     $exceptions = [];
@@ -16,19 +16,19 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     try {
       $multipleInstallmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan();
       $multipleInstallmentRenewal->run();
-    } catch (Exception $e) {
+    } catch (CRM_Core_Exception $e) {
       $exceptions[] = $e->getMessage();
     }
 
     try {
       $singleInstallmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan();
       $singleInstallmentRenewal->run();
-    } catch (Exception $e) {
+    } catch (CRM_Core_Exception $e) {
       $exceptions[] = $e->getMessage();
     }
 
     if (count($exceptions)) {
-      throw new Exception("Errors found on auto-renewals: " . implode("\n", $exceptions));
+      throw new CRM_Core_Exception("Errors found on auto-renewals: " . implode("\n", $exceptions));
     }
 
     return TRUE;
