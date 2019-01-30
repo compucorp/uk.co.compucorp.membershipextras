@@ -60,6 +60,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     $this->updateMembership();
     $this->updateRelatedInstallments();
     $this->updateRecurringContribution();
+    $this->updateSubscriptionLineItems();
   }
 
   /**
@@ -79,6 +80,27 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     civicrm_api3('ContributionRecur', 'create', $params);
   }
 
+  /**
+   * Updates recurring line items associated to the recurring contribution.
+   */
+  private function updateSubscriptionLineItems() {
+    $autoRenew = $this->form->getElementValue('auto_renew');
+    
+    if (!$autoRenew) {
+      return;
+    }
+
+    civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->recurringContribution['id'],
+      'options' => ['limit' => 0],
+      'api.ContributionRecurLineItem.create' => [
+        'id' => '$value.id',
+        'auto_renew' => $autoRenew,
+      ]
+    ]);
+  }
+  
   /**
    * Updates membership if necessary.
    */
