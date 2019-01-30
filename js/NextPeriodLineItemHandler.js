@@ -295,11 +295,17 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
       yes: ts('Apply')
     }
   }).on('crmConfirm:yes', function() {
-    CRM.api3('ContributionRecurLineItem', 'create', {
+    var params = {
       'id': lineItemData.id,
-      'auto_renew': 0,
-    }).done(function (lineRemovalRes) {
-      
+      'auto_renew': 0
+    };
+
+    if (typeof lineItemData.start_date === 'undefined' || lineItemData.start_date === '') {
+      params.is_removed = 1;
+    }
+
+    CRM.api3('ContributionRecurLineItem', 'create', params)
+    .done(function (lineRemovalRes) {
       if (lineRemovalRes.is_error) {
         CRM.alert(ts('Cannot remove the last item in an order!'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
@@ -340,7 +346,6 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
 
         return;
       }
-
     });
   }).on('crmConfirm:no', function() {
     return;
