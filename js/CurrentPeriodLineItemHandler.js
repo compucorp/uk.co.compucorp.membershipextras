@@ -223,7 +223,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
   };
 
   /**
-   * Adds events tht handle new membership addition to the recurring
+   * Adds events that handle new membership addition to the recurring
    * contribution.
    */
   CurrentPeriodLineItemHandler.prototype.setNewMembershipEvents = function () {
@@ -436,11 +436,11 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     CRM.api3('Contribution', 'getcount', {
       'contribution_recur_id': that.recurringContributionID,
       'contribution_status_id': 'Pending',
-      'end_date': {'>=': startDate},
+      'receive_date': {'>=': startDate},
     }).done(function (result) {
       that.currentTab.unblock();
 
-      if (that.recurringContribution.installments > 1 && result.result < 1) {
+      if (result.result < 1) {
         CRM.alert(
           'There are no instalments left for this period. Suggest to follow the steps below:' +
           '<ul>' +
