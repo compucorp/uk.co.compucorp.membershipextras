@@ -53,7 +53,7 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
         {/foreach}
       </select>
     </td>
-    <td id="financialTypeTaxRate" nowrap>{if !empty($financialTypes[0].tax_rate)}{$financialTypes[0].tax_rate}{else}N/A{/if}</td>
+    <td id="financialTypeTaxRate" nowrap>{if !empty($financialTypes[0].tax_rate)}{$financialTypes[0].tax_rate} %{else}N/A{/if}</td>
     <td>
       {$currencySymbol}&nbsp; <input type="text" class="four crm-form-text" size="4" id="amount" />
     </td>
