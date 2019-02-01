@@ -93,6 +93,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
       'contribution_recur_id' => $this->recurringContribution['id'],
+      'is_removed' => 0,
       'options' => ['limit' => 0],
       'api.ContributionRecurLineItem.create' => [
         'id' => '$value.id',
