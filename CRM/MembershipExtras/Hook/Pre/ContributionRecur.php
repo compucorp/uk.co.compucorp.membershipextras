@@ -123,8 +123,9 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
       'contribution_status_id' => 'Partially paid',
     ]);
 
-    $allPaid = $paidInstallmentsCount >= $this->recurringContribution['installments'];
-    $moreThanOneInstallment = $this->recurringContribution['installments'] > 1;
+    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 0);
+    $allPaid = $paidInstallmentsCount >= $installments;
+    $moreThanOneInstallment = $installments > 1;
 
     switch (true) {
       case $moreThanOneInstallment && $allPaid:
