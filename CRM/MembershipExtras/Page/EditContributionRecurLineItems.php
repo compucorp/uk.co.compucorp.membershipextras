@@ -263,8 +263,11 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return string
    */
   private function calculateNextPeriodStartDate() {
-    $nextPeriodStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
-    $intervalLength = CRM_Utils_Array::value('frequency_interval', $this->contribRecur) * CRM_Utils_Array::value('installments', $this->contribRecur);
+    $numberOfInstallments = 1;
+    if (!empty($this->contribRecur['installments'])) {
+      $numberOfInstallments = $this->contribRecur['installments'];
+    }
+    $intervalLength = CRM_Utils_Array::value('frequency_interval', $this->contribRecur, 0) * $numberOfInstallments;
 
     switch (CRM_Utils_Array::value('frequency_unit', $this->contribRecur)) {
       case 'month':
@@ -278,6 +281,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
         break;
     }
 
+    $nextPeriodStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
     $nextPeriodStartDate->add(new DateInterval($interval));
 
     return $nextPeriodStartDate->format('Y-m-d');
