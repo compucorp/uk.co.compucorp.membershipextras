@@ -283,15 +283,9 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
         nextPeriodLineItemsResult
       );
 
-      if (isMembershipTypeOnNextPeriod && that.newMembershipAutoRenewField.prop('checked')) {
-        CRM.alert(
-          ts('This membership type is already enrolled in next period. If you want to create it, please unset the check-box to auto-renew. Otherwise, delete the line item on next period tab and try again.'),
-          ts('Duplicate Membership Type Found on Next Period'),
-          'alert',
-          {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
-        );
-
-        return;
+      var autoRenew = that.newMembershipAutoRenewField.prop('checked') === true ? 1 : 0;
+      if (isMembershipTypeOnNextPeriod) {
+        autoRenew = 1;
       }
 
       if (that.validateNewMembership()) {
@@ -302,7 +296,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
             membership_type_id: that.newMembershipTypeField.val(),
             start_date: that.newMembershipStartDateField.val(),
             end_date: that.newMembershipEndDateField.val(),
-            auto_renew: that.newMembershipAutoRenewField.prop('checked') === true ? 1 : 0,
+            auto_renew: autoRenew,
             amount: that.newMembershipAmountField.val()
           }
         });
@@ -681,9 +675,10 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @param membershipTypeData
    */
   CurrentPeriodLineItemHandler.prototype.showMembershipTypeInfo = function (membershipTypeData) {
+    var that = this;
     var financialType = membershipTypeData['api.FinancialType.getsingle'];
     var taxAccount = membershipTypeData['api.EntityFinancialAccount.getsingle']['api.FinancialAccount.getsingle'];
-    var numberOfInstallments = this.getNumberOfInstallments()
+    var numberOfInstallments = this.getNumberOfInstallments();
     var minAmount = Math.round((membershipTypeData.minimum_fee / numberOfInstallments) * 100) / 100;
 
     this.newMembershipAmountField.val(minAmount);
@@ -693,6 +688,22 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       var taxRate = Math.round(taxAccount.tax_rate * 100) / 100;
       CRM.$('#newline_tax_rate', this.newMembershipRow).html(taxRate + ' %');
     }
+
+    var params = this.buildNextPeriodLineItemCallParameters();
+    this.currentTab.block();
+    CRM.api3('ContributionRecurLineItem', 'get', params)
+    .done(function (nextPeriodLineItemsResult) {
+      that.currentTab.unblock({message: null});
+      var isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
+        that.newMembershipTypeField.val(),
+        nextPeriodLineItemsResult
+      );
+
+      if (isMembershipTypeOnNextPeriod) {
+        that.newMembershipAutoRenewField.prop('checked', true);
+        that.newMembershipAutoRenewField.prop('disabled', true);
+      }
+    });
   };
 
   /**
