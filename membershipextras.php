@@ -240,6 +240,11 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
     $postProcessFormHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription($form);
     $postProcessFormHook->postProcess();
   }
+
+  if ($formName === 'CRM_Member_Form_MembershipType') {
+    $membershipTypeHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour($form);
+    $membershipTypeHook->process();
+  }
 }
 
 /**
@@ -265,6 +270,28 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName === 'CRM_Contribute_Form_UpdateSubscription') {
     $updateFormHook = new CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription($form);
     $updateFormHook->buildForm();
+  }
+
+  if ($formName === 'CRM_Member_Form_MembershipType') {
+    $membershipTypeHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipTypeColour($form);
+    $membershipTypeHook->buildForm();
+  }
+}
+
+/**
+ * Implements hrcore_civicrm_pageRun.
+ *
+ * @link https://docs.civicrm.org/dev/en/master/hooks/hook_civicrm_pageRun/
+ */
+function membershipextras_civicrm_pageRun($page) {
+  $hooks = [
+    new CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate(),
+    new CRM_MembershipExtras_Hook_PageRun_MemberPageTabColourUpdate(),
+    new CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate()
+  ];
+
+  foreach ($hooks as $hook) {
+    $hook->handle($page);
   }
 }
 
