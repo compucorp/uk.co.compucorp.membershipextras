@@ -103,7 +103,9 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   }
 
   /**
-   * Creates new line item associaated to the rcurring contribution.
+   * Checks if recurring line item exists for membership type in next period,
+   * and updates it if finds one. Otherwise, creates new line item associated to
+   * the recurring contribution.
    *
    * @return array
    */
@@ -116,7 +118,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       $this->lineItemParams['amount'] * $taxRate / 100
     );
 
-    $lineItem = civicrm_api3('LineItem', 'create', [
+    $params = [
       'sequential' => 1,
       'entity_table' => 'civicrm_membership',
       'entity_id' => $membership['id'],
@@ -128,7 +130,14 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'price_field_value_id' => $priceFieldValue['id'],
       'financial_type_id' => $priceFieldValue['financial_type_id'],
       'tax_amount' => $taxAmount,
-    ]);
+    ];
+
+    $existingLineItem = $this->getExistingLineItemForMembershipType($membership['membership_type_id']);
+    if (CRM_Utils_Array::value('id', $existingLineItem, false)) {
+      $params['id'] = $existingLineItem['id'];
+    }
+
+    $lineItem = civicrm_api3('LineItem', 'create', $params);
 
     CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
       'contribution_recur_id' => $this->recurringContribution['id'],
@@ -138,6 +147,69 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
     ]);
 
     return array_shift($lineItem['values']);
+  }
+
+  /**
+   * Loops through line items on next period and returns the first line item
+   * with the same membership type as the given one.
+   *
+   * @param int $membershipTypeID
+   *
+   * @return array
+   */
+  private function getExistingLineItemForMembershipType($membershipTypeID) {
+    $nextPeriodLines = $this->getNextPeriodLineItems();
+
+    foreach ($nextPeriodLines as $lineItem) {
+      $priceFieldValue = $lineItem['price_field_value'];
+      $lineMembershipType = $priceFieldValue['membership_type_id'];
+
+      if ($membershipTypeID == $lineMembershipType) {
+        return $lineItem;
+      }
+    }
+
+    return [];
+  }
+
+  /**
+   * Obtains list of line items for the next period.
+   *
+   * @return array
+   */
+  private function getNextPeriodLineItems() {
+    $lineItems = array();
+
+    $params = [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->recurringContribution['id'],
+      'auto_renew' => TRUE,
+      'is_removed' => 0,
+      'options' => ['limit' => 0],
+      'api.LineItem.getsingle' => [
+        'id' => '$value.line_item_id',
+        'entity_table' => ['IS NOT NULL' => 1],
+        'entity_id' => ['IS NOT NULL' => 1],
+        'api.PriceFieldValue.getsingle' => [
+          'id' => '$value.price_field_value_id',
+        ],
+      ],
+    ];
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', $params);
+
+    if ($result['count'] > 0) {
+      foreach ($result['values'] as $lineItemData) {
+        $lineDetails = $lineItemData['api.LineItem.getsingle'];
+        $lineDetails['price_field_value'] = $lineDetails['api.PriceFieldValue.getsingle'];
+
+        unset($lineDetails['id']);
+        unset($lineDetails['api.PriceFieldValue.getsingle']);
+        unset($lineItemData['api.LineItem.getsingle']);
+        $lineItems[] = array_merge($lineItemData, $lineDetails);
+      }
+    }
+
+    return $lineItems;
   }
 
   /**
