@@ -36,7 +36,9 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipTypeColour {
     if ($this->form->getAction() & CRM_Core_Action::DELETE) {
       return;
     }
+
     $this->addColourRelatedFields();
+    $this->setColourFieldsDefaultValue();
   }
 
   /**
@@ -47,7 +49,6 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipTypeColour {
     CRM_Core_Resources::singleton()->addStyleFile('uk.co.compucorp.membershipextras', 'js/vendor/spectrum/spectrum.css');
     $this->form->add('advcheckbox', 'set_membership_colour', ts('Set membership colour?'));
     $this->form->add('text', 'membership_colour', ts('Membership colour'));
-    $this->setColourFieldsDefaultValue();
 
     CRM_Core_Region::instance('page-body')->add([
       'template' => "{$this->templatePath}/CRM/Member/Form/MembershipTypeColour.tpl"
