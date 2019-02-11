@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Helper_MembershipTypeSettings as MembershipTypeSettings;
+use CRM_MembershipExtras_SettingsManager as MembershipTypeSettings;
 
 /**
  * Implements form changes needed to be done to add membership type colour selection fields

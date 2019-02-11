@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Helper_MembershipTypeSettings as MembershipTypeSettings;
+use CRM_MembershipExtras_SettingsManager as MembershipTypeSettings;
 
 class CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate {
 
@@ -25,7 +25,6 @@ class CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate {
   private function setMembershipTypeColourStyle() {
     $membershipTypeColourSettings = Civi::settings()->get(MembershipTypeSettings::COLOUR_SETTINGS_KEY);
     $css = '';
-    $membershipTypeSettings = new MembershipTypeSettings();
 
     foreach ($membershipTypeColourSettings  as $membershipTypeId => $settings) {
       $backgroundColour = $settings['membership_colour'];
@@ -33,7 +32,7 @@ class CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate {
         $backgroundColour = 'inherit';
       }
       $identifier = '#membership_type-' . $membershipTypeId . '  > td.crmf-name';
-      $textColour = $membershipTypeSettings->computeTextColor($backgroundColour);
+      $textColour = MembershipTypeSettings::computeTextColor($backgroundColour);
       $css .= "$identifier" . "{background-color: {$backgroundColour} !important; color: {$textColour}}";
     }
 

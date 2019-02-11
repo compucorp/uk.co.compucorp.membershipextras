@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Helper_MembershipTypeSettings as MembershipTypeSettings;
+use CRM_MembershipExtras_SettingsManager as MembershipTypeSettings;
 
 class CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour {
 
