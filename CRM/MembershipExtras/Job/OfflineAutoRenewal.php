@@ -610,18 +610,21 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'contribution_id' => $this->lastContribution['id'],
     ])['values'];
 
+    $membershipIds = [];
     foreach ($membershipPayments as $membershipPayment) {
       $membership = new CRM_Member_DAO_Membership();
       $membership->id = $membershipPayment['membership_id'];
       $membership->end_date = MembershipEndDateCalculator::calculate($membershipPayment['membership_id']);
       $membership->save();
 
-      $nullObject = CRM_Utils_Hook::$_nullObject;
-      CRM_Utils_Hook::singleton()->invoke(
-        ['membershipId', 'recurContributionId', 'previousRecurContributionId'], $membershipPayment['membership_id'],
-        $this->currentRecurContributionID, $this->previousRecurContributionID, $nullObject, $nullObject, $nullObject,
-        'membershipextras_postOfflineAutoRenewal');
+      $membershipIds[] = $membershipPayment['membership_id'];
     }
+
+    $nullObject = CRM_Utils_Hook::$_nullObject;
+    CRM_Utils_Hook::singleton()->invoke(
+      ['membershipIds', 'recurContributionId', 'previousRecurContributionId'], $membershipIds,
+      $this->currentRecurContributionID, $this->previousRecurContributionID, $nullObject, $nullObject, $nullObject,
+      'membershipextras_postOfflineAutoRenewal');
   }
 
 }

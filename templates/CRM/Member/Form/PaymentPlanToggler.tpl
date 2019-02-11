@@ -7,6 +7,7 @@
   var membershipextras_taxRates = [];
 
   {literal}
+
   if (membershipextras_taxRatesStr != '') {
     membershipextras_taxRates = JSON.parse(membershipextras_taxRatesStr);
   }
@@ -133,21 +134,24 @@
 </script>
 <table id="payment_plan_fields">
   <tr id="contributionTypeToggle">
-    <td colspan="2" align="center">
-      <input name="contribution_type_toggle" id="contribution_toggle" value="contribution" type="radio">
-      <label for="contribution_toggle">Contribution</label>
-      &nbsp;
-      <input name="contribution_type_toggle" id="payment_plan_toggle" value="payment_plan" type="radio">
-      <label for="payment_plan_toggle">Payment Plan</label>
+    <td colspan="2">
+      <p>
+        <input name="contribution_type_toggle" id="contribution_toggle" value="contribution" type="radio">
+        <label for="contribution_toggle">Contribution</label>
+        &nbsp;
+        <input name="contribution_type_toggle" id="payment_plan_toggle" value="payment_plan" type="radio">
+        <label for="payment_plan_toggle">Payment Plan</label>
+      </p>
     </td>
   </tr>
   <tr id="installments_row">
-    <td nowrap>
-      {$form.installments.label} <span class="marker">*</span>
+    <td class="label" nowrap>
+      {$form.installments.label}<span class="crm-marker">*</span>
     </td>
     <td nowrap>
       {$form.installments.html}
-      {$form.installments_frequency.label} <span class="marker">*</span>
+      &nbsp;
+      {$form.installments_frequency.label} <span class="crm-marker">*</span>
       {$form.installments_frequency.html}
       {$form.installments_frequency_unit.html}
     </td>

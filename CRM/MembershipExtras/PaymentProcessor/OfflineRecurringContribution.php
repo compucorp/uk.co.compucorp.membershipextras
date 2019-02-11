@@ -93,15 +93,7 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
       'class_name' => 'Payment_Manual',
       'is_recur' => '1',
       'payment_instrument_id' => 'EFT',
-      'financial_account_id' => $this->getDepositBankAccountId(),
     ];
-  }
-
-  private function getDepositBankAccountId() {
-    return civicrm_api3('FinancialAccount', 'getvalue', [
-      'return' => 'id',
-      'name' => 'Deposit Bank Account',
-    ]);
   }
 
   public function setAsDefaultPaymentPlanProcessor() {
@@ -138,10 +130,14 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
    *   True to enable, False to disable.
    */
   public function toggle($newStatus) {
-    $paymentProcessorRecords = civicrm_api3('PaymentProcessor', 'get', [
-      'return' => 'id',
-      'name' => self::NAME,
-    ]);
+    try {
+      $paymentProcessorId = civicrm_api3('PaymentProcessor', 'getvalue', [
+        'return' => 'id',
+        'name' => self::NAME,
+      ]);
+    } catch (Exception $e) {
+      return;
+    }
 
     foreach ($paymentProcessorRecords['values'] as $record) {
       $paymentProcessor = new CRM_Financial_DAO_PaymentProcessor();

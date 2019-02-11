@@ -29,7 +29,7 @@ Membership Extras is designed to work with CiviCRM 4.7.x or 5.x plus. If you are
 If your CiviCRM is already on CiviCRM 4.7.x or 5.x plus and this is the first time you use an extension,  please see [Here](http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions "CiviCRM Extensions Installation") for full instructions and information on how to set and configure extensions.
 
 #### I am an user
-You can get the latest release of Membership Extras from [CiviCRM extension directory page](placeholder) or our [Github repository release page](https://github.com/compucorp/uk.co.compucorp.membershipextras/releases).
+You can get the latest release of Membership Extras from [CiviCRM extension directory page](https://civicrm.org/extensions/membership-extras) or our [Github repository release page](https://github.com/compucorp/uk.co.compucorp.membershipextras/releases).
 
 If you are using Drupal and you would like to use Membership Extras with Webform CiviCRM, you can simply download and install [the companion Drupal module](https://github.com/compucorp/webform_civicrm_membership_extras/releases) and there you have it!
 
@@ -85,7 +85,7 @@ A good example is, if one contribution has a link to a Direct Debit Mandate, the
 However, if there are custom information on the contributions that should not be carried over to any new generated contributions. You are able to exclude them by going to **Administer -> Payment Plan Settings** and selecting them in “Custom groups to be excluded when auto-renew” setting.
 
 ## Support
-CiviCRM extension directory page: https://civicrm.org/extensions/gift-aid-extension-uk
+CiviCRM extension directory page: [https://civicrm.org/extensions/membership-extras](https://civicrm.org/extensions/membership-extras)
 
 Please contact the follow email if you have any question:
 <guanhuan@compucorp.co.uk>, <info@compucorp.co.uk>

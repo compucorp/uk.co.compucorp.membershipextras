@@ -62,7 +62,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     $customGroups = civicrm_api3('CustomGroup', 'get', [
       'extends' => 'LineItem',
-      'name' => 'recurring_contribution_external_id',
+      'name' => 'line_item_external_id',
     ]);
 
     if (!$customGroups['count']) {
@@ -167,4 +167,16 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       ]);
     }
   }
+
+  /**
+   * Adds membershipextras_contribution_recur_line_item table to DB.
+   *
+   * @return bool
+   */
+  public function upgrade_0001() {
+    $this->executeSqlFile('sql/auto_install.sql');
+
+    return TRUE;
+  }
+
 }

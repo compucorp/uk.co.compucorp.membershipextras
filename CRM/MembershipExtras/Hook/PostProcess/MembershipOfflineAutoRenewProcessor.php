@@ -31,7 +31,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
    * Processes the membership new/renew form
    * to handle offline auto-renewal.
    */
-  public function process() {
+  public function postProcess() {
     if (!$this->isOfflineAutoRenewMembership() || $this->membershipIsAlreadyAutoRenew()) {
       return;
     }
