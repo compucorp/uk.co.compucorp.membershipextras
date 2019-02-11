@@ -613,6 +613,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       'contribution_recur_id': this.recurringContribution.id,
       'auto_renew': true,
       'is_removed': 0,
+      'options': {'limit': 0},
       'api.LineItem.get': {
         'sequential': 1,
         'id': '$value.line_item_id',

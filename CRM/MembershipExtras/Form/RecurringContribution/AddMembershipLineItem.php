@@ -185,6 +185,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'contribution_recur_id' => $this->recurringContribution['id'],
       'auto_renew' => TRUE,
       'is_removed' => 0,
+      'options' => ['limit' => 0],
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
