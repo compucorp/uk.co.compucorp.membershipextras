@@ -24,26 +24,13 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * contributions upfront for the payment plan.
    */
   public function postProcess() {
-    $recurContributionID = $this->getMembershipLastRecurContributionID();
-    $this->creaateRecurringSubscriptionLineItems($recurContributionID);
-
     if (!$this->isPaymentPlanPayment()) {
       return;
     }
 
+    $recurContributionID = $this->getMembershipLastRecurContributionID();
     $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
-  }
-
-  /**
-   * Creates recurring contribution's line items to set up current and next
-   * periods.
-   *
-   * @param $recurContributionID
-   */
-  private function creaateRecurringSubscriptionLineItems($recurContributionID ) {
-    $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
-    $lineItemCreator->create();
   }
 
   /**

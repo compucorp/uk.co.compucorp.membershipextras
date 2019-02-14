@@ -12,8 +12,8 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
 
   public function __construct($recurContributionID){
     $this->recurContributionID = $recurContributionID;
-    $this->setRecurContribution();
     $this->previousPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'previous_period');
+    $this->setRecurContribution();
   }
 
   private function setRecurContribution() {
