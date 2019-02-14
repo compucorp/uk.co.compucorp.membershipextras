@@ -1,7 +1,5 @@
 <?php
 
-use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
-
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
 
   /***
