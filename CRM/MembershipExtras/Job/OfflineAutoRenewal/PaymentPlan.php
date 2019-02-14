@@ -196,8 +196,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Renews the given payment plan.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function run() {
+    $exceptions = [];
     $paymentPlans = $this->getRecurringContributions();
 
     foreach ($paymentPlans as $recurContribution) {
@@ -210,12 +213,16 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         $this->dispatchMembershipRenewalHook();
       } catch (Exception $e) {
         $transaction->rollback();
-        $message = "An error occurred renewing a payment plan with id({$this->currentRecurringContribution['contribution_recur_id']}): " . $e->getMessage();
+        $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
 
-        throw new Exception($message);
+        continue;
       }
 
       $transaction->commit();
+    }
+
+    if (count($exceptions)) {
+      throw new CRM_Core_Exception(implode(";\n", $exceptions));
     }
   }
   
@@ -466,8 +473,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function calculateSingleInstallmentAmount($amount) {
     $resultAmount =  $amount;
 
-    if ($this->newRecurringContribution['installments'] > 1) {
-      $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->newRecurringContribution['installments']));
+    if ($this->currentRecurringContribution['installments'] > 1) {
+      $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->currentRecurringContribution['installments']));
     }
 
     return $resultAmount;

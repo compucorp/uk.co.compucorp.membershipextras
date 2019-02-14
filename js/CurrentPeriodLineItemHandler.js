@@ -1,8 +1,10 @@
 CRM.RecurringContribution = CRM.RecurringContribution || {};
 
+var NOTIFICATION_EXPIRE_TIME_IN_MS = 5000;
+
 /**
- * This class handles fron-end events and logic associated to manging line items
- * for a recurring contribution.
+ * This class handles front-end events and logic associated to managing line
+ * items for a recurring contribution.
  */
 CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
@@ -50,6 +52,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * Initializes form.
    */
   CurrentPeriodLineItemHandler.prototype.initializeForm = function (currentTab) {
+    var that = this;
     this.currentTab = currentTab;
 
     this.newMembershipRow = CRM.$('#new_membership_line_item', this.currentTab);
@@ -69,6 +72,14 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     this.newDonationFinancialTypeField = CRM.$('#newline_donation_financial_type_id', this.newDonationRow);
     this.newDonationAmountField = CRM.$('#newline_donation_amount', this.newDonationRow);
     this.newDonationRow.css('display', 'none');
+
+    this.currentTab.block();
+    CRM.api3('ContributionRecur', 'getsingle', {
+      'id': this.recurringContributionID
+    }).done(function (result) {
+      that.currentTab.unblock({message: null});
+      that.recurringContribution = result;
+    });
   };
 
   /**
@@ -76,7 +87,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    */
   CurrentPeriodLineItemHandler.prototype.addEventHandlers = function () {
     this.setUpRowFlashingOnOutClick();
-    this.setLineItemRemovalEvents();
+    this.setLineItemEvents();
     this.setNewMembershipEvents();
     this.setNewDonationEvents();
   };
@@ -84,19 +95,16 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
   /**
    * Adds events to the form to handle line item removal.
    */
-  CurrentPeriodLineItemHandler.prototype.setLineItemRemovalEvents = function () {
+  CurrentPeriodLineItemHandler.prototype.setLineItemEvents = function () {
     var that = this;
 
-    // Shows removal confirmation dialog.
+    // Processes auto-renew check-box events.
     CRM.$('.auto-renew-line-checkbox', this.currentTab).change(function() {
       var itemData = CRM.$(this).closest('tr').data('item-data');
       if (!this.checked) {
         showNextPeriodLineItemRemovalConfirmation(itemData);
       } else {
-        if (Number(itemData.auto_renew)) {
-          CRM.alert(ts('This membership type is already enrolled in next period.'), null, 'warning');
-        }
-        showAddLineItemConfirmation(itemData.label, Number(itemData.line_total), itemData.financial_type_id);
+        that.processSetLineItemAutoRenewal(itemData);
       }
     });
 
@@ -112,7 +120,110 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
   };
 
   /**
-   * Adds events tht handle new membership addition to the recurring
+   * Shows confirmation form to set a line item to auto renew, and thus add to
+   * next period.
+   *
+   * @param itemData
+   */
+  CurrentPeriodLineItemHandler.prototype.processSetLineItemAutoRenewal = function(itemData) {
+    var that = this;
+
+    if (itemData.entity_table !== 'civicrm_membership') {
+      this.showLineItemAutoRenewConfirmation(itemData);
+
+      return;
+    }
+
+    var params = this.buildNextPeriodLineItemCallParameters();
+
+    var apiCalls = {
+      'nextPeriodLineItems': ['ContributionRecurLineItem', 'get', params],
+      'membership': ['Membership', 'getsingle', {'id': itemData.entity_id}]
+    };
+
+    this.currentTab.block({message: null});
+    CRM.api3(apiCalls)
+    .done(function (results) {
+      var isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
+        results.membership.membership_type_id,
+        results.nextPeriodLineItems
+      );
+
+      that.currentTab.unblock();
+      if (itemData.entity_table === 'civicrm_membership' && isMembershipTypeOnNextPeriod) {
+        CRM.alert(ts('This membership type is already enrolled in next period.'), 'Duplicate Membership Type in Next Period', 'alert', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
+        CRM.refreshParent('#periodsContainer');
+      } else {
+        that.showLineItemAutoRenewConfirmation(itemData);
+      }
+    });
+  };
+
+  /**
+   * Show confirmation to set a line item to auto-renew.
+   *
+   * @param lineItemData
+   */
+  CurrentPeriodLineItemHandler.prototype.showLineItemAutoRenewConfirmation = function (lineItemData) {
+    CRM.confirm({
+      title: ts('Set ' + lineItemData.label + ' to auto-renew?'),
+      message: ts('Please note the changes should take effect immediately after \'Apply\'.'),
+      options: {
+        no: ts('Cancel'),
+        yes: ts('Apply')
+      }
+    })
+    .on('crmConfirm:yes', function() {
+      var apiCalls = {
+        'membership': ['Membership', 'create', {'id': lineItemData.entity_id, 'contribution_recur_id': lineItemData.contribution_recur_id}],
+        'line_item': ['ContributionRecurLineItem', 'create', {'id': lineItemData.id, 'auto_renew': 1}]
+      };
+
+      CRM.api3(apiCalls).done(function () {
+        CRM.refreshParent('#periodsContainer');
+      });
+    })
+    .on('crmConfirm:no', function () {
+      CRM.refreshParent('#periodsContainer');
+    });
+  };
+
+  /**
+   * Checks if the membership type for the membership already exists on given
+   * list of line items.
+   *
+   * @param lineMembershipTypeID
+   * @param lineItemsResult
+   *
+   * @returns {boolean}
+   */
+  CurrentPeriodLineItemHandler.prototype.isMembershipTypeOnNextPeriod = function (lineMembershipTypeID, lineItemsResult) {
+    if (lineItemsResult.count === 0) {
+      return false;
+    }
+
+    var currentLineMembershipType, currentLine, currentPriceFieldValue;
+    var nextPeriodLineItems = lineItemsResult.values;
+
+    for (var i = 0; i < nextPeriodLineItems.length; i++) {
+      if (nextPeriodLineItems[i]['api.LineItem.get']['count'] === 0) {
+        continue;
+      }
+
+      currentLine = nextPeriodLineItems[i]['api.LineItem.get']['values'][0];
+      currentPriceFieldValue = currentLine['api.PriceFieldValue.getsingle'];
+      currentLineMembershipType = currentPriceFieldValue.membership_type_id;
+
+      if (lineMembershipTypeID == currentLineMembershipType) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  /**
+   * Adds events that handle new membership addition to the recurring
    * contribution.
    */
   CurrentPeriodLineItemHandler.prototype.setNewMembershipEvents = function () {
@@ -151,6 +262,32 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
     // Adds line item to recurring contribution and all pending installments.
     CRM.$('#apply_add_membership_btn', this.currentTab).click(function () {
+      that.processMembershipCreation();
+
+      return false;
+    });
+  };
+
+  CurrentPeriodLineItemHandler.prototype.processMembershipCreation = function () {
+    this.currentTab.block({message: null});
+
+    var that = this;
+    var params = this.buildNextPeriodLineItemCallParameters();
+
+    CRM.api3('ContributionRecurLineItem', 'get', params)
+    .done(function (nextPeriodLineItemsResult) {
+      that.currentTab.unblock();
+
+      var isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
+        that.newMembershipTypeField.val(),
+        nextPeriodLineItemsResult
+      );
+
+      var autoRenew = that.newMembershipAutoRenewField.prop('checked') === true ? 1 : 0;
+      if (isMembershipTypeOnNextPeriod) {
+        autoRenew = 1;
+      }
+
       if (that.validateNewMembership()) {
         that.callNewLineConfirmationForm('civicrm/recurring-contribution/add-membership-lineitem', {
           reset: 1,
@@ -159,13 +296,11 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
             membership_type_id: that.newMembershipTypeField.val(),
             start_date: that.newMembershipStartDateField.val(),
             end_date: that.newMembershipEndDateField.val(),
-            auto_renew: that.newMembershipAutoRenewField.prop('checked') === true ? 1 : 0,
+            auto_renew: autoRenew,
             amount: that.newMembershipAmountField.val()
           }
         });
       }
-
-      return false;
     });
   };
 
@@ -295,7 +430,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     CRM.api3('Contribution', 'getcount', {
       'contribution_recur_id': that.recurringContributionID,
       'contribution_status_id': 'Pending',
-      'end_date': {'>=': startDate}
+      'receive_date': {'>=': startDate},
     }).done(function (result) {
       that.currentTab.unblock();
 
@@ -307,7 +442,8 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
           '<li>(optional) Create the membership or contribution outside the recurring order.</li>' +
           '</ul>',
           null,
-          'alert'
+          'alert',
+          {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
         );
 
         return;
@@ -355,7 +491,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }
 
     if (errors.length > 0) {
-      CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error');
+      CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return false;
     }
@@ -395,7 +531,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }
 
     if (errors.length > 0) {
-      CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error');
+      CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return false;
     }
@@ -420,7 +556,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       that.currentTab.unblock();
 
       if (result.result < 2) {
-        CRM.alert('Cannot remove the last item in an order!', null, 'alert');
+        CRM.alert('Cannot remove the last item in an order!', null, 'alert', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
         return;
       }
@@ -471,6 +607,31 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }
   };
 
+  CurrentPeriodLineItemHandler.prototype.buildNextPeriodLineItemCallParameters = function () {
+    var params = {
+      'sequential': 1,
+      'contribution_recur_id': this.recurringContribution.id,
+      'auto_renew': true,
+      'is_removed': 0,
+      'options': {'limit': 0},
+      'api.LineItem.get': {
+        'sequential': 1,
+        'id': '$value.line_item_id',
+        'entity_table': {'IS NOT NULL': 1},
+        'entity_id': {'IS NOT NULL': 1},
+        'api.PriceFieldValue.getsingle': {
+          'id': '$value.price_field_value_id'
+        }
+      }
+    };
+
+    if (typeof this.recurringContribution.installments === 'undefined' || this.recurringContribution.installments <= 1) {
+      params.end_date = {'IS NULL': 1};
+    }
+
+    return params;
+  };
+
   /**
    * Builds API parameter arrays to obtain information required to show data
    * for selected membership type.
@@ -515,9 +676,10 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @param membershipTypeData
    */
   CurrentPeriodLineItemHandler.prototype.showMembershipTypeInfo = function (membershipTypeData) {
+    var that = this;
     var financialType = membershipTypeData['api.FinancialType.getsingle'];
     var taxAccount = membershipTypeData['api.EntityFinancialAccount.getsingle']['api.FinancialAccount.getsingle'];
-    var numberOfInstallments = this.recurringContribution.installments;
+    var numberOfInstallments = this.getNumberOfInstallments();
     var minAmount = Math.round((membershipTypeData.minimum_fee / numberOfInstallments) * 100) / 100;
 
     this.newMembershipAmountField.val(minAmount);
@@ -527,7 +689,38 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       var taxRate = Math.round(taxAccount.tax_rate * 100) / 100;
       CRM.$('#newline_tax_rate', this.newMembershipRow).html(taxRate + ' %');
     }
+
+    var params = this.buildNextPeriodLineItemCallParameters();
+    this.currentTab.block();
+    CRM.api3('ContributionRecurLineItem', 'get', params)
+    .done(function (nextPeriodLineItemsResult) {
+      that.currentTab.unblock({message: null});
+      var isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
+        that.newMembershipTypeField.val(),
+        nextPeriodLineItemsResult
+      );
+
+      if (isMembershipTypeOnNextPeriod) {
+        that.newMembershipAutoRenewField.prop('checked', true);
+        that.newMembershipAutoRenewField.prop('disabled', true);
+      }
+    });
   };
+
+  /**
+   * Calculates number of installments the current recurring contribution has.
+   *
+   * @return {number}
+   */
+  CurrentPeriodLineItemHandler.prototype.getNumberOfInstallments = function () {
+    var numberOfInstallments = 1;
+
+    if (typeof this.recurringContribution.installments != 'undefined') {
+      numberOfInstallments = parseInt(this.recurringContribution.installments);
+    }
+
+    return numberOfInstallments > 0 ? numberOfInstallments : 1;
+  }
 
   return CurrentPeriodLineItemHandler;
 })(CRM.$);

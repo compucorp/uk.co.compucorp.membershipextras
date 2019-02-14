@@ -275,8 +275,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
 
     if ($result['count'] > 0) {
       foreach ($result['values'] as $lineItemData) {
-        $totalAmount += $lineItemData['api.LineItem.getsingle']['line_total'];
-        $totalAmount += $lineItemData['api.LineItem.getsingle']['tax_amount'];
+        $totalAmount += floatval($lineItemData['api.LineItem.getsingle']['line_total']);
+        $totalAmount += floatval($lineItemData['api.LineItem.getsingle']['tax_amount']);
       }
     }
 

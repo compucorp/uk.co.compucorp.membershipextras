@@ -5,7 +5,7 @@ var membershipTypes = JSON.parse('{$membershipTypes|@json_encode}');
 var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
 </script>
 <div class="right">
-  Period Start Date: {$nextPeriodStartDate|date_format}
+  Period Start Date: {$nextPeriodStartDate|date_format:"%Y-%m-%d"|crmDate}
 </div>
 <table class="selector row-highlight" id="nextPeriodLineItems">
   <tbody>
@@ -53,16 +53,16 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
         {/foreach}
       </select>
     </td>
-    <td id="financialTypeTaxRate" nowrap>{if !empty($financialTypes[0].tax_rate)}{$financialTypes[0].tax_rate}{else}N/A{/if}</td>
+    <td id="financialTypeTaxRate" nowrap>{if !empty($financialTypes[0].tax_rate)}{$financialTypes[0].tax_rate} %{else}N/A{/if}</td>
     <td>
       {$currencySymbol}&nbsp; <input type="text" class="four crm-form-text" size="4" id="amount" />
     </td>
-    <td>
-      <a href="#" class="cancel-add-next-period-line-button">
-        <span><i class="crm-i fa-times crm-i-red"></i></span>
-      </a>
+    <td nowrap class="confirmation-icons">
       <a href="#" class="confirm-add-next-period-line-button">
         <span><i class="crm-i fa-check crm-i-green"></i></span>
+      </a>
+      <a href="#" class="cancel-add-next-period-line-button">
+        <span><i class="crm-i fa-times crm-i-red"></i></span>
       </a>
     </td>
   </tr>
@@ -76,16 +76,16 @@ var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
       </select>
     </td>
     <td id="newMembershipFinancialType">{ts}select a membership type{/ts}</td>
-    <td id="newMembershipFinTypeTaxRate">N/A</td>
+    <td id="newMembershipFinTypeTaxRate">-</td>
     <td>
       {$currencySymbol}&nbsp; <input type="text" class="four crm-form-text" size="4" id="newMembershipAmount" />
     </td>
     <td nowrap class="confirmation-icons">
-      <a href="#" class="cancel-add-next-period-membership-button">
-        <span><i class="crm-i fa-times"></i></span>
-      </a>
       <a href="#" class="confirm-add-next-period-membership-button">
         <span><i class="crm-i fa-check"></i></span>
+      </a>
+      <a href="#" class="cancel-add-next-period-membership-button">
+        <span><i class="crm-i fa-times"></i></span>
       </a>
     </td>
   </tr>
