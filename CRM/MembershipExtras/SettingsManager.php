@@ -30,6 +30,21 @@ class CRM_MembershipExtras_SettingsManager {
     return $daysToRenewInAdvance;
   }
 
+  /**
+   * Returns the 'days to disable membership periods with overdue payment'
+   * setting.
+   *
+   * @return int
+   */
+  public static function getDaysToDisableMembershipPeriodsWithOverduePayment() {
+    $daysToDisableMP = self::getSettingValue('membershipextras_paymentplan_days_to_disable_membership_period_with_overdue_payment');
+    if (empty($daysToDisableMP)) {
+      return 0;
+    }
+
+    return $daysToDisableMP;
+  }
+
   public static function getCustomFieldsIdsToExcludeForAutoRenew() {
     $customGroupsIdsToExcludeForAutoRenew = self::getSettingValue('membershipextras_customgroups_to_exclude_for_autorenew');
     if (empty($customGroupsIdsToExcludeForAutoRenew)) {
