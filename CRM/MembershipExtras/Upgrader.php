@@ -143,6 +143,11 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->removeOfflineAutoRenewalScheduledJob();
     $this->removeCustomExternalIDs();
     $this->removeManageInstallmentActivityTypes();
+    $this->cleanUpTables();
+  }
+
+  private function cleanUpTables() {
+    $this->executeSqlFile('sql/auto_uninstall.sql');
   }
 
   /**
