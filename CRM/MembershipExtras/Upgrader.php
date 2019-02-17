@@ -11,6 +11,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   public function Install() {
     $this->createOfflineAutoRenewalScheduledJob();
+    $this->createUpdateMembershipPeriodScheduledJob();
     $this->createPaymentProcessorType();
     $this->createPaymentProcessor();
     $this->createLineItemExternalIDCustomField();
@@ -141,6 +142,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType->remove();
 
     $this->removeOfflineAutoRenewalScheduledJob();
+    $this->removeUpdateMembershipPeriodScheduledJob();
     $this->removeCustomExternalIDs();
     $this->removeManageInstallmentActivityTypes();
   }
@@ -152,6 +154,31 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   private function removeOfflineAutoRenewalScheduledJob() {
     civicrm_api3('Job', 'get', [
       'name' => 'Renew offline auto-renewal memberships',
+      'api.Job.delete' => ['id' => '$value.id'],
+    ]);
+  }
+
+  /**
+   * Create 'Update membership/period status' Scheduled Job.
+   */
+  private function createUpdateMembershipPeriodScheduledJob() {
+    civicrm_api3('Job', 'create', [
+      'run_frequency' => 'Daily',
+      'name' => 'Update membership period status',
+      'description' => ts('Update membership/period status when overdue by amount of days in setting'),
+      'api_entity' => 'UpdateMembershipPeriod',
+      'api_action' => 'run',
+      'is_active' => 0,
+    ]);
+  }
+
+  /**
+   * Removes 'Update membership period status'
+   * Scheduled Job.
+   */
+  private function removeUpdateMembershipPeriodScheduledJob() {
+    civicrm_api3('Job', 'get', [
+      'name' => 'Update membership period status',
       'api.Job.delete' => ['id' => '$value.id'],
     ]);
   }
@@ -412,6 +439,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    */
   public function upgrade_0002() {
     $this->executeSqlFile('sql/Upgrader/0002_create_membership_period.sql');
+    $this->createUpdateMembershipPeriodScheduledJob();
 
     return true;
   }
