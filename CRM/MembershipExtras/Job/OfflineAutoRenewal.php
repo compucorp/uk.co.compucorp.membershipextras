@@ -211,7 +211,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    *   - The number of the recurring contribution installments (installments)
    */
   private function getOfflineAutoRenewalRecurContributions() {
-    $getContributionStatusesNameMap = $this->getContributionStatusesNameMap();
+    $getContributionStatusesNameMap = CRM_MembershipExtras_Service_ContributionUtilities::getContributionStatusesNameMap();
     $cancelledStatusID = $getContributionStatusesNameMap['Cancelled'];
     $refundedStatusID = $getContributionStatusesNameMap['Refunded'];
 
@@ -260,27 +260,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     }
 
     return $recurContributionsList;
-  }
-
-  /**
-   * Gets contribution Statuses Name to value Mapping
-   *
-   * @return array $contributionStatusesNameMap
-   */
-  private function getContributionStatusesNameMap() {
-    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
-      'sequential' => 1,
-      'return' => ['name', 'value'],
-      'option_group_id' => 'contribution_status',
-      'options' => ['limit' => 0],
-    ])['values'];
-
-    $contributionStatusesNameMap = [];
-    foreach ($contributionStatuses as $status) {
-      $contributionStatusesNameMap[$status['name']] = $status['value'];
-    }
-
-    return $contributionStatusesNameMap;
   }
 
   /**
