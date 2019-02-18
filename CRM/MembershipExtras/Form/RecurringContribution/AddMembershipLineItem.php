@@ -118,7 +118,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       $this->lineItemParams['amount'] * $taxRate / 100
     );
 
-    $params = [
+    $lineItemParams = [
       'sequential' => 1,
       'entity_table' => 'civicrm_membership',
       'entity_id' => $membership['id'],
@@ -134,17 +134,21 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
 
     $existingLineItem = $this->getExistingLineItemForMembershipType($membership['membership_type_id']);
     if (CRM_Utils_Array::value('id', $existingLineItem, false)) {
-      $params['id'] = $existingLineItem['id'];
+      $lineItemParams['id'] = $existingLineItem['line_item_id'];
     }
+    $lineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
 
-    $lineItem = civicrm_api3('LineItem', 'create', $params);
-
-    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+    $recurringSubscriptionLineParams = [
       'contribution_recur_id' => $this->recurringContribution['id'],
       'line_item_id' => $lineItem['id'],
       'start_date' => $this->lineItemParams['start_date'],
       'auto_renew' => $this->lineItemParams['auto_renew'],
-    ]);
+    ];
+
+    if (CRM_Utils_Array::value('id', $existingLineItem, false)) {
+      $recurringSubscriptionLineParams['id'] = $existingLineItem['id'];
+    }
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create($recurringSubscriptionLineParams);
 
     return array_shift($lineItem['values']);
   }
@@ -195,8 +199,13 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
         ],
       ],
     ];
-    $result = civicrm_api3('ContributionRecurLineItem', 'get', $params);
 
+    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 0);
+    if ($installments <= 1) {
+      $params['end_date'] = ['IS NULL' => 1];
+    }
+
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', $params);
     if ($result['count'] > 0) {
       foreach ($result['values'] as $lineItemData) {
         $lineDetails = $lineItemData['api.LineItem.getsingle'];
