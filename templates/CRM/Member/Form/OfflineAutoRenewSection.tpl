@@ -6,12 +6,12 @@
   {/literal}
 </script>
 
-<table>
+<table class="form-layout-compressed">
   <tr id="offline_autorenew_fields">
     <td class="label">
       {$form.offline_auto_renew.label}
     </td>
-    <td>
+    <td class="html-adjust">
       {$form.offline_auto_renew.html}
       {if $form.offline_auto_renew.frozen}
         {$form.membership_is_already_autorenew.html}
