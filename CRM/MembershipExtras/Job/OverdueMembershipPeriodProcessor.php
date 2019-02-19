@@ -1,6 +1,6 @@
 <?php
 
-class CRM_MembershipExtras_Job_UpdateMembershipPeriod {
+class CRM_MembershipExtras_Job_OverdueMembershipPeriodProcessor {
 
   /**
    * @var array
@@ -73,6 +73,7 @@ class CRM_MembershipExtras_Job_UpdateMembershipPeriod {
       LEFT JOIN civicrm_contribution cc ON cmp.contribution_id = cc.id
         WHERE cc.receive_date <= '$daysAgo'
          AND cc.contribution_status_id IN ($overdueContributionStatuses)
+         AND mmp.is_active = 1
       GROUP BY membership_period_id
     ";
 

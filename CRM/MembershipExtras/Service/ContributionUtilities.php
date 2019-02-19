@@ -9,7 +9,7 @@ class CRM_MembershipExtras_Service_ContributionUtilities {
    *
    * @return array $contributionStatusesNameMap
    */
-  public static function getContributionStatusesNameMap() {
+  public static function getStatusesNameMap() {
     $contributionStatuses = civicrm_api3('OptionValue', 'get', [
       'sequential' => 1,
       'return' => ['name', 'value'],
