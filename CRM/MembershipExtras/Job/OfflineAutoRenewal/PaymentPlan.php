@@ -583,16 +583,16 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return int
    */
   private function createMembership($lineItem, $priceFieldValue) {
-    $membership = civicrm_api3('Membership', 'create', [
+    $membershipCreateResult = civicrm_api3('Membership', 'create', [
       'contact_id' => $this->currentRecurringContribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
       'join_date' => date('YmdHis'),
       'start_date' => $lineItem['start_date'],
       'end_date' => $lineItem['end_date'],
       'contribution_recur_id' => $this->newRecurringContributionID,
-    ])['values'][0];
+    ]);
 
-    return $membership['id'];
+    return $membershipCreateResult['id'];
   }
 
   /**
