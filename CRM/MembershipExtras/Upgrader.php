@@ -172,7 +172,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'description' => ts('Update membership/period status when overdue by amount of days in setting'),
         'api_entity' => 'OverdueMembershipPeriodProcessor',
         'api_action' => 'run',
-        'is_active' => 0,
+        'is_active' => 1,
       ]);
     }
   }
