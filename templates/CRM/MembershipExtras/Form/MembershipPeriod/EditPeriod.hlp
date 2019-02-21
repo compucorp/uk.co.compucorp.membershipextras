@@ -1,0 +1,9 @@
+{htxt id="membershipextras_membershipperiod_is_historic"}
+{ts}
+CiviCRM originally does not keep track of membership periods information.
+<br><br>
+If a period is an estimated legacy period, it means it is a membership period
+with and estimated length that covers the start date and end date of the membership
+when the membership extras extension is installed.
+{/ts}
+{/htxt}

@@ -82,12 +82,9 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
     }
 
     foreach (self::$memberShipStatuses as $status) {
-      $startEventIsArrearsRelated = stripos($status['start_event'], 'arrears') !== false;
-      $endEventIsArrearsRelated = stripos($status['end_event'], 'arrears') !== false;
-
-      if (!$startEventIsArrearsRelated && !$endEventIsArrearsRelated) {
+      if (!$this->isArrearsRelatedStatus($status)) {
         // If we reach calculated status, we don't need to consider other options by weight.
-        if ($calculatedStatus['id'] == $status['id']) {
+        if (CRM_Utils_Array::value('id', $calculatedStatus) == $status['id']) {
           break;
         }
 
@@ -115,6 +112,26 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
         break;
       }
     }
+  }
+
+  /**
+   * Checks if given status is arrears related.
+   *
+   * @param $status
+   *
+   * @return bool
+   */
+  private function isArrearsRelatedStatus($status) {
+    $startEvent = CRM_Utils_Array::value('start_event', $status);
+    $startEventIsArrearsRelated = stripos($startEvent, 'arrears') !== false;
+    $endEvent = CRM_Utils_Array::value('end_event', $status);
+    $endEventIsArrearsRelated = stripos($endEvent, 'arrears') !== false;
+
+    if ($startEventIsArrearsRelated || $endEventIsArrearsRelated) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**

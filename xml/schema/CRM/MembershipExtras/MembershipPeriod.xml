@@ -56,14 +56,14 @@
     <type>varchar</type>
     <length>64</length>
     <comment>Either civicrm_contribution or civicrm_contribution_recur.</comment>
-    <required>true</required>
+    <required>false</required>
     <add>5.0</add>
   </field>
 
   <field>
     <name>entity_id</name>
     <type>int unsigned</type>
-    <required>true</required>
+    <required>false</required>
     <comment>ID of the payment entity.</comment>
     <add>5.0</add>
   </field>
