@@ -449,4 +449,13 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     return true;
   }
 
+  /**
+   * @return bool
+   */
+  public function upgrade_0003() {
+    $this->createOverdueMembershipPeriodProcessorScheduledJob();
+
+    return true;
+  }
+
 }
