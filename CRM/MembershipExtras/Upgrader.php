@@ -168,7 +168,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     if ($result['count'] == 0) {
       civicrm_api3('Job', 'create', [
         'run_frequency' => 'Daily',
-        'name' => 'Update membership period status',
+        'name' => 'Update overdue membership period status',
         'description' => ts('Update membership/period status when overdue by amount of days in setting'),
         'api_entity' => 'OverdueMembershipPeriodProcessor',
         'api_action' => 'run',
