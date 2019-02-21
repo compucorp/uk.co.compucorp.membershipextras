@@ -464,7 +464,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
-   * Calulcates the value for a single installment of the given amount.
+   * Calculates the value for a single installment of the given amount.
    *
    * @param $amount
    *
@@ -473,8 +473,9 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function calculateSingleInstallmentAmount($amount) {
     $resultAmount =  $amount;
 
-    if ($this->currentRecurringContribution['installments'] > 1) {
-      $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->currentRecurringContribution['installments']));
+    $numberOfInstallments = CRM_Utils_Array::value('installments', $this->currentRecurringContribution, 0);
+    if ($numberOfInstallments > 1) {
+      $resultAmount = MoneyUtilities::roundToCurrencyPrecision($amount / $numberOfInstallments);
     }
 
     return $resultAmount;
