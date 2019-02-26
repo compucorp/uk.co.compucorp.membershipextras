@@ -65,9 +65,8 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
    * contribution.
    */
   public function preProcess() {
-    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor(
-      $this->recurringContribution['payment_processor_id']
-    );
+    $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $this->recurringContribution, 0);
+    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($paymentProcessorID);
 
     if ($this->operation == 'edit' && $isManualPaymentPlan) {
       $this->rectifyPaymentPlanStatus();
