@@ -309,27 +309,14 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     }
   }
 
-  private function getCustomFieldId($customGroupName, $customFieldName) {
-    return civicrm_api3('CustomField', 'getvalue', [
-      'return' => 'id',
-      'custom_group_id' => $customGroupName,
-      'name' => $customFieldName,
-    ]);
-  }
-
   private function createCustomValueForPaymentPlan($paymentPlanId) {
-    $nextPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'next_period');
-    $prevPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'previous_period');
+    $custom_fields = array (
+      'previous_period' => 0,
+      'next_period' => 0
+    );
+    $params = array('entityID' => $paymentPlanId, $custom_fields);
 
-    civicrm_api3('ContributionRecur', 'create', [
-      [
-        'id' => $paymentPlanId,
-        'custom_' . $nextPeriodCustomFieldId => 0,
-      ], [
-        'id' => $paymentPlanId,
-        'custom_' . $prevPeriodCustomFieldId => 0,
-      ],
-    ]);
+    CRM_Core_BAO_CustomValueTable::setValues($params);
   }
 
   /**
