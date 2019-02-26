@@ -173,60 +173,69 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
-   * Add Related Payment Plan Periods' Custom Fields
+   * Add Related Payment Plan Periods' Custom Group
    */
-  private function createPeriodLinkCustomFields() {
-    $result = civicrm_api3('CustomGroup', 'get', [
+  private function createPeriodLinkCustomGroup() {
+    $result = civicrm_api3('CustomGroup', 'getvalue', [
       'sequential' => 1,
       'name' => 'related_payment_plan_periods',
     ]);
 
-    if ($result['count'] === 0) {
-      civicrm_api3('CustomGroup', 'create', [
-        'name' => 'related_payment_plan_periods',
-        'title' => E::ts('Related Payment Plan Periods'),
-        'extends' => 'ContributionRecur',
-        'style' => 'Inline',
-        'collapse_display' => 1,
-        'weight' => 10,
-        'is_active' => 1,
-        'table_name' => 'civicrm_value_payment_plan_periods',
-        'is_multiple' => 0,
-        'collapse_adv_display' => 0,
-        'is_reserved' => 0,
-        'is_public' => 1,
-        'api.CustomField.create' => [
-          [
-            'custom_group_id' => '$value.id',
-            'name' => 'previous_period',
-            'label' => E::ts('Previous Payment Plan Period'),
-            'data_type' => 'Int',
-            'html_type' => 'Text',
-            'is_required' => 0,
-            'is_searchable' => 0,
-            'weight' => 2,
-            'is_active' => 1,
-            'is_view' => 1,
-            'is_selector' => 0,
-            'custom_group_name' => 'related_payment_plan_periods',
-            'column_name' => 'previous_period',
-          ], [
-            'custom_group_id' => '$value.id',
-            'name' => 'next_period',
-            'label' => E::ts('Next Payment Plan Period'),
-            'data_type' => 'Int',
-            'html_type' => 'Text',
-            'is_required' => 0,
-            'is_searchable' => 0,
-            'weight' => 2,
-            'is_active' => 1,
-            'is_view' => 1,
-            'is_selector' => 0,
-            'custom_group_name' => 'related_payment_plan_periods',
-            'column_name' => 'next_period',
-          ]
-        ],
+    if (isset($result['result'])) {
+      return (int) $result['result'];
+    }
+
+    $response = civicrm_api3('CustomGroup', 'create', [
+      'name' => 'related_payment_plan_periods',
+      'title' => E::ts('Related Payment Plan Periods'),
+      'extends' => 'ContributionRecur',
+      'style' => 'Inline',
+      'collapse_display' => 1,
+      'weight' => 10,
+      'is_active' => 1,
+      'table_name' => 'civicrm_value_payment_plan_periods',
+      'is_multiple' => 0,
+      'collapse_adv_display' => 0,
+      'is_reserved' => 0,
+      'is_public' => 1,
+    ]);
+
+    if ($response['count'] > 0) {
+      return $response['id'];
+    }
+
+    throw new Exception("Cannot create customgroup related_payment_plan_periods.");
+  }
+
+  /**
+   * Add Related Payment Plan Periods' Custom Fields
+   */
+  private function createPeriodLinkCustomFields($customGroupID, $customFields) {
+    foreach ($customFields as $customField) {
+      $result = civicrm_api3('CustomField', 'get', [
+        'sequential' => 1,
+        'name' => $customField['name'],
       ]);
+  
+      if ($result['count'] > 0) {
+        return;
+      }
+  
+      civicrm_api3('CustomField', 'create', [
+        'custom_group_id' => $customGroupID,
+        'name' => $customField['name'],
+        'label' => $customField['label'],
+        'data_type' => 'Int',
+        'html_type' => 'Text',
+        'is_required' => 0,
+        'is_searchable' => 0,
+        'weight' => 2,
+        'is_active' => 1,
+        'is_view' => 1,
+        'is_selector' => 0,
+        'custom_group_name' => 'related_payment_plan_periods',
+        'column_name' => $customField['name'],
+      ]); 
     }
   }
 
@@ -402,7 +411,11 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    */
   public function upgrade_0001() {
     $this->executeSqlFile('sql/auto_install.sql');
-    $this->createPeriodLinkCustomFields();
+    $customGroupID = $this->createPeriodLinkCustomGroup();
+    $this->createPeriodLinkCustomFields($customGroupID, [
+      ['name' => 'previous_period', 'label' => E::ts('Previous Payment Plan Period')],
+      ['name' => 'next_period', 'label' => E::ts('Next Payment Plan Period')],
+    ]);
     $this->updatePaymentPlans();
     $this->createManageInstallmentActivityTypes();
 
