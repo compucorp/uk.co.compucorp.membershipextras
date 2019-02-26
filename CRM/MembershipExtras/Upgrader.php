@@ -406,6 +406,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     foreach ($optionValues as $optionValue) {
       $result = civicrm_api3('OptionValue', 'get', [
         'sequential' => 1,
+        'option_group_id' => 'activity_type',
         'name' => $optionValue['name'],
       ]);
 
