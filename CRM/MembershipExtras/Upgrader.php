@@ -308,11 +308,21 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       civicrm_api3('LineItem', 'create', $params);
     }
   }
+  private function getCustomFieldId($customGroupName, $customFieldName) {
+    return civicrm_api3('CustomField', 'getvalue', [
+      'return' => 'id',
+      'custom_group_id' => $customGroupName,
+      'name' => $customFieldName,
+    ]);
+  }
 
   private function createCustomValueForPaymentPlan($paymentPlanId) {
-    $custom_fields = array (
-      'previous_period' => 0,
-      'next_period' => 0
+    $nextPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'next_period');
+    $prevPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'previous_period');
+
+    $custom_fields = array(
+      'custom_' . $prevPeriodCustomFieldId => 0,
+      'custom_' . $nextPeriodCustomFieldId => 0
     );
     $params = array('entityID' => $paymentPlanId, $custom_fields);
 
