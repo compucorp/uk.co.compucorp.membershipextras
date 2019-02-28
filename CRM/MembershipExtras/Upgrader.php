@@ -215,7 +215,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       $result = civicrm_api3('CustomField', 'get', [
         'sequential' => 1,
         'name' => $customField['name'],
-        'custom_group_name' => 'related_payment_plan_periods',
+        'custom_group_id' => 'related_payment_plan_periods',
       ]);
   
       if ($result['count'] > 0) {
@@ -233,7 +233,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'is_active' => 1,
         'is_view' => 1,
         'is_selector' => 0,
-        'custom_group_name' => 'related_payment_plan_periods',
+        'custom_group_id' => 'related_payment_plan_periods',
         'column_name' => $customField['name'],
       ]); 
     }
@@ -249,7 +249,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ];
     civicrm_api3('CustomField', 'get', [
       'name' => ['IN' => $customFields],
-      'custom_group_name' => 'related_payment_plan_periods',
+      'custom_group_id' => 'related_payment_plan_periods',
       'api.CustomField.delete' => ['id' => '$value.id'],
     ]);
 
@@ -293,15 +293,21 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     }
 
     $result = civicrm_api3('Contribution', 'getsingle', [
-      'options' => ['sort' => 'id DESC', 'limit' => 1],
       'contribution_recur_id' => $paymentPlanId,
+      'options' => ['sort' => 'id DESC', 'limit' => 1],
     ]);
+
+    if ($result['count'] === 0) {
+      $result = [];
+    }
+
+    return $result;
   }
 
   /**
-   * Get the contributions associated to a contribution id
+   * Get the line items for a contribution
    * 
-   * @param string $contributionId
+   * @param int|string $contributionId
    * 
    * @return array
    */
@@ -345,6 +351,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       civicrm_api3('LineItem', 'create', $params);
     }
   }
+
   private function getCustomFieldId($customGroupName, $customFieldName) {
     return civicrm_api3('CustomField', 'getvalue', [
       'return' => 'id',
@@ -373,8 +380,11 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     foreach ($manualRecurContributions as $paymentPlan) {
       $lastInstalment = $this->getLastInstalmentForPaymentPlan($paymentPlan['id']);
-      $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
+      if (empty($lastInstalment)) {
+        continue;
+      }
 
+      $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
       $this->copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems);
 
       $isMatch = (
