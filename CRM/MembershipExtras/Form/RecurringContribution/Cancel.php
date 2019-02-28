@@ -3,7 +3,7 @@
 /**
  * QuickForm used to cancel memberships.
  */
-class CRM_MembershipExtras_Form_CancelRecurringContribution extends CRM_Core_Form {
+class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Form {
 
   /**
    * ID of recurring contribution to be cancelled.

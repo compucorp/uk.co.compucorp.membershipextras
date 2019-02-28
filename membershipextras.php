@@ -172,7 +172,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   static $isFirstPaymentPlanContribution = TRUE;
-  $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithMoreThanOneInstallment();
+  $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithAtLeastOneInstallment();
   $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
   if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
@@ -196,18 +196,17 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
 }
 
 /**
- * Determines if the membership is paid
- * using payment plan option using more than
- * one installment or not.
+ * Determines if the membership is paid using payment plan option having at
+ * least one instalment.
  *
  * @return bool
  */
-function _membershipextras_isPaymentPlanWithMoreThanOneInstallment() {
+function _membershipextras_isPaymentPlanWithAtLeastOneInstallment() {
   $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
   $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
   $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-  if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+  if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 0) {
     return TRUE;
   }
 
@@ -223,9 +222,14 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $entityFinancialTrxnHook->updatePaymentPlanStatus();
   }
 
-  if ($objectName == 'LineItem') {
-    $lineItemPostHook = new CRM_MembershipExtras_Hook_Post_LineItem($op, $objectId, $objectRef);
-    $lineItemPostHook->postProcess();
+  if ($objectName === 'ContributionRecur') {
+    $contributionRecurPostHook = new CRM_MembershipExtras_Hook_Post_ContributionRecur($objectRef);
+    $contributionRecurPostHook->postProcess();
+  }
+
+  if ($objectName == 'MembershipPayment') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef);
+    $membershipPaymentPostHook->postProcess();
   }
 }
 
@@ -233,9 +237,9 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
  * Implements hook_civicrm_postProcess()
  */
 function membershipextras_civicrm_postProcess($formName, &$form) {
-
   $isAddAction = $form->getAction() & CRM_Core_Action::ADD;
   $isRenewAction = $form->getAction() & CRM_Core_Action::RENEW;
+
   if (
     ($formName === 'CRM_Member_Form_Membership' && $isAddAction)
     ||
@@ -356,4 +360,29 @@ function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$
  */
 function membershipextras_civicrm_entityTypes(&$entityTypes) {
   return _membershipextras_civix_civicrm_entityTypes($entityTypes);
+}
+
+/**
+ * Implements hook_civicrm_pageRun
+ */
+function membershipextras_civicrm_pageRun($page) {
+  if (get_class($page) === 'CRM_MembershipExtras_Page_EditContributionRecurLineItems') {
+    CRM_Core_Resources::singleton()->addStyleFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'css/style.css',
+      1
+    );
+
+    CRM_Core_Resources::singleton()->addScriptFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'js/CurrentPeriodLineItemHandler.js',
+      1,
+      'page-header'
+    )->addScriptFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'js/NextPeriodLineItemHandler.js',
+      1,
+      'page-header'
+    );
+  }
 }

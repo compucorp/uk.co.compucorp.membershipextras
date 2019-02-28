@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+
 class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
 
   /**
@@ -36,8 +38,8 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
       return;
     }
 
-    $isPaymentPlanPayment = $this->isPaymentPlanPayment();
-    if ($isPaymentPlanPayment) {
+    $isPaymentPlanWithAtLeastOneInstallment = $this->isPaymentPlanWithAtLeastOneInstallment();
+    if ($isPaymentPlanWithAtLeastOneInstallment) {
       $recurContributionID = $this->getMembershipLastRecurContributionID();
     }
     else {
@@ -46,9 +48,11 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     }
 
     $this->setMembershipToAutoRenew($recurContributionID);
+    $this->createRecurringSubscriptionLineItems($recurContributionID);
 
-    if ($isPaymentPlanPayment) {
+    if ($isPaymentPlanWithAtLeastOneInstallment) {
       $this->setRecurContributionAutoRenew($recurContributionID);
+      $this->setRecurringLineItemsAsAutoRenew($recurContributionID);
     }
   }
 
@@ -78,12 +82,12 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
    *
    * @return bool
    */
-  private function isPaymentPlanPayment() {
+  private function isPaymentPlanWithAtLeastOneInstallment() {
     $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 0) {
       return TRUE;
     }
 
@@ -236,6 +240,17 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
   }
 
   /**
+   * Creates recurring contribution's line items to set up current and next
+   * periods.
+   *
+   * @param $recurContributionID
+   */
+  private function createRecurringSubscriptionLineItems($recurContributionID ) {
+    $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
+    $lineItemCreator->create();
+  }
+
+  /**
    * Gets the value of the specified
    * protected (or private) form object
    * property.
@@ -268,6 +283,19 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     civicrm_api3('ContributionRecur', 'create', [
       'id' => $recurContributionID,
       'auto_renew' => 1,
+    ]);
+  }
+
+  /**
+   * Sets recurring contribution's line items' auto_renew field to true.
+   *
+   * @param $recurContributionID
+   */
+  private function setRecurringLineItemsAsAutoRenew($recurContributionID) {
+    civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $recurContributionID,
+      'api.ContributionRecurLineItem.create' => ['id' => '$value.id', 'auto_renew' => 1],
     ]);
   }
 

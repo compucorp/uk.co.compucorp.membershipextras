@@ -15,6 +15,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->createPaymentProcessor();
     $this->createLineItemExternalIDCustomField();
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
+    $this->updatePaymentPlans();
+    $this->createManageInstallmentActivityTypes();
   }
 
   /**
@@ -22,12 +24,21 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * Scheduled Job.
    */
   private function createOfflineAutoRenewalScheduledJob() {
+    $result = civicrm_api3('Job', 'get', [
+      'name' => 'Renew offline auto-renewal memberships',
+    ]);
+
+    if ($result['count'] > 0) {
+      return;
+    }
+
     civicrm_api3('Job', 'create', [
       'run_frequency' => 'Daily',
       'name' => 'Renew offline auto-renewal memberships',
       'description' => ts('Automatically renew any offline/paylater membership that is configured to be auto-renewed'),
       'api_entity' => 'OfflineAutoRenewalJob',
       'api_action' => 'run',
+      'is_active' => 0,
     ]);
   }
 
@@ -139,6 +150,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     $this->removeOfflineAutoRenewalScheduledJob();
     $this->removeCustomExternalIDs();
+    $this->removePeriodLinkCustomGroupAndFields();
+    $this->removeManageInstallmentActivityTypes();
   }
 
   /**
@@ -169,12 +182,266 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
+   * Add Related Payment Plan Periods' Custom Group and Fields
+   */
+  private function createPeriodLinkCustomGroupAndFields() {
+    $customGroup = civicrm_api3('CustomGroup', 'get', [
+      'sequential' => 1,
+      'name' => 'related_payment_plan_periods',
+    ]);
+
+    if ($customGroup['count'] === 0) {
+      civicrm_api3('CustomGroup', 'create', [
+        'name' => 'related_payment_plan_periods',
+        'title' => E::ts('Related Payment Plan Periods'),
+        'extends' => 'ContributionRecur',
+        'style' => 'Inline',
+        'collapse_display' => 1,
+        'weight' => 10,
+        'is_active' => 1,
+        'table_name' => 'civicrm_value_payment_plan_periods',
+        'is_multiple' => 0,
+        'collapse_adv_display' => 0,
+        'is_reserved' => 0,
+        'is_public' => 1,
+      ]);
+    }
+
+    $customFields = [
+      ['name' => 'previous_period', 'label' => E::ts('Previous Payment Plan Period')],
+      ['name' => 'next_period', 'label' => E::ts('Next Payment Plan Period')],
+    ];
+    foreach ($customFields as $customField) {
+      $result = civicrm_api3('CustomField', 'get', [
+        'sequential' => 1,
+        'name' => $customField['name'],
+        'custom_group_name' => 'related_payment_plan_periods',
+      ]);
+  
+      if ($result['count'] > 0) {
+        continue;
+      }
+  
+      civicrm_api3('CustomField', 'create', [
+        'name' => $customField['name'],
+        'label' => $customField['label'],
+        'data_type' => 'Int',
+        'html_type' => 'Text',
+        'is_required' => 0,
+        'is_searchable' => 0,
+        'weight' => 2,
+        'is_active' => 1,
+        'is_view' => 1,
+        'is_selector' => 0,
+        'custom_group_name' => 'related_payment_plan_periods',
+        'column_name' => $customField['name'],
+      ]); 
+    }
+  }
+
+  /**
+   * Remove 'Related Payment Plan Periods' Custom and Fields and Group
+   */
+  private function removePeriodLinkCustomGroupAndFields() {
+    $customFields = [
+      'previous_period',
+      'next_period',
+    ];
+    civicrm_api3('CustomField', 'get', [
+      'name' => ['IN' => $customFields],
+      'custom_group_name' => 'related_payment_plan_periods',
+      'api.CustomField.delete' => ['id' => '$value.id'],
+    ]);
+
+    civicrm_api3('CustomGroup', 'get', [
+      'name' => 'related_payment_plan_periods',
+      'api.CustomGroup.delete' => ['id' => '$value.id'],
+    ]);
+  }
+
+  /**
+   * Returns all existing manual payment plans
+   * 
+   * @return array
+   */
+  private function getManualPaymentPlans() {
+    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
+    $result = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'payment_processor_id' => ['IN' => $manualPaymentProcessors],
+      'options' => ['limit' => 0],
+    ]);
+
+    $paymentPlans = [];
+    if ($result['count'] > 0) {
+      $paymentPlans = $result['values'];
+    }
+
+    return $paymentPlans;
+  }
+
+  /**
+   * Gets the last instalment of a payment plan
+   * 
+   * @param string $paymentPlanId
+   * 
+   * @return array
+   */
+  private function getLastInstalmentForPaymentPlan($paymentPlanId) {
+    if (empty($paymentPlanId)) {
+      return [];
+    }
+
+    $result = civicrm_api3('Contribution', 'getsingle', [
+      'options' => ['sort' => 'id DESC', 'limit' => 1],
+      'contribution_recur_id' => $paymentPlanId,
+    ]);
+  }
+
+  /**
+   * Get the contributions associated to a contribution id
+   * 
+   * @param string $contributionId
+   * 
+   * @return array
+   */
+  private function getLineItemsForContribution($contributionId) {
+    $result = civicrm_api3('LineItem', 'get', [
+      'sequential' => 1,
+      'options' => ['limit' => 0],
+      'contribution_id' => $contributionId,
+    ]);
+
+    $lineItems = [];
+    if ($result['count'] > 0) {
+      $lineItems = $result['values'];
+    }
+
+    return $lineItems;
+  }
+
+  /**
+   * Copy a payment plan's line items and create subscription
+   * lines for each copied line item
+   * 
+   * @param array $paymentPlan
+   * @param array $lineItems
+   */
+  private function copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems) {
+    foreach ($lineItems as $lineItem) {
+      unset($lineItem['id']);
+      unset($lineItem['contribution_id']);
+
+      $params = array_merge($lineItem, [
+        'api.ContributionRecurLineItem.create' => [
+          'contribution_recur_id' => $paymentPlan['id'],
+          'line_item_id' => '$value.id',
+          'start_date' => $paymentPlan['start_date'],
+          'end_date' => $paymentPlan['end_date'],
+          'auto_renew' => $paymentPlan['auto_renew'],
+          'is_removed' => 0,
+        ],
+      ]);
+      civicrm_api3('LineItem', 'create', $params);
+    }
+  }
+  private function getCustomFieldId($customGroupName, $customFieldName) {
+    return civicrm_api3('CustomField', 'getvalue', [
+      'return' => 'id',
+      'custom_group_id' => $customGroupName,
+      'name' => $customFieldName,
+    ]);
+  }
+
+  private function createCustomValueForPaymentPlan($paymentPlanId) {
+    $nextPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'next_period');
+    $prevPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'previous_period');
+
+    civicrm_api3('ContributionRecur', 'create', [
+      'id' => $paymentPlanId,
+      'custom_' . $nextPeriodCustomFieldId => 0,
+      'custom_' . $prevPeriodCustomFieldId => 0,
+    ]);
+  }
+
+  /**
+   * Finds all payment plans and populate the offline recurring contribution
+   * line item for the payment plans using an offline payment processor
+   */
+  private function updatePaymentPlans() {
+    $manualRecurContributions = $this->getManualPaymentPlans();
+
+    foreach ($manualRecurContributions as $paymentPlan) {
+      $lastInstalment = $this->getLastInstalmentForPaymentPlan($paymentPlan['id']);
+      $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
+
+      $this->copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems);
+
+      $isMatch = (
+        ($paymentPlan['installments'] > 0) && $paymentPlan['auto_renew'] &&
+        $this->isMoreThanOneMonthOld($paymentPlan['end_date'])
+      );
+      if ($isMatch) {
+        $this->createCustomValueForPaymentPlan($paymentPlan['id']);
+      }
+    }
+  }
+
+  /**
+   * Checks if a date is older than 1 month
+   * 
+   * @param string $date
+   * 
+   * @return bool
+   */
+  private function isMoreThanOneMonthOld($date = null) {
+    return $date && (strtotime($date) < strtotime('-30 days'));
+  }
+
+  private function createManageInstallmentActivityTypes() {
+    $optionValues = [
+      ['name' => 'update_payment_plan_next_period', 'label' => 'Update Payment Plan Next Period'],
+      ['name' => 'update_payment_plan_current_period', 'label' => 'Update Payment Plan Current Period'],
+    ];
+    foreach ($optionValues as $optionValue) {
+      $result = civicrm_api3('OptionValue', 'get', [
+        'sequential' => 1,
+        'option_group_id' => 'activity_type',
+        'name' => $optionValue['name'],
+      ]);
+
+      if ($result['count'] > 0) {
+        continue;
+      }
+      
+      civicrm_api3('OptionValue', 'create', [
+        'option_group_id' => 'activity_type',
+        'name' => $optionValue['name'],
+        'label' => $optionValue['label'],
+      ]);
+    }
+  }
+
+  private function removeManageInstallmentActivityTypes() {
+    civicrm_api3('OptionValue', 'get', [
+      'option_group_id' => 'activity_type',
+      'name' => [
+        'IN' => ['update_payment_plan_next_period', 'update_payment_plan_current_period'],
+      ],
+      'api.OptionValue.delete' => ['id' => '$value.id'],
+    ]);
+  }
+
+  /**
    * Adds membershipextras_contribution_recur_line_item table to DB.
    *
    * @return bool
    */
   public function upgrade_0001() {
     $this->executeSqlFile('sql/auto_install.sql');
+    $this->createPeriodLinkCustomGroupAndFields();
+    $this->updatePaymentPlans();
+    $this->createManageInstallmentActivityTypes();
 
     return TRUE;
   }

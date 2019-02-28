@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+
 /**
  * Implements pre hook on ContributionRecur entity.
  */
@@ -63,7 +65,11 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
    * contribution.
    */
   public function preProcess() {
-    if ($this->operation == 'edit' && $this->isManualPaymentPlan()) {
+    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor(
+      $this->recurringContribution['payment_processor_id']
+    );
+
+    if ($this->operation == 'edit' && $isManualPaymentPlan) {
       $this->rectifyPaymentPlanStatus();
     }
   }
@@ -120,8 +126,9 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
       'contribution_status_id' => 'Partially paid',
     ]);
 
-    $allPaid = $paidInstallmentsCount >= $this->recurringContribution['installments'];
-    $moreThanOneInstallment = $this->recurringContribution['installments'] > 1;
+    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 0);
+    $allPaid = $paidInstallmentsCount >= $installments;
+    $moreThanOneInstallment = $installments > 1;
 
     switch (true) {
       case $moreThanOneInstallment && $allPaid:
@@ -137,22 +144,6 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     }
 
     return $status;
-  }
-
-  /**
-   * Checks if current recurring contribution corresponds to a manual payment
-   * plan.
-   */
-  private function isManualPaymentPlan() {
-    $payLaterProcessorID = 0;
-    $manualPaymentProcessorsIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
-    $isManualPaymentProcessor = in_array($this->recurringContribution['payment_processor_id'], $manualPaymentProcessorsIDs);
-
-    if ($isManualPaymentProcessor) {
-      return TRUE;
-    }
-
-    return FALSE;
   }
 
 }

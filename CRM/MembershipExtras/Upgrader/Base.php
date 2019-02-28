@@ -9,7 +9,7 @@ use CRM_MembershipExtras_ExtensionUtil as E;
 class CRM_MembershipExtras_Upgrader_Base {
 
   /**
-   * @var varies, subclass of ttis
+   * @var varies, subclass of this
    */
   static $instance;
 

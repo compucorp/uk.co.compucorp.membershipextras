@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+
 /**
  * Alters action links for recurring contributions.
  */
@@ -59,10 +61,10 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
 
     if ($this->isManualPaymentPlan()) {
       $this->links[] = [
-        'name' => 'View/Update Recurring Line Items',
+        'name' => 'View/Modify Future Instalments',
         'url' => 'civicrm/recurring-contribution/edit-lineitems',
         'qs' => 'reset=1&crid=%%crid%%&cid=%%cid%%&context=contribution',
-        'title' => 'View/Update Recurring Line Items',
+        'title' => 'View/Modify Future Instalments',
       ];
     }
   }
@@ -76,16 +78,9 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
     $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $this->recurringContributionID
     ]);
-
     $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
-    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
-    $isOfflineContribution = in_array($paymentProcessorID, $manualPaymentProcessors);
 
-    if ($isOfflineContribution || empty($paymentProcessorID)) {
-      return TRUE;
-    }
-
-    return FALSE;
+    return ManualPaymentProcessors::isManualPaymentProcessor($paymentProcessorID);
   }
 
 }
