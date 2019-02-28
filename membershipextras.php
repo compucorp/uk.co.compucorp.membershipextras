@@ -308,6 +308,26 @@ function membershipextras_civicrm_pageRun($page) {
   foreach ($hooks as $hook) {
     $hook->handle($page);
   }
+
+  if (get_class($page) === 'CRM_MembershipExtras_Page_EditContributionRecurLineItems') {
+    CRM_Core_Resources::singleton()->addStyleFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'css/style.css',
+      1
+    );
+
+    CRM_Core_Resources::singleton()->addScriptFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'js/CurrentPeriodLineItemHandler.js',
+      1,
+      'page-header'
+    )->addScriptFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'js/NextPeriodLineItemHandler.js',
+      1,
+      'page-header'
+    );
+  }
 }
 
 /**
@@ -360,29 +380,4 @@ function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$
  */
 function membershipextras_civicrm_entityTypes(&$entityTypes) {
   return _membershipextras_civix_civicrm_entityTypes($entityTypes);
-}
-
-/**
- * Implements hook_civicrm_pageRun
- */
-function membershipextras_civicrm_pageRun($page) {
-  if (get_class($page) === 'CRM_MembershipExtras_Page_EditContributionRecurLineItems') {
-    CRM_Core_Resources::singleton()->addStyleFile(
-      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
-      'css/style.css',
-      1
-    );
-
-    CRM_Core_Resources::singleton()->addScriptFile(
-      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
-      'js/CurrentPeriodLineItemHandler.js',
-      1,
-      'page-header'
-    )->addScriptFile(
-      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
-      'js/NextPeriodLineItemHandler.js',
-      1,
-      'page-header'
-    );
-  }
 }
