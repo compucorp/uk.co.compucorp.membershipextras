@@ -391,6 +391,38 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ]);
   }
 
+  private function createMembershipPeriods() {
+    $memberships = $this->getMemberships();
+    foreach ($memberships as $membership) {
+      CRM_MembershipExtras_BAO_MembershipPeriod::createPeriodForMembership($membership['id']);
+    }
+  }
+
+  private function getMemberships() {
+    $result = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'return' => ['id'],
+      'options' => ['limit' => 0],
+    ]);
+
+    $memberships = [];
+    if ($result['count'] > 0) {
+      $memberships = $result['values'];
+    }
+
+    return $memberships;
+  }
+
+  /**
+   * Creates settings and set default values
+   */
+  private function createSettingValues() {
+    $configFields = CRM_MembershipExtras_SettingsManager::getConfigFields();
+    foreach ($configFields  as $name => $config) {
+      civicrm_api3('Setting', 'create', [$name => $config['default']]);
+    }
+  }
+
   /**
    * Adds membershipextras_contribution_recur_line_item table to DB.
    *
@@ -413,7 +445,17 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   public function upgrade_0002() {
     $this->executeSqlFile('sql/Upgrader/0002_create_membership_period.sql');
 
-    return true;
+    return TRUE;
+  }
+
+  /**
+   * @return bool
+   */
+  public function upgrade_0003() {
+    $this->createMembershipPeriods();
+    $this->createSettingValues();
+
+    return TRUE;
   }
 
 }

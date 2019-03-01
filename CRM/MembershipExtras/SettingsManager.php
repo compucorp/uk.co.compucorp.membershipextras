@@ -61,4 +61,26 @@ class CRM_MembershipExtras_SettingsManager {
     ])['values'][0][$settingName];
   }
 
+  /**
+   * Gets the extension configuration fields
+   *
+   * @return array
+   */
+  public static function getConfigFields() {
+    $allowedConfigFields = self::fetchSettingFields();
+    if (!isset($allowedConfigFields) || empty($allowedConfigFields)) {
+      $result = civicrm_api3('System', 'flush');
+      if ($result['is_error'] == 0){
+        $allowedConfigFields =  self::fetchSettingFields();
+      }
+    }
+    return $allowedConfigFields;
+  }
+
+  private static function fetchSettingFields() {
+    return civicrm_api3('Setting', 'getfields',[
+      'filters' =>[ 'group' => 'membershipextras_paymentplan'],
+    ])['values'];
+  }
+
 }
