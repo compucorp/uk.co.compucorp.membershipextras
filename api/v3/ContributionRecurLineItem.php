@@ -14,6 +14,19 @@ function _civicrm_api3_contribution_recur_line_item_create_spec(&$spec) {
 }
 
 /**
+ * Declare metadata for createsubscriptionline api call.
+ *
+ * @param $spec
+ */
+function _civicrm_api3_contribution_recur_line_item_createsubscriptionline_spec(&$spec) {
+  $spec['contribution_recur_id'] = array (
+    'title' => 'Contribution Recur ID',
+    'type' => CRM_Utils_Type::T_INT,
+    'api.required' => 1,
+  );
+}
+
+/**
  * ContributionRecurLineItem.create API
  *
  * @param array $params
@@ -22,6 +35,19 @@ function _civicrm_api3_contribution_recur_line_item_create_spec(&$spec) {
  */
 function civicrm_api3_contribution_recur_line_item_create($params) {
   return _civicrm_api3_basic_create(_civicrm_api3_get_BAO(__FUNCTION__), $params);
+}
+
+/**
+ * ContributionRecurLineItem.createsubscriptionline API
+ *
+ * @param array $params
+ * @return array API result descriptor
+ * @throws API_Exception
+ */
+function civicrm_api3_contribution_recur_line_item_createsubscriptionline($params) {
+  $line = new CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator($params['contribution_recur_id']);
+  $line->create();
+  return civicrm_api3_create_success();
 }
 
 /**
