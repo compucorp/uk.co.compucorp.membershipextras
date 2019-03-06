@@ -11,6 +11,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   public function Install() {
     $this->createOfflineAutoRenewalScheduledJob();
+    $this->createOverdueMembershipPeriodProcessorScheduledJob();
     $this->createPaymentProcessorType();
     $this->createPaymentProcessor();
     $this->createLineItemExternalIDCustomField();
@@ -107,7 +108,10 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->toggle(TRUE);
 
-    $this->toggleOfflineAutoRenewalScheduledJob(TRUE);
+    $this->toggleScheduledJob([
+      'Renew offline auto-renewal memberships',
+      'Update overdue membership period status'
+    ], TRUE);
   }
 
   public function disable() {
@@ -117,20 +121,29 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->toggle(FALSE);
 
-    $this->toggleOfflineAutoRenewalScheduledJob(FALSE);
+    $this->toggleScheduledJob([
+      'Renew offline auto-renewal memberships',
+      'Update overdue membership period status',
+    ], FALSE);
   }
 
   /**
-   * Enables/Disables 'Renew offline auto-renewal memberships'
-   * Scheduled Job based on the passed status.
+   * Enables/Disables a Scheduled Job based on the passed status.
    *
-   * @param int $newStatus
+   * @param array|string $jobName
+   * @param bool $newStatus
    */
-  private function toggleOfflineAutoRenewalScheduledJob($newStatus) {
-    civicrm_api3('Job', 'get', [
-      'name' => 'Renew offline auto-renewal memberships',
-      'api.Job.create' => ['id' => '$value.id', 'is_active' => $newStatus],
-    ]);
+  private function toggleScheduledJob($jobs, $newStatus) {
+    if (!is_array($jobs)) {
+      $jobs = [$jobs];
+    }
+
+    foreach ($jobs as $job) {
+      civicrm_api3('Job', 'get', [
+        'name' => $job,
+        'api.Job.create' => ['id' => '$value.id', 'is_active' => $newStatus],
+      ]);
+    }
   }
 
   public function uninstall() {
@@ -140,20 +153,47 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType = new ManualRecurringPaymentProcessorType();
     $paymentProcessorType->remove();
 
-    $this->removeOfflineAutoRenewalScheduledJob();
+    $this->removeScheduledJobs([
+      'Renew offline auto-renewal memberships',
+      'Update overdue membership period status',
+    ]);
     $this->removeCustomExternalIDs();
     $this->removeManageInstallmentActivityTypes();
   }
 
   /**
-   * Removes 'Renew offline auto-renewal memberships'
-   * Scheduled Job.
+   * @param array|string $jobs.
    */
-  private function removeOfflineAutoRenewalScheduledJob() {
-    civicrm_api3('Job', 'get', [
-      'name' => 'Renew offline auto-renewal memberships',
-      'api.Job.delete' => ['id' => '$value.id'],
+  private function removeScheduledJobs($jobs) {
+    if (!is_array($jobs)) {
+      $jobs = [$jobs];
+    }
+
+    foreach ($jobs as $job) {
+      civicrm_api3('Job', 'get', [
+        'name' => $job,
+        'api.Job.delete' => ['id' => '$value.id'],
+      ]);
+    }
+  }
+
+  /**
+   * Create 'Update overdue membership/period status' Scheduled Job.
+   */
+  private function createOverdueMembershipPeriodProcessorScheduledJob() {
+    $result = civicrm_api3('Job', 'get', [
+      'name' => 'Update overdue membership period status',
     ]);
+    if ($result['count'] == 0) {
+      civicrm_api3('Job', 'create', [
+        'run_frequency' => 'Daily',
+        'name' => 'Update overdue membership period status',
+        'description' => ts('Update membership/period status when overdue by amount of days in setting'),
+        'api_entity' => 'OverdueMembershipPeriodProcessor',
+        'api_action' => 'run',
+        'is_active' => 1,
+      ]);
+    }
   }
 
   private function removeCustomExternalIDs() {
@@ -456,6 +496,15 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->createSettingValues();
 
     return TRUE;
+  }
+
+  /**
+   * @return bool
+   */
+  public function upgrade_0003() {
+    $this->createOverdueMembershipPeriodProcessorScheduledJob();
+    
+    return true;
   }
 
 }

@@ -1,5 +1,6 @@
 <?php
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+use CRM_MembershipExtras_Service_ContributionUtilities as ContributionUtilities;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 
 /**
@@ -111,6 +112,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan constructor.
    */
   public function __construct() {
+    $this->contributionStatusesNameMap = ContributionUtilities::getStatusesNameMap();
+    
     $this->setUseMembershipLatestPrice();
     $this->setContributionPendingStatusValue();
     $this->setContributionStatusesNameMap();
@@ -156,27 +159,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
     ]);
-  }
-
-  /**
-   * Gets contribution Statuses Name to value Mapping
-   *
-   * @return array $contributionStatusesNameMap
-   */
-  private function setContributionStatusesNameMap() {
-    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
-      'sequential' => 1,
-      'return' => ['name', 'value'],
-      'option_group_id' => 'contribution_status',
-      'options' => ['limit' => 0],
-    ])['values'];
-
-    $contributionStatusesNameMap = [];
-    foreach ($contributionStatuses as $status) {
-      $contributionStatusesNameMap[$status['name']] = $status['value'];
-    }
-
-    $this->contributionStatusesNameMap = $contributionStatusesNameMap;
   }
 
   /**
