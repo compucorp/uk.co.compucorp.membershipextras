@@ -8,10 +8,10 @@
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_overdue_membership_period_processor_run($params) {
-  $OverdueMembershipPeriodProcessor = new CRM_MembershipExtras_Job_OverdueMembershipPeriodProcessor();
+  $overdueMembershipPeriodProcessor = new CRM_MembershipExtras_Job_OverdueMembershipPeriodProcessor();
   
   return civicrm_api3_create_success(
-    $OverdueMembershipPeriodProcessor->run(),
+    $overdueMembershipPeriodProcessor->run(),
     $params
   );
 }

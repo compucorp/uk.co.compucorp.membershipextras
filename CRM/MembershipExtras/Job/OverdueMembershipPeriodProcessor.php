@@ -47,7 +47,6 @@ class CRM_MembershipExtras_Job_OverdueMembershipPeriodProcessor {
     (
       SELECT mmp.id as membership_period_id
         FROM membershipextras_membership_period mmp
-          INNER JOIN civicrm_membership cm ON mmp.membership_id = cm.id
           INNER JOIN civicrm_contribution cc ON (
             mmp.entity_id = cc.id
             AND mmp.payment_entity_table = 'civicrm_contribution'
@@ -59,7 +58,6 @@ class CRM_MembershipExtras_Job_OverdueMembershipPeriodProcessor {
     ) UNION (
       SELECT mmp.id as membership_period_id
         FROM membershipextras_membership_period mmp
-          INNER JOIN civicrm_membership cm ON mmp.membership_id = cm.id
           INNER JOIN civicrm_contribution_recur ccr ON (
             mmp.entity_id = ccr.id
             AND mmp.payment_entity_table = 'civicrm_contribution_recur'
