@@ -193,6 +193,11 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $contributionRecurPreHook = new CRM_MembershipExtras_Hook_Pre_ContributionRecur($op, $id, $params);
     $contributionRecurPreHook->preProcess();
   }
+
+  if ($objectName === 'Contribution') {
+    $contributionPreHook = new CRM_MembershipExtras_Hook_Pre_Contribution($op, $id, $params);
+    $contributionPreHook->preProcess();
+  }
 }
 
 /**
