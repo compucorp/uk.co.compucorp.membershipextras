@@ -45,7 +45,9 @@ class CRM_MembershipExtras_Hook_Pre_Contribution {
    * contribution.
    */
   public function preProcess() {
-    $this->rectifyAmountsBasedOnLineItems();
+    if ($this->operation == 'edit' && $this->contributionID) {
+      $this->rectifyAmountsBasedOnLineItems();
+    }
   }
 
   /**
@@ -57,8 +59,9 @@ class CRM_MembershipExtras_Hook_Pre_Contribution {
     $taxAmount = 0;
 
     foreach ($lineItems as $line) {
-      $totalAmount += $line['line_total'] + $line['tax_amount'];
-      $taxAmount += $line['tax_amount'];
+      $lineTax = CRM_Utils_Array::value('tax_amount', $line, 0);
+      $totalAmount += $line['line_total'] + $lineTax;
+      $taxAmount += $lineTax;
     }
 
     if ($totalAmount != $this->params['total_amount'] || $taxAmount != $this->params['tax_amount']) {
