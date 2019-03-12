@@ -104,6 +104,7 @@
 
         $('.totaltaxAmount').html(taxMessage);
         $('#amount_summary').html(`${membershipextrasCurrency} ${amountPerPeriod.toFixed(2)} <br/> ${taxPerPeriodMessage}`);
+        toggleStatusOfPaymentAndAutoRenewCheckboxes($('#record_contribution'));
       });
     }
 
