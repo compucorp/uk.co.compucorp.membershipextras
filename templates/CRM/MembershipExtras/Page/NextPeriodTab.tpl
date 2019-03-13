@@ -1,5 +1,4 @@
 <script>
-var recurringContributionID = {$recurringContributionID};
 var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
 var membershipTypes = JSON.parse('{$membershipTypes|@json_encode}');
 var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
