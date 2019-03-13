@@ -96,7 +96,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    */
   private function isAllowedMembershipType($membershipType, $currentLineItems) {
     foreach ($currentLineItems as $lineItem) {
-      if ($lineItem['entity_table'] != 'civicrm_membership') {
+      if ($lineItem['entity_table'] != 'civicrm_membership' || !$lineItem['auto_renew'] ) {
         continue;
       }
 
@@ -117,14 +117,18 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return array
    */
   private function getMembershipTypeFromMembershipID($membershipID) {
-    $result = civicrm_api3('Membership', 'getsingle', [
-      'id' => $membershipID,
-      'api.MembershipType.getsingle' => [
-        'id' => '$value.membership_type_id',
-      ],
-    ]);
+    try {
+      $result = civicrm_api3('Membership', 'getsingle', [
+        'id' => $membershipID,
+        'api.MembershipType.getsingle' => [
+          'id' => '$value.membership_type_id',
+        ],
+      ]);
 
-    return $result['api.MembershipType.getsingle'];
+      return $result['api.MembershipType.getsingle'];
+    } catch (Exception $e) {
+      return [];
+    }
   }
 
   /**
