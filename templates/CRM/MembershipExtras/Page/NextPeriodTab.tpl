@@ -1,7 +1,6 @@
 <script>
-var financialTypes = JSON.parse('{$financialTypes|@json_encode}');
-var membershipTypes = JSON.parse('{$membershipTypes|@json_encode}');
-var recurringContribution = JSON.parse('{$recurringContribution|@json_encode}');
+var membershipTypes = {$membershipTypes|@json_encode};
+var recurringContribution = {$recurringContribution|@json_encode};
 </script>
 <div class="right">
   Period Start Date: {$nextPeriodStartDate|date_format:"%Y-%m-%d"|crmDate}
