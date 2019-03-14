@@ -1,11 +1,12 @@
 <script>
-  var currentFinancialTypes = JSON.parse('{$financialTypes|@json_encode}');
+  var recurringContributionID = {$recurringContributionID};
+  var financialTypes = {$financialTypes|@json_encode};
 
   {literal}
   CRM.$(function () {
     var formHandler = new CRM.RecurringContribution.CurrentPeriodLineItemHandler(CRM.$('#recurringContributionID').val());
     formHandler.initializeForm(CRM.$('#current-subtab'));
-    formHandler.set('financialTypes', currentFinancialTypes);
+    formHandler.set('financialTypes', financialTypes);
     formHandler.addEventHandlers();
   });
   {/literal}

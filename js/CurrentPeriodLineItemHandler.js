@@ -409,7 +409,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @return (object)
    */
   CurrentPeriodLineItemHandler.prototype.getFinancialType = function(id) {
-    return financialTypes.filter(function(financialType) {
+    return this.financialTypes.filter(function(financialType) {
       return financialType.id === id;
     })[0];
   };
