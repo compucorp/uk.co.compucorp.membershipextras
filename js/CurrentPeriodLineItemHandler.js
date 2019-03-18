@@ -709,11 +709,15 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @param membershipTypeData
    */
   CurrentPeriodLineItemHandler.prototype.showMembershipTypeInfo = function (membershipTypeData) {
-    var that = this;
-    var financialType = membershipTypeData['api.FinancialType.getsingle'];
-    var taxAccount = membershipTypeData['api.EntityFinancialAccount.getsingle']['api.FinancialAccount.getsingle'];
-    var numberOfInstallments = this.getNumberOfInstallments();
-    var minAmount = Math.round((membershipTypeData.minimum_fee / numberOfInstallments) * 100) / 100;
+    const that = this;
+    const financialType = membershipTypeData['api.FinancialType.getsingle'];
+    const taxAccount = membershipTypeData['api.EntityFinancialAccount.getsingle']['api.FinancialAccount.getsingle'];
+    const numberOfInstallments = this.getNumberOfInstallments();
+    let minAmount;
+
+    if (typeof membershipTypeData.minimum_fee !== 'undefined') {
+      minAmount = Math.round((membershipTypeData.minimum_fee / numberOfInstallments) * 100) / 100;
+    }
 
     this.newMembershipAmountField.val(minAmount);
     CRM.$('#newline_financial_type', this.newMembershipRow).html(financialType.name);
@@ -721,14 +725,16 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     if (typeof taxAccount !== 'undefined') {
       var taxRate = Math.round(taxAccount.tax_rate * 100) / 100;
       CRM.$('#newline_tax_rate', this.newMembershipRow).html(taxRate + ' %');
+    } else {
+      CRM.$('#newline_tax_rate', this.newMembershipRow).html('N/A');
     }
 
-    var params = this.buildNextPeriodLineItemCallParameters();
+    const params = this.buildNextPeriodLineItemCallParameters();
     this.currentTab.block();
     CRM.api3('ContributionRecurLineItem', 'get', params)
     .done(function (nextPeriodLineItemsResult) {
       that.currentTab.unblock({message: null});
-      var isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
+      const isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
         that.newMembershipTypeField.val(),
         nextPeriodLineItemsResult
       );
@@ -746,7 +752,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @return {number}
    */
   CurrentPeriodLineItemHandler.prototype.getNumberOfInstallments = function () {
-    var numberOfInstallments = 1;
+    let numberOfInstallments = 1;
 
     if (typeof this.recurringContribution.installments != 'undefined') {
       numberOfInstallments = parseInt(this.recurringContribution.installments);
