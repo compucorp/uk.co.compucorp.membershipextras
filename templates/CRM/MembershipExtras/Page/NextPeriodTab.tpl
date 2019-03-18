@@ -1,6 +1,5 @@
 <script>
 var membershipTypes = {$membershipTypes|@json_encode};
-var recurringContribution = {$recurringContribution|@json_encode};
 </script>
 <div class="right">
   Period Start Date: {$nextPeriodStartDate|date_format:"%Y-%m-%d"|crmDate}
