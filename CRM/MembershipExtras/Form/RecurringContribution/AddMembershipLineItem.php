@@ -270,7 +270,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'id' => $membership['id'],
       'start_date' => $this->lineItemParams['start_date'],
       'end_date' => $this->lineItemParams['end_date'],
-      'contribution_recur_id' => $this->recurringContribution['id'],
+      'contribution_recur_id' => $this->recurringContribution['auto_renew'] ? $this->recurringContribution['id'] : '',
     ]);
 
     return array_shift($result['values']);
@@ -313,7 +313,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'join_date' => date('YmdHis'),
       'start_date' => $this->lineItemParams['start_date'],
       'end_date' => $this->lineItemParams['end_date'],
-      'contribution_recur_id' => $this->recurringContribution['id'],
+      'contribution_recur_id' => $this->recurringContribution['auto_renew'] ? $this->recurringContribution['id'] : '',
     ]);
 
     return array_shift($result['values']);
