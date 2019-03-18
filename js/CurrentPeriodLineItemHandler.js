@@ -465,7 +465,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @returns {boolean}
    */
   CurrentPeriodLineItemHandler.prototype.validateNewDonation = function () {
-    var errors = '';
+    let errors = '';
 
     if (!this.newDonationItemField.val().length) {
       this.newDonationItemField.addClass('required');
@@ -497,7 +497,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }
 
     return true;
-  }
+  };
 
   /**
    * Validates new membership line item.
@@ -505,7 +505,20 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @return (boolean)
    */
   CurrentPeriodLineItemHandler.prototype.validateNewMembership = function () {
-    var errors = '';
+    if (!this.validateMembershipRequiredFields()) {
+      return false;
+    }
+
+    return this.validateDates();
+  };
+
+  /**
+   * Validates fields required to add a membership.
+   *
+   * @return {boolean}
+   */
+  CurrentPeriodLineItemHandler.prototype.validateMembershipRequiredFields = function () {
+    let errors = '';
 
     if (!this.newMembershipTypeField.val().length) {
       this.newMembershipTypeField.addClass('required');
@@ -532,6 +545,26 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
     if (errors.length > 0) {
       CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
+
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
+   * Validates dates for membership line item.
+   *
+   * @return {boolean}
+   */
+  CurrentPeriodLineItemHandler.prototype.validateDates = function () {
+    const startDate = new Date(this.newMembershipStartDateField.val());
+    const endDate = new Date(this.newMembershipEndDateField.val());
+
+    if (endDate < startDate) {
+      this.newMembershipStartDateField.addClass('required');
+      this.newMembershipEndDateField.addClass('required');
+      CRM.alert('<p>Start date cannot be larger than end date!</p>', 'Dates Validation', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return false;
     }
