@@ -45,10 +45,10 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     else {
       $recurContributionID = $this->createAutoRenewRecurContribution();
       $this->updateContributionRecurringContribution($recurContributionID);
+      $this->createRecurringSubscriptionLineItems($recurContributionID);
     }
 
     $this->setMembershipToAutoRenew($recurContributionID);
-    $this->createRecurringSubscriptionLineItems($recurContributionID);
 
     if ($isPaymentPlanWithAtLeastOneInstallment) {
       $this->setRecurContributionAutoRenew($recurContributionID);
