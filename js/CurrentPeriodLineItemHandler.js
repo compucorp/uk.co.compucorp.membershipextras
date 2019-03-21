@@ -465,7 +465,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @returns {boolean}
    */
   CurrentPeriodLineItemHandler.prototype.validateNewDonation = function () {
-    var errors = '';
+    let errors = '';
 
     if (!this.newDonationItemField.val().length) {
       this.newDonationItemField.addClass('required');
@@ -497,7 +497,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }
 
     return true;
-  }
+  };
 
   /**
    * Validates new membership line item.
@@ -505,7 +505,20 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @return (boolean)
    */
   CurrentPeriodLineItemHandler.prototype.validateNewMembership = function () {
-    var errors = '';
+    if (!this.validateMembershipRequiredFields()) {
+      return false;
+    }
+
+    return this.validateDates();
+  };
+
+  /**
+   * Validates fields required to add a membership.
+   *
+   * @return {boolean}
+   */
+  CurrentPeriodLineItemHandler.prototype.validateMembershipRequiredFields = function () {
+    let errors = '';
 
     if (!this.newMembershipTypeField.val().length) {
       this.newMembershipTypeField.addClass('required');
@@ -532,6 +545,26 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
     if (errors.length > 0) {
       CRM.alert('<p>Required fields are missing:</p> <ul>' + errors + '</ul>', 'Missing Fields', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
+
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
+   * Validates dates for membership line item.
+   *
+   * @return {boolean}
+   */
+  CurrentPeriodLineItemHandler.prototype.validateDates = function () {
+    const startDate = new Date(this.newMembershipStartDateField.val());
+    const endDate = new Date(this.newMembershipEndDateField.val());
+
+    if (endDate < startDate) {
+      this.newMembershipStartDateField.addClass('required');
+      this.newMembershipEndDateField.addClass('required');
+      CRM.alert('<p>Start date cannot be larger than end date!</p>', 'Dates Validation', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return false;
     }
@@ -676,11 +709,15 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @param membershipTypeData
    */
   CurrentPeriodLineItemHandler.prototype.showMembershipTypeInfo = function (membershipTypeData) {
-    var that = this;
-    var financialType = membershipTypeData['api.FinancialType.getsingle'];
-    var taxAccount = membershipTypeData['api.EntityFinancialAccount.getsingle']['api.FinancialAccount.getsingle'];
-    var numberOfInstallments = this.getNumberOfInstallments();
-    var minAmount = Math.round((membershipTypeData.minimum_fee / numberOfInstallments) * 100) / 100;
+    const that = this;
+    const financialType = membershipTypeData['api.FinancialType.getsingle'];
+    const taxAccount = membershipTypeData['api.EntityFinancialAccount.getsingle']['api.FinancialAccount.getsingle'];
+    const numberOfInstallments = this.getNumberOfInstallments();
+    let minAmount;
+
+    if (typeof membershipTypeData.minimum_fee !== 'undefined') {
+      minAmount = Math.round((membershipTypeData.minimum_fee / numberOfInstallments) * 100) / 100;
+    }
 
     this.newMembershipAmountField.val(minAmount);
     CRM.$('#newline_financial_type', this.newMembershipRow).html(financialType.name);
@@ -688,14 +725,16 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     if (typeof taxAccount !== 'undefined') {
       var taxRate = Math.round(taxAccount.tax_rate * 100) / 100;
       CRM.$('#newline_tax_rate', this.newMembershipRow).html(taxRate + ' %');
+    } else {
+      CRM.$('#newline_tax_rate', this.newMembershipRow).html('N/A');
     }
 
-    var params = this.buildNextPeriodLineItemCallParameters();
+    const params = this.buildNextPeriodLineItemCallParameters();
     this.currentTab.block();
     CRM.api3('ContributionRecurLineItem', 'get', params)
     .done(function (nextPeriodLineItemsResult) {
       that.currentTab.unblock({message: null});
-      var isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
+      const isMembershipTypeOnNextPeriod = that.isMembershipTypeOnNextPeriod(
         that.newMembershipTypeField.val(),
         nextPeriodLineItemsResult
       );
@@ -713,7 +752,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * @return {number}
    */
   CurrentPeriodLineItemHandler.prototype.getNumberOfInstallments = function () {
-    var numberOfInstallments = 1;
+    let numberOfInstallments = 1;
 
     if (typeof this.recurringContribution.installments != 'undefined') {
       numberOfInstallments = parseInt(this.recurringContribution.installments);

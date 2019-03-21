@@ -1,6 +1,7 @@
 <script>
   var recurringContributionID = {$recurringContributionID};
   var financialTypes = {$financialTypes|@json_encode};
+  var recurringContribution = {$recurringContribution|@json_encode};
 
   {literal}
   CRM.$(function () {

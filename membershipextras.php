@@ -386,3 +386,10 @@ function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$
 function membershipextras_civicrm_entityTypes(&$entityTypes) {
   return _membershipextras_civix_civicrm_entityTypes($entityTypes);
 }
+
+function membershipextras_civicrm_preProcess($formName, $form) {
+  if ($formName === 'CRM_Contribute_Form_ContributionView') {
+    $preProcessor = new CRM_MembershipExtras_Hook_PreProcess_ContributionView($form);
+    $preProcessor->preProcess();
+  }
+}
