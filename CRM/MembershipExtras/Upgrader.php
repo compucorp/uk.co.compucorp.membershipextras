@@ -328,11 +328,12 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * @param array $lineItems
    */
   private function copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems) {
+    dpm($paymentPlan);
     foreach ($lineItems as $lineItem) {
       unset($lineItem['id']);
       unset($lineItem['contribution_id']);
 
-      $params = array_merge($lineItem, [
+      /*$params = array_merge($lineItem, [
         'api.ContributionRecurLineItem.create' => [
           'contribution_recur_id' => $paymentPlan['id'],
           'line_item_id' => '$value.id',
@@ -341,8 +342,19 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
           'auto_renew' => $paymentPlan['auto_renew'],
           'is_removed' => 0,
         ],
+      ]);*/
+      dpm($lineItem);
+      $line = civicrm_api3('LineItem', 'create', $lineItem);
+      dpm($line);
+      $r = civicrm_api3('ContributionRecurLineItem', 'create', [
+        'contribution_recur_id' => $paymentPlan['id'],
+        'line_item_id' => $line['id'],
+        'start_date' => $paymentPlan['start_date'],
+        'end_date' => $paymentPlan['end_date'],
+        'auto_renew' => $paymentPlan['auto_renew'],
+        'is_removed' => 0,
       ]);
-      civicrm_api3('LineItem', 'create', $params);
+      dpm($r);
     }
   }
   private function getCustomFieldId($customGroupName, $customFieldName) {
@@ -369,6 +381,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * line item for the payment plans using an offline payment processor
    */
   private function updatePaymentPlans() {
+    return;
     $manualRecurContributions = $this->getManualPaymentPlans();
 
     foreach ($manualRecurContributions as $paymentPlan) {
@@ -376,11 +389,12 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
 
       $this->copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems);
-
+dpm('here');
       $isMatch = (
         ($paymentPlan['installments'] > 0) && $paymentPlan['auto_renew'] &&
         $this->isMoreThanOneMonthOld($paymentPlan['end_date'])
       );
+      dpm('ooo');
       if ($isMatch) {
         $this->createCustomValueForPaymentPlan($paymentPlan['id']);
       }

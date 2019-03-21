@@ -20,4 +20,14 @@ DELETE FROM civicrm_line_item WHERE `id` IN (
 );
 DROP TABLE IF EXISTS `membershipextras_subscription_line`;
 
+-- /*******************************************************
+-- * Delete Members Only Event tables
+-- *******************************************************/
+DROP TABLE IF EXISTS `membersonlyevent_event_membership_type`;
+DROP TABLE IF EXISTS `membersonlyevent`;
+
 SET FOREIGN_KEY_CHECKS=1;
+
+DROP TABLE IF EXISTS `civicrm_value_offline_autorenew_option`;
+DROP TABLE IF EXISTS `civicrm_value_payment_plan_periods`;
+SELECT * FROM `civicrm_custom_field` where `custom_group_id` > 21;

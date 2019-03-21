@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/MembersOnlyEvent</base>
+  <class>MembersOnlyEvent</class>
+  <name>membersonlyevent</name>
+  <comment>Stores members-only event configurations</comment>
+  <add>4.4</add>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <add>4.4</add>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>event_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Foreign key for the Event</comment>
+    <add>4.4</add>
+  </field>
+  <foreignKey>
+    <name>event_id</name>
+    <table>civicrm_event</table>
+    <key>id</key>
+    <add>4.4</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>purchase_membership_button</name>
+    <title>Purchase membership button</title>
+    <type>boolean</type>
+    <default>0</default>
+    <comment>Should we provide membership purchase button when access to event denied ?</comment>
+    <add>4.4</add>
+  </field>
+
+  <field>
+    <name>notice_for_access_denied</name>
+    <title>Notice for access denied</title>
+    <type>text</type>
+    <default>NULL</default>
+    <comment>Notice message to show to the user when the access to members-only event denied.</comment>
+    <html>
+      <type>TextArea</type>
+      <rows>4</rows>
+      <cols>80</cols>
+    </html>
+    <add>4.4</add>
+  </field>
+
+  <field>
+    <name>purchase_membership_button_label</name>
+    <title>Purchase membership button label</title>
+    <type>varchar</type>
+    <default>NULL</default>
+    <length>255</length>
+    <comment>Purchase membership button label if it is enabled</comment>
+    <add>4.4</add>
+  </field>
+
+  <field>
+    <name>purchase_membership_link_type</name>
+    <title>Purchase membership link type</title>
+    <type>int</type>
+    <default>0</default>
+    <comment>0: contribution page, 1: custom URL</comment>
+    <add>4.4</add>
+  </field>
+  
+  <field>
+    <name>contribution_page_id</name>
+    <type>int unsigned</type>
+    <default>NULL</default>
+    <comment>Foreign key for the Contribution page</comment>
+    <add>4.4</add>
+  </field>
+  <foreignKey>
+    <name>contribution_page_id</name>
+    <table>civicrm_contribution_page</table>
+    <key>id</key>
+    <add>4.4</add>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>purchase_membership_url</name>
+    <title>Purchase membership page URL</title>
+    <type>varchar</type>
+    <length>3000</length>
+    <default>NULL</default>
+    <comment>Purchase membership page URL</comment>
+    <add>4.4</add>
+  </field>
+
+</table>

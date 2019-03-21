@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<table>
+  <base>CRM/MembersOnlyEvent</base>
+  <class>EventMembershipType</class>
+  <name>membersonlyevent_event_membership_type</name>
+  <comment>Joining table for members-only event and allowed membership types</comment>
+  <add>4.4</add>
+  <log>true</log>
+
+  <field>
+    <name>members_only_event_id</name>
+    <title>Members-only event ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Members-only event ID.</comment>
+    <add>4.4</add>
+  </field>
+  <foreignKey>
+    <name>members_only_event_id</name>
+    <table>membersonlyevent</table>
+    <key>id</key>
+    <add>4.4</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>membership_type_id</name>
+    <title>Membership Type ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Allowed Membership Type ID.</comment>
+    <add>4.4</add>
+  </field>
+  <foreignKey>
+    <name>membership_type_id</name>
+    <table>civicrm_membership_type</table>
+    <key>id</key>
+    <add>4.4</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <index>
+    <name>index_event_id_membership_type_id</name>
+    <fieldName>members_only_event_id</fieldName>
+    <fieldName>membership_type_id</fieldName>
+    <add>4.4</add>
+  </index>
+
+</table>
