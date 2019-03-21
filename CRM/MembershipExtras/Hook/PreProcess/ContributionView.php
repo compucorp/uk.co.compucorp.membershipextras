@@ -95,9 +95,11 @@ class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
    */
   private function isThereMoreThanOneLineItem() {
     $contributionID = $this->form->get('id');
-    $lineItems = CRM_Price_BAO_LineItem::getLineItemsByContributionID($contributionID);
+    $lineItemsCount = civicrm_api3('LineItem', 'getcount', [
+      'contribution_id' => $contributionID,
+    ]);
 
-    if (count($lineItems) > 1) {
+    if ($lineItemsCount > 1) {
       return true;
     }
 
