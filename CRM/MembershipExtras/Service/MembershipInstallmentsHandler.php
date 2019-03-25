@@ -105,7 +105,11 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    */
   public function createRemainingInstalmentContributionsUpfront() {
     $installmentsCount = (int) $this->currentRecurContribution['installments'];
-    for($contributionNumber = 2; $contributionNumber <= $installmentsCount; $contributionNumber++) {
+    // check number of contributions in  recur contribution and only create remaining
+    $contributionsCount = civicrm_api3('Contribution', 'getcount', [
+      'contribution_recur_id' => (int) $this->currentRecurContribution['id'],
+    ]);
+    for($contributionNumber = $contributionsCount + 1; $contributionNumber <= $installmentsCount; $contributionNumber++) {
       $this->createContribution($contributionNumber);
     }
   }
