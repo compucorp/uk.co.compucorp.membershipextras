@@ -6,6 +6,7 @@ use CRM_MembershipExtras_ExtensionUtil as E;
  * This is used for documentation and validation.
  *
  * @param array $spec description of fields supported by this API call
+ *
  * @return void
  * @see http://wiki.civicrm.org/confluence/display/CRMDOC/API+Architecture+Standards
  */
@@ -14,11 +15,11 @@ function _civicrm_api3_contribution_recur_line_item_create_spec(&$spec) {
 }
 
 /**
- * Declare metadata for createsubscriptionline api call.
+ * Declare metadata for createsubscriptionlines api call.
  *
  * @param $spec
  */
-function _civicrm_api3_contribution_recur_line_item_createsubscriptionline_spec(&$spec) {
+function _civicrm_api3_contribution_recur_line_item_createsubscriptionlines_spec(&$spec) {
   $spec['contribution_recur_id'] = array (
     'title' => 'Contribution Recur ID',
     'type' => CRM_Utils_Type::T_INT,
@@ -30,6 +31,7 @@ function _civicrm_api3_contribution_recur_line_item_createsubscriptionline_spec(
  * ContributionRecurLineItem.create API
  *
  * @param array $params
+ *
  * @return array API result descriptor
  * @throws API_Exception
  */
@@ -38,15 +40,17 @@ function civicrm_api3_contribution_recur_line_item_create($params) {
 }
 
 /**
- * ContributionRecurLineItem.createsubscriptionline API
+ * ContributionRecurLineItem.createsubscriptionlines API
  *
  * @param array $params
+ *
  * @return array API result descriptor
  * @throws API_Exception
  */
-function civicrm_api3_contribution_recur_line_item_createsubscriptionline($params) {
+function civicrm_api3_contribution_recur_line_item_createsubscriptionlines($params) {
   $line = new CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator($params['contribution_recur_id']);
   $line->create();
+  
   return civicrm_api3_create_success();
 }
 
@@ -54,6 +58,7 @@ function civicrm_api3_contribution_recur_line_item_createsubscriptionline($param
  * ContributionRecurLineItem.delete API
  *
  * @param array $params
+ *
  * @return array API result descriptor
  * @throws API_Exception
  */
@@ -65,6 +70,7 @@ function civicrm_api3_contribution_recur_line_item_delete($params) {
  * ContributionRecurLineItem.get API
  *
  * @param array $params
+ *
  * @return array API result descriptor
  * @throws API_Exception
  */
