@@ -93,6 +93,10 @@ class CRM_MembershipExtras_Form_MembershipPeriod_EditPeriod extends CRM_Core_For
       $params[$paramKey] = CRM_Utils_Array::value($paramKey, $submittedValues, NULL);
     }
 
+    if (!isset($submittedValues['is_active'])) {
+      $params['is_active'] = 0;
+    }
+
     $params['start_date'] = (new DateTime($params['start_date']))->format('Y-m-d');
     $params['end_date'] = (new DateTime($params['end_date']))->format('Y-m-d');
 

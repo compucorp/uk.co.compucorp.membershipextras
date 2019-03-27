@@ -18,6 +18,16 @@
                 <span class="btn-slide crm-hover-button">
                     Delete...
                     <ul class="panel" style="display: none;">
+                        {if $membershipPeriod.is_active}
+                            <li>
+                                <a href='{crmURL p="civicrm/membership/period/deactivate" q="id=`$membershipPeriod.id`"}' class='action-item crm-hover-button' class="action-item crm-hover-button" title='Deactivate Membership Period'>Deactivate</a>
+                            </li>
+                        {else}
+                            <li>
+                                <a href='{crmURL p="civicrm/membership/period/activate" q="id=`$membershipPeriod.id`"}' class='action-item crm-hover-button' class="action-item crm-hover-button" title='Activate Membership Period'>Activate</a>
+                            </li>
+                        {/if}
+
                         <li>
                             <a href='{crmURL p="civicrm/membership/period/delete" q="id=`$membershipPeriod.id`"}' class='action-item crm-hover-button' class="action-item crm-hover-button" title='Delete Membership Period'>Delete</a>
                         </li>
