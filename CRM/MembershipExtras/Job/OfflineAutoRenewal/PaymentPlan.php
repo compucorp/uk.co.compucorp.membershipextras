@@ -188,7 +188,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         $this->setCurrentRecurringContribution($recurContribution['contribution_recur_id']);
         $this->setLastContribution();
         $this->renew();
-        $this->createMembershipPeriods();
         $this->dispatchMembershipRenewalHook();
       } catch (Exception $e) {
         $transaction->rollback();
@@ -212,23 +211,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * Renews the current payment plan.
    */
   abstract public function renew();
-
-  /**
-   * Creates new periods for memberships that were renewed.
-   */
-  private function createMembershipPeriods() {
-    $recurringLineItems = $this->getNewPaymentPlanActiveLineItems();
-
-    foreach ($recurringLineItems as $lineItem) {
-      $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
-      if (!$this->isMembershipLineItem($lineItem, $priceFieldValue)) {
-        continue;
-      }
-
-      $existingMembershipID = $this->getExistingMembershipIDForLineItem($lineItem, $priceFieldValue);
-      CRM_MembershipExtras_BAO_MembershipPeriod::createPeriodForMembership($existingMembershipID);
-    }
-  }
 
   /**
    * Dispatches postOfflineAutoRenewal hook for each membership line item in the
