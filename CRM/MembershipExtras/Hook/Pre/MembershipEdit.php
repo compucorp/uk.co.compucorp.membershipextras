@@ -41,12 +41,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     if ($this->paymentContributionID) {
       $this->preventExtendingPaymentPlanMembership();
     }
-
-    $isPaymentPlanPayment = $this->isPaymentPlanWithMoreThanOneInstallment();
-    $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
-    if ($isMembershipRenewal && $isPaymentPlanPayment) {
-      $this->extendPendingPaymentPlanMembershipOnRenewal();
-    }
   }
 
   /**
@@ -149,30 +143,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     }
 
     return FALSE;
-  }
-
-  /**
-   * Extends the membership at renewal if the selected
-   * payment status is pending.
-   *
-   * When renewing a membership through civicrm and selecting
-   * the payment status as pending, then the membership will not
-   * get extended unless you marked the first payment as complete,
-   * So this method make sure it get extended without the need to
-   * complete the first payment.
-   */
-  public function extendPendingPaymentPlanMembershipOnRenewal() {
-    $pendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
-      'return' => 'value',
-      'option_group_id' => 'contribution_status',
-      'name' => 'Pending',
-    ]);
-    $isPaymentPending = (CRM_Utils_Request::retrieve('contribution_status_id', 'String') === $pendingStatusValue);
-    if (!$isPaymentPending) {
-      return;
-    }
-
-    $this->params['end_date'] = MembershipEndDateCalculator::calculate($this->id);
   }
 
 }
