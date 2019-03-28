@@ -227,6 +227,11 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $lineItemPostHook->postProcess();
   }
 
+  if ($objectName == 'Membership' && $op == 'create') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipCreate($objectRef);
+    $membershipPaymentPostHook->process();
+  }
+
   if ($objectName == 'MembershipPayment') {
     $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef);
     $membershipPaymentPostHook->postProcess();
