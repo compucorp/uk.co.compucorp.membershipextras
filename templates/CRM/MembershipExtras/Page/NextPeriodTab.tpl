@@ -1,5 +1,5 @@
 <script>
-var membershipTypes = {$membershipTypes|@json_encode};
+var nextPeriodMembershipTypes = {$nextPeriodMembershipTypes|@json_encode};
 </script>
 <div class="right">
   Period Start Date: {$nextPeriodStartDate|date_format:"%Y-%m-%d"|crmDate}
@@ -67,7 +67,7 @@ var membershipTypes = {$membershipTypes|@json_encode};
     <td>
       <select name="newline_membership_type" class="crm-form-select" id="newMembershipItem">
         <option value="">- {ts}select{/ts} -</option>
-        {foreach from=$membershipTypes item="membership"}
+        {foreach from=$nextPeriodMembershipTypes item="membership"}
           <option value="{$membership.id}">{$membership.name}</option>
         {/foreach}
       </select>
