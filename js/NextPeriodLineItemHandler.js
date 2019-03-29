@@ -275,7 +275,7 @@ function roundUp(num, decimalPlaces) {
  * @returns {Object}
  */
 function getMembershipType(memTypeId) { 
-  var result = CRM.$.grep(membershipTypes, function(membershipType){
+  var result = CRM.$.grep(nextPeriodMembershipTypes, function(membershipType){
     return membershipType.id == memTypeId;
   });
   

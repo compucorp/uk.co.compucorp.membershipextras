@@ -70,14 +70,14 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @return array
    */
-  private function getAvailableMembershipTypes($currentLineItems) {
+  private function getAvailableMembershipTypes($currentLineItems, $period) {
     $memberhipTypes = civicrm_api3('MembershipType', 'get', [
       'options' => ['limit' => 0],
     ])['values'];
 
     $allowedTypes = [];
     foreach ($memberhipTypes as $type) {
-      if ($this->isAllowedMembershipType($type, $currentLineItems)) {
+      if ($this->isAllowedMembershipType($type, $currentLineItems, $period)) {
         $allowedTypes[] = $type;
       }
     }
@@ -94,9 +94,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @return bool
    */
-  private function isAllowedMembershipType($membershipType, $currentLineItems) {
+  private function isAllowedMembershipType($membershipType, $currentLineItems, $period) {
     foreach ($currentLineItems as $lineItem) {
-      if ($lineItem['entity_table'] != 'civicrm_membership' || !$lineItem['auto_renew'] ) {
+      $matchAutoRenewLineItems = ($period == 'current_period') ? $lineItem['auto_renew'] : !$lineItem['auto_renew'];
+      if ($lineItem['entity_table'] != 'civicrm_membership' || $matchAutoRenewLineItems ) {
         continue;
       }
 
@@ -146,7 +147,8 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $currentPeriodLineItems = $this->getCurrentPeriodLineItems();
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
-    $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
+    $this->assign('currentPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'current_period'));
+    $this->assign('nextPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'next_period'));
     $this->assign('lineItems', $currentPeriodLineItems);
 
     $nextPeriodLineItems = $this->getNextPeriodLineItems();

@@ -68,7 +68,7 @@
       <td>
         <select name="newline_membership_type" class="crm-form-select" id="newline_membership_type">
           <option value="">- {ts}select{/ts} -</option>
-          {foreach from=$membershipTypes item="membership"}
+          {foreach from=$currentPeriodMembershipTypes item="membership"}
             <option value="{$membership.id}">{$membership.name}</option>
           {/foreach}
         </select>
