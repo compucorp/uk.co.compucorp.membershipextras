@@ -28,6 +28,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private $paymentContributionID;
 
+
   public function __construct($id, &$params, $contributionID) {
     $this->id = $id;
     $this->params = &$params;
@@ -41,6 +42,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     if ($this->paymentContributionID) {
       $this->preventExtendingPaymentPlanMembership();
     }
+
+    $this->updateMembershipPeriods();
   }
 
   /**
@@ -128,21 +131,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
-   * Determines if the membership is paid using payment plan option using more
-   * than one installment or not.
-   *
-   * @return bool
+   * Update membership periods upon membership
+   * edit which might result on updating existing
+   * periods or creating new ones or both.
    */
-  private function isPaymentPlanWithMoreThanOneInstallment() {
-    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
-    $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
-    $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
-
-    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
-      return TRUE;
-    }
-
-    return FALSE;
+  private function updateMembershipPeriods() {
+    $membershipPeriodUpdate = new CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater($this->id, $this->params, $this->paymentContributionID);
+    $membershipPeriodUpdate->process();
   }
 
 }
