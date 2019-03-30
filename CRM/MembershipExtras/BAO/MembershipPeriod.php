@@ -106,6 +106,25 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
   }
 
   /**
+   * Returns an array with the information for the latest period for the
+   * given membership whether its active or not.
+   *
+   * @param int $membershipID
+   *
+   * @return array
+   */
+  public static function getLastPeriod($membershipID) {
+    $membershipPeriod = new self();
+    $membershipPeriod->membership_id = $membershipID;
+    $membershipPeriod->orderBy('end_date,id DESC');
+    $membershipPeriod->limit(1);
+    if ($membershipPeriod->find(TRUE) > 0) {
+      return $membershipPeriod->toArray();
+    }
+    return [];
+  }
+
+  /**
    * Returns an array with the data of the last contribution made as payment for
    * the given membership ID.
    *

@@ -232,8 +232,14 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $membershipPaymentPostHook->process();
   }
 
+
+  static $periodId = NULL;
+  if ($objectName == 'MembershipPeriod') {
+    $periodId = $objectId;
+  }
+
   if ($objectName == 'MembershipPayment') {
-    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef);
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef, $periodId);
     $membershipPaymentPostHook->postProcess();
   }
 
