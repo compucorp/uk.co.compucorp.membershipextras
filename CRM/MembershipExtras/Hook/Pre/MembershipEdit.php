@@ -39,7 +39,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    if ($this->paymentContributionID) {
+    if ($this->paymentContributionID && $this->isOfflineNonPendingPaymentPlanMembership()) {
       $this->preventExtendingPaymentPlanMembership();
     }
 
@@ -47,7 +47,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
-   * Prevents extending offline payment plan Membership.
+   * Prevents extending offline non pending payment plan Membership.
    *
    * If a membership price will be paid using
    * payment plan then each time an installment get
@@ -56,29 +56,28 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * a 1 year membership, then each time an
    * installment get paid the membership will get extended
    * by one year, this method prevent civicrm from doing that
-   * so the membership gets only extended once when you renew it.
+   * so the membership gets only extended at completing
+   * the first payment.
    */
   public function preventExtendingPaymentPlanMembership() {
-    if ($this->isOfflinePaymentPlanMembership()) {
-      unset($this->params['end_date']);
-    }
+    unset($this->params['end_date']);
   }
 
   /**
    * Determines if the payment for a membership
-   * subscription is offline (pay later) and paid
+   * subscription is offline (pay later), non pending and paid
    * as payment plan.
    *
    * @return bool
    */
-  private function isOfflinePaymentPlanMembership() {
+  private function isOfflineNonPendingPaymentPlanMembership() {
     $recContributionID = $this->getPaymentRecurringContributionID();
 
     if ($recContributionID === NULL) {
       return FALSE;
     }
 
-    return $this->isOfflinePaymentPlanContribution($recContributionID);
+    return $this->isOfflineNonPendingPaymentPlanContribution($recContributionID);
   }
 
   /**
@@ -89,7 +88,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * @param $recurringContributionID
    * @return bool
    */
-  private function isOfflinePaymentPlanContribution($recurringContributionID) {
+  private function isOfflineNonPendingPaymentPlanContribution($recurringContributionID) {
     $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $recurringContributionID,
@@ -101,10 +100,12 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
       in_array($recurringContribution['payment_processor_id'], $manualPaymentProcessors);
 
-    if ($isOfflineContribution && $isPaymentPlanRecurringContribution) {
+    $pendingContributionStatusId = array_search('Pending', CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name'));
+    $isNonPending = !($recurringContribution['contribution_status_id'] == $pendingContributionStatusId);
+
+    if ($isOfflineContribution && $isPaymentPlanRecurringContribution && $isNonPending) {
       return TRUE;
     }
-
     return FALSE;
   }
 
