@@ -40,10 +40,26 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   public function preProcess() {
     if ($this->paymentContributionID && $this->isOfflineNonPendingPaymentPlanMembership()) {
+      $this->correctStartDateIfRenewingExpiredPaymentPlanMembership();
       $this->preventExtendingPaymentPlanMembership();
     }
 
     $this->updateMembershipPeriods();
+  }
+
+  /**
+   * If we are renewing an expired membership
+   * with payment plan, then the start date should
+   * equal the join date.
+   */
+  private function correctStartDateIfRenewingExpiredPaymentPlanMembership() {
+    if (empty($this->params['join_date']) || empty($this->params['start_date'])) {
+      return;
+    }
+
+    if ($this->params['start_date'] > $this->params['end_date']) {
+      $this->params['start_date'] = $this->params['join_date'];
+    }
   }
 
   /**
