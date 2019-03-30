@@ -315,6 +315,11 @@ function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$f
       $paymentPlanValidateHook->validate();
     }
   }
+
+  if($formName === 'CRM_Member_Form_Task_Batch') {
+    $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MemberTaskBatch($form, $errors);
+    $paymentPlanValidateHook->validate();
+  }
 }
 
 /**
