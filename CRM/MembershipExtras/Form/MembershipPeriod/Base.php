@@ -19,14 +19,14 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
    *
    * @var array
    */
-  protected $contributionStatusesNameMap;
+  protected $contributionStatusesValueMap;
 
   /**
    * @inheritdoc
    */
   public function preProcess() {
     $this->id = CRM_Utils_Request::retrieve('id', 'String', $this, TRUE);
-    $this->contributionStatusesNameMap = ContributionUtilities::getStatusesNameMap();
+    $this->contributionStatusesValueMap = ContributionUtilities::getStatusesValueMap();
   }
 
   /**
@@ -82,7 +82,7 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
   private function isPaymentStarted(CRM_MembershipExtras_BAO_MembershipPeriod $period) {
     $status = $this->getPaymentEntityStatus($period->payment_entity_table, $period->entity_id);
 
-    switch ($this->contributionStatusesNameMap[$status]) {
+    switch ($this->contributionStatusesValueMap[$status]) {
       case 'Completed':
       case 'In Progress':
       case 'Partially paid':
