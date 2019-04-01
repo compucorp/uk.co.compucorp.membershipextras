@@ -116,7 +116,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     
     $this->setUseMembershipLatestPrice();
     $this->setContributionPendingStatusValue();
-    $this->setContributionStatusesNameMap();
     $this->setManualPaymentProcessorIDs();
     $this->setDaysToRenewInAdvance();
   }
