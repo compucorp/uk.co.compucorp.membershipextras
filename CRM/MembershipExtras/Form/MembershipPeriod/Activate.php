@@ -5,41 +5,13 @@ use CRM_MembershipExtras_ExtensionUtil as E;
 /**
  * Membership period activate form controller class.
  */
-class CRM_MembershipExtras_Form_MembershipPeriod_Activate extends CRM_Core_Form {
-
-  /**
-   * ID of the period to be activated.
-   *
-   * @var int
-   */
-  private $id;
+class CRM_MembershipExtras_Form_MembershipPeriod_Activate extends CRM_MembershipExtras_Form_MembershipPeriod_Base {
 
   /**
    * @inheritdoc
    */
-  public function preProcess() {
-    $this->id = CRM_Utils_Request::retrieve('id', 'String', $this, TRUE);
-  }
-
-  /**
-   * @inheritdoc
-   */
-  public function buildQuickForm() {
+  protected function setFormTitle() {
     CRM_Utils_System::setTitle(E::ts('Activate Membership Period?'));
-
-    $this->addButtons([
-      [
-        'type' => 'submit',
-        'name' => E::ts('Activate'),
-        'isDefault' => TRUE,
-      ],
-      [
-        'type' => 'cancel',
-        'name' => ts('Cancel'),
-      ],
-    ]);
-
-    parent::buildQuickForm();
   }
 
   /**

@@ -1,11 +1,15 @@
 <div class="crm-block crm-form-block crm-payment-plan-cancel-form-block">
-  <div class="messages status no-popup">
-    <div class="icon inform-icon"></div>
-    WARNING - This action sets the CiviCRM membership period to inactive, but
-    does not cancel or refund associated payment entity.
-  </div>
   <p>
-    <strong> Are you sure you want to Deactivate this period? </strong>
+    <strong>
+      {if $isPaymentStarted}
+        Membership period {$period->start_date|date_format} to {$period->end_date|date_format}
+        has a payment in progress or is already paid. Would you still like to
+        deactivate it?
+      {else}
+        Would you like to deactivate membership period {$period->start_date|date_format}
+        to {$period->end_date|date_format}?
+      {/if}
+    </strong>
   </p>
   <div class="crm-submit-buttons">
     {include file="CRM/common/formButtons.tpl" location="bottom"}
