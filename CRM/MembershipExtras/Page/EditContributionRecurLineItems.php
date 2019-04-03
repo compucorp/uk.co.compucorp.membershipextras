@@ -96,7 +96,9 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    */
   private function isAllowedMembershipType($membershipType, $currentLineItems, $period) {
     foreach ($currentLineItems as $lineItem) {
-      $matchAutoRenewLineItems = ($period == 'current_period') ? $lineItem['auto_renew'] : !$lineItem['auto_renew'];
+      $matchAutoRenewLineItems = (
+        ($period == 'current_period') ? boolval($lineItem['auto_renew']) : !boolval($lineItem['auto_renew'])
+      );
       if ($lineItem['entity_table'] != 'civicrm_membership' || $matchAutoRenewLineItems ) {
         continue;
       }
