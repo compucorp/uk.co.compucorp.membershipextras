@@ -80,7 +80,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
 
     $this->membership = civicrm_api3('Membership', 'getsingle', [
       'id' => $this->membershipPayment->membership_id,
-      'return' => ['join_date', 'membership_type_id',
+      'return' => ['join_date', 'membership_type_id', 'membership_type_id.name',
         'membership_type_id.duration_unit', 'membership_type_id.duration_interval'],
     ]);
 
@@ -236,6 +236,11 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   }
 
   private function createPendingMissingPeriod() {
+    $membershipType = $this->membership['membership_type_id.name'];
+    if ($membershipType == 'Lifetime') {
+      return;
+    }
+
     $newPeriodParams = [];
     $newPeriodParams['membership_id'] = $this->membershipPayment->membership_id;
 

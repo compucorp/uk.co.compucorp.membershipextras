@@ -55,7 +55,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater {
   private function setMembership($membershipId) {
     $this->membership =  civicrm_api3('Membership', 'get', [
       'id' => $membershipId,
-      'return' => ['join_date', 'end_date'],
+      'return' => ['membership_type_id.name', 'join_date', 'end_date'],
       'sequential' => 1,
     ])['values'][0];
   }
@@ -90,6 +90,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater {
   }
 
   private function setCalculatedMembershipEndDate() {
+    $membershipEndDate = NULL;
     if (!empty($this->membershipHookParams['end_date'])) {
       $membershipEndDate = date('Ymd', strtotime($this->membershipHookParams['end_date']));
     }
@@ -97,7 +98,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater {
     elseif(!empty($this->membershipHookParams['membership_end_date'])) {
       $membershipEndDate = date('Ymd', strtotime($this->membershipHookParams['membership_end_date']));
     }
-    else {
+    elseif (!empty($this->membership['end_date'])){
       $membershipEndDate = date('Ymd', strtotime($this->membership['end_date']));
     }
 
@@ -110,6 +111,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater {
     $this->firstActivatedPeriod = MembershipPeriod::getFirstActivePeriod($this->membership['id']);
     $this->lastActivatedPeriod = MembershipPeriod::getLastActivePeriod($this->membership['id']);
     if (empty($this->firstActivatedPeriod) || empty($this->lastActivatedPeriod)) {
+      return;
+    }
+
+    if ($this->membership['membership_type_id.name'] == 'Lifetime') {
+      $this->updateLifetimeMembershipPeriod();
       return;
     }
 
@@ -147,6 +153,18 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater {
     $this->setCompletedContributionPeriodActivateStatus($periodToUpdate);
     $this->setCompletedContributionPeriodNewDates($periodToUpdate);
     $periodToUpdate->save();
+  }
+
+  /**
+   * Lifetime membership does not have an end date
+   * so we just need to update its period start date
+   * in case it was edited.
+   */
+  private function updateLifetimeMembershipPeriod() {
+    $updateParams = [];
+    $updateParams['id'] = $this->firstActivatedPeriod['id'];
+    $updateParams['start_date'] = $this->calculatedMembershipJoinDate;
+    MembershipPeriod::create($updateParams);
   }
 
   /**

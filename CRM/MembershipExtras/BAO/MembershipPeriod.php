@@ -46,7 +46,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     return self::create([
       'membership_id' => $membershipID,
       'start_date' => self::calculateStartDate($membership, $lastActivePeriod),
-      'end_date' => $membership['end_date'],
+      'end_date' => CRM_Utils_Array::value('end_date', $membership),
       'payment_entity_table' => $paymentEntityTable,
       'entity_id' => $entityId,
       'is_active' => TRUE,
