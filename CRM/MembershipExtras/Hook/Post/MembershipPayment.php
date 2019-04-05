@@ -218,6 +218,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
     $contributionsCount = civicrm_api3('Contribution', 'getcount', [
       'contribution_recur_id' => $this->contribution['contribution_recur_id'],
     ]);
+
     return ($contributionsCount == 1);
   }
 
@@ -288,12 +289,13 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
 
     $currentStartDate->add(new DateInterval($interval));
     $currentStartDate->sub(new DateInterval('P1D'));
+
     return $currentStartDate->format('Ymd');
   }
 
   /**
    * Since periods are sometimes created before
-   * the arability of any payment record, we here
+   * the payment record, we here
    * ensure that the payment entity get linked back
    * to the created period.
    */

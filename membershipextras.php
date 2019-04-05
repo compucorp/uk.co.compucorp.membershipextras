@@ -232,7 +232,6 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $membershipPaymentPostHook->process();
   }
 
-
   static $periodId = NULL;
   if ($objectName == 'MembershipPeriod') {
     $periodId = $objectId;

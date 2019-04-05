@@ -121,6 +121,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     if ($membershipPeriod->find(TRUE) > 0) {
       return $membershipPeriod->toArray();
     }
+
     return [];
   }
 
