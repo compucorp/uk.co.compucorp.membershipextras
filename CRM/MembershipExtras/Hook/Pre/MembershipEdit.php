@@ -28,11 +28,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private $paymentContributionID;
 
+  private $recurContributionPreviousStatus;
 
-  public function __construct($id, &$params, $contributionID) {
+  private $originalEndDateParam;
+
+  public function __construct($id, &$params, $contributionID, $recurContributionPreviousStatus) {
     $this->id = $id;
     $this->params = &$params;
+    $this->originalEndDateParam = CRM_Utils_Array::value('end_date', $this->params);
     $this->paymentContributionID = $contributionID;
+    $this->recurContributionPreviousStatus = $recurContributionPreviousStatus;
   }
 
   /**
@@ -40,26 +45,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   public function preProcess() {
     if ($this->paymentContributionID && $this->isOfflineNonPendingPaymentPlanMembership()) {
-      $this->correctStartDateIfRenewingExpiredPaymentPlanMembership();
       $this->preventExtendingPaymentPlanMembership();
+      $this->correctStartDateIfRenewingExpiredPaymentPlanMembership();
     }
 
     $this->updateMembershipPeriods();
-  }
-
-  /**
-   * If we are renewing an expired membership
-   * with payment plan, then the start date should
-   * equal the join date.
-   */
-  private function correctStartDateIfRenewingExpiredPaymentPlanMembership() {
-    if (empty($this->params['join_date']) || empty($this->params['start_date'])) {
-      return;
-    }
-
-    if ($this->params['start_date'] > $this->params['end_date']) {
-      $this->params['start_date'] = $this->params['join_date'];
-    }
   }
 
   /**
@@ -77,6 +67,22 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   public function preventExtendingPaymentPlanMembership() {
     unset($this->params['end_date']);
+  }
+
+  /**
+   * If we are renewing an expired membership
+   * with payment plan, then the start date should
+   * equal the join date.
+   */
+  private function correctStartDateIfRenewingExpiredPaymentPlanMembership() {
+    if (empty($this->params['join_date']) || empty($this->params['start_date'])) {
+      return;
+    }
+
+    $currentEndDateParam = CRM_Utils_Array::value('end_date', $this->params);
+    if (!empty($this->originalEndDateParam) && $this->params['start_date'] > $currentEndDateParam) {
+      $this->params['start_date'] = $this->params['join_date'];
+    }
   }
 
   /**
@@ -118,6 +124,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
 
     $pendingContributionStatusId = array_search('Pending', CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name'));
     $isNonPending = !($recurringContribution['contribution_status_id'] == $pendingContributionStatusId);
+    if (!empty($this->recurContributionPreviousStatus)) {
+      $isNonPending = $isNonPending && ($this->recurContributionPreviousStatus !== 'Pending');
+    }
 
     if ($isOfflineContribution && $isPaymentPlanRecurringContribution && $isNonPending) {
       return TRUE;

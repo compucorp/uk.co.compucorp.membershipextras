@@ -157,8 +157,15 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
    * options for now.
    */
   static $contributionID = NULL;
-  if ($op === 'edit' && $objectName === 'Contribution') {
+  if ($objectName === 'Contribution' && $op === 'edit') {
     $contributionID = $id;
+  }
+
+  static $recurContributionPreviousStatus = NULL;
+  if ($objectName === 'ContributionRecur' && $op === 'edit') {
+    if (!empty($params['contribution_status_id'])) {
+      $recurContributionPreviousStatus = _membershipextras_getRecurContributionPreviousStatus($id);
+    }
   }
 
   if ($objectName === 'Membership' && $op == 'create') {
@@ -167,7 +174,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   if ($objectName === 'Membership' && $op == 'edit') {
-    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID);
+    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID, $recurContributionPreviousStatus);
     $membershipPreHook->preProcess();
   }
 
@@ -192,6 +199,18 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   if ($objectName == 'ContributionRecur') {
     $contributionRecurPreHook = new CRM_MembershipExtras_Hook_Pre_ContributionRecur($op, $id, $params);
     $contributionRecurPreHook->preProcess();
+  }
+}
+
+function _membershipextras_getRecurContributionPreviousStatus($id) {
+  try{
+    return civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'contribution_status_id.name',
+      'id' => $id,
+    ]);
+  }
+  catch (CRM_Core_Exception $exception) {
+    return NULL;
   }
 }
 

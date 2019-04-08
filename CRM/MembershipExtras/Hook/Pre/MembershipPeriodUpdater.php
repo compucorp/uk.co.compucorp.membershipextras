@@ -184,7 +184,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater {
       $periodToUpdate->payment_entity_table = 'civicrm_contribution_recur';
     }
 
-    $periodToUpdate->orderBy('end_date,id desc');
+    $periodToUpdate->orderBy('end_date DESC,id DESC');
     $periodToUpdate->limit(1);
     if($periodToUpdate->find(TRUE)) {
       return $periodToUpdate;
