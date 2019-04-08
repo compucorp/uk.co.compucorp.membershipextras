@@ -116,7 +116,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
   public static function getLastPeriod($membershipID) {
     $membershipPeriod = new self();
     $membershipPeriod->membership_id = $membershipID;
-    $membershipPeriod->orderBy('end_date,id DESC');
+    $membershipPeriod->orderBy('end_date DESC,id DESC');
     $membershipPeriod->limit(1);
     if ($membershipPeriod->find(TRUE) > 0) {
       return $membershipPeriod->toArray();
