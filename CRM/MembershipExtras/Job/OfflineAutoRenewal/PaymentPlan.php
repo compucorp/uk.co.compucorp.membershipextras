@@ -116,7 +116,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     
     $this->setUseMembershipLatestPrice();
     $this->setContributionPendingStatusValue();
-    $this->setContributionStatusesNameMap();
     $this->setManualPaymentProcessorIDs();
     $this->setDaysToRenewInAdvance();
   }
@@ -188,7 +187,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         $this->setCurrentRecurringContribution($recurContribution['contribution_recur_id']);
         $this->setLastContribution();
         $this->renew();
-        $this->createMembershipPeriods();
         $this->dispatchMembershipRenewalHook();
       } catch (Exception $e) {
         $transaction->rollback();
@@ -212,23 +210,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * Renews the current payment plan.
    */
   abstract public function renew();
-
-  /**
-   * Creates new periods for memberships that were renewed.
-   */
-  private function createMembershipPeriods() {
-    $recurringLineItems = $this->getNewPaymentPlanActiveLineItems();
-
-    foreach ($recurringLineItems as $lineItem) {
-      $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
-      if (!$this->isMembershipLineItem($lineItem, $priceFieldValue)) {
-        continue;
-      }
-
-      $existingMembershipID = $this->getExistingMembershipIDForLineItem($lineItem, $priceFieldValue);
-      CRM_MembershipExtras_BAO_MembershipPeriod::createPeriodForMembership($existingMembershipID);
-    }
-  }
 
   /**
    * Dispatches postOfflineAutoRenewal hook for each membership line item in the
@@ -503,10 +484,9 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   abstract protected function calculateRecurringContributionTotalAmount($recurringContributionID);
 
   /**
-   * Renews/Extend the related payment plan memberships to be auto-renewed
-   * for one term.
+   * Creates any missing payment plan membership.
    */
-  protected function renewPaymentPlanMemberships() {
+  protected function createMissingPaymentPlanMemberships() {
     $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
     $existingMembershipID = null;
 
@@ -517,18 +497,15 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       }
 
       $existingMembershipID = $this->getExistingMembershipIDForLineItem($lineItem, $priceFieldValue);
+      if (!$existingMembershipID) {
+        $newMembershipID = $this->createMembership($lineItem, $priceFieldValue);
 
-      if ($existingMembershipID) {
-        $this->extendExistingMembership($existingMembershipID);
-      } else {
-        $existingMembershipID = $this->createMembership($lineItem, $priceFieldValue);
+        civicrm_api3('LineItem', 'create', [
+          'id' => $lineItem['id'],
+          'entity_table' => 'civicrm_membership',
+          'entity_id' => $newMembershipID,
+        ]);
       }
-
-      civicrm_api3('LineItem', 'create', [
-        'id' => $lineItem['id'],
-        'entity_table' => 'civicrm_membership',
-        'entity_id' => $existingMembershipID,
-      ]);
     }
   }
 
@@ -586,18 +563,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     ])['values'][0];
 
     return $membership['id'];
-  }
-
-  /**
-   * Extend membership identified by given ID.
-   *
-   * @param int $membershipID
-   */
-  private function extendExistingMembership($membershipID) {
-    $membership = new CRM_Member_DAO_Membership();
-    $membership->id = $membershipID;
-    $membership->end_date = MembershipEndDateCalculator::calculate($membershipID);
-    $membership->save();
   }
 
   /**

@@ -157,8 +157,15 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
    * options for now.
    */
   static $contributionID = NULL;
-  if ($op === 'edit' && $objectName === 'Contribution') {
+  if ($objectName === 'Contribution' && $op === 'edit') {
     $contributionID = $id;
+  }
+
+  static $recurContributionPreviousStatus = NULL;
+  if ($objectName === 'ContributionRecur' && $op === 'edit') {
+    if (!empty($params['contribution_status_id'])) {
+      $recurContributionPreviousStatus = _membershipextras_getRecurContributionPreviousStatus($id);
+    }
   }
 
   if ($objectName === 'Membership' && $op == 'create') {
@@ -167,7 +174,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   if ($objectName === 'Membership' && $op == 'edit') {
-    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID);
+    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID, $recurContributionPreviousStatus);
     $membershipPreHook->preProcess();
   }
 
@@ -192,6 +199,18 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   if ($objectName == 'ContributionRecur') {
     $contributionRecurPreHook = new CRM_MembershipExtras_Hook_Pre_ContributionRecur($op, $id, $params);
     $contributionRecurPreHook->preProcess();
+  }
+}
+
+function _membershipextras_getRecurContributionPreviousStatus($id) {
+  try{
+    return civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'contribution_status_id.name',
+      'id' => $id,
+    ]);
+  }
+  catch (CRM_Core_Exception $exception) {
+    return NULL;
   }
 }
 
@@ -227,9 +246,24 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $lineItemPostHook->postProcess();
   }
 
+  if ($objectName == 'Membership' && $op == 'create') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipCreate($objectRef);
+    $membershipPaymentPostHook->process();
+  }
+
+  static $periodId = NULL;
+  if ($objectName == 'MembershipPeriod') {
+    $periodId = $objectId;
+  }
+
   if ($objectName == 'MembershipPayment') {
-    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef);
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef, $periodId);
     $membershipPaymentPostHook->postProcess();
+  }
+
+  if ($objectName == 'Contribution' && $op == 'edit') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_ContributionEdit($objectRef);
+    $membershipPaymentPostHook->process();
   }
 }
 
@@ -250,19 +284,11 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
 
     $offlineAutoRenewProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
     $offlineAutoRenewProcessor->postProcess();
-
-    $periodProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPeriodCreator($form);
-    $periodProcessor->postProcess();
   }
 
   if ($formName === 'CRM_Contribute_Form_UpdateSubscription') {
     $postProcessFormHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription($form);
     $postProcessFormHook->postProcess();
-  }
-
-  if ($formName === 'CRM_Contribute_Form_Contribution_Confirm') {
-    $contributionPageProcessor = new CRM_MembershipExtras_Hook_PostProcess_ContributionConfirm($form);
-    $contributionPageProcessor->postProcess();
   }
 }
 
@@ -306,6 +332,11 @@ function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$f
       $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
       $paymentPlanValidateHook->validate();
     }
+  }
+
+  if($formName === 'CRM_Member_Form_Task_Batch') {
+    $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MemberTaskBatch($form, $errors);
+    $paymentPlanValidateHook->validate();
   }
 }
 

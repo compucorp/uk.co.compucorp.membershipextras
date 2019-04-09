@@ -35,7 +35,7 @@ class CRM_MembershipExtras_Job_OverdueMembershipPeriodProcessor {
    *  Object that point to result set of IDs of overdue membership periods
    */
   private function getMembershipsPeriodsWithOverduePayment() {
-    $contributionStatusesNameMap = ContributionUtilities::getContributionStatusesNameMap();
+    $contributionStatusesNameMap = ContributionUtilities::getStatusesNameMap();
     $completedContributionStatusID = $contributionStatusesNameMap['Completed'];
     
     $daysToDisableMP = CRM_MembershipExtras_SettingsManager::getDaysToDisableMembershipPeriodsWithOverduePayment();
