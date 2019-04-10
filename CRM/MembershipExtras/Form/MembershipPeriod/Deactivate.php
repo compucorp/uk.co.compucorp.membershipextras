@@ -18,10 +18,18 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Deactivate extends CRM_Membersh
    * @inheritdoc
    */
   public function postProcess() {
-    $period = new CRM_MembershipExtras_BAO_MembershipPeriod();
-    $period->id = $this->id;
-    $period->is_active = 0;
-    $period->save();
+    $transaction = new CRM_Core_Transaction();
+    try {
+      CRM_MembershipExtras_BAO_MembershipPeriod::create([
+        'id' => $this->id,
+        'is_active' => 0,
+      ]);
+    }
+    catch (Exception $exception) {
+      $transaction->rollback();
+      throw $exception;
+    }
+    $transaction->commit();
   }
 
 }

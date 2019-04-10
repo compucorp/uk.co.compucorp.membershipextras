@@ -15,18 +15,10 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
   protected $id;
 
   /**
-   * Maps status ID's to status names.
-   *
-   * @var array
-   */
-  protected $contributionStatusesValueMap;
-
-  /**
    * @inheritdoc
    */
   public function preProcess() {
     $this->id = CRM_Utils_Request::retrieve('id', 'String', $this, TRUE);
-    $this->contributionStatusesValueMap = ContributionUtilities::getStatusesValueMap();
   }
 
   /**
@@ -47,7 +39,7 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
       ],
     ]);
 
-    $period = $this->getMembershipPeriod();
+    $period = CRM_MembershipExtras_BAO_MembershipPeriod::getMembershipPeriodById($this->id);
     $this->assign('period', $period);
     $this->assign('isPaymentStarted', $this->isPaymentStarted($period));
   }
@@ -60,19 +52,6 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
   protected abstract function setFormTitle();
 
   /**
-   * Obtains Membership Period BAO for the current period.
-   *
-   * @return \CRM_MembershipExtras_BAO_MembershipPeriod
-   */
-  protected function getMembershipPeriod() {
-    $period = new CRM_MembershipExtras_BAO_MembershipPeriod();
-    $period->id = $this->id;
-    $period->find(TRUE);
-
-    return $period;
-  }
-
-  /**
    * Obtains payment entity status.
    *
    * @param \CRM_MembershipExtras_BAO_MembershipPeriod $period
@@ -81,8 +60,9 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
    */
   private function isPaymentStarted(CRM_MembershipExtras_BAO_MembershipPeriod $period) {
     $status = $this->getPaymentEntityStatus($period->payment_entity_table, $period->entity_id);
+    $contributionStatusesValueMap = ContributionUtilities::getStatusesValueMap();
 
-    switch ($this->contributionStatusesValueMap[$status]) {
+    switch ($contributionStatusesValueMap[$status]) {
       case 'Completed':
       case 'In Progress':
       case 'Partially paid':
@@ -108,14 +88,14 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
     $entity = $entityTable === 'civicrm_contribution_recur' ? 'ContributionRecur' : 'Contribution';
 
     try {
-      $recurringContribution = civicrm_api3($entity, 'getsingle', [
+      $paymentEntity = civicrm_api3($entity, 'getsingle', [
         'id' => $entityID,
       ]);
     } catch (Exception $e) {
       return '';
     }
 
-    return $recurringContribution['contribution_status_id'];
+    return $paymentEntity['contribution_status_id'];
   }
 
 }

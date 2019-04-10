@@ -16,7 +16,7 @@
                     <a href='{crmURL p="civicrm/membership/period/edit" q="id=`$membershipPeriod.id`"}' class='action-item crm-hover-button' title='Edit Membership Period'>Edit</a>
                 </span>
                 <span class="btn-slide crm-hover-button">
-                    Delete...
+                    ...
                     <ul class="panel" style="display: none;">
                         {if $membershipPeriod.is_active}
                             <li>
