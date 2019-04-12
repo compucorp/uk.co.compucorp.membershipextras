@@ -101,7 +101,7 @@ class CRM_MembershipExtras_Form_MembershipPeriod_EditPeriod extends CRM_Core_For
     $params['end_date'] = (new DateTime($params['end_date']))->format('Y-m-d');
 
     try {
-      MembershipPeriod::updatePeriod($params);
+      MembershipPeriod::updatePeriodAndMembership($params);
     }
     catch (CRM_Core_Exception $exception) {
       CRM_Core_Session::setStatus($exception->getMessage(), '', 'error');

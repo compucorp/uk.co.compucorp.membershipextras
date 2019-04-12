@@ -1,5 +1,6 @@
 <?php
 
+use CRM_MembershipExtras_ExtensionUtil as E;
 use CRM_MembershipExtras_Service_ContributionUtilities as ContributionUtilities;
 
 /**
@@ -27,17 +28,7 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
   public function buildQuickForm() {
     $this->setFormTitle();
 
-    $this->addButtons([
-      [
-        'type' => 'submit',
-        'name' => E::ts('Activate'),
-        'isDefault' => TRUE,
-      ],
-      [
-        'type' => 'cancel',
-        'name' => ts('Cancel'),
-      ],
-    ]);
+    $this->addButtons($this->getFormButtons());
 
     $period = CRM_MembershipExtras_BAO_MembershipPeriod::getMembershipPeriodById($this->id);
     $this->assign('period', $period);
@@ -46,10 +37,15 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
 
   /**
    * Sets the title for the form.
-   *
-   * @return mixed
    */
   protected abstract function setFormTitle();
+
+	/**
+	 * Returns array of buttons for the form.
+	 *
+	 * @return array
+	 */
+  protected abstract function getFormButtons();
 
   /**
    * Obtains payment entity status.

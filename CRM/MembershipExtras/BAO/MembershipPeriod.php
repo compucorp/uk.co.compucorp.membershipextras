@@ -23,8 +23,6 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     $instance = new CRM_MembershipExtras_DAO_MembershipPeriod();
     $instance->copyValues($params);
     $instance->save();
-    $instance->find(TRUE);
-    self::updateMembershipDates($instance);
 
     CRM_Utils_Hook::post($hook, 'MembershipPeriod', $instance->id, $instance);
 
@@ -267,10 +265,12 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    *
    * @throws CRM_Core_Exception
    */
-  public static function updatePeriod($params) {
+  public static function updatePeriodAndMembership($params) {
     $transaction = new CRM_Core_Transaction();
     try {
-      self::create($params);
+      $instance = self::create($params);
+			$instance->find(TRUE);
+			self::updateMembershipDates($instance);
     }
     catch (CRM_Core_Exception $exception) {
       $transaction->rollback();
@@ -289,26 +289,39 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    * @throws \CRM_Core_Exception
    */
   private static function doesOverlapWithOtherActivePeriods($periodParams) {
+  	if (!$periodParams['is_active']) {
+  		return FALSE;
+		}
+
     $periodID = CRM_Utils_Array::value('id', $periodParams, 0);
     $membershipID = CRM_Utils_Array::value('membership_id', $periodParams, 0);
+    $periodNewStartDate = CRM_Utils_Array::value('start_date', $periodParams, '');
+    $periodNewEndDate = CRM_Utils_Array::value('end_date', $periodParams, '');
 
-    if (empty($membershipID) && empty($periodID)) {
-      throw new CRM_Core_Exception("Can't calculate period overlapping without a membership ID!");
+    if (!empty($periodID)) {
+      $membershipPeriod = self::getMembershipPeriodById($periodID);
+      $membershipID = $membershipID ?: $membershipPeriod->membership_id;
+      $periodNewStartDate = $periodNewStartDate ?: $membershipPeriod->start_date;
+      $periodNewEndDate = $periodNewEndDate ?: $membershipPeriod->end_date;
     }
 
     if (empty($membershipID)) {
-      $membershipPeriod = self::getMembershipPeriodById($periodID);
-      $membershipID = $membershipPeriod->membership_id;
+      throw new CRM_Core_Exception("Can't calculate period overlapping without a membership ID!");
     }
 
-    $periodNewStartDate = $periodParams['start_date'];
-    $periodNewEndDate = $periodParams['end_date'];
+    if (empty($periodNewStartDate)) {
+      throw new CRM_Core_Exception("Can't calculate period overlapping without period start date!");
+    }
 
     $overlappedMembershipPeriods = new self();
     $overlappedMembershipPeriods->membership_id = $membershipID;
     $overlappedMembershipPeriods->is_active = TRUE;
     $overlappedMembershipPeriods->whereAdd('"' . $periodNewStartDate . '" <= end_date');
-    $overlappedMembershipPeriods->whereAdd('"' . $periodNewEndDate . '" >= start_date');
+
+    if (!empty($periodNewEndDate)) {
+      $overlappedMembershipPeriods->whereAdd('"' . $periodNewEndDate . '" >= start_date');
+    }
+
     $overlappedMembershipPeriods->whereAdd('id != ' . $periodID);
     if ($overlappedMembershipPeriods->find()) {
       return TRUE;
@@ -319,16 +332,32 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
 
   private static function updateMembershipDates($membershipPeriod) {
     $membershipId = $membershipPeriod->membership_id;
-    $joinDate = $startDate = self::getFirstActivePeriod($membershipId)['start_date'];
-    $endDate = self::getLastActivePeriod($membershipId)['end_date'];
+    $firstActivePeriod = self::getFirstActivePeriod($membershipId);
+    $lastActivePeriod = self::getLastActivePeriod($membershipId);
 
-    civicrm_api3('Membership', 'create', [
+    $joinDate = $startDate = CRM_Utils_Array::value('start_date', $firstActivePeriod, '');
+    $endDate = CRM_Utils_Array::value('end_date', $lastActivePeriod, '');
+
+    $params = [
       'id' => $membershipId,
-      'join_date' => $joinDate,
-      'start_date' => $startDate,
-      'end_date' => $endDate,
       'skipStatusCal' => 0,
-    ]);
+    ];
+
+    if (!empty($joinDate)) {
+      $params['join_date'] = $joinDate;
+    }
+
+    if (!empty($startDate)) {
+      $params['start_date'] = $startDate;
+    }
+
+    if (!empty($endDate)) {
+      $params['end_date'] = $endDate;
+    }
+
+    if ($joinDate || $startDate || $endDate) {
+      civicrm_api3('Membership', 'create', $params);
+    }
   }
 
   public static function deleteById($id) {
