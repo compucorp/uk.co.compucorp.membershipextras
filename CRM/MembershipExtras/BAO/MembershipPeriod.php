@@ -20,13 +20,13 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
 
     CRM_Utils_Hook::pre($hook, 'MembershipPeriod', CRM_Utils_Array::value('id', $params), $params);
 
-    $instance = new CRM_MembershipExtras_DAO_MembershipPeriod();
-    $instance->copyValues($params);
-    $instance->save();
+    $membershipPeriod = new CRM_MembershipExtras_DAO_MembershipPeriod();
+    $membershipPeriod->copyValues($params);
+    $membershipPeriod->save();
 
-    CRM_Utils_Hook::post($hook, 'MembershipPeriod', $instance->id, $instance);
+    CRM_Utils_Hook::post($hook, 'MembershipPeriod', $membershipPeriod->id, $membershipPeriod);
 
-    return $instance;
+    return $membershipPeriod;
   }
 
   /**
@@ -234,9 +234,9 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
   public static function updatePeriodAndMembership($params) {
     $transaction = new CRM_Core_Transaction();
     try {
-      $instance = self::create($params);
-      $instance->find(TRUE);
-      self::updateMembershipDates($instance);
+      $membershipPeriod = self::create($params);
+      $membershipPeriod->find(TRUE);
+      self::updateMembershipDates($membershipPeriod);
     }
     catch (CRM_Core_Exception $exception) {
       $transaction->rollback();
