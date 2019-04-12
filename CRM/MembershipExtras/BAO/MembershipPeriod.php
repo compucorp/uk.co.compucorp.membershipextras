@@ -30,40 +30,6 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
   }
 
   /**
-   * Checks if the given period is the first active period for its membership.
-   *
-   * @param \CRM_MembershipExtras_DAO_MembershipPeriod $period
-   *
-   * @return bool
-   */
-  public static function isFirstActivePeriodOfMembership(CRM_MembershipExtras_DAO_MembershipPeriod $period) {
-    $firstActivePeriod = self::getFirstActivePeriod($period->membership_id);
-
-    if ($firstActivePeriod['id'] == $period->id) {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-  /**
-   * Checks if the given period is the last active period for its membership.
-   *
-   * @param \CRM_MembershipExtras_DAO_MembershipPeriod $period
-   *
-   * @return bool
-   */
-  public static function isLastActivePeriodOfMembership(CRM_MembershipExtras_DAO_MembershipPeriod $period) {
-    $lastActivePeriod = self::getLastActivePeriod($period->membership_id);
-
-    if ($lastActivePeriod['id'] == $period->id) {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-  /**
    * Creates a new period for the given membership, using the membership's
    * current state.
    *
