@@ -235,8 +235,8 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     $transaction = new CRM_Core_Transaction();
     try {
       $instance = self::create($params);
-			$instance->find(TRUE);
-			self::updateMembershipDates($instance);
+      $instance->find(TRUE);
+      self::updateMembershipDates($instance);
     }
     catch (CRM_Core_Exception $exception) {
       $transaction->rollback();
@@ -255,9 +255,9 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    * @throws \CRM_Core_Exception
    */
   private static function doesOverlapWithOtherActivePeriods($periodParams) {
-  	if (!$periodParams['is_active']) {
-  		return FALSE;
-		}
+    if (!$periodParams['is_active']) {
+      return FALSE;
+    }
 
     $periodID = CRM_Utils_Array::value('id', $periodParams, 0);
     $membershipID = CRM_Utils_Array::value('membership_id', $periodParams, 0);
