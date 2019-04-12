@@ -14,24 +14,24 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Deactivate extends CRM_Membersh
     CRM_Utils_System::setTitle(E::ts('Deactivate Membership Period?'));
   }
 
-	/**
-	 * @inheritdoc
-	 */
+  /**
+   * @inheritdoc
+   */
   protected function getFormButtons() {
-		return [
-			[
-				'type' => 'submit',
-				'name' => E::ts('Deactivate'),
-				'isDefault' => TRUE,
-			],
-			[
-				'type' => 'cancel',
-				'name' => E::ts('Cancel'),
-			],
-		];
-	}
+    return [
+      [
+        'type' => 'submit',
+        'name' => E::ts('Deactivate'),
+        'isDefault' => TRUE,
+      ],
+      [
+        'type' => 'cancel',
+        'name' => E::ts('Cancel'),
+      ],
+    ];
+  }
 
-	/**
+  /**
    * @inheritdoc
    */
   public function postProcess() {
@@ -41,16 +41,15 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Deactivate extends CRM_Membersh
         'id' => $this->id,
         'is_active' => 0,
       ]);
-    }
-    catch (Exception $exception) {
+    } catch (Exception $exception) {
       $transaction->rollback();
-			CRM_Core_Session::setStatus($exception->getMessage(), 'Period Deactivation', 'error');
+      CRM_Core_Session::setStatus($exception->getMessage(), 'Period Deactivation', 'error');
 
-			return;
+      return;
     }
 
     $transaction->commit();
-		CRM_Core_Session::setStatus(ts('Membership period has been deactivated.'), 'Membership Period Deactivation', 'success');
+    CRM_Core_Session::setStatus(ts('Membership period has been deactivated.'), 'Membership Period Deactivation', 'success');
   }
 
 }
