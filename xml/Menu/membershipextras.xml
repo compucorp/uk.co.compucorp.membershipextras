@@ -62,13 +62,13 @@
   </item>
   <item>
     <path>civicrm/membership/period/activate</path>
-    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_Activate</page_callback>
+    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_Activation_Activate</page_callback>
     <title>Membership Period Activation</title>
     <access_arguments>edit memberships</access_arguments>
   </item>
   <item>
     <path>civicrm/membership/period/deactivate</path>
-    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_Deactivate</page_callback>
+    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_Activation_Deactivate</page_callback>
     <title>Membership Period Deactivation</title>
     <access_arguments>edit memberships</access_arguments>
   </item>

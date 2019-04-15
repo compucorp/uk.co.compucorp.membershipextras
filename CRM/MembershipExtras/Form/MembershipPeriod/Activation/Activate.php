@@ -5,7 +5,7 @@ use CRM_MembershipExtras_ExtensionUtil as E;
 /**
  * Membership period activate form controller class.
  */
-class CRM_MembershipExtras_Form_MembershipPeriod_Activate extends CRM_MembershipExtras_Form_MembershipPeriod_Base {
+class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Activate extends CRM_MembershipExtras_Form_MembershipPeriod_Activation_Base {
 
   /**
    * @inheritdoc

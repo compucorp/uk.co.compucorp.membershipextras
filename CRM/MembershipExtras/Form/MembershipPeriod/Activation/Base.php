@@ -1,12 +1,11 @@
 <?php
 
-use CRM_MembershipExtras_ExtensionUtil as E;
 use CRM_MembershipExtras_Service_ContributionUtilities as ContributionUtilities;
 
 /**
  * Base for forms to update membership periods.
  */
-abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_Form {
+abstract class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Base extends CRM_Core_Form {
 
   /**
    * ID of the period to be activated.
@@ -57,8 +56,9 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Base extends CRM_Core_
   private function isPaymentStarted(CRM_MembershipExtras_BAO_MembershipPeriod $period) {
     $status = $this->getPaymentEntityStatus($period->payment_entity_table, $period->entity_id);
     $contributionStatusesValueMap = ContributionUtilities::getStatusesValueMap();
+    $statusName = CRM_Utils_Array::value($status, $contributionStatusesValueMap, '');
 
-    switch ($contributionStatusesValueMap[$status]) {
+    switch ($statusName) {
       case 'Completed':
       case 'In Progress':
       case 'Partially paid':
