@@ -30,6 +30,15 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Base extend
     $this->addButtons($this->getFormButtons());
 
     $period = CRM_MembershipExtras_BAO_MembershipPeriod::getMembershipPeriodById($this->id);
+
+    $startDate = new DateTime($period->start_date);
+    $period->start_date = $startDate->format('Y-m-d');
+
+    if (!empty($period->end_date)) {
+      $endDate = new DateTime($period->end_date);
+      $period->end_date = $endDate->format('Y-m-d');
+    }
+
     $this->assign('period', $period);
     $this->assign('isPaymentStarted', $this->isPaymentStarted($period));
   }

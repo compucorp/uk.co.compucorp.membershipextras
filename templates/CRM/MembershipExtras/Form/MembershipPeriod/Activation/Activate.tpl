@@ -2,10 +2,10 @@
   <p>
     <strong>
       {if $isPaymentStarted}
-        Would you like to activate membership period {$period->start_date|date_format} to
-        {$period->end_date|date_format}?
+        Would you like to activate membership period {$period->start_date|crmDate} to
+        {$period->end_date|crmDate}?
       {else}
-        Membership period {$period->start_date|date_format} to {$period->end_date|date_format} does not
+        Membership period {$period->start_date|crmDate} to {$period->end_date|crmDate} does not
         have any fulfilled payment. Would you still like to activate it?
       {/if}
     </strong>
