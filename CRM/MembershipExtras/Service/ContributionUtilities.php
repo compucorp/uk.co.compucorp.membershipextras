@@ -5,26 +5,6 @@
 class CRM_MembershipExtras_Service_ContributionUtilities {
 
   /**
-   * Obtains list of contribution statuses.
-   *
-   * @return array
-   */
-  private static function getContributionStatuses() {
-    try {
-      $contributionStatuses = civicrm_api3('OptionValue', 'get', [
-        'sequential' => 1,
-        'return' => ['name', 'value'],
-        'option_group_id' => 'contribution_status',
-        'options' => ['limit' => 0],
-      ])['values'];
-    } catch (Exception $e) {
-      return [];
-    }
-
-    return $contributionStatuses;
-  }
-
-  /**
    * Gets contribution Statuses Name to value Mapping
    *
    * @return array $contributionStatusesNameMap
@@ -54,6 +34,26 @@ class CRM_MembershipExtras_Service_ContributionUtilities {
     }
 
     return $contributionStatusesValueMap;
+  }
+
+  /**
+   * Obtains list of contribution statuses.
+   *
+   * @return array
+   */
+  private static function getContributionStatuses() {
+    try {
+      $contributionStatuses = civicrm_api3('OptionValue', 'get', [
+        'sequential' => 1,
+        'return' => ['name', 'value'],
+        'option_group_id' => 'contribution_status',
+        'options' => ['limit' => 0],
+      ])['values'];
+    } catch (Exception $e) {
+      return [];
+    }
+
+    return $contributionStatuses;
   }
 
 }
