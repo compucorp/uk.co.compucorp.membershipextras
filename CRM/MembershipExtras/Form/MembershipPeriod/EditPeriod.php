@@ -98,7 +98,10 @@ class CRM_MembershipExtras_Form_MembershipPeriod_EditPeriod extends CRM_Core_For
     }
 
     $params['start_date'] = (new DateTime($params['start_date']))->format('Y-m-d');
-    $params['end_date'] = (new DateTime($params['end_date']))->format('Y-m-d');
+
+    if (!empty($params['end_date'])) {
+      $params['end_date'] = (new DateTime($params['end_date']))->format('Y-m-d');
+    }
 
     try {
       MembershipPeriod::updatePeriodAndMembership($params);
