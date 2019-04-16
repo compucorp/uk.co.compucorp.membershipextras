@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
 
   /***
@@ -29,6 +31,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $recurContributionID = $this->getMembershipLastRecurContributionID();
     $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+    $this->createRecurringSubscriptionLineItems($recurContributionID);
   }
 
   /**
@@ -65,6 +68,17 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     ])['values'][0]['contribution_id.contribution_recur_id'];
 
     return $recurContributionID;
+  }
+
+  /**
+   * Creates recurring contribution's line items to set up current and next
+   * periods.
+   *
+   * @param $recurContributionID
+   */
+  private function createRecurringSubscriptionLineItems($recurContributionID ) {
+    $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
+    $lineItemCreator->create();
   }
 
 }

@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+
 /**
  * Alters action links for recurring contributions.
  */
@@ -76,16 +78,9 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
     $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $this->recurringContributionID
     ]);
-
     $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
-    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
-    $isOfflineContribution = in_array($paymentProcessorID, $manualPaymentProcessors);
 
-    if ($isOfflineContribution || empty($paymentProcessorID)) {
-      return TRUE;
-    }
-
-    return FALSE;
+    return ManualPaymentProcessors::isManualPaymentProcessor($paymentProcessorID);
   }
 
 }

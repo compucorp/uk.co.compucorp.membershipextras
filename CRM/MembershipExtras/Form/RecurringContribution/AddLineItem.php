@@ -172,13 +172,9 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
         $taxRates = CRM_Core_PseudoConstant::getTaxRates();
         $rate = CRM_Utils_Array::value($recurringLineItem['financial_type_id'], $taxRates, 0);
 
-        $lineItemParams['tax_amount'] = MoneyUtilities::roundToCurrencyPrecision(
-          ($firstAmountTotal * ($rate / 100)) / (1 + ($rate / 100))
-        );
-        $lineItemParams['unit_price'] = MoneyUtilities::roundToCurrencyPrecision(
-          $firstAmountTotal - $lineItemParams['tax_amount']
-        );
-        $lineItemParams['line_total'] = $lineItemParams['unit_price'];
+        $lineItemParams['unit_price'] = MoneyUtilities::roundToCurrencyPrecision($firstAmountTotal);
+        $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
+        $lineItemParams['tax_amount'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['line_total'] * ($rate / 100));
 
         $firstContribution = FALSE;
       }

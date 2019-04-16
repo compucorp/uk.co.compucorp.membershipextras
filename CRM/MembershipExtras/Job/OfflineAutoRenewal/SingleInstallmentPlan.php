@@ -115,7 +115,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    * @inheritdoc
    */
   public function renew() {
-    $this->duplicateRecurringLineItems($this->currentRecurContributionID);
+    $this->endCurrentLineItemsAndCreateNewOnesForNextPeriod($this->currentRecurContributionID);
     $this->updateRecurringContributionAmount($this->currentRecurContributionID);
     $this->setNewRecurringContribution();
     $this->buildLineItemsParams();
@@ -124,6 +124,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
 
     $this->createMissingPaymentPlanMemberships();
     $this->recordPaymentPlanFirstContribution();
+    $this->renewPaymentPlanMemberships();
   }
 
   /**
@@ -143,11 +144,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    *
    * @param $recurringContributionID
    */
-  private function duplicateRecurringLineItems($recurringContributionID) {
+  private function endCurrentLineItemsAndCreateNewOnesForNextPeriod($recurringContributionID) {
+    $newStartDate = new DateTime($this->calculateNoInstallmentsPaymentPlanStartDate());
+    $newEndDate = new DateTime($newStartDate->format('Y-m-d'));
+    $newEndDate->sub(new DateInterval('P1D'));
+
     $lineItems = civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
       'contribution_recur_id' => $recurringContributionID,
-      'auto_renew' => 1,
       'is_removed' => 0,
       'end_date' => ['IS NULL' => 1],
       'api.LineItem.getsingle' => [
@@ -159,34 +163,54 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     ]);
 
     foreach ($lineItems['values'] as $line) {
-      $lineItemParams = $line['api.LineItem.getsingle'];
-      unset($lineItemParams['id']);
-      $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams);
-      $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
-      $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
+      $this->endLineItem($line['id'], $newEndDate);
 
-      $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
-
-      $newStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
-      CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
-        'contribution_recur_id' => $recurringContributionID,
-        'line_item_id' => $newLineItem['id'],
-        'start_date' => $newStartDate,
-        'auto_renew' => 1,
-      ]);
-
-      $endDate = new DateTime($newStartDate);
-      $endDate->sub(new DateInterval('P1D'));
-      CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
-        'id' => $line['id'],
-        'end_date' => $endDate->format('Y-m-d'),
-      ]);
+      if ($line['auto_renew']) {
+        $this->duplicateSubscriptionLine($line, $newStartDate);
+      }
     }
   }
 
   /**
-   * Calculates the new start date for the payment plan
-   * if its paid with no installments.
+   * Sets end date for given subscription line item ID.
+   *
+   * @param $lineID
+   * @param \DateTime $endDate
+   */
+  private function endLineItem($lineID, DateTime $endDate) {
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+      'id' => $lineID,
+      'end_date' => $endDate->format('Y-m-d'),
+    ]);
+  }
+
+  /**
+   * Duplicates given subscription line with the given start date.
+   *
+   * @param array $line
+   * @param \DateTime $startDate
+   */
+  private function duplicateSubscriptionLine($line, DateTime $startDate) {
+    $lineItemParams = $line['api.LineItem.getsingle'];
+    $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams);
+    $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
+    $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
+    unset($lineItemParams['id']);
+
+    $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
+
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+      'contribution_recur_id' => $line['contribution_recur_id'],
+      'line_item_id' => $newLineItem['id'],
+      'start_date' => $startDate->format('Y-m-d'),
+      'auto_renew' => 1,
+    ]);
+  }
+
+  /**
+   * Calculates the new start date for the payment plan if its paid with no
+   * installments.
+   *
    * @return string
    */
   private function calculateNoInstallmentsPaymentPlanStartDate() {
