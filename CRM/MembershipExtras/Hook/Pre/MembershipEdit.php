@@ -64,6 +64,37 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
+   * Determines if the payment for a membership
+   * subscription is offline (pay later) and paid
+   * as payment plan.
+   *
+   * @return bool
+   */
+  private function isOfflinePaymentPlanMembership() {
+    $recContributionID = $this->getPaymentRecurringContributionID();
+
+    if ($recContributionID === NULL) {
+      return FALSE;
+    }
+
+    $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'id' => $recContributionID,
+    ])['values'][0];
+
+    $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
+    $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor(
+      $recurringContribution['payment_processor_id']
+    );
+
+    if ($isOfflineContribution && $isPaymentPlanRecurringContribution) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
    * Prevents extending offline non pending payment plan Membership.
    *
    * If a membership price will be paid using
