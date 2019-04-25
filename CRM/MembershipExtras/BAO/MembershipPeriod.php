@@ -231,7 +231,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    *
    * @throws CRM_Core_Exception
    */
-  public static function updatePeriodAndMembership($params) {
+  public static function updatePeriod($params) {
     $transaction = new CRM_Core_Transaction();
     try {
       $membershipPeriod = self::create($params);
@@ -255,25 +255,23 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    * @throws \CRM_Core_Exception
    */
   private static function doesOverlapWithOtherActivePeriods($periodParams) {
-    if (!$periodParams['is_active']) {
-      return FALSE;
-    }
-
     $periodID = CRM_Utils_Array::value('id', $periodParams, 0);
     $membershipID = CRM_Utils_Array::value('membership_id', $periodParams, 0);
     $periodNewStartDate = CRM_Utils_Array::value('start_date', $periodParams, '');
     $periodNewEndDate = CRM_Utils_Array::value('end_date', $periodParams, '');
+		$periodIsActive = CRM_Utils_Array::value('is_active', $periodParams, '');
 
     if (!empty($periodID)) {
       $membershipPeriod = self::getMembershipPeriodById($periodID);
       $membershipID = $membershipID ?: $membershipPeriod->membership_id;
       $periodNewStartDate = $periodNewStartDate ?: $membershipPeriod->start_date;
       $periodNewEndDate = $periodNewEndDate ?: $membershipPeriod->end_date;
+      $periodIsActive = $periodIsActive ?: $membershipPeriod->is_active;
     }
 
-    if (empty($membershipID)) {
-      throw new CRM_Core_Exception("Can't calculate period overlapping without a membership ID!");
-    }
+		if (!$periodIsActive) {
+			return FALSE;
+		}
 
     if (empty($periodNewStartDate)) {
       throw new CRM_Core_Exception("Can't calculate period overlapping without period start date!");
@@ -301,7 +299,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     $firstActivePeriod = self::getFirstActivePeriod($membershipId);
     $lastActivePeriod = self::getLastActivePeriod($membershipId);
 
-    $joinDate = $startDate = CRM_Utils_Array::value('start_date', $firstActivePeriod, '');
+    $joinDate = CRM_Utils_Array::value('start_date', $firstActivePeriod, '');
     $endDate = CRM_Utils_Array::value('end_date', $lastActivePeriod, '');
 
     $params = [
@@ -311,17 +309,14 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
 
     if (!empty($joinDate)) {
       $params['join_date'] = $joinDate;
-    }
-
-    if (!empty($startDate)) {
-      $params['start_date'] = $startDate;
+			$params['start_date'] = $joinDate;
     }
 
     if (!empty($endDate)) {
       $params['end_date'] = $endDate;
     }
 
-    if ($joinDate || $startDate || $endDate) {
+    if ($joinDate || $endDate) {
       civicrm_api3('Membership', 'create', $params);
     }
   }

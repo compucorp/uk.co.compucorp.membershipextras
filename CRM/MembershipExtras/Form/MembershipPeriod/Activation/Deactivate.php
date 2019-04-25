@@ -37,7 +37,7 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Deactivate extends C
   public function postProcess() {
     $transaction = new CRM_Core_Transaction();
     try {
-      CRM_MembershipExtras_BAO_MembershipPeriod::updatePeriodAndMembership([
+      CRM_MembershipExtras_BAO_MembershipPeriod::updatePeriod([
         'id' => $this->id,
         'is_active' => 0,
       ]);
