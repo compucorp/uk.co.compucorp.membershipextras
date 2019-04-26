@@ -148,7 +148,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
       'api.Contribution.get' => ['id' => '$value.contribution_id'],
       'options' => [
         'sort' => 'contribution_id DESC',
-        'limit' => 1
+        'limit' => 1,
       ],
     ]);
 
@@ -237,8 +237,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
       $membershipPeriod = self::create($params);
       $membershipPeriod->find(TRUE);
       self::updateMembershipDates($membershipPeriod);
-    }
-    catch (CRM_Core_Exception $exception) {
+    } catch (CRM_Core_Exception $exception) {
       $transaction->rollback();
       throw $exception;
     }
@@ -259,7 +258,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     $membershipID = CRM_Utils_Array::value('membership_id', $periodParams, 0);
     $periodNewStartDate = CRM_Utils_Array::value('start_date', $periodParams, '');
     $periodNewEndDate = CRM_Utils_Array::value('end_date', $periodParams, '');
-		$periodIsActive = CRM_Utils_Array::value('is_active', $periodParams, '');
+    $periodIsActive = CRM_Utils_Array::value('is_active', $periodParams, '');
 
     if (!empty($periodID)) {
       $membershipPeriod = self::getMembershipPeriodById($periodID);
@@ -269,9 +268,9 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
       $periodIsActive = $periodIsActive ?: $membershipPeriod->is_active;
     }
 
-		if (!$periodIsActive) {
-			return FALSE;
-		}
+    if (!$periodIsActive) {
+      return FALSE;
+    }
 
     if (empty($periodNewStartDate)) {
       throw new CRM_Core_Exception("Can't calculate period overlapping without period start date!");
@@ -309,7 +308,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
 
     if (!empty($joinDate)) {
       $params['join_date'] = $joinDate;
-			$params['start_date'] = $joinDate;
+      $params['start_date'] = $joinDate;
     }
 
     if (!empty($endDate)) {
