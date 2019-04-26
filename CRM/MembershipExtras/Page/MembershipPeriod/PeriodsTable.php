@@ -32,12 +32,13 @@ class CRM_MembershipExtras_Page_MembershipPeriod_PeriodsTable extends CRM_Core_P
   private function getPeriodCSSClass($membershipPeriodEntity) {
     $periodEndDate = (new DateTime($membershipPeriodEntity->end_date))->format('Ymd');
     $currentDate = (new DateTime())->format('Ymd');
-    if ($currentDate > $periodEndDate) {
-      return 'membership-period-in-past';
-    }
 
     if ($membershipPeriodEntity->is_active == 0) {
       return 'membership-period-inactive';
+    }
+
+    if ($currentDate > $periodEndDate) {
+      return 'membership-period-in-past';
     }
 
     return '';

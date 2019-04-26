@@ -81,20 +81,27 @@ class CRM_MembershipExtras_Form_MembershipPeriod_EditPeriod extends CRM_Core_For
 
   public function postProcess() {
     $submittedValues = $this->exportValues();
-    $paramKeysToUpdate = [
-      'start_date',
-      'end_date',
-      'is_active',
-      'is_historic',
-    ];
 
+    $fieldsToUpdate = [
+      ['name' => 'start_date', 'default_value' => NULL],
+      ['name' => 'end_date', 'default_value' => NULL],
+      ['name' => 'is_active', 'default_value' => 0],
+      ['name' => 'is_historic', 'default_value' => 0],
+    ];
     $params['id'] = $this->id;
-    foreach ($paramKeysToUpdate as $paramKey) {
-      $params[$paramKey] = CRM_Utils_Array::value($paramKey, $submittedValues, NULL);
+    foreach ($fieldsToUpdate as $field) {
+      $params[$field['name']] = CRM_Utils_Array::value(
+        $field['name'],
+        $submittedValues,
+        $field['default_value']
+      );
     }
 
     $params['start_date'] = (new DateTime($params['start_date']))->format('Y-m-d');
-    $params['end_date'] = (new DateTime($params['end_date']))->format('Y-m-d');
+
+    if (!empty($params['end_date'])) {
+      $params['end_date'] = (new DateTime($params['end_date']))->format('Y-m-d');
+    }
 
     try {
       MembershipPeriod::updatePeriod($params);

@@ -36,7 +36,6 @@
     <title>RecurringContribution_AddDonationLineItem</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
-
   <item>
     <path>civicrm/membership/periods</path>
     <page_callback>CRM_MembershipExtras_Page_MembershipPeriod_PeriodsTable</page_callback>
@@ -60,5 +59,17 @@
     <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_DeletePeriod</page_callback>
     <title>Delete Membership Period</title>
     <access_arguments>delete membership period</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/membership/period/activate</path>
+    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_Activation_Activate</page_callback>
+    <title>Membership Period Activation</title>
+    <access_arguments>edit memberships</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/membership/period/deactivate</path>
+    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_Activation_Deactivate</page_callback>
+    <title>Membership Period Deactivation</title>
+    <access_arguments>edit memberships</access_arguments>
   </item>
 </menu>
