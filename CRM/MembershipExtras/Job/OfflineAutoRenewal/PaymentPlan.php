@@ -583,8 +583,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'contact_id' => $this->currentRecurringContribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
       'join_date' => date('YmdHis'),
-      'start_date' => $lineItem['start_date'],
-      'end_date' => $lineItem['end_date'],
+      'start_date' => CRM_Utils_Array::value('start_date', $lineItem, NULL),
+      'end_date' => CRM_Utils_Array::value('end_date', $lineItem, NULL),
       'contribution_recur_id' => $this->newRecurringContributionID,
     ]);
 

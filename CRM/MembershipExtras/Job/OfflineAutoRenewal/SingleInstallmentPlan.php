@@ -124,7 +124,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
 
     $this->createMissingPaymentPlanMemberships();
     $this->recordPaymentPlanFirstContribution();
-    $this->renewPaymentPlanMemberships();
   }
 
   /**
