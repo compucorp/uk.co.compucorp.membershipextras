@@ -84,7 +84,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
 
     $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
     $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor(
-      $recurringContribution['payment_processor_id']
+      CRM_Utils_Array::value('payment_processor_id', $recurringContribution, NULL)
     );
 
     if ($isOfflineContribution && $isPaymentPlanRecurringContribution) {
@@ -160,7 +160,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     ])['values'][0];
 
     $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
-    $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor($recurringContribution['payment_processor_id']);
+    $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor(
+      CRM_Utils_Array::value('payment_processor_id', $recurringContribution, NULL)
+    );
 
     $pendingContributionStatusId = array_search('Pending', CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name'));
     $isNonPending = !($recurringContribution['contribution_status_id'] == $pendingContributionStatusId);

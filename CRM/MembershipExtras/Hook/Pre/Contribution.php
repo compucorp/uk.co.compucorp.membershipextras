@@ -54,19 +54,21 @@ class CRM_MembershipExtras_Hook_Pre_Contribution {
    * Checks if total amount is ok vs sum of line items.
    */
   private function rectifyAmountsBasedOnLineItems() {
-    $lineItems = $this->getContributionLineItems();
-    $totalAmount = 0;
-    $taxAmount = 0;
+    $calculatedTotalAmount = 0;
+    $calculatedTaxAmount = 0;
+    $givenTotalAmount = CRM_Utils_Array::value('total_amount', $this->params, 0);
+    $givenTaxAmount = CRM_Utils_Array::value('tax_amount', $this->params, 0);
 
+    $lineItems = $this->getContributionLineItems();
     foreach ($lineItems as $line) {
       $lineTax = CRM_Utils_Array::value('tax_amount', $line, 0);
-      $totalAmount += $line['line_total'] + $lineTax;
-      $taxAmount += $lineTax;
+      $calculatedTotalAmount += $line['line_total'] + $lineTax;
+      $calculatedTaxAmount += $lineTax;
     }
 
-    if ($totalAmount != $this->params['total_amount'] || $taxAmount != $this->params['tax_amount']) {
-      $this->params['total_amount'] = $totalAmount;
-      $this->params['tax_amount'] = $taxAmount;
+    if ($calculatedTotalAmount != $givenTotalAmount || $calculatedTaxAmount != $givenTaxAmount) {
+      $this->params['total_amount'] = $calculatedTotalAmount;
+      $this->params['tax_amount'] = $calculatedTaxAmount;
     }
   }
 
