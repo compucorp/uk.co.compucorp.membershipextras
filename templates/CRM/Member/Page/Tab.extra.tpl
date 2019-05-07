@@ -42,6 +42,14 @@
         $(this).toggleClass('period-extended');
         e.preventDefault();
       });
+    
+    // Refreshes memberships when a period is modified.
+    $('body').on('crmPopupFormSuccess ', function (e, data) {
+      let eventTarget = $(e.target);
+      if (eventTarget.hasClass('period-action')) {
+        CRM.refreshParent(eventTarget.closest('.dataTable'));
+      }
+    });
   });
 </script>
 {/literal}

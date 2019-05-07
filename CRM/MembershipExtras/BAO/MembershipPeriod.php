@@ -13,10 +13,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
   public static function create($params) {
     $hook = empty($params['id']) ? 'create' : 'edit';
 
-    if (self::doesOverlapWithOtherActivePeriods($params)) {
-      throw new CRM_Core_Exception('The new end date of this membership period overlaps with
-       another activated membership period. please review your changes');
-    }
+    self::validateOverlapWithOtherActivePeriods($params);
 
     CRM_Utils_Hook::pre($hook, 'MembershipPeriod', CRM_Utils_Array::value('id', $params), $params);
 
@@ -253,7 +250,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    * @return bool
    * @throws \CRM_Core_Exception
    */
-  private static function doesOverlapWithOtherActivePeriods($periodParams) {
+  private static function validateOverlapWithOtherActivePeriods($periodParams) {
     $periodID = CRM_Utils_Array::value('id', $periodParams, 0);
     $membershipID = CRM_Utils_Array::value('membership_id', $periodParams, 0);
     $periodNewStartDate = CRM_Utils_Array::value('start_date', $periodParams, '');
@@ -269,30 +266,66 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     }
 
     if (!$periodIsActive) {
-      return FALSE;
+      return;
     }
 
     if (empty($periodNewStartDate)) {
       throw new CRM_Core_Exception("Can't calculate period overlapping without period start date!");
     }
 
+    $overlappedMembershipPeriods = self::getOverlappingPeriods($periodID, $membershipID, $periodNewStartDate, $periodNewEndDate);
+    if ($overlappedMembershipPeriods->N > 0) {
+      $overlappingStartDate = new DateTime($periodNewStartDate);
+      $overlappingEndDate = new DateTime($periodNewEndDate);
+      $conflictingPeriodStartDate = new DateTime($overlappedMembershipPeriods->start_date);
+      $conflictingPeriodEndDate = new DateTime($overlappedMembershipPeriods->end_date);
+      
+      $isEndDateOverlap = $overlappingEndDate > $conflictingPeriodStartDate && $overlappingStartDate < $conflictingPeriodStartDate;
+      if ($isEndDateOverlap) {
+        throw new CRM_Core_Exception(
+          'The new end date of this membership period overlaps with another
+          activated membership period. Please review your changes.'
+        );
+      }
+      
+      $isStartDateOverlap = $overlappingStartDate < $conflictingPeriodEndDate && $overlappingEndDate > $conflictingPeriodEndDate;
+      if ($isStartDateOverlap) {
+        throw new CRM_Core_Exception(
+          'The new start date of this membership period overlaps with
+          another activated membership period. Please review your changes.'
+        );
+      }
+      
+      throw new CRM_Core_Exception('Undetermined problem found validating period overlapping.');
+    }
+  }
+
+  /**
+   * Obtains BAO used to query for overlapping periods.
+   * 
+   * @param int $periodID
+   * @param int $membershipID
+   * @param string $periodNewStartDate
+   * @param string $periodNewEndDate
+   * 
+   * @return \self
+   */
+  private static function getOverlappingPeriods($periodID, $membershipID, $periodNewStartDate, $periodNewEndDate) {
     $overlappedMembershipPeriods = new self();
     $overlappedMembershipPeriods->membership_id = $membershipID;
     $overlappedMembershipPeriods->is_active = TRUE;
+    $overlappedMembershipPeriods->whereAdd('id != ' . $periodID);
     $overlappedMembershipPeriods->whereAdd('"' . $periodNewStartDate . '" <= end_date');
 
     if (!empty($periodNewEndDate)) {
       $overlappedMembershipPeriods->whereAdd('"' . $periodNewEndDate . '" >= start_date');
     }
 
-    $overlappedMembershipPeriods->whereAdd('id != ' . $periodID);
-    if ($overlappedMembershipPeriods->find()) {
-      return TRUE;
-    }
-
-    return FALSE;
+    $overlappedMembershipPeriods->find(TRUE);
+    
+    return $overlappedMembershipPeriods;
   }
-
+  
   private static function updateMembershipDates($membershipPeriod) {
     $membershipId = $membershipPeriod->membership_id;
     $firstActivePeriod = self::getFirstActivePeriod($membershipId);
