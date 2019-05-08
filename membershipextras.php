@@ -295,22 +295,6 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
 }
 
 /**
- * Implements hrcore_civicrm_pageRun.
- *
- * @link https://docs.civicrm.org/dev/en/master/hooks/hook_civicrm_pageRun/
- */
-function membershipextras_civicrm_pageRun($page) {
-  $hooks = [
-    new CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate(),
-    new CRM_MembershipExtras_Hook_PageRun_MemberPageTabColourUpdate(),
-    new CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate()
-  ];
-  foreach ($hooks as $hook) {
-    $hook->handle($page);
-  }
-}
-
-/**
  * Implements hook_civicrm_validateForm()
  */
 function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
@@ -384,5 +368,14 @@ function membershipextras_civicrm_pageRun($page) {
       1,
       'page-header'
     );
+  }
+  
+  $hooks = [
+    new CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate(),
+    new CRM_MembershipExtras_Hook_PageRun_MemberPageTabColourUpdate(),
+    new CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate()
+  ];
+  foreach ($hooks as $hook) {
+    $hook->handle($page);
   }
 }
