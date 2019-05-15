@@ -1,5 +1,4 @@
 <div class="crm-block crm-form-block">
-  <input/>
     <table class="form-layout-compressed">
         <tbody>
         <tr>

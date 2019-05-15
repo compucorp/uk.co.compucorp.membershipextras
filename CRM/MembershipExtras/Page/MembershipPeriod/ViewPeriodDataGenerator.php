@@ -5,6 +5,9 @@ class CRM_MembershipExtras_Page_MembershipPeriod_ViewPeriodDataGenerator {
 
   private $periodId;
 
+  /**
+   * @var MembershipPeriod
+   */
   private $membershipPeriod;
 
   public function __construct($periodId) {
@@ -48,12 +51,14 @@ class CRM_MembershipExtras_Page_MembershipPeriod_ViewPeriodDataGenerator {
     $membershipPeriod['membership_type_name'] = $membershipType;
     $membershipPeriod['is_active'] = $membershipPeriod['is_active'] ? ts('Yes') : ts('No');
     $membershipPeriod['is_historic'] = $membershipPeriod['is_historic'] ? ts('Yes') : ts('No');
-    
+
     $startDate = new DateTime($membershipPeriod['start_date']);
     $membershipPeriod['start_date'] = $startDate->format('Y-m-d');
 
     $endDate = new DateTime($membershipPeriod['end_date']);
     $membershipPeriod['end_date'] = $endDate->format('Y-m-d');
+
+    $membershipPeriod['term_number'] = $this->membershipPeriod->calculateTermNumber();
 
     return $membershipPeriod;
   }
