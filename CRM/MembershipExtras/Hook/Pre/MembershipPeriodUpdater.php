@@ -217,8 +217,12 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater {
         $periodToUpdate->start_date = $newStartDate;
         $periodToUpdate->end_date = $newEndDate;
         // we also update the membership join date to match the new start date
-        $this->membershipHookParams['join_date'] = date('Y-m-d', strtotime($this->membershipHookParams['start_date']));
-        $this->calculatedMembershipJoinDate = $newStartDate;
+        // if there are no other active periods
+        $isThereActivePeriods = !empty(MembershipPeriod::getFirstActivePeriod($this->membership['id']));
+        if (!$isThereActivePeriods) {
+          $this->membershipHookParams['join_date'] = date('Y-m-d', strtotime($this->membershipHookParams['start_date']));
+          $this->calculatedMembershipJoinDate = $newStartDate;
+        }
       }
     }
   }
