@@ -93,6 +93,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
 
     if ($membershipID) {
       $this->params['id'] = $membershipID;
+      $this->createPeriodForTheUpdatedMembershipDates();
     }
   }
 
@@ -112,6 +113,26 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
     }
 
     return FALSE;
+  }
+
+  private function createPeriodForTheUpdatedMembershipDates() {
+    $newPeriodParams = [
+      'is_active' => FALSE,
+      'membership_id' => $this->params['id'],
+      'start_date' => CRM_Utils_Array::value('start_date', $this->params),
+      'end_date' => CRM_Utils_Array::value('end_date', $this->params),
+    ];
+
+    $completedStatus = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+    $relatedContributionStatus = CRM_Utils_Array::value('contribution_status_id', $this->params);
+    if ($completedStatus == $relatedContributionStatus) {
+      $newPeriodParams['is_active'] = TRUE;
+    } else {
+      unset($this->params['start_date']);
+      unset($this->params['end_date']);
+    }
+
+    CRM_MembershipExtras_BAO_MembershipPeriod::create($newPeriodParams);
   }
 
 }

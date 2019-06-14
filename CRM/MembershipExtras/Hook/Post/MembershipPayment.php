@@ -256,13 +256,19 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
     $membershipId = $this->membershipPayment->membership_id;
     $lastActivePeriod = CRM_MembershipExtras_BAO_MembershipPeriod::getLastActivePeriod($membershipId);
     if (!empty($lastActivePeriod) && !empty($lastActivePeriod['end_date'])) {
-      $todayDate = new DateTime();
+      $renewalDate = CRM_Utils_Request::retrieve('renewal_date', 'String');
+      if ($renewalDate) {
+        $renewalDate = (new DateTime($renewalDate))->format('Y-m-d');
+      } else {
+        $renewalDate = (new DateTime())->format('Y-m-d');
+      }
+
       $endOfLastActivePeriod = new DateTime($lastActivePeriod['end_date']);
       $endOfLastActivePeriod->add(new DateInterval('P1D'));
-      if ($endOfLastActivePeriod > $todayDate) {
+      if ($endOfLastActivePeriod->format('Y-m-d') > $renewalDate) {
         $calculatedStartDate =  $endOfLastActivePeriod->format('Y-m-d');
       } else {
-        $calculatedStartDate = $todayDate->format('Y-m-d');
+        $calculatedStartDate = $renewalDate;
       }
     } else {
       $calculatedStartDate = new DateTime($this->membership['join_date']);
