@@ -68,6 +68,7 @@ function civicrm_api3_membership_type_getproratedamount($params) {
     'membership_type_id' => $membershipTypeID,
     'pro_rated_amount' => $proRata
   ];
+  $extraParams = ['duration_in_days' => $membershipTypeDuration->calculateDaysBasedOnDates($startDate, $endDate)];
 
-  return civicrm_api3_create_success($results, $params);
+  return civicrm_api3_create_success($results, $params, null, 'create', $membershipType, $extraParams);
 }

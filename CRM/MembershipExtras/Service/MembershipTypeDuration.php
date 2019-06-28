@@ -54,6 +54,9 @@ class CRM_MembershipExtras_Service_MembershipTypeDuration {
    * @return int
    */
   public function calculateDaysBasedOnDates(DateTime $startDate = NULL, DateTime $endDate = NULL) {
+    if ($startDate) {
+      $this->setMembershipStartAndEndDates($startDate);
+    }
     $adjustedStartDate = $startDate ? $startDate : $this->membershipStartDate;
     $adjustedEndDate = $endDate ? $endDate : $this->membershipEndDate;
 
@@ -88,12 +91,14 @@ class CRM_MembershipExtras_Service_MembershipTypeDuration {
    * today as the start date and adding the duration days to today's date
    * to get the end date. The end date is adjusted because the duration in
    * days includes both the start and end date.
+   *
+   * @param DateTime|NULL $startDate
    */
-  private function setMembershipStartAndEndDates() {
+  private function setMembershipStartAndEndDates(DateTime $startDate = NULL) {
     $durationInDays = $this->getDurationInDays() - 1;
-    $datetime = new DateTime();
+    $datetime = $startDate ? clone $startDate : new DateTime();
     $datetime->modify("+{$durationInDays} day");
     $this->membershipEndDate = $datetime;
-    $this->membershipStartDate = new DateTime();
+    $this->membershipStartDate = $startDate ? clone $startDate : new DateTime();
   }
 }
