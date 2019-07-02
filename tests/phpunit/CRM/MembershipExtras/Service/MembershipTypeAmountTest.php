@@ -18,7 +18,8 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountTest extends BaseHeadless
     $membershipType = MembershipTypeFabricator::fabricate(['minimum_fee' => 120]);
     $expectedProrata = 20; //i.e 60/360 *120
     $membershipTypeDuration = $this->getMembershipTypeDuration($originalDurationDays, $calculatedDays);
-    $membershipTypeTaxAmount = $this->getMembershipTypeTaxAmount($membershipType);
+    $taxAmount = 0;
+    $membershipTypeTaxAmount = $this->getMembershipTypeTaxAmount($membershipType, $expectedProrata, $taxAmount);
     $membershipTypeAmount = new MembershipTypeAmount($membershipTypeDuration, $membershipTypeTaxAmount);
     $proRata = $membershipTypeAmount->calculateProRata($membershipType, new DateTime(), new DateTime());
     $this->assertEquals($expectedProrata, $proRata);
@@ -27,26 +28,28 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountTest extends BaseHeadless
   public function testCalculateProRataWithTax() {
     $originalDurationDays = 360;
     $calculatedDays = 60;
-    $membershipType = MembershipTypeFabricator::fabricate(['minimum_fee' => 120]);
-    $expectedProrata = 30; //i.e 60/360 *120 + 10tax
+    $membershipType = MembershipTypeFabricator::fabricate(['minimum_fee' => 120], TRUE);
+    $expectedProrata = 20; //i.e 60/360 *120 + 10tax
+    $taxAmount = 30;
+    $expectedTotal =  $expectedProrata + $taxAmount;
     $membershipTypeDuration = $this->getMembershipTypeDuration($originalDurationDays, $calculatedDays);
-    $membershipTypeTaxAmount = $this->getMembershipTypeTaxAmount($membershipType, 10);
+    $membershipTypeTaxAmount = $this->getMembershipTypeTaxAmount($membershipType, $expectedProrata, $taxAmount);
     $membershipTypeAmount = new MembershipTypeAmount($membershipTypeDuration, $membershipTypeTaxAmount);
     $proRata = $membershipTypeAmount->calculateProRata($membershipType, new DateTime(), new DateTime());
-    $this->assertEquals($expectedProrata, $proRata);
+    $this->assertEquals($expectedTotal, $proRata);
   }
 
   private function getMembershipTypeDuration($originalDays, $calculatedDays) {
     $membershipTypeDuration = $this->prophesize(MembershipTypeDuration::class);
     $membershipTypeDuration->calculateOriginalInDays()->willReturn($originalDays);
-    $membershipTypeDuration->calculateDaysBasedOnDates(new DateTime(), new DateTime())->willReturn($calculatedDays);
+    $membershipTypeDuration->calculateDaysBasedOnDates(new DateTime(), new DateTime(), NULL)->willReturn($calculatedDays);
 
     return $membershipTypeDuration->reveal();
   }
 
-  private function getMembershipTypeTaxAmount($membershipType, $amount = 0) {
+  private function getMembershipTypeTaxAmount($membershipType, $prorata, $amount = 0) {
     $membershipTypeTaxAmount = $this->prophesize(MembershipTypeTaxAmount::class);
-    $membershipTypeTaxAmount->calculateTax($membershipType)->willReturn($amount);
+    $membershipTypeTaxAmount->calculateTax($membershipType, $prorata)->willReturn($amount);
 
     return $membershipTypeTaxAmount->reveal();
   }

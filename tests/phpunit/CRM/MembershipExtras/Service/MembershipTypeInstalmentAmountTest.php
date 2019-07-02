@@ -3,6 +3,7 @@
 use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount as MembershipTypeInstalmentAmount;
+use CRM_MembershipExtras_Service_MembershipTypeDates as MembershipTypeDates;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as InvalidMembershipTypeInstalmentAmount;
 
 
@@ -26,9 +27,7 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
     $this->setExpectedException(InvalidMembershipTypeInstalmentAmount::class, InvalidMembershipTypeInstalmentAmount::FIXED_PERIOD_TYPE);
     $this->getMembershipTypeInstalmentAmount(
       $membershipTypes,
-      $membershipTaxAmount,
-      new DateTime('2019-06-15'),
-      new DateTime('2019-06-30')
+      $membershipTaxAmount
     );
   }
 
@@ -45,9 +44,7 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
     $this->setExpectedException(InvalidMembershipTypeInstalmentAmount::class, InvalidMembershipTypeInstalmentAmount::SAME_PERIOD_START_DAY);
     $this->getMembershipTypeInstalmentAmount(
       $membershipTypes,
-      $membershipTaxAmount,
-      new DateTime('2019-06-15'),
-      new DateTime('2019-06-30')
+      $membershipTaxAmount
     );
   }
 
@@ -64,9 +61,7 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
     $this->setExpectedException(InvalidMembershipTypeInstalmentAmount::class, InvalidMembershipTypeInstalmentAmount::ONE_YEAR_DURATION);
     $this->getMembershipTypeInstalmentAmount(
       $membershipTypes,
-      $membershipTaxAmount,
-      new DateTime('2019-06-15'),
-      new DateTime('2019-06-30')
+      $membershipTaxAmount
     );
   }
 
@@ -85,9 +80,7 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
     $this->setExpectedException(InvalidMembershipTypeInstalmentAmount::class, InvalidMembershipTypeInstalmentAmount::ONE_YEAR_DURATION);
     $this->getMembershipTypeInstalmentAmount(
       $membershipTypes,
-      $membershipTaxAmount,
-      new DateTime('2019-06-15'),
-      new DateTime('2019-06-30')
+      $membershipTaxAmount
     );
   }
 
@@ -104,9 +97,7 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
     $membershipTaxAmount = $this->getMembershipTypeTaxAmount($membershipTypes, 6);
     $membershipInstalment = $this->getMembershipTypeInstalmentAmount(
       $membershipTypes,
-      $membershipTaxAmount,
-      new DateTime(),
-      new DateTime('last day of this month')
+      $membershipTaxAmount
     );
 
     //FOI =  120 + 240 + (6 + 6) TAX / 12 = 31
@@ -126,13 +117,13 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
     $membershipTaxAmount = $this->getMembershipTypeTaxAmount($membershipTypes, 6);
     $membershipInstalment = $this->getMembershipTypeInstalmentAmount(
       $membershipTypes,
-      $membershipTaxAmount,
-      new DateTime('2019-06-15'),
-      new DateTime('2019-06-30')
+      $membershipTaxAmount
     );
 
+    $startDate = new DateTime('2019-06-15');
+    $endDate = new DateTime('2019-06-30');
     //FIA = 15(days remaining in month)/30 (number of days in mth) * 31(FOI)
-    $this->assertEquals(15.5, $membershipInstalment->calculateFirstInstalmentAmount());
+    $this->assertEquals(15.5, $membershipInstalment->calculateFirstInstalmentAmount($startDate, $endDate));
   }
 
   private function getMembershipTypeTaxAmount($membershipTypes, $amount = 0) {
@@ -144,7 +135,8 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
     return $membershipTypeTaxAmount->reveal();
   }
 
-  private function getMembershipTypeInstalmentAmount(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount, DateTime $startDate, DateTime $endDate) {
-    return new MembershipTypeInstalmentAmount($membershipTypes, $membershipTypeTaxAmount, $startDate, $endDate);
+  private function getMembershipTypeInstalmentAmount(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount) {
+    $membershipTypeDates = new MembershipTypeDates();
+    return new MembershipTypeInstalmentAmount($membershipTypes, $membershipTypeTaxAmount, $membershipTypeDates);
   }
 }
