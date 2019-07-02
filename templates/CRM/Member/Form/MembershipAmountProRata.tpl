@@ -14,12 +14,38 @@
 
     $(function () {
       setProratedAmount();
+
+      $('#start_date').change(function () {
+        var memTypeId = parseInt($('#membership_type_id_1').val());
+        if (memTypeId) {
+          setMembershipEndDate(this, memTypeId);
+        }
+      });
+
       $('#start_date, #end_date, #membership_type_id_1, #price_set_id').change(() => {
         if ($('#start_date').val() || $('#end_date').val()) {
           setProratedAmount();
         }
       });
     });
+
+    /**
+     * Sets the membership end date for a membership type
+     */
+    function setMembershipEndDate(startDate, memTypeId) {
+      var startDateValue = cj(startDate).val();
+      var memSinceDate = $('#join_date').val();
+      CRM.api3('MembershipType', 'getdatesformembershiptype', {
+        "membership_type_id" : memTypeId,
+        "start_date" : startDateValue,
+        "join_date" : memSinceDate,
+      }).done(function(result) {
+        if (result.is_error == 0) {
+          cj('#end_date').val(result.values.end_date);
+          cj('#end_date').next('.hasDatepicker').datepicker('setDate', new Date(result.values.end_date));
+        }
+      });
+    }
 
     /**
      * Sets prorated amount for membership type and membership types in price sets.
@@ -41,6 +67,10 @@
 
     /**
      * Sets the prorated amount for a membership type depending on the selected dates.
+     *
+     * @param {String} memStartDate
+     * @param {String} memEndDate
+     * @param {String} memSinceDate
      */
     function setProratedAmountForMembershipType(memStartDate, memEndDate, memSinceDate) {
       var memTypeId = parseInt(cj('#membership_type_id_1').val())
@@ -62,6 +92,10 @@
 
     /**
      * Sets the prorated amount for membership types in a price set depending on the selected dates.
+     *
+     * @param {String} memStartDate
+     * @param {String} memEndDate
+     * @param {String} memSinceDate
      */
     function setProratedAmountForPriceSet(memStartDate, memEndDate, memSinceDate) {
       var priceSetId = cj('#price_set_id').val();
