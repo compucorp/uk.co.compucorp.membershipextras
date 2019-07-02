@@ -1,6 +1,7 @@
 <?php
 
 use CRM_Member_BAO_MembershipType as MembershipType;
+use CRM_MembershipExtras_Service_MembershipTypeDates as MembershipTypeDates;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipTypeDuration
@@ -13,23 +14,19 @@ class CRM_MembershipExtras_Service_MembershipTypeDuration {
   private $membershipType;
 
   /**
-   * @var DateTime
+   * @var MembershipTypeDates
    */
-  private $membershipStartDate;
-
-  /**
-   * @var DateTime
-   */
-  private $membershipEndDate;
+  private $membershipTypeDates;
 
   /**
    * CRM_MembershipExtras_Service_MembershipTypeDuration constructor.
    *
-   * @param \CRM_Member_BAO_MembershipType $membershipType
+   * @param MembershipType $membershipType
+   * @param MembershipTypeDates $membershipTypeDates
    */
-  public function __construct(MembershipType $membershipType) {
+  public function __construct(MembershipType $membershipType, MembershipTypeDates $membershipTypeDates) {
     $this->membershipType = $membershipType;
-    $this->setMembershipStartAndEndDates();
+    $this->membershipTypeDates = $membershipTypeDates;
   }
 
   /**
@@ -44,23 +41,28 @@ class CRM_MembershipExtras_Service_MembershipTypeDuration {
 
   /**
    * Calculates the membership type duration in days based on start and end dates passed in.
-   * The dates are adjusted depending on whether they are present or not.
    * One more day is added to interval because the start and end date are inclusive of the
    * number of days.
    *
    * @param \DateTime|NULL $startDate
    * @param \DateTime|NULL $endDate
+   * @param \DateTime|NULL $joinDate
    *
    * @return int
    */
-  public function calculateDaysBasedOnDates(DateTime $startDate = NULL, DateTime $endDate = NULL) {
-    if ($startDate) {
-      $this->setMembershipStartAndEndDates($startDate);
-    }
-    $adjustedStartDate = $startDate ? $startDate : $this->membershipStartDate;
-    $adjustedEndDate = $endDate ? $endDate : $this->membershipEndDate;
+  public function calculateDaysBasedOnDates (DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+    $startDate = empty($startDate) ? $joinDate : $startDate;
+    $membershipDates = $this->membershipTypeDates->getDatesForMembershipType(
+      $this->membershipType,
+      $startDate,
+      $endDate,
+      $joinDate
+    );
 
-    $interval = $adjustedEndDate->diff($adjustedStartDate);
+    $membershipStartDate = new DateTime($membershipDates['start_date']);
+    $membershipEndDate = new DateTime($membershipDates['end_date']);
+
+    $interval = $membershipEndDate->diff($membershipStartDate);
 
     return (int) $interval->format("%a") + 1;
   }
@@ -71,34 +73,11 @@ class CRM_MembershipExtras_Service_MembershipTypeDuration {
    * @return float|int
    */
   private function getDurationInDays() {
-    switch ($this->membershipType->duration_unit) {
-      case 'month':
-        $numberOfDays = date('t');
-        break;
-      case 'day':
-        $numberOfDays = 1;
-        break;
-      case 'year':
-        $numberOfDays = date('L') ? 366 : 365;
-        break;
-    }
+    $membershipDates = $this->membershipTypeDates->getDatesForMembershipType($this->membershipType);
+    $startDate = new DateTime($membershipDates['start_date']);
+    $endDate = new DateTime($membershipDates['end_date']);
+    $interval = $endDate->diff($startDate);
 
-    return $numberOfDays * $this->membershipType->duration_interval;
-  }
-
-  /**
-   * Sets the membership type start and end dates. The logic works by using
-   * today as the start date and adding the duration days to today's date
-   * to get the end date. The end date is adjusted because the duration in
-   * days includes both the start and end date.
-   *
-   * @param DateTime|NULL $startDate
-   */
-  private function setMembershipStartAndEndDates(DateTime $startDate = NULL) {
-    $durationInDays = $this->getDurationInDays() - 1;
-    $datetime = $startDate ? clone $startDate : new DateTime();
-    $datetime->modify("+{$durationInDays} day");
-    $this->membershipEndDate = $datetime;
-    $this->membershipStartDate = $startDate ? clone $startDate : new DateTime();
+    return (int) $interval->format("%a") + 1;
   }
 }

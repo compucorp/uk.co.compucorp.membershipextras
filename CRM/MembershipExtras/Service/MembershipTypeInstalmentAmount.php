@@ -4,6 +4,7 @@ use CRM_Member_BAO_MembershipType as MembershipType;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as InvalidMembershipTypeInstalmentAmount;
+use CRM_MembershipExtras_Service_MembershipTypeDates as MembershipTypeDates;
 
 class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
 
@@ -13,19 +14,14 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
   private $followingInstalmentAmount;
 
   /**
+   * @var MembershipTypeDates
+   */
+  private $membershipTypeDates;
+
+  /**
    * @var array
    */
   private $membershipTypes;
-
-  /**
-   * @var \DateTime
-   */
-  private $startDate;
-
-  /**
-   * @var \DateTime
-   */
-  private $endDate;
 
   /**
    * @var MembershipTypeTaxAmount
@@ -37,14 +33,12 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
    *
    * @param MembershipType[] $membershipTypes
    * @param MembershipTypeTaxAmount $membershipTypeTaxAmount
-   * @param \DateTime $startDate
-   * @param \DateTime $endDate
+   * @param MembershipTypeDates $membershipTypeDates
    */
-  public function __construct(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount, DateTime $startDate, DateTime $endDate) {
+  public function __construct(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount, MembershipTypeDates $membershipTypeDates) {
     $this->membershipTypes = $membershipTypes;
-    $this->startDate = $startDate;
-    $this->endDate = $endDate;
     $this->membershipTypeTaxAmount = $membershipTypeTaxAmount;
+    $this->membershipTypeDates = $membershipTypeDates;
     $this->validateMembershipTypeForInstalment();
   }
 
@@ -75,14 +69,39 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
    * A = No of days from membership start date to end of month
    * B = No of days in month.
    *
+   * @param \DateTime|NULL $startDate
+   * @param \DateTime|NULL $endDate
+   * @param \DateTime|NULL $joinDate
+   *
    * @return float
    */
-  public function calculateFirstInstalmentAmount() {
+  public function calculateFirstInstalmentAmount(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+    if (empty($startDate)) {
+      $startDate = new DateTime($this->getMembershipStartDate($startDate, $endDate, $joinDate));
+    }
+
     $foiAmount = $this->calculateFollowingInstalmentAmount();
-    $calculatedDurationInDays = $this->calculateRemainingDaysInStartDateMonth();
-    $proRata = ($calculatedDurationInDays / $this->getNumberOfDaysInStartDateMonth()) * $foiAmount;
+    $calculatedDurationInDays = $this->calculateRemainingDaysInStartDateMonth($startDate);
+    $proRata = ($calculatedDurationInDays / $this->getNumberOfDaysInStartDateMonth($startDate)) * $foiAmount;
 
     return MoneyUtilities::roundToPrecision(($proRata), 2);
+  }
+
+  /**
+   * @param \DateTime|NULL $startDate
+   * @param \DateTime|NULL $endDate
+   * @param \DateTime|NULL $joinDate
+   * @return mixed
+   */
+  private function getMembershipStartDate(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+    $membershipDates = $this->membershipTypeDates->getDatesForMembershipType(
+      $this->membershipTypes[0],
+      $startDate,
+      $endDate,
+      $joinDate
+    );
+
+    return $membershipDates['start_date'];
   }
 
   /**
@@ -100,10 +119,6 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
       if ($membershipType->period_type != 'fixed') {
         throw new InvalidMembershipTypeInstalmentAmount(InvalidMembershipTypeInstalmentAmount::FIXED_PERIOD_TYPE);
       }
-
-      if ((int) $this->endDate->format( 't' ) != $this->endDate->format( 'j')) {
-        throw new InvalidMembershipTypeInstalmentAmount(InvalidMembershipTypeInstalmentAmount::LAST_DAY_OF_MONTH);
-      }
     }
 
     $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
@@ -115,11 +130,13 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
   /**
    * Calculates the remaining days from start date to the end of month date.
    *
+   * @param DateTime $startDate
+   *
    * @return int
    */
-  private function calculateRemainingDaysInStartDateMonth() {
-    $endOfMonthDate = new DateTime($this->startDate->format('Y-m-t'));
-    $interval = $endOfMonthDate->diff($this->startDate);
+  private function calculateRemainingDaysInStartDateMonth(DateTime $startDate) {
+    $endOfMonthDate = new DateTime($startDate->format('Y-m-t'));
+    $interval = $endOfMonthDate->diff($startDate);
 
     return (int) $interval->format("%a");
   }
@@ -127,9 +144,11 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
   /**
    * Calculates the number of days in the month the start date falls in.
    *
+   * @param DateTime $startDate
+   *
    * @return int
    */
-  private function getNumberOfDaysInStartDateMonth() {
-    return (int) $this->startDate->format('t');
+  private function getNumberOfDaysInStartDateMonth(DateTime $startDate) {
+    return (int) $startDate->format('t');
   }
 }
