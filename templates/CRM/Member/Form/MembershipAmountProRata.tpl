@@ -1,13 +1,23 @@
 <script type="text/javascript">
   {literal}
-  var optionSep = '|';
 
   (function ($) {
+    {/literal}
+    const membershipextrasTaxRatesStr = '{$taxRates}';
+    const membershipextrasTaxTerm = '{$taxTerm}';
+    const membershipextrasCurrency = '{$currency}';
+    var optionSep = '|';
+    {literal}
+    const membershipextrasTaxRates = membershipextrasTaxRatesStr !== ''
+      ? JSON.parse(membershipextrasTaxRatesStr)
+      : [];
 
     $(function () {
       setProratedAmount();
       $('#start_date, #end_date, #membership_type_id_1, #price_set_id').change(() => {
-        setProratedAmount();
+        if ($('#start_date').val() || $('#end_date').val()) {
+          setProratedAmount();
+        }
       });
     });
 
@@ -18,31 +28,33 @@
       cj("#prorated_label").hide();
       var isPriceSet = cj('#price_set_id').length > 0 && cj('#price_set_id').val();
       var memType = parseInt($('#membership_type_id_1').val());
+      var memStartDate = $('#start_date').val();
+      var memEndDate = $('#end_date').val();
+      var memSinceDate = $('#join_date').val();
 
       if (isPriceSet) {
-        setProratedAmountForPriceSet();
+        setProratedAmountForPriceSet(memStartDate, memEndDate, memSinceDate);
       } else if (memType) {
-        setProratedAmountForMembershipType();
+        setProratedAmountForMembershipType(memStartDate, memEndDate, memSinceDate);
       }
     }
 
     /**
      * Sets the prorated amount for a membership type depending on the selected dates.
      */
-    function setProratedAmountForMembershipType() {
-      var memTypeId = parseInt($('#membership_type_id_1').val());
-      var memStartDate = $('#start_date').val();
-      var memEndDate = $('#end_date').val();
-
+    function setProratedAmountForMembershipType(memStartDate, memEndDate, memSinceDate) {
+      var memTypeId = parseInt(cj('#membership_type_id_1').val())
       CRM.api3('MembershipType', 'getproratedamount', {
         "membership_type_id" : memTypeId,
         "start_date" : memStartDate,
         "end_date" : memEndDate,
+        "join_date" : memSinceDate,
         "is_fixed_membership" : true
       }).done(function(result) {
         if (result.is_error == 0) {
           var totalAmount = result.values.pro_rated_amount;
           cj("#total_amount").val(CRM.formatMoney(totalAmount, true));
+          $('#total_amount').change();
           $('<span id="prorated_label" class="description"> Prorated for ' + result.duration_in_days + ' days</span>').insertAfter($('#total_amount'));
         }
       });
@@ -51,15 +63,14 @@
     /**
      * Sets the prorated amount for membership types in a price set depending on the selected dates.
      */
-    function setProratedAmountForPriceSet() {
-      var priceSetId = cj('#price_set_id').length > 0 && cj('#price_set_id').val();
-      var memStartDate = $('#start_date').val();
-      var memEndDate = $('#end_date').val();
+    function setProratedAmountForPriceSet(memStartDate, memEndDate, memSinceDate) {
+      var priceSetId = cj('#price_set_id').val();
 
       CRM.api3('MembershipType', 'getproratedamountforpriceset', {
         "price_set_id" : priceSetId,
         "start_date" : memStartDate,
         "end_date" : memEndDate,
+        "join_date" : memSinceDate,
         "is_fixed_membership" : true
       }).done(function(result) {
         if (result.is_error == 0) {
@@ -99,18 +110,34 @@
     }
 
     /**
+     * Gets the Tax message for a prorated price set amount.
+     */
+    function getTaxLabelForPriceSetAmount(currentAmount, financialTypeID) {
+      taxRate = membershipextrasTaxRates[financialTypeID];
+
+      if (taxRate !== undefined) {
+        taxAmount = (currentAmount * (taxRate / 100)) / (1 + (taxRate / 100));
+        taxAmount = isNaN(taxAmount) ? 0 : taxAmount.toFixed(2);
+
+        return ` (Includes ${membershipextrasTaxTerm} of ${membershipextrasCurrency} ${taxAmount})`;
+      }
+
+      return '';
+    }
+    
+    /**
      * Sets updated prorated label for a select item in price set
      */
     function setProratedLabelForSelectLineItem(priceElement, proratedAmounts) {
       eval( 'var priceOption = ' + cj(priceElement).attr('price') );
+      eval( 'var priceFieldValues = ' + cj(priceElement).attr('data-price-field-values') );
       cj(priceElement.options).each(function() {
         if (this.value && proratedAmounts[this.value]) {
-          var priceOptionPart = priceOption[this.value].split(optionSep);
-          var oldPrice = CRM.formatMoney(priceOptionPart[0], true);
-          var optionText = cj(this).html();
-          var newPrice = CRM.formatMoney(proratedAmounts[this.value].pro_rated_amount, true);
-          optionText = optionText.replace(oldPrice, newPrice);
-          cj(this).html(optionText);
+          var newPrice = CRM.formatMoney(proratedAmounts[this.value].pro_rated_amount);
+          var taxMessage = getTaxLabelForPriceSetAmount(proratedAmounts[this.value].pro_rated_amount, proratedAmounts[this.value].financial_type_id);
+          var fullLabel = priceFieldValues[this.value].label + ' - ' + newPrice + taxMessage;
+
+          cj(this).html(fullLabel);
         }
       });
     }
@@ -121,13 +148,19 @@
     function setProratedLabelForCheckBoxLineItem(priceElement, proratedAmounts) {
       eval( 'var option = ' + cj(priceElement).attr('price') );
       if (proratedAmounts[option[0]]) {
+        var proratedAmount = proratedAmounts[option[0]];
         var optionPart = option[1].split(optionSep);
         var oldPrice = CRM.formatMoney(optionPart[0], true);
         var elementId = cj(priceElement).attr('id');
-        var checkboxLabel = cj('label[for="' + elementId + '"]').html();
-        var newPrice = CRM.formatMoney(proratedAmounts[option[0]].pro_rated_amount, true);
+        var checkBoxLabelElement = cj('label[for="' + elementId + '"]');
+        var checkboxLabel = checkBoxLabelElement.html();
+        var newPrice = CRM.formatMoney(proratedAmount.pro_rated_amount, true);
         var optionText = checkboxLabel.replace(oldPrice, newPrice);
-        cj('label[for="' + elementId + '"]').html(optionText)
+        cj('label[for="' + elementId + '"]').html(optionText);
+
+        checkBoxLabelElement.find('.crm-price-amount-tax').html(
+          getTaxLabelForPriceSetAmount(proratedAmount.pro_rated_amount, proratedAmount.financial_type_id)
+        )
       }
     }
 
@@ -141,10 +174,15 @@
         var optionPart = option[1].split(optionSep);
         var oldPrice = CRM.formatMoney(optionPart[0], true);
         var elementId = cj(priceElement).attr('id');
-        var radioLabel = cj('label[for="' + elementId + '"]').html();
+        var radioPriceElement = cj('label[for="' + elementId + '"]');
+        var radioLabel = radioPriceElement.html();
         var newPrice = CRM.formatMoney(proratedAmounts[priceValueId].pro_rated_amount, true);
         var optionText = radioLabel.replace(oldPrice, newPrice);
         cj('label[for="' + elementId + '"]').html(optionText)
+
+        radioPriceElement.find('.crm-price-amount-tax').html(
+          getTaxLabelForPriceSetAmount(proratedAmounts[priceValueId].pro_rated_amount, proratedAmounts[priceValueId].financial_type_id)
+        )
       }
     }
 
