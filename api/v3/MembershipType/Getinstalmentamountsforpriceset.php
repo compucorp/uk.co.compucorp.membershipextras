@@ -17,17 +17,23 @@ function _civicrm_api3_membership_type_getinstalmentamountsforpriceset_spec(&$sp
     'FKApiName' => 'PriceFieldValue',
     'api.required' => 1,
   ];
+  $spec['join_date'] = [
+    'name' => 'join_date',
+    'title' => 'Member Since Date',
+    'type' => CRM_Utils_Type::T_DATE,
+    'api.required' => 0
+  ];
   $spec['start_date'] = [
     'name' => 'start_date',
     'title' => 'Membership Start Date',
     'type' => CRM_Utils_Type::T_DATE,
-    'api.required' => 1
+    'api.required' => 0
   ];
   $spec['end_date'] = [
     'name' => 'end_date',
     'title' => 'Membership End Date',
     'type' => CRM_Utils_Type::T_DATE,
-    'api.required' => 1
+    'api.required' => 0
   ];
 }
 
@@ -41,8 +47,10 @@ function _civicrm_api3_membership_type_getinstalmentamountsforpriceset_spec(&$sp
  * @return array API result descriptor
  */
 function civicrm_api3_membership_type_getinstalmentamountsforpriceset($params) {
-  $startDate = new DateTime($params['start_date']);
-  $endDate = new DateTime($params['end_date']);
+  $startDate = !empty($params['start_date']) ? new DateTime($params['start_date']) : NULL;
+  $endDate = !empty($params['end_date']) ? new DateTime($params['end_date']) : NULL;
+  $joinDate = !empty($params['join_date']) ? new DateTime($params['join_date']) : NULL;
+
   $priceFieldValueIds = _civicrm_api3_membership_type_getPriceFieldValueIdsFromParams($params);
   $priceFieldValueItems = _civicrm_api3_membership_type_getPriceFieldValueItems($priceFieldValueIds);
   $membershipTypes = [];
@@ -57,15 +65,17 @@ function civicrm_api3_membership_type_getinstalmentamountsforpriceset($params) {
     $membershipType->financial_type_id = $priceFieldValue['financial_type_id'];
     $membershipTypes[] = $membershipType;
   }
+
+  $membershipTypeDates = new CRM_MembershipExtras_Service_MembershipTypeDates();
   $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
   $membershipTypeInstalment = new CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount(
     $membershipTypes,
     $membershipTypeTaxAmount,
-    $startDate,
-    $endDate
+    $membershipTypeDates
+
   );
   $results = [
-    'fi_amount' => $membershipTypeInstalment->calculateFirstInstalmentAmount(),
+    'fi_amount' => $membershipTypeInstalment->calculateFirstInstalmentAmount($startDate, $endDate, $joinDate),
     'foi_amount' => $membershipTypeInstalment->calculateFollowingInstalmentAmount()
   ];
 

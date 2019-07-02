@@ -17,17 +17,23 @@ function _civicrm_api3_membership_type_getinstalmentamounts_spec(&$spec) {
     'FKApiName' => 'MembershipType',
     'api.required' => 1,
   ];
+  $spec['join_date'] = [
+    'name' => 'join_date',
+    'title' => 'Member Since Date',
+    'type' => CRM_Utils_Type::T_DATE,
+    'api.required' => 0
+  ];
   $spec['start_date'] = [
     'name' => 'start_date',
     'title' => 'Membership Start Date',
     'type' => CRM_Utils_Type::T_DATE,
-    'api.required' => 1
+    'api.required' => 0
   ];
   $spec['end_date'] = [
     'name' => 'end_date',
     'title' => 'Membership End Date',
     'type' => CRM_Utils_Type::T_DATE,
-    'api.required' => 1
+    'api.required' => 0
   ];
 }
 
@@ -41,20 +47,23 @@ function _civicrm_api3_membership_type_getinstalmentamounts_spec(&$spec) {
  * @return array API result descriptor
  */
 function civicrm_api3_membership_type_getinstalmentamounts($params) {
-  $startDate = new DateTime($params['start_date']);
-  $endDate = new DateTime($params['end_date']);
+  $startDate = !empty($params['start_date']) ? new DateTime($params['start_date']) : NULL;
+  $endDate = !empty($params['end_date']) ? new DateTime($params['end_date']) : NULL;
+  $joinDate = !empty($params['join_date']) ? new DateTime($params['join_date']) : NULL;
   $membershipTypeID = $params['membership_type_id'];
+
   $membershipType = CRM_Member_BAO_MembershipType::findById($membershipTypeID);
   $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
+  $membershipTypeDates = new CRM_MembershipExtras_Service_MembershipTypeDates();
+
   $membershipTypeInstalment = new CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount(
     [$membershipType],
     $membershipTypeTaxAmount,
-    $startDate,
-    $endDate
+    $membershipTypeDates
   );
 
   $results = [
-    'fi_amount' => $membershipTypeInstalment->calculateFirstInstalmentAmount(),
+    'fi_amount' => $membershipTypeInstalment->calculateFirstInstalmentAmount($startDate, $endDate, $joinDate),
     'foi_amount' => $membershipTypeInstalment->calculateFollowingInstalmentAmount()
   ];
 

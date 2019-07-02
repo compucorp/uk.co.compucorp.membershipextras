@@ -17,6 +17,12 @@ function _civicrm_api3_membership_type_getproratedamount_spec(&$spec) {
     'FKApiName' => 'MembershipType',
     'api.required' => 1,
   ];
+  $spec['join_date'] = [
+    'name' => 'join_date',
+    'title' => 'Member Since Date',
+    'type' => CRM_Utils_Type::T_DATE,
+    'api.required' => 0
+  ];
   $spec['start_date'] = [
     'name' => 'start_date',
     'title' => 'Membership Start Date',
@@ -50,6 +56,7 @@ function _civicrm_api3_membership_type_getproratedamount_spec(&$spec) {
 function civicrm_api3_membership_type_getproratedamount($params) {
   $startDate = !empty($params['start_date']) ? new DateTime($params['start_date']) : NULL;
   $endDate = !empty($params['end_date']) ? new DateTime($params['end_date']) : NULL;
+  $joinDate = !empty($params['join_date']) ? new DateTime($params['join_date']) : NULL;
   $membershipTypeID = $params['membership_type_id'];
   $isFixedMembershipOnly = !empty($params['is_fixed_membership']);
 
@@ -59,16 +66,17 @@ function civicrm_api3_membership_type_getproratedamount($params) {
     throw new API_Exception('Membership Period Type is not of type Fixed');
   }
 
-  $membershipTypeDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType);
+  $membershipTypeDates = new CRM_MembershipExtras_Service_MembershipTypeDates();
+  $membershipTypeDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType, $membershipTypeDates);
   $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
   $membershipTypeAmount = new CRM_MembershipExtras_Service_MembershipTypeAmount($membershipTypeDuration, $membershipTypeTaxAmount);
-  $proRata = $membershipTypeAmount->calculateProRata($membershipType, $startDate, $endDate);
+  $proRata = $membershipTypeAmount->calculateProRata($membershipType, $startDate, $endDate, $joinDate);
 
   $results = [
     'membership_type_id' => $membershipTypeID,
     'pro_rated_amount' => $proRata
   ];
-  $extraParams = ['duration_in_days' => $membershipTypeDuration->calculateDaysBasedOnDates($startDate, $endDate)];
+  $extraParams = ['duration_in_days' => $membershipTypeDuration->calculateDaysBasedOnDates($startDate, $endDate, $joinDate)];
 
   return civicrm_api3_create_success($results, $params, null, 'create', $membershipType, $extraParams);
 }
