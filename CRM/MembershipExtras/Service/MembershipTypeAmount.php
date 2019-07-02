@@ -38,16 +38,23 @@ class CRM_MembershipExtras_Service_MembershipTypeAmount {
    * @param \CRM_Member_BAO_MembershipType $membershipType
    * @param \DateTime|NULL $startDate
    * @param \DateTime|NULL $endDate
+   * @param \DateTime|NULL $joinDate
    *
    * @return float
    */
-  public function calculateProRata(MembershipType $membershipType, DateTime $startDate = NULL, DateTime $endDate = NULL) {
+  public function calculateProRata
+  (
+    MembershipType $membershipType,
+    DateTime $startDate = NULL,
+    DateTime $endDate = NULL,
+    DateTime $joinDate = NULL
+  ) {
     $membershipTypeDurationInDays = $this->membershipTypeDuration->calculateOriginalInDays();
-    $calculatedDurationInDays = $this->membershipTypeDuration->calculateDaysBasedOnDates($startDate, $endDate);
+    $calculatedDurationInDays = $this->membershipTypeDuration->calculateDaysBasedOnDates($startDate, $endDate, $joinDate);
     $membershipAmount = $membershipType->minimum_fee;
 
     $proRata = ($membershipAmount/$membershipTypeDurationInDays) * $calculatedDurationInDays;
-    $tax = $this->membershipTypeTaxAmount->calculateTax($membershipType);
+    $tax = $this->membershipTypeTaxAmount->calculateTax($membershipType, $proRata);
 
     return MoneyUtilities::roundToPrecision(($proRata + $tax), 2);
   }
