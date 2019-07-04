@@ -2,6 +2,7 @@
 
 use CRM_MembershipExtras_ExtensionUtil as E;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+use CRM_MembershipExtras_Service_MembershipTypeDates as MembershipTypeDates;
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
 
 /**
@@ -228,7 +229,8 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
   protected function getProratedFirstInstalmentAmount() {
     $lineItems = $this->lineItemParams;
     $membershipType = $membershipType = CRM_Member_BAO_MembershipType::findById($lineItems['membership_type_id']);
-    $membershipDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType);
+    $membershipTypeDates = new MembershipTypeDates();
+    $membershipDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType, $membershipTypeDates);
     $proratedAmount = $lineItems['amount'];
     $daysUntilNextCycle = $this->daysRemainingUntilNextCycleDate;
 
