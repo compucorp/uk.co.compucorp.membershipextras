@@ -4,6 +4,8 @@
     function buildAutoRenew () {}
   }
 
+  let selectedPriceValueIds = [];
+
   (function ($) {
     {/literal}
     const togglerValue = '{$contribution_type_toggle}';
@@ -45,6 +47,7 @@
       $('#recordContribution legend:first').html('Contribution and Payment Plan');
       $('#installments_row').insertAfter($('#financial_type_id').parent().parent());
       $('#first_installment').insertAfter($('#installments_row'));
+      $('#following_installment').insertAfter($('#first_installment'));
       $('span.crm-error').css('display', 'none');
       $('label span.crm-error').css('display', 'inline');
       $('#payment_plan_fields_tabs').insertBefore($('#installments_row').closest('table'));
@@ -80,10 +83,13 @@
         }
       });
 
-      $('#installments, #total_amount, #membership_type_id_1').change(() => {
+      $('#installments, #total_amount, #membership_type_id_1, #installments_frequency, #installments_frequency_unit').change(() => {
+        $('#following_installment').hide();
         let currentMembershipData, taxRate, taxAmount, taxPerPeriod;
         let taxMessage = '';
         let taxPerPeriodMessage = '';
+        let instalmentFrequency = cj('#installments_frequency').val();
+        let instalmentFrequencyUnit = cj('#installments_frequency_unit').val();
         const currentAmount = parseFloat($('#total_amount').val().replace(/[^0-9.]+/g, ''));
         const amountPerPeriod = currentAmount / parseFloat($('#installments').val());
         const memType = parseInt($('#membership_type_id_1').val());
@@ -104,6 +110,13 @@
 
         $('.totaltaxAmount').html(taxMessage);
         $('#amount_summary').html(`${membershipextrasCurrency} ${amountPerPeriod.toFixed(2)} <br/> ${taxPerPeriodMessage}`);
+
+
+        if (instalmentFrequency == 1 && instalmentFrequencyUnit == 'month') {
+          //Commented out for now till the BE functionality to store these values are in place.
+          // updateInstalmentAmounts();
+        }
+
         toggleStatusOfPaymentAndAutoRenewCheckboxes($('#record_contribution'));
       });
     }
@@ -175,6 +188,182 @@
         }
       }
     }
+
+    /**
+     * stores the values of the selected price field values for the
+     * selected price set in a global array.
+     */
+    function storeSelectedPriceFields() {
+      cj("#priceset [price]").each(function () {
+        let elementType =  cj(this).attr('type');
+        switch(elementType) {
+          case 'checkbox':
+            setSelectedPriceFieldValueForCheckboxLineItem(this);
+            break;
+
+          case 'radio':
+            setSelectedPriceFieldValueForRadioLineItem(this);
+            break;
+
+          case 'text':
+            break;
+
+          case 'SELECT':
+            setSelectedPriceFieldValueForSelectLineItem(this);
+            break;
+        }
+      });
+    }
+
+    /**
+     * Stores the selected price field value for a checkbox element in the
+     * global selectedPriceValueIds array.
+     */
+    function setSelectedPriceFieldValueForCheckboxLineItem(priceElement) {
+      eval( 'var option = ' + cj(priceElement).attr('price') );
+      let priceFieldValue = option[0];
+
+      if (cj(priceElement).is(':checked')) {
+        addToSelectedPriceFields(priceFieldValue);
+      }
+      else {
+        removeFromSelectedPriceFields(priceFieldValue);
+      }
+    }
+
+    /**
+     * Stores the selected price field value for a radio element in the
+     * global array selectedPriceValueIds
+     */
+    function setSelectedPriceFieldValueForRadioLineItem(priceElement) {
+      console.log('I ran here radio');
+      let priceFieldValue = cj(priceElement).val();
+      console.log(priceFieldValue);
+
+      if (cj(priceElement).is(':checked')) {
+        addToSelectedPriceFields(priceFieldValue);
+      }
+      else{
+        removeFromSelectedPriceFields(priceFieldValue);
+      }
+    }
+
+    /**
+     * Stores the selected price field value for a select element in the
+     * global selectedPriceValueIds array.
+     */
+    function setSelectedPriceFieldValueForSelectLineItem(priceElement) {
+      eval('var priceOption = ' + cj(priceElement).attr('price'));
+      let priceFieldValue = cj(priceElement).val()
+
+      cj(priceElement.options).each(function() {
+        if (this.value === priceFieldValue) {
+          addToSelectedPriceFields(this.value);
+        }
+        else {
+          removeFromSelectedPriceFields(this.value);
+        }
+      });
+    }
+
+    /**
+     * removes the price field value from the global selectedPriceValueIds array.
+     */
+    function addToSelectedPriceFields(priceFieldValue) {
+      if (priceFieldValue) {
+        selectedPriceValueIds.push(priceFieldValue);
+      }
+    }
+
+    /**
+     * Adds the price field value from the global selectedPriceValueIds array.
+     */
+    function removeFromSelectedPriceFields(priceFieldValue) {
+      let index = selectedPriceValueIds.indexOf(priceFieldValue);
+
+      if (index > -1) {
+        selectedPriceValueIds.splice(index, 1);
+      }
+    }
+
+    /**
+     * Updates the instalment amount fields. Basicaly the First instlment and the
+     * following instalment fields.
+     */
+    function updateInstalmentAmounts() {
+      let isPriceSet = cj('#price_set_id').length > 0 && cj('#price_set_id').val();
+      let memType = parseInt($('#membership_type_id_1').val());
+      let memStartDate = $('#start_date').val();
+      let memEndDate = $('#end_date').val();
+      let memSinceDate = $('#join_date').val();
+      let
+      selectedPriceValueIds = [];
+
+      if (memStartDate || memEndDate) {
+        let params = {
+          "start_date" : memStartDate,
+          "end_date" : memEndDate,
+          "join_date" : memSinceDate,
+        };
+
+        if (isPriceSet) {
+          storeSelectedPriceFields();
+          if (selectedPriceValueIds.length === 0) {
+            return [];
+          }
+          params.price_field_value_id = {'IN' : selectedPriceValueIds};
+          CRM.api3('MembershipType', 'getinstalmentamountsforpriceset', params).done(
+            function(result) {
+              if (result.is_error == 0) {
+                updateInstalmentPaymentFields(result.values);
+              }
+          });
+        } else if (memType) {
+          params.membership_type_id = memType;
+          CRM.api3('MembershipType', 'getinstalmentamounts', params).done(
+            function(result) {
+              if (result.is_error == 0) {
+                updateInstalmentPaymentFields(result.values);
+              }
+          });
+        }
+      }
+    }
+
+    /**
+     * Updates the instalment payment/amount and tax fields.
+     */
+    function updateInstalmentPaymentFields(instalmentAmounts) {
+      $('#following_installment').show();
+      $('#foi_invoice_date_summary').html($('#receive_date').val());
+      let foiAmount = instalmentAmounts.foi_amount;
+      let fiAmount = instalmentAmounts.fi_amount;
+      let taxPerPeriodMessageFoi = '';
+      let taxPerPeriodMessageFi = '';
+      let currentMembershipData, taxRate;
+
+      const memType = parseInt($('#membership_type_id_1').val());
+      const isPriceSet = cj('#price_set_id').length > 0 && cj('#price_set_id').val();
+
+      if (!isPriceSet) {
+        currentMembershipData = membershipextrasAllMembershipData[memType];
+        taxRate = membershipextrasTaxRates[currentMembershipData['financial_type_id']];
+
+        if (taxRate !== undefined) {
+          let taxCalc = (taxRate / 100) / (1 + (taxRate / 100));
+          let taxAmountFi = fiAmount * taxCalc;
+          let taxAmountFOi = foiAmount * taxCalc;
+          taxAmountFi = isNaN(taxAmountFi) ? 0 : taxAmountFi.toFixed(2);
+          taxAmountFOi = isNaN(taxAmountFOi) ? 0 : taxAmountFOi.toFixed(2);
+          taxPerPeriodMessageFi = `Includes ${membershipextrasTaxTerm} amount of ${membershipextrasCurrency} ${taxAmountFi}`;
+          taxPerPeriodMessageFoi = `Includes ${membershipextrasTaxTerm} amount of ${membershipextrasCurrency} ${taxAmountFOi}`;
+        }
+      }
+
+      $('#amount_summary').html(`${membershipextrasCurrency} ${fiAmount.toFixed(2)} <br/> ${taxPerPeriodMessageFi}`);
+      $('#foi_amount_summary').html(`${membershipextrasCurrency} ${foiAmount.toFixed(2)} <br/> ${taxPerPeriodMessageFoi}`);
+    }
+
   })(CRM.$);
   {/literal}
 </script>
@@ -221,6 +410,27 @@
           <div class="crm-section check_number-section">
             <div class="label">Amount</div>
             <div class="content" id="amount_summary"></div>
+            <div class="clear"></div>
+          </div>
+        </div>
+      </fieldset>
+    </td>
+  </tr>
+  <tr id="following_installment">
+    <td colspan="2">
+      <fieldset>
+        <legend>{ts}Following Installment Summary{/ts}</legend>
+        <div class="crm-section billing_mode-section pay-later_info-section">
+          <div class="crm-section check_number-section">
+            <div class="label">Invoice Date</div>
+            <div class="content" id="foi_invoice_date_summary"></div>
+            <div class="clear"></div>
+          </div>
+        </div>
+        <div class="crm-section billing_mode-section pay-later_info-section">
+          <div class="crm-section check_number-section">
+            <div class="label">Amount</div>
+            <div class="content" id="foi_amount_summary"></div>
             <div class="clear"></div>
           </div>
         </div>
