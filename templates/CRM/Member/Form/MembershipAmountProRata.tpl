@@ -17,7 +17,8 @@
 
       $('#start_date').change(function () {
         var memTypeId = parseInt($('#membership_type_id_1').val());
-        if (memTypeId) {
+        var isPriceSet = cj('#price_set_id').length > 0 && cj('#price_set_id').val();
+        if (memTypeId && !isPriceSet) {
           setMembershipEndDate(this, memTypeId);
         }
       });
@@ -212,7 +213,7 @@
         var radioLabel = radioPriceElement.html();
         var newPrice = CRM.formatMoney(proratedAmounts[priceValueId].pro_rated_amount, true);
         var optionText = radioLabel.replace(oldPrice, newPrice);
-        cj('label[for="' + elementId + '"]').html(optionText)
+        cj('label[for="' + elementId + '"]').html(optionText);
 
         radioPriceElement.find('.crm-price-amount-tax').html(
           getTaxLabelForPriceSetAmount(proratedAmounts[priceValueId].pro_rated_amount, proratedAmounts[priceValueId].financial_type_id)
