@@ -1,7 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_MembershipTypeDuration as MembershipTypeDuration;
-use CRM_MembershipExtras_Service_MembershipTypeAmount as MembershipTypeAmount;
+use CRM_MembershipExtras_Service_MembershipTypeAmountProrater as MembershipTypeAmount;
 use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 
@@ -10,7 +10,7 @@ use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabrica
  *
  * @group headless
  */
-class CRM_MembershipExtras_Service_MembershipTypeAmountTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends BaseHeadlessTest {
 
   public function testCalculateProRata() {
     $originalDurationDays = 360;

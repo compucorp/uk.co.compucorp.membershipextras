@@ -4,7 +4,7 @@ use CRM_Member_BAO_MembershipType as MembershipType;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as InvalidMembershipTypeInstalmentAmount;
-use CRM_MembershipExtras_Service_MembershipTypeDates as MembershipTypeDates;
+use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 
 class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
 
@@ -14,9 +14,9 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
   private $followingInstalmentAmount;
 
   /**
-   * @var MembershipTypeDates
+   * @var MembershipTypeDatesCalculator
    */
-  private $membershipTypeDates;
+  private $membershipTypeDatesCalculator;
 
   /**
    * @var array
@@ -33,12 +33,12 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
    *
    * @param MembershipType[] $membershipTypes
    * @param MembershipTypeTaxAmount $membershipTypeTaxAmount
-   * @param MembershipTypeDates $membershipTypeDates
+   * @param MembershipTypeDatesCalculator $membershipTypeDatesCalculator
    */
-  public function __construct(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount, MembershipTypeDates $membershipTypeDates) {
+  public function __construct(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount, MembershipTypeDatesCalculator $membershipTypeDatesCalculator) {
     $this->membershipTypes = $membershipTypes;
     $this->membershipTypeTaxAmount = $membershipTypeTaxAmount;
-    $this->membershipTypeDates = $membershipTypeDates;
+    $this->membershipTypeDatesCalculator = $membershipTypeDatesCalculator;
     $this->validateMembershipTypeForInstalment();
   }
 
@@ -94,7 +94,7 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
    * @return mixed
    */
   private function getMembershipStartDate(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
-    $membershipDates = $this->membershipTypeDates->getDatesForMembershipType(
+    $membershipDates = $this->membershipTypeDatesCalculator->getDatesForMembershipType(
       $this->membershipTypes[0],
       $startDate,
       $endDate,

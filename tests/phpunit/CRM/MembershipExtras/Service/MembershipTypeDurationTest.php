@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Service_MembershipTypeDuration as MembershipTypeDuration;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
-use CRM_MembershipExtras_Service_MembershipTypeDates as MembershipTypeDates;
+use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipTypeDurationTest
@@ -17,8 +17,8 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationTest extends BaseHeadle
       'duration_interval' => 1,
     ], TRUE);
 
-    $membershipTypeDates = new MembershipTypeDates();
-    $membershipTypeDuration = new MembershipTypeDuration($membershipType, $membershipTypeDates);
+    $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
+    $membershipTypeDuration = new MembershipTypeDuration($membershipType, $membershipTypeDatesCalculator);
     $startDate = new DateTime('2019-06-01');
     $endDate = new DateTime('2019-06-30');
     $numberOfDays = $membershipTypeDuration->calculateDaysBasedOnDates($startDate, $endDate);
@@ -31,8 +31,8 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationTest extends BaseHeadle
       'duration_interval' => 1
     ], TRUE);
 
-    $membershipTypeDates = new MembershipTypeDates();
-    $membershipTypeDuration = new MembershipTypeDuration($membershipType, $membershipTypeDates);
+    $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
+    $membershipTypeDuration = new MembershipTypeDuration($membershipType, $membershipTypeDatesCalculator);
     $endDate = new DateTime('+5 days');
     $numberOfDays = $membershipTypeDuration->calculateDaysBasedOnDates(NULL, $endDate);
 
@@ -48,8 +48,8 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationTest extends BaseHeadle
       'duration_interval' => 1
     ], TRUE);
 
-    $membershipTypeDates = new MembershipTypeDates();
-    $membershipTypeDuration = new MembershipTypeDuration($membershipType, $membershipTypeDates);
+    $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
+    $membershipTypeDuration = new MembershipTypeDuration($membershipType, $membershipTypeDatesCalculator);
     $joinDate = new DateTime('today');
     $endDate = new DateTime('+5 days');
     $numberOfDays = $membershipTypeDuration->calculateDaysBasedOnDates(NULL, $endDate, $joinDate);
@@ -64,8 +64,8 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationTest extends BaseHeadle
       'duration_interval' => 1
     ], TRUE);
 
-    $membershipTypeDates = new MembershipTypeDates();
-    $membershipTypeDuration = new MembershipTypeDuration($membershipType, $membershipTypeDates);
+    $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
+    $membershipTypeDuration = new MembershipTypeDuration($membershipType, $membershipTypeDatesCalculator);
     $startDate = new DateTime('today');
     $numberOfDays = $membershipTypeDuration->calculateDaysBasedOnDates($startDate, NULL);
 

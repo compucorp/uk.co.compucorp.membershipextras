@@ -66,11 +66,11 @@ function civicrm_api3_membership_type_getproratedamount($params) {
     throw new API_Exception('Membership Period Type is not of type Fixed');
   }
 
-  $membershipTypeDates = new CRM_MembershipExtras_Service_MembershipTypeDates();
-  $membershipTypeDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType, $membershipTypeDates);
+  $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
+  $membershipTypeDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType, $membershipTypeDatesCalculator);
   $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
-  $membershipTypeAmount = new CRM_MembershipExtras_Service_MembershipTypeAmount($membershipTypeDuration, $membershipTypeTaxAmount);
-  $proRata = $membershipTypeAmount->calculateProRata($membershipType, $startDate, $endDate, $joinDate);
+  $membershipTypeAmountProrater = new CRM_MembershipExtras_Service_MembershipTypeAmountProrater($membershipTypeDuration, $membershipTypeTaxAmount);
+  $proRata = $membershipTypeAmountProrater->calculateProRata($membershipType, $startDate, $endDate, $joinDate);
 
   $results = [
     'membership_type_id' => $membershipTypeID,

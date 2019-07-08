@@ -2,7 +2,7 @@
 
 use CRM_Member_BAO_MembershipType as MembershipType;
 
-class CRM_MembershipExtras_Service_MembershipTypeDates {
+class CRM_MembershipExtras_Service_MembershipTypeDatesCalculator {
 
   /**
    * Gets the membership Start, End and Join dates based on parameters provided.

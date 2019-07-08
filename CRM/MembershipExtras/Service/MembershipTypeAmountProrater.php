@@ -8,7 +8,7 @@ use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmo
 /**
  * Class CRM_MembershipExtras_Service_MembershipTypeAmount
  */
-class CRM_MembershipExtras_Service_MembershipTypeAmount {
+class CRM_MembershipExtras_Service_MembershipTypeAmountProrater {
 
   /**
    * @var MembershipTypeDuration
@@ -58,4 +58,5 @@ class CRM_MembershipExtras_Service_MembershipTypeAmount {
 
     return MoneyUtilities::roundToPrecision(($proRata + $tax), 2);
   }
+
 }

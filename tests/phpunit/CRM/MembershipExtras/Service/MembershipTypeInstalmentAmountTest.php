@@ -3,7 +3,7 @@
 use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount as MembershipTypeInstalmentAmount;
-use CRM_MembershipExtras_Service_MembershipTypeDates as MembershipTypeDates;
+use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as InvalidMembershipTypeInstalmentAmount;
 
 
@@ -136,7 +136,7 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
   }
 
   private function getMembershipTypeInstalmentAmount(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount) {
-    $membershipTypeDates = new MembershipTypeDates();
-    return new MembershipTypeInstalmentAmount($membershipTypes, $membershipTypeTaxAmount, $membershipTypeDates);
+    $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
+    return new MembershipTypeInstalmentAmount($membershipTypes, $membershipTypeTaxAmount, $membershipTypeDatesCalculator);
   }
 }

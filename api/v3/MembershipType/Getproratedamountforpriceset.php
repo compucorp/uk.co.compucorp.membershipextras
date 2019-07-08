@@ -135,10 +135,10 @@ function _civicrm_api3_membership_type_getPriceFieldValues($priceSetId) {
  * @return float
  */
 function _civicrm_api3_membership_type_geProRata($membershipType, DateTime $startDate = NULL, DateTime $endDate = NULL, $joinDate = NULL) {
-  $membershipTypeDates = new CRM_MembershipExtras_Service_MembershipTypeDates();
-  $membershipTypeDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType, $membershipTypeDates);
+  $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
+  $membershipTypeDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType, $membershipTypeDatesCalculator);
   $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
-  $membershipTypeAmount = new CRM_MembershipExtras_Service_MembershipTypeAmount($membershipTypeDuration, $membershipTypeTaxAmount);
+  $membershipTypeAmountProrater = new CRM_MembershipExtras_Service_MembershipTypeAmountProrater($membershipTypeDuration, $membershipTypeTaxAmount);
 
-  return $membershipTypeAmount->calculateProRata($membershipType, $startDate, $endDate, $joinDate);
+  return $membershipTypeAmountProrater->calculateProRata($membershipType, $startDate, $endDate, $joinDate);
 }

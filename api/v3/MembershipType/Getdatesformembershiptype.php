@@ -58,8 +58,8 @@ function civicrm_api3_membership_type_getdatesformembershipType($params) {
     throw new API_Exception('Membership Period Type is not of type Fixed');
   }
 
-  $membershipTypeDates = new CRM_MembershipExtras_Service_MembershipTypeDates();
-  $membershipTypeDates = $membershipTypeDates->getDatesForMembershipType($membershipType, $startDate, $endDate, $joinDate);
+  $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
+  $membershipTypeDates = $membershipTypeDatesCalculator->getDatesForMembershipType($membershipType, $startDate, $endDate, $joinDate);
   $membershipTypeDates = array_map('_civicrm_api3_membership_type_process_dates', $membershipTypeDates);
 
   return civicrm_api3_create_success($membershipTypeDates, $params);
