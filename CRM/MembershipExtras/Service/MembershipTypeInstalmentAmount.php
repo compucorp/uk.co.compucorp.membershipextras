@@ -2,7 +2,7 @@
 
 use CRM_Member_BAO_MembershipType as MembershipType;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
+use CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator as MembershipTypeTaxAmountCalculator;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as InvalidMembershipTypeInstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 
@@ -24,20 +24,25 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
   private $membershipTypes;
 
   /**
-   * @var MembershipTypeTaxAmount
+   * @var MembershipTypeTaxAmountCalculator
    */
-  private $membershipTypeTaxAmount;
+  private $membershipTypeTaxAmountCalculator;
 
   /**
    * CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount constructor.
    *
    * @param MembershipType[] $membershipTypes
-   * @param MembershipTypeTaxAmount $membershipTypeTaxAmount
+   * @param MembershipTypeTaxAmountCalculator $membershipTypeTaxAmountCalculator
    * @param MembershipTypeDatesCalculator $membershipTypeDatesCalculator
    */
-  public function __construct(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount, MembershipTypeDatesCalculator $membershipTypeDatesCalculator) {
+  public function __construct
+  (
+    array $membershipTypes,
+    MembershipTypeTaxAmountCalculator $membershipTypeTaxAmountCalculator,
+    MembershipTypeDatesCalculator $membershipTypeDatesCalculator)
+  {
     $this->membershipTypes = $membershipTypes;
-    $this->membershipTypeTaxAmount = $membershipTypeTaxAmount;
+    $this->membershipTypeTaxAmountCalculator = $membershipTypeTaxAmountCalculator;
     $this->membershipTypeDatesCalculator = $membershipTypeDatesCalculator;
     $this->validateMembershipTypeForInstalment();
   }
@@ -53,7 +58,7 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
     if (!$this->followingInstalmentAmount) {
       $totalMembershipTypeAmount = 0;
       foreach ($this->membershipTypes as $membershipType) {
-        $totalMembershipTypeAmount += ($membershipType->minimum_fee + $this->membershipTypeTaxAmount->calculateTax($membershipType));
+        $totalMembershipTypeAmount += ($membershipType->minimum_fee + $this->membershipTypeTaxAmountCalculator->calculateTax($membershipType));
       }
 
       $this->followingInstalmentAmount = MoneyUtilities::roundToPrecision($totalMembershipTypeAmount/12, 2);

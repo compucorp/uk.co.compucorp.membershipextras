@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
+use CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator as MembershipTypeTaxAmountCalculator;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount as MembershipTypeInstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
@@ -127,15 +127,15 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends Ba
   }
 
   private function getMembershipTypeTaxAmount($membershipTypes, $amount = 0) {
-    $membershipTypeTaxAmount = $this->prophesize(MembershipTypeTaxAmount::class);
+    $membershipTypeTaxAmountCalculator = $this->prophesize(MembershipTypeTaxAmountCalculator::class);
     foreach ($membershipTypes as $membershipType) {
-      $membershipTypeTaxAmount->calculateTax($membershipType)->willReturn($amount);
+      $membershipTypeTaxAmountCalculator->calculateTax($membershipType)->willReturn($amount);
     }
 
-    return $membershipTypeTaxAmount->reveal();
+    return $membershipTypeTaxAmountCalculator->reveal();
   }
 
-  private function getMembershipTypeInstalmentAmount(array $membershipTypes, MembershipTypeTaxAmount $membershipTypeTaxAmount) {
+  private function getMembershipTypeInstalmentAmount(array $membershipTypes, MembershipTypeTaxAmountCalculator $membershipTypeTaxAmount) {
     $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
     return new MembershipTypeInstalmentAmount($membershipTypes, $membershipTypeTaxAmount, $membershipTypeDatesCalculator);
   }

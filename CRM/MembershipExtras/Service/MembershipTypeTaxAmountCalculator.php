@@ -2,7 +2,7 @@
 
 use CRM_Member_BAO_MembershipType as MembershipType;
 
-class CRM_MembershipExtras_Service_MembershipTypeTaxAmount {
+class CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator {
 
   /**
    * Calculate Tax amount for the membership type.

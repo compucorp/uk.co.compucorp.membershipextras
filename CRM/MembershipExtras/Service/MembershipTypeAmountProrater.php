@@ -3,7 +3,7 @@
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_Member_BAO_MembershipType as MembershipType;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
+use CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator as MembershipTypeTaxAmountCalculator;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipTypeAmountProrater
@@ -16,19 +16,19 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProrater {
   private $membershipTypeDurationCalculator;
 
   /**
-   * @var MembershipTypeTaxAmount
+   * @var MembershipTypeTaxAmountCalculator
    */
-  private $membershipTypeTaxAmount;
+  private $membershipTypeTaxAmountCalculator;
 
   /**
    * CRM_MembershipExtras_Service_MembershipTypeAmount constructor.
    *
    * @param MembershipTypeDurationCalculator $membershipTypeDurationCalculator
-   * @param MembershipTypeTaxAmount $membershipTypeTaxAmount
+   * @param MembershipTypeTaxAmountCalculator $membershipTypeTaxAmountCalculator
    */
-  public function __construct(MembershipTypeDurationCalculator $membershipTypeDurationCalculator, MembershipTypeTaxAmount $membershipTypeTaxAmount) {
+  public function __construct(MembershipTypeDurationCalculator $membershipTypeDurationCalculator, MembershipTypeTaxAmountCalculator $membershipTypeTaxAmountCalculator) {
     $this->membershipTypeDurationCalculator = $membershipTypeDurationCalculator;
-    $this->membershipTypeTaxAmount = $membershipTypeTaxAmount;
+    $this->membershipTypeTaxAmountCalculator = $membershipTypeTaxAmountCalculator;
   }
 
   /**
@@ -54,7 +54,7 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProrater {
     $membershipAmount = $membershipType->minimum_fee;
 
     $proRata = ($membershipAmount/$membershipTypeDurationInDays) * $calculatedDurationInDays;
-    $tax = $this->membershipTypeTaxAmount->calculateTax($membershipType, $proRata);
+    $tax = $this->membershipTypeTaxAmountCalculator->calculateTax($membershipType, $proRata);
 
     return MoneyUtilities::roundToPrecision(($proRata + $tax), 2);
   }

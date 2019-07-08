@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeAmountProrater as MembershipTypeAmount;
-use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
+use CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator as MembershipTypeTaxAmountCalculator;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 
 /**
@@ -48,7 +48,7 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends Base
   }
 
   private function getMembershipTypeTaxAmount($membershipType, $prorata, $amount = 0) {
-    $membershipTypeTaxAmount = $this->prophesize(MembershipTypeTaxAmount::class);
+    $membershipTypeTaxAmount = $this->prophesize(MembershipTypeTaxAmountCalculator::class);
     $membershipTypeTaxAmount->calculateTax($membershipType, $prorata)->willReturn($amount);
 
     return $membershipTypeTaxAmount->reveal();
