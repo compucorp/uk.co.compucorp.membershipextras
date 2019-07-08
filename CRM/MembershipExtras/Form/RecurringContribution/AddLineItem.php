@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_ExtensionUtil as E;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Service_MembershipTypeDates as MembershipTypeDates;
+use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
 
 /**
@@ -229,13 +229,13 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
   protected function getProratedFirstInstalmentAmount() {
     $lineItems = $this->lineItemParams;
     $membershipType = CRM_Member_BAO_MembershipType::findById($lineItems['membership_type_id']);
-    $membershipTypeDates = new MembershipTypeDates();
-    $membershipDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType, $membershipTypeDates);
+    $membershipTypeDates = new MembershipTypeDatesCalculator();
+    $membershipDurationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($membershipType, $membershipTypeDates);
     $proratedAmount = $lineItems['amount'];
     $daysUntilNextCycle = $this->daysRemainingUntilNextCycleDate;
 
     if ($daysUntilNextCycle) {
-      $membershipTypeDurationInDays = $membershipDuration->calculateOriginalInDays();
+      $membershipTypeDurationInDays = $membershipDurationCalculator->calculateOriginalInDays();
       $membershipTypeAmount = $membershipType->minimum_fee;
       $proratedAmount = ($membershipTypeAmount/$membershipTypeDurationInDays) * $daysUntilNextCycle;
       $proratedAmount = MoneyUtilities::roundToPrecision($proratedAmount, 2);

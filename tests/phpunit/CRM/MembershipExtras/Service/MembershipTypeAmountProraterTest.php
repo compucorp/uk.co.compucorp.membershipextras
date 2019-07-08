@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_MembershipTypeDuration as MembershipTypeDuration;
+use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeAmountProrater as MembershipTypeAmount;
 use CRM_MembershipExtras_Service_MembershipTypeTaxAmount as MembershipTypeTaxAmount;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
@@ -40,11 +40,11 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends Base
   }
 
   private function getMembershipTypeDuration($originalDays, $calculatedDays) {
-    $membershipTypeDuration = $this->prophesize(MembershipTypeDuration::class);
-    $membershipTypeDuration->calculateOriginalInDays()->willReturn($originalDays);
-    $membershipTypeDuration->calculateDaysBasedOnDates(new DateTime(), new DateTime(), NULL)->willReturn($calculatedDays);
+    $membershipTypeDurationCalculator = $this->prophesize(MembershipTypeDurationCalculator::class);
+    $membershipTypeDurationCalculator->calculateOriginalInDays()->willReturn($originalDays);
+    $membershipTypeDurationCalculator->calculateDaysBasedOnDates(new DateTime(), new DateTime(), NULL)->willReturn($calculatedDays);
 
-    return $membershipTypeDuration->reveal();
+    return $membershipTypeDurationCalculator->reveal();
   }
 
   private function getMembershipTypeTaxAmount($membershipType, $prorata, $amount = 0) {

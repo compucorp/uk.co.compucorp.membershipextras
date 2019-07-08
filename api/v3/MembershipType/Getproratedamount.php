@@ -67,16 +67,16 @@ function civicrm_api3_membership_type_getproratedamount($params) {
   }
 
   $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
-  $membershipTypeDuration = new CRM_MembershipExtras_Service_MembershipTypeDuration($membershipType, $membershipTypeDatesCalculator);
+  $membershipTypeDurationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($membershipType, $membershipTypeDatesCalculator);
   $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
-  $membershipTypeAmountProrater = new CRM_MembershipExtras_Service_MembershipTypeAmountProrater($membershipTypeDuration, $membershipTypeTaxAmount);
+  $membershipTypeAmountProrater = new CRM_MembershipExtras_Service_MembershipTypeAmountProrater($membershipTypeDurationCalculator, $membershipTypeTaxAmount);
   $proRata = $membershipTypeAmountProrater->calculateProRata($membershipType, $startDate, $endDate, $joinDate);
 
   $results = [
     'membership_type_id' => $membershipTypeID,
     'pro_rated_amount' => $proRata
   ];
-  $extraParams = ['duration_in_days' => $membershipTypeDuration->calculateDaysBasedOnDates($startDate, $endDate, $joinDate)];
+  $extraParams = ['duration_in_days' => $membershipTypeDurationCalculator->calculateDaysBasedOnDates($startDate, $endDate, $joinDate)];
 
   return civicrm_api3_create_success($results, $params, null, 'create', $membershipType, $extraParams);
 }

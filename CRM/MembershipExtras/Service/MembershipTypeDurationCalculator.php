@@ -4,9 +4,9 @@ use CRM_Member_BAO_MembershipType as MembershipType;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 
 /**
- * Class CRM_MembershipExtras_Service_MembershipTypeDuration
+ * Class CRM_MembershipExtras_Service_MembershipTypeDurationCalculator
  */
-class CRM_MembershipExtras_Service_MembershipTypeDuration {
+class CRM_MembershipExtras_Service_MembershipTypeDurationCalculator {
 
   /**
    * @var MembershipType
