@@ -236,7 +236,6 @@
      * global array selectedPriceValueIds
      */
     function setSelectedPriceFieldValueForRadioLineItem(priceElement) {
-      console.log('I ran here radio');
       let priceFieldValue = cj(priceElement).val();
       console.log(priceFieldValue);
 
@@ -267,7 +266,7 @@
     }
 
     /**
-     * removes the price field value from the global selectedPriceValueIds array.
+     * Adds the price field value from the global selectedPriceValueIds array.
      */
     function addToSelectedPriceFields(priceFieldValue) {
       if (priceFieldValue) {
@@ -276,7 +275,7 @@
     }
 
     /**
-     * Adds the price field value from the global selectedPriceValueIds array.
+     * Removes the price field value from the global selectedPriceValueIds array.
      */
     function removeFromSelectedPriceFields(priceFieldValue) {
       let index = selectedPriceValueIds.indexOf(priceFieldValue);

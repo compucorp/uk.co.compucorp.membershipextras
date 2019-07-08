@@ -6,7 +6,6 @@ use CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculator as Mem
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as InvalidMembershipTypeInstalmentAmount;
 
-
 /**
  * Class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest
  *

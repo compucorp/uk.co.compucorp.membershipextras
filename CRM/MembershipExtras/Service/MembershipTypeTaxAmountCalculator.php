@@ -24,4 +24,5 @@ class CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator {
 
     return ($taxRate/100) * $membershipTypeAmount;
   }
+
 }
