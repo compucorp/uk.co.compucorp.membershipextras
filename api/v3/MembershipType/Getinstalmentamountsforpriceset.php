@@ -67,10 +67,10 @@ function civicrm_api3_membership_type_getinstalmentamountsforpriceset($params) {
   }
 
   $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
-  $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
-  $membershipTypeInstalment = new CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount(
+  $membershipTypeTaxAmountCalculator = new CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator();
+  $membershipTypeInstalment = new CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculator(
     $membershipTypes,
-    $membershipTypeTaxAmount,
+    $membershipTypeTaxAmountCalculator,
     $membershipTypeDatesCalculator
 
   );

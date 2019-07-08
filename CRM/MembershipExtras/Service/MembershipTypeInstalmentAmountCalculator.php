@@ -6,7 +6,7 @@ use CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator as Membership
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as InvalidMembershipTypeInstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 
-class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount {
+class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculator {
 
   /**
    * @var float

@@ -53,12 +53,12 @@ function civicrm_api3_membership_type_getinstalmentamounts($params) {
   $membershipTypeID = $params['membership_type_id'];
 
   $membershipType = CRM_Member_BAO_MembershipType::findById($membershipTypeID);
-  $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
+  $membershipTypeTaxAmountCalculator = new CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator();
   $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
 
-  $membershipTypeInstalment = new CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount(
+  $membershipTypeInstalment = new CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculator(
     [$membershipType],
-    $membershipTypeTaxAmount,
+    $membershipTypeTaxAmountCalculator,
     $membershipTypeDatesCalculator
   );
 

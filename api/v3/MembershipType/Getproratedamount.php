@@ -68,8 +68,8 @@ function civicrm_api3_membership_type_getproratedamount($params) {
 
   $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
   $membershipTypeDurationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($membershipType, $membershipTypeDatesCalculator);
-  $membershipTypeTaxAmount = new CRM_MembershipExtras_Service_MembershipTypeTaxAmount();
-  $membershipTypeAmountProrater = new CRM_MembershipExtras_Service_MembershipTypeAmountProrater($membershipTypeDurationCalculator, $membershipTypeTaxAmount);
+  $membershipTypeTaxAmountCalculator = new CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator();
+  $membershipTypeAmountProrater = new CRM_MembershipExtras_Service_MembershipTypeAmountProrater($membershipTypeDurationCalculator, $membershipTypeTaxAmountCalculator);
   $proRata = $membershipTypeAmountProrater->calculateProRata($membershipType, $startDate, $endDate, $joinDate);
 
   $results = [

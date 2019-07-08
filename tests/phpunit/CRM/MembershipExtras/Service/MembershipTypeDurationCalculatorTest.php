@@ -9,7 +9,7 @@ use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipType
  *
  * @group headless
  */
-class CRM_MembershipExtras_Service_MembershipTypeDurationTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends BaseHeadlessTest {
 
   public function testCalculateDaysBasedOnDatesWhenStartAndEndDateIsNotNull() {
     $membershipType = MembershipTypeFabricator::fabricate([

@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator as MembershipTypeTaxAmountCalculator;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
-use CRM_MembershipExtras_Service_MembershipTypeInstalmentAmount as MembershipTypeInstalmentAmount;
+use CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculator as MembershipTypeInstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as InvalidMembershipTypeInstalmentAmount;
 
@@ -12,7 +12,7 @@ use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as Inva
  *
  * @group headless
  */
-class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest extends BaseHeadlessTest {
 
   public function testExceptionIsThrownIfMembershipTypeIsNotFixed() {
     $membershipType1 = MembershipTypeFabricator::fabricate([
