@@ -352,7 +352,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
 
     $evaluatedPeriodEndDate = new DateTime($evaluatedPeriod->end_date);
 
-    return $endDate >= $evaluatedPeriodStartDate && $endDate < $evaluatedPeriodEndDate;
+    return $endDate >= $evaluatedPeriodStartDate && $endDate <= $evaluatedPeriodEndDate;
   }
 
   private static function updateMembershipDates($membershipPeriod) {
