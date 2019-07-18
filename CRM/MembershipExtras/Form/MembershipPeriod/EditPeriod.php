@@ -26,6 +26,8 @@ class CRM_MembershipExtras_Form_MembershipPeriod_EditPeriod extends CRM_Core_For
   public function buildQuickForm() {
     $this->assignContactAndMembershipTypeInfoToTemplate();
 
+    $this->add('hidden', 'period_id');
+
     $this->add('datepicker', 'start_date', ts('Start Date'), '', TRUE, ['time' => FALSE]);
 
     $this->add('datepicker', 'end_date', ts('End Date'), '', TRUE, ['time' => FALSE]);
@@ -71,6 +73,7 @@ class CRM_MembershipExtras_Form_MembershipPeriod_EditPeriod extends CRM_Core_For
   }
 
   public function setDefaultValues() {
+    $defaults['period_id'] = $this->membershipPeriod->id;
     $defaults['start_date'] = $this->membershipPeriod->start_date;
     $defaults['end_date'] = $this->membershipPeriod->end_date;
     $defaults['is_active'] = !empty($this->membershipPeriod->is_active) ? TRUE : FALSE ;

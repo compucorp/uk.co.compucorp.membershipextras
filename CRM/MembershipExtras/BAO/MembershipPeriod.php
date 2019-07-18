@@ -226,6 +226,8 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    *
    * @param $params
    *
+   * @return CRM_MembershipExtras_DAO_MembershipPeriod
+   *
    * @throws CRM_Core_Exception
    */
   public static function updatePeriod($params) {
@@ -234,6 +236,8 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
       $membershipPeriod = self::create($params);
       $membershipPeriod->find(TRUE);
       self::updateMembershipDates($membershipPeriod);
+
+      return $membershipPeriod;
     } catch (CRM_Core_Exception $exception) {
       $transaction->rollback();
       throw $exception;

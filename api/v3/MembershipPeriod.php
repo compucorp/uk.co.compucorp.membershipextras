@@ -26,6 +26,23 @@ function civicrm_api3_membership_period_create($params) {
 }
 
 /**
+ * MembershipPeriod.updateperiod API
+ *
+ * @param array $params
+ * @return array API result descriptor
+ * @throws API_Exception
+ */
+function civicrm_api3_membership_period_updateperiod($params) {
+  try {
+    $updatedPeriod = CRM_MembershipExtras_BAO_MembershipPeriod::updatePeriod($params);
+    return civicrm_api3_create_success($updatedPeriod->toArray());
+  }
+  catch (CRM_Core_Exception $exception) {
+    return civicrm_api3_create_error($exception->getMessage());
+  }
+}
+
+/**
  * MembershipPeriod.delete API
  *
  * @param array $params
