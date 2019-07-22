@@ -53,8 +53,7 @@
         </tbody>
     </table>
     <div class="crm-submit-buttons">
-        {include file=
-        "CRM/common/formButtons.tpl" location="bottom"}
+        {include file="CRM/common/formButtons.tpl" location="bottom"}
     </div>
 </div>
 <script type="text/javascript">
@@ -67,7 +66,6 @@
   var activeNewStatus;
   var isActiveChanged = false;
   var activeOriginalState = (CRM.$('#is_active:checked').length > 0) ? 1 : 0;
-  console.log(activeOriginalState);
   CRM.$('#is_active').change(function () {
     activeNewStatus = this.checked ? 1 : 0;
     if (activeOriginalState != activeNewStatus) {
