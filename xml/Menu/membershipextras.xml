@@ -73,6 +73,11 @@
     <access_arguments>edit memberships</access_arguments>
   </item>
   <item>
+    <path>civicrm/membership/period/preactive-validation</path>
+    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_Activation_PreChangeWarnings::checkForEditForm</page_callback>
+    <access_arguments>edit memberships</access_arguments>
+  </item>
+  <item>
     <path>civicrm/membership/period/related-contributions</path>
     <page_callback>CRM_MembershipExtras_Page_MembershipPeriod_ContributionList</page_callback>
     <title>Membership Period Contributions</title>

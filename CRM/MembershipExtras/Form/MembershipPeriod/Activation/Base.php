@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_ContributionUtilities as ContributionUtilities;
+use CRM_MembershipExtras_Form_MembershipPeriod_Activation_PreChangeWarnings as PreChangeWarnings;
 
 /**
  * Base for forms to update membership periods.
@@ -13,6 +13,14 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Base extend
    * @var int
    */
   protected $id;
+
+  /**
+   * Determines if we are doing an activation or
+   * deactivation operation.
+   *
+   * @var boolean
+   */
+  protected $activationStatus;
 
   /**
    * @inheritdoc
@@ -40,7 +48,7 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Base extend
     }
 
     $this->assign('period', $period);
-    $this->assign('isPaymentStarted', $this->isPaymentStarted($period));
+    $this->assign('preChangeWarnings', PreChangeWarnings::checkForQuickAction($period, $this->activationStatus));
   }
 
   /**
@@ -54,53 +62,5 @@ abstract class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Base extend
 	 * @return array
 	 */
   protected abstract function getFormButtons();
-
-  /**
-   * Obtains payment entity status.
-   *
-   * @param \CRM_MembershipExtras_BAO_MembershipPeriod $period
-   *
-   * @return string
-   */
-  private function isPaymentStarted(CRM_MembershipExtras_BAO_MembershipPeriod $period) {
-    $status = $this->getPaymentEntityStatus($period->payment_entity_table, $period->entity_id);
-    $contributionStatusesValueMap = ContributionUtilities::getStatusesValueMap();
-    $statusName = CRM_Utils_Array::value($status, $contributionStatusesValueMap, '');
-
-    switch ($statusName) {
-      case 'Completed':
-      case 'In Progress':
-      case 'Partially paid':
-        $isPaymentStarted = TRUE;
-        break;
-
-      default:
-        $isPaymentStarted = FALSE;
-    }
-
-    return $isPaymentStarted;
-  }
-
-  /**
-   * Obtains the status of the payment entity associated to the given period.
-   *
-   * @param string $entityTable
-   * @param int $entityID
-   *
-   * @return string
-   */
-  private function getPaymentEntityStatus($entityTable, $entityID) {
-    $entity = $entityTable === 'civicrm_contribution_recur' ? 'ContributionRecur' : 'Contribution';
-
-    try {
-      $paymentEntity = civicrm_api3($entity, 'getsingle', [
-        'id' => $entityID,
-      ]);
-    } catch (Exception $e) {
-      return '';
-    }
-
-    return $paymentEntity['contribution_status_id'];
-  }
 
 }

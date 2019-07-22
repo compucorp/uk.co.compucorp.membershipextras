@@ -17,6 +17,14 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Activate extends CRM
   /**
    * @inheritdoc
    */
+  public function buildQuickForm() {
+    $this->activationStatus = true;
+    parent::buildQuickForm();
+  }
+
+  /**
+   * @inheritdoc
+   */
   protected function getFormButtons() {
     return [
       [

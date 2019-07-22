@@ -243,15 +243,15 @@ function roundUp(num, decimalPlaces) {
 }
 
 /**
- * @param {string} memTypeId 
- * 
+ * @param {string} memTypeId
+ *
  * @returns {Object}
  */
-function getMembershipType(memTypeId) { 
+function getMembershipType(memTypeId) {
   var result = CRM.$.grep(membershipTypes, function(membershipType){
     return membershipType.id == memTypeId;
   });
-  
+
   if (result.length === 0) {
     return {};
   }
@@ -272,7 +272,7 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
       'id': lineItemData.id,
       'auto_renew': 0,
     }).done(function (lineRemovalRes) {
-      
+
       if (lineRemovalRes.is_error) {
         CRM.alert(ts('Cannot remove the last item in an order!'), null, 'error');
 
@@ -284,13 +284,13 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
           'id': lineItemData.entity_id,
           'contribution_recur_id': '',
         }).done(function (membershipUnlinkRes) {
-          
+
           if (membershipUnlinkRes.is_error) {
             CRM.alert(ts('Cannot unlink the associated membership'), null, 'alert');
 
             return;
           }
-          
+
           CRM.alert(
             ts(lineItemData.label + ' should no longer be continued in the next period.'),
             null,
@@ -353,7 +353,6 @@ function createActivity(subject, typeId) {
     'subject': subject,
     'added_by': 'admin',
   }).done(function (res) {
-    console.log(res);
     return;
   });
 }

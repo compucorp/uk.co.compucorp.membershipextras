@@ -226,6 +226,8 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    *
    * @param $params
    *
+   * @return CRM_MembershipExtras_DAO_MembershipPeriod
+   *
    * @throws CRM_Core_Exception
    */
   public static function updatePeriod($params) {
@@ -233,7 +235,9 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     try {
       $membershipPeriod = self::create($params);
       $membershipPeriod->find(TRUE);
-      self::updateMembershipDates($membershipPeriod);
+      self::updateMembershipDatesAndStatus($membershipPeriod);
+
+      return $membershipPeriod;
     } catch (CRM_Core_Exception $exception) {
       $transaction->rollback();
       throw $exception;
@@ -355,7 +359,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     return $endDate >= $evaluatedPeriodStartDate && $endDate <= $evaluatedPeriodEndDate;
   }
 
-  private static function updateMembershipDates($membershipPeriod) {
+  private static function updateMembershipDatesAndStatus($membershipPeriod) {
     $membershipId = $membershipPeriod->membership_id;
     $firstActivePeriod = self::getFirstActivePeriod($membershipId);
     $lastActivePeriod = self::getLastActivePeriod($membershipId);
@@ -377,9 +381,30 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
       $params['end_date'] = $endDate;
     }
 
-    if ($joinDate || $endDate) {
+    $isTheOnlyActivePeriodDeactivated = empty($firstActivePeriod)
+      && $membershipPeriod->is_active == 0 && !self::isMembershipStatusOverridden($membershipId);
+    if ($isTheOnlyActivePeriodDeactivated) {
+      $params['status_id'] = 'Pending';
+      $params['skipStatusCal'] = 1;
+    }
+
+    if ($joinDate || $endDate || $isTheOnlyActivePeriodDeactivated) {
       civicrm_api3('Membership', 'create', $params);
     }
+  }
+
+  private static function isMembershipStatusOverridden($membershipId) {
+    $membership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'return' => ['is_override'],
+      'id' => $membershipId,
+    ]);
+
+    if (empty($membership['values'][0]['is_override'])) {
+      return FALSE;
+    }
+
+    return TRUE;
   }
 
   public static function deleteById($id) {

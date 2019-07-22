@@ -34,6 +34,14 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Activation_Deactivate extends C
   /**
    * @inheritdoc
    */
+  public function buildQuickForm() {
+    $this->activationStatus = false;
+    parent::buildQuickForm();
+  }
+
+  /**
+   * @inheritdoc
+   */
   public function postProcess() {
     $transaction = new CRM_Core_Transaction();
     try {
