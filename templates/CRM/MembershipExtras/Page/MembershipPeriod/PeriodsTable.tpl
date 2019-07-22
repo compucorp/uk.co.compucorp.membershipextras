@@ -29,7 +29,7 @@
                         {/if}
 
                         <li>
-                            <a href='{crmURL p="civicrm/membership/period/delete" q="id=`$membershipPeriod.id`"}' class='action-item crm-hover-button' class="action-item crm-hover-button" title='Delete Membership Period'>Delete</a>
+                            <a href='{crmURL p="civicrm/membership/period/delete" q="id=`$membershipPeriod.id`"}' class='period-action action-item crm-hover-button' title='Delete Membership Period'>Delete</a>
                         </li>
                     </ul>
 
