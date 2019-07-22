@@ -431,7 +431,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     if ($isTheOnlyPeriodOfMembership) {
       self::deleteMembership($membershipId);
     } else {
-      self::updateMembershipDates($membershipPeriod);
+      self::updateMembershipDatesAndStatus($membershipPeriod);
     }
 
     $transaction->commit();
