@@ -1,5 +1,8 @@
 <?php
 
+use CRM_MembershipExtras_BAO_MembershipPeriod as MembershipPeriod;
+use CRM_MembershipExtras_SettingsManager as SettingsManager;
+
 /**
  * Post processes membership payments after creation or update.
  */
@@ -103,6 +106,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
       $this->fixRecurringLineItemMembershipReferences();
       $this->createMissingMembershipPeriod();
       $this->linkPaymentToMembershipPeriod();
+      $this->updateMembershipStatusBasedOnPaymentMethod();
     }
   }
 
@@ -233,7 +237,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   private function deactivateExistingPeriod() {
     $newPeriodParams['id'] = $this->periodId;
     $newPeriodParams['is_active'] = FALSE;
-    CRM_MembershipExtras_BAO_MembershipPeriod::create($newPeriodParams);
+    MembershipPeriod::create($newPeriodParams);
   }
 
   private function createPendingMissingPeriod() {
@@ -249,12 +253,12 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
     $newPeriodParams['end_date'] = $this->calculateMissingPeriodEndDate($newPeriodParams['start_date']);
 
     $newPeriodParams['is_active'] = FALSE;
-    CRM_MembershipExtras_BAO_MembershipPeriod::create($newPeriodParams);
+    MembershipPeriod::create($newPeriodParams);
   }
 
   private function calculateMissingPeriodStartDate() {
     $membershipId = $this->membershipPayment->membership_id;
-    $lastActivePeriod = CRM_MembershipExtras_BAO_MembershipPeriod::getLastActivePeriod($membershipId);
+    $lastActivePeriod = MembershipPeriod::getLastActivePeriod($membershipId);
     if (!empty($lastActivePeriod) && !empty($lastActivePeriod['end_date'])) {
       $renewalDate = CRM_Utils_Request::retrieve('renewal_date', 'String');
       if ($renewalDate) {
@@ -307,7 +311,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    */
   private function linkPaymentToMembershipPeriod() {
     $membershipId = $this->membershipPayment->membership_id;
-    $lastMembershipPeriod = CRM_MembershipExtras_BAO_MembershipPeriod::getLastPeriod($membershipId);
+    $lastMembershipPeriod = MembershipPeriod::getLastPeriod($membershipId);
     if (!empty($lastMembershipPeriod['entity_id'])) {
       return;
     }
@@ -326,8 +330,90 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
       ];
     }
 
-    $membershipPeriod = new CRM_MembershipExtras_BAO_MembershipPeriod();
+    $membershipPeriod = new MembershipPeriod();
     $membershipPeriod::create($periodNewParams);
+  }
+
+  /**
+   * Updates the membership dates, status as well
+   * as the related period status If the membership is paid for by
+   * a payment method that that should activate the membership automatically
+   * activate the membership.
+   */
+  private function updateMembershipStatusBasedOnPaymentMethod() {
+    $paymentMethodId = $this->contribution['payment_instrument_id'];
+    $paymentMethodsThatAlwaysActivateMemberships = SettingsManager::getPaymentMethodsThatAlwaysActivateMemberships();
+    if (in_array($paymentMethodId, $paymentMethodsThatAlwaysActivateMemberships)) {
+      $this->activateAllRelatedMemberships();
+    }
+  }
+
+  /**
+   * Activates the payment  membership
+   * as well as any joint membership related to it.
+   */
+  private function activateAllRelatedMemberships() {
+    $jointMembershipIds = $this->getJointMembershipIds();
+    $membershipsToUpdateIds = array_merge([$this->membershipPayment->membership_id], $jointMembershipIds);
+
+    foreach ($membershipsToUpdateIds as $membershipsId) {
+      $paymentPendingPeriod = $this->getPendingPaymentPeriod($membershipsId);
+      if ($paymentPendingPeriod) {
+        $periodNewParams = ['id' => $paymentPendingPeriod->id, 'is_active' => true];
+        MembershipPeriod::updatePeriod($periodNewParams);
+      }
+    }
+  }
+
+  private function getJointMembershipIds() {
+    $jointMemberships = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'return' => ['id'],
+      'owner_membership_id' => $this->membershipPayment->membership_id,
+      'options' => ['limit' => 0],
+    ]);
+
+    if ($jointMemberships['count'] < 1) {
+      return [];
+    }
+
+    $jointMembershipIds = [];
+    foreach ($jointMemberships['values'] as $jointMembership) {
+      $jointMembershipIds[] = $jointMembership['id'];
+    }
+
+    return $jointMembershipIds;
+  }
+
+  /**
+   * Gets the pending period that is linked to this
+   * payment and the specified membership
+   * in case there is any
+   *
+   * @param int $membershipsId
+   *
+   * @return CRM_MembershipExtras_DAO_MembershipPeriod|null
+   */
+  private function getPendingPaymentPeriod($membershipsId) {
+    $period = new CRM_MembershipExtras_DAO_MembershipPeriod();
+    $period->is_active = FALSE;
+    $period->membership_id = $membershipsId;
+
+    if(!empty($this->recurringContribution)) {
+      $period->payment_entity_table = 'civicrm_contribution_recur';
+      $period->entity_id = $this->recurringContribution['id'];
+    } else {
+      $period->payment_entity_table = 'civicrm_contribution';
+      $period->entity_id = $this->contribution['id'];
+    }
+
+    $period->orderBy('end_date DESC,id DESC');
+    $period->limit(1);
+    if($period->find(TRUE)) {
+      return $period;
+    }
+
+    return NULL;
   }
 
 }

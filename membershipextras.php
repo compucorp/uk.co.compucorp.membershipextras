@@ -149,16 +149,26 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
  */
 function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   /**
-   * We store the contribution ID in a static variable because we
+   * We store the contribution parameters in a static variable because we
    * need it for CRM_MembershipExtras_Hook_PreEdit_Membership class
    * to be able to determine the correct recurring contribution ID in
    * case there was more than one recurring contribution.
-   * It is not that pretty solution but there is no much
+   * it also used to identify if a membership edit is triggered
+   * by completing a contribution or not.
+   *
+   * It is not that pretty solution but there is no other
    * options for now.
    */
-  static $contributionID = NULL;
-  if ($objectName === 'Contribution' && $op === 'edit') {
-    $contributionID = $id;
+  static $contributionPreviousParams = NULL;
+  if ($op === 'edit' && $objectName === 'Contribution' && !$contributionPreviousParams) {
+    $contributionParamsResponse = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'id' => $id,
+    ]);
+
+    if (!empty($contributionParamsResponse['values'][0])) {
+      $contributionPreviousParams = $contributionParamsResponse['values'][0];
+    }
   }
 
   static $recurContributionPreviousStatus = NULL;
@@ -174,7 +184,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   if ($objectName === 'Membership' && $op == 'edit') {
-    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID, $recurContributionPreviousStatus);
+    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionPreviousParams, $recurContributionPreviousStatus);
     $membershipPreHook->preProcess();
   }
 

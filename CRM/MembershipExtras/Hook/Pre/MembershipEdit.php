@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
+use CRM_MembershipExtras_SettingsManager as SettingsManager;
 
 /**
  * Implements hook to be run before a membership is created/edited.
@@ -22,21 +22,24 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   private $id;
 
   /**
-   * The membership payment contribution ID.
+   * The membership payment contribution in case the membership edit is triggeed
+   * by completing a contribution.
+   * this holds the contribution details at the moment of completing it but
+   * before its status and the payment relevant details are changed.
    *
-   * @var int
+   * @var array
    */
-  private $paymentContributionID;
+  private $paymentContributionPreviousParams;
 
   private $recurContributionPreviousStatus;
 
   private $originalEndDateParam;
 
-  public function __construct($id, &$params, $contributionID, $recurContributionPreviousStatus) {
+  public function __construct($id, &$params, $contributionPreviousParams, $recurContributionPreviousStatus) {
     $this->id = $id;
     $this->params = &$params;
     $this->originalEndDateParam = CRM_Utils_Array::value('end_date', $this->params);
-    $this->paymentContributionID = $contributionID;
+    $this->paymentContributionPreviousParams = $contributionPreviousParams;
     $this->recurContributionPreviousStatus = $recurContributionPreviousStatus;
   }
 
@@ -44,9 +47,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    if ($this->paymentContributionID && $this->isOfflineNonPendingPaymentPlanMembership()) {
-      $this->preventExtendingPaymentPlanMembership();
-      $this->correctStartDateIfRenewingExpiredPaymentPlanMembership();
+    if ($this->paymentContributionPreviousParams) {
+      if($this->isOfflineNonPendingPaymentPlanMembership()) {
+        $this->preventExtendingPaymentPlanMembership();
+        $this->correctStartDateIfRenewingExpiredPaymentPlanMembership();
+      }
+
+      $this->preventExtendingAlreadyActiveAndExtendedMembership();
     }
 
     $this->updateMembershipPeriods();
@@ -145,7 +152,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   private function getPaymentRecurringContributionID() {
     $paymentContribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'id' => $this->paymentContributionID,
+      'id' => $this->paymentContributionPreviousParams['id'],
       'return' => ['id', 'contribution_recur_id'],
     ]);
 
@@ -157,12 +164,56 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
+   * If a membership is created/renewed by a "payment method"
+   * that should automatically activate the membership. then completing
+   * any pending payment should not extend the membership dates since it should
+   * be already extended at the time of creating/renewal.
+   * This method ensure that the extending of the membership should not happen.
+   *
+   */
+  private function preventExtendingAlreadyActiveAndExtendedMembership() {
+    $contributionCurrentParams = $this->getContributionCurrentParams();
+    $contributionCurrentStatus = $contributionCurrentParams['contribution_status'];
+
+    $contributionPreviousStatus = $this->paymentContributionPreviousParams['contribution_status'];
+
+    $isCompletingPendingContribution = in_array($contributionPreviousStatus, ['Pending', 'Partially paid']) && $contributionCurrentStatus == 'Completed';
+    $paymentMethodsThatAlwaysActivateMemberships = SettingsManager::getPaymentMethodsThatAlwaysActivateMemberships();
+    if ($isCompletingPendingContribution &&
+      (in_array($this->paymentContributionPreviousParams['payment_instrument_id'],
+        $paymentMethodsThatAlwaysActivateMemberships))) {
+      unset($this->params['end_date']);
+    }
+
+  }
+
+  /**
+   * The current details of the completed contribution
+   * which is after its status and the other payment details
+   * are changed by the payment made.
+   * @return array
+   */
+  private function getContributionCurrentParams() {
+    $contributionParamsResponse = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'id' => $this->paymentContributionPreviousParams['id'],
+    ]);
+
+    $contributionParams = [];
+    if (!empty($contributionParamsResponse['values'][0])) {
+      $contributionParams = $contributionParamsResponse['values'][0];
+    }
+
+    return $contributionParams;
+  }
+
+  /**
    * Update membership periods upon membership
    * edit which might result on updating existing
    * periods or creating new ones or both.
    */
   private function updateMembershipPeriods() {
-    $membershipPeriodUpdate = new CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater($this->id, $this->params, $this->paymentContributionID);
+    $membershipPeriodUpdate = new CRM_MembershipExtras_Hook_Pre_MembershipPeriodUpdater($this->id, $this->params, $this->paymentContributionPreviousParams['id']);
     $membershipPeriodUpdate->process();
   }
 
