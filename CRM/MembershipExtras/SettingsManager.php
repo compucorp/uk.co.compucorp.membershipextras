@@ -41,7 +41,7 @@ class CRM_MembershipExtras_SettingsManager {
     if (empty($daysToDisableMP)) {
       return 0;
     }
-    
+
     return $daysToDisableMP;
   }
 
@@ -67,6 +67,15 @@ class CRM_MembershipExtras_SettingsManager {
     }
 
     return $customFieldsIdsToExcludeForAutoRenew;
+  }
+
+  public static function getPaymentMethodsThatAlwaysActivateMemberships() {
+    $paymentMethods = self::getSettingValue('membershipextras_paymentmethods_that_always_activate_memberships');
+    if (empty($paymentMethods)) {
+      return [];
+    }
+
+    return $paymentMethods;
   }
 
   private static function getSettingValue($settingName) {

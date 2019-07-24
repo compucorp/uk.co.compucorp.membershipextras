@@ -34,6 +34,9 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
         case 'membershipextras_customgroups_to_exclude_for_autorenew':
           $this->addCustomGroupsToExcludeField($field);
           break;
+        case 'membershipextras_paymentmethods_that_always_activate_memberships':
+          $this->addPaymentMethodsThatActivateMembershipsField($field);
+          break;
         default:
           $this->addSettingField($field);
           break;
@@ -105,6 +108,38 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     }
 
     return $customGroupsOptions;
+  }
+
+  private function addPaymentMethodsThatActivateMembershipsField($field) {
+    $paymentMethodOptions = ['' => ts('- select -')] + $this->getPaymentMethods();
+
+    $this->add(
+      $field['html_type'],
+      $field['name'],
+      ts($field['title']),
+      $paymentMethodOptions,
+      $field['is_required'],
+      $field['extra_attributes']
+    );
+  }
+
+  private function getPaymentMethods() {
+    $paymentMethods = civicrm_api3('OptionValue', 'get', [
+      'sequential' => 1,
+      'return' => ['label', 'value'],
+      'option_group_id' => 'payment_instrument',
+      'is_active' => 1,
+      'options' => ['limit' => 0],
+    ]);
+
+    $paymentMethodOptions = [];
+    if (!empty($paymentMethods['values'])) {
+      foreach ($paymentMethods['values'] as $paymentMethod) {
+        $paymentMethodOptions[$paymentMethod['value']] =  $paymentMethod['label'];
+      }
+    }
+
+    return $paymentMethodOptions;
   }
 
   /**

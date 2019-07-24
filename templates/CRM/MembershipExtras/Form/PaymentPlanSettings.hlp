@@ -23,7 +23,14 @@
 {/htxt}
 
 {htxt id="membershipextras_customgroups_to_exclude_for_autorenew"}
-{ts}Information in selected custom groups will not be copied over to any new installments 
+{ts}Information in selected custom groups will not be copied over to any new installments
  of an existing payment plan when it auto-renew.{/ts}
 {/htxt}
 
+{htxt id="membershipextras_paymentmethods_that_always_activate_memberships-title"}
+{ts}Payment methods that always activate memberships{/ts}
+{/htxt}
+{htxt id="membershipextras_paymentmethods_that_always_activate_memberships"}
+{ts}When a membership is created using any of the payment methods specified here, Its status will be changed to "Current"
+even if the payment is still pending.{/ts}
+{/htxt}
