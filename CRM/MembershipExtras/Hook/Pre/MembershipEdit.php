@@ -169,7 +169,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * any pending payment should not extend the membership dates since it should
    * be already extended at the time of creating/renewal.
    * This method ensure that the extending of the membership should not happen.
-   *
    */
   private function preventExtendingAlreadyActiveAndExtendedMembership() {
     $contributionCurrentParams = $this->getContributionCurrentParams();
@@ -178,10 +177,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     $contributionPreviousStatus = $this->paymentContributionPreviousParams['contribution_status'];
 
     $isCompletingPendingContribution = in_array($contributionPreviousStatus, ['Pending', 'Partially paid']) && $contributionCurrentStatus == 'Completed';
+
     $paymentMethodsThatAlwaysActivateMemberships = SettingsManager::getPaymentMethodsThatAlwaysActivateMemberships();
-    if ($isCompletingPendingContribution &&
-      (in_array($this->paymentContributionPreviousParams['payment_instrument_id'],
-        $paymentMethodsThatAlwaysActivateMemberships))) {
+    $isPaymentMethodAlwaysActivate = in_array($this->paymentContributionPreviousParams['payment_instrument_id'], $paymentMethodsThatAlwaysActivateMemberships);
+
+    if ($isCompletingPendingContribution && $isPaymentMethodAlwaysActivate) {
       unset($this->params['end_date']);
     }
 
@@ -191,6 +191,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * The current details of the completed contribution
    * which is after its status and the other payment details
    * are changed by the payment made.
+   *
    * @return array
    */
   private function getContributionCurrentParams() {
