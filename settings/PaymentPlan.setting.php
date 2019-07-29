@@ -72,5 +72,21 @@ return [
     'is_required' => FALSE,
     'description' => 'Days after a payment is overdue that a membership period should become inactive',
     'help_text' => 'Days after a payment is overdue that a membership period should become inactive',
-  ]
+  ],
+  'membershipextras_paymentmethods_that_always_activate_memberships' => [
+    'name' => 'membershipextras_paymentmethods_that_always_activate_memberships',
+    'group_name' => 'MembershipExtras: Payment Plan',
+    'group' => 'membershipextras_paymentplan',
+    'type' => 'Integer',
+    'quick_form_type' => 'Element',
+    'add' => '4.7',
+    'title' => 'Payment methods that always activate memberships',
+    'html_type' => 'select',
+    'is_required' => FALSE,
+    'extra_attributes' => [
+      'class' => 'crm-select2',
+      'multiple' => 'multiple',
+      'placeholder' => ts('- select -'),
+    ],
+  ],
 ];

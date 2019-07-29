@@ -237,12 +237,13 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
       $membershipPeriod->find(TRUE);
       self::updateMembershipDatesAndStatus($membershipPeriod);
 
+      $transaction->commit();
+
       return $membershipPeriod;
     } catch (CRM_Core_Exception $exception) {
       $transaction->rollback();
       throw $exception;
     }
-    $transaction->commit();
   }
 
   /**
