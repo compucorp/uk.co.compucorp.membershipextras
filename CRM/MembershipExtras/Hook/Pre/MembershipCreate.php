@@ -93,13 +93,14 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
 
     if ($membershipID) {
       $this->params['id'] = $membershipID;
+      $this->unsetPendingStatusIfApplicable();
       $this->createPeriodForTheUpdatedMembershipDates();
     }
   }
 
   /**
    * Returns the last membership based on the conditions passed
-   * 
+   *
    * @param mixed[] $conditions
    */
   private function getLastMembershipID($conditions) {
@@ -113,6 +114,24 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
     }
 
     return FALSE;
+  }
+
+  /**
+   * Adding a pending membership of the same type
+   * of an existing membership should not affect
+   * the existing membership status until the
+   * payment is paid. so we here unset it to
+   * preserve the original status.
+   */
+  private function unsetPendingStatusIfApplicable() {
+    $pendingMembershipStatusId = array_search('Pending', CRM_Member_PseudoConstant::membershipStatus());
+    $isMembershipStatusPending = $this->params['status_id'] == $pendingMembershipStatusId;
+
+    $isMembershipStatusOverridden = $this->params['is_override'];
+
+    if ($isMembershipStatusPending && !$isMembershipStatusOverridden) {
+      unset($this->params['status_id']);
+    }
   }
 
   private function createPeriodForTheUpdatedMembershipDates() {
