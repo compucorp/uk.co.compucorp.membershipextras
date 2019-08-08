@@ -80,8 +80,18 @@
       e.preventDefault();
       var periodId = CRM.$("input[name='period_id']").val();
       var isActive = CRM.$("#is_active").val();
+
+      var confirmationTitle = 'Deactivate Membership Period?';
+      var confirmationButtonLabel = 'Deactivate';
+      if (activeNewStatus) {
+        confirmationTitle = 'Activate Membership Period?';
+        confirmationButtonLabel = 'Activate';
+      }
+
       CRM.confirm({
-        url: CRM.url("civicrm/membership/period/preactive-validation", {'id' : periodId, 'is_active' : activeNewStatus})
+        title : confirmationTitle,
+        url: CRM.url("civicrm/membership/period/preactive-validation", {'id' : periodId, 'is_active' : activeNewStatus}),
+        options: {no: 'Cancel', yes: confirmationButtonLabel}
       }).on('crmConfirm:yes', function() {
         var updateParams = getUpdateApiParams();
         CRM.api3('MembershipPeriod', 'updateperiod', updateParams, true).done(function() {
