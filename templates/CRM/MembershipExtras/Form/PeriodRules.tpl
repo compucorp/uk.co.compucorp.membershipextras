@@ -38,6 +38,7 @@
           <tr>
             <td class="label">
               {$form.membershipextras_membership_period_rules_update_period_end_date_offset.label}
+              {help id=membershipextras_membership_period_rules_update_period_end_date_offset file="CRM/MembershipExtras/Form/PeriodRules.hlp"}
             </td>
             <td>
               {$form.membershipextras_membership_period_rules_update_period_end_date_offset.html}

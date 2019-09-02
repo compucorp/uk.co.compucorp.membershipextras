@@ -1,0 +1,13 @@
+{htxt id="membershipextras_membership_period_rules_action_on_period_with_overdue_payment_1"}
+  {ts}When a period is deactivated, it is treated as it has not taken effect.
+    A deactivated period is not reflected in memberships duration.{/ts}<br /><br/>
+  {ts}E.g. If a membership has the following periods:{/ts}<br/>
+  {ts}1. 01/01/2018 - 31/12/2018, activated{/ts}<br/>
+  {ts}2. 01/01/2019 - 31/12/2019, deactivated{/ts}<br/>
+  {ts}The membership duration will be 01/01/2018 - 31/12/2018.{/ts}
+{/htxt}
+
+{htxt id="membershipextras_membership_period_rules_update_period_end_date_offset"}
+  {ts}The period end date will be set to the option selected above plus a number of days
+    specified in the offset. This can be a negative number{/ts}
+{/htxt}
