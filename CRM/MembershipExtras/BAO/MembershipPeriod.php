@@ -138,7 +138,7 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
    *
    * @return array
    */
-  private static function getMembershipLastContribution($membershipID) {
+  public static function getMembershipLastContribution($membershipID) {
     $result = civicrm_api3('MembershipPayment', 'get', [
       'sequential' => 1,
       'membership_id' => $membershipID,

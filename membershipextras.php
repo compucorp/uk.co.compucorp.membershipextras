@@ -130,16 +130,28 @@ function membershipextras_civicrm_alterSettingsFolders(&$metaDataFolders = NULL)
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu/
  */
 function membershipextras_civicrm_navigationMenu(&$menu) {
-  $paymentPlanSettingsMenuItem = [
-    'name' => ts('payment_plan_settings'),
-    'label' => ts('Payment Plan Settings'),
-    'url' => 'civicrm/admin/payment_plan_settings',
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
-    'separator' => NULL,
+  $menuItems = [
+    'Administer/' => [
+      'name' => 'payment_plan_settings',
+      'label' => E::ts('Payment Plan Settings'),
+      'url' => 'civicrm/admin/payment_plan_settings',
+      'permission' => 'administer CiviCRM',
+      'operator' => NULL,
+      'separator' => NULL,
+    ],
+    'Administer/CiviMember' => [
+      'name' => 'membership_period_rules',
+      'label' => E::ts('Membership Period Rules'),
+      'url' => 'civicrm/admin/membership/period/rules',
+      'permission' => 'administer CiviCRM',
+      'operator' => NULL,
+      'separator' => NULL,
+    ],
   ];
 
-  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/', $paymentPlanSettingsMenuItem);
+  foreach ($menuItems as $path => $menuItem) {
+    _membershipextras_civix_insert_navigation_menu($menu, $path, $menuItem);
+  }
 }
 
 /**

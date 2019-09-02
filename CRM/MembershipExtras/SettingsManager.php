@@ -16,6 +16,18 @@ class CRM_MembershipExtras_SettingsManager {
   }
 
   /**
+   * Returns the 'should auto update overdue membership'
+   * setting.
+   *
+   * @return bool
+   */
+  public static function shouldUpdateOverdueMembershipPeriod() {
+    $autoUpdateOverdueMembershipSettingValue = (bool) self::getSettingValue('membershipextras_membership_period_rules_automatically_update_membership_period_with_overdue_payment');
+
+    return $autoUpdateOverdueMembershipSettingValue;
+  }
+
+  /**
    * Returns the 'days to renew in advance'
    * setting.
    *
@@ -36,13 +48,46 @@ class CRM_MembershipExtras_SettingsManager {
    *
    * @return int
    */
-  public static function getDaysToDisableMembershipPeriodsWithOverduePayment() {
-    $daysToDisableMP = self::getSettingValue('membershipextras_paymentplan_days_to_disable_membership_period_with_overdue_payment');
-    if (empty($daysToDisableMP)) {
-      return 0;
-    }
+  public static function getDaysToUpdateOverdueMembershipPeriods() {
+    $daysToDisableMP = (int) self::getSettingValue('membershipextras_membership_period_rules_days_to_act_on_membership_period_with_overdue_payment');
 
     return $daysToDisableMP;
+  }
+
+  /**
+   * Returns the action to take on overdue memberships.
+   * 0. for ignore, 1. for Deactivate, 2. for Update end date.
+   *
+   * @return int
+   */
+  public static function getActionToTakeOnOverdueMembershipPeriods() {
+    $daysToDisableMP = (int) self::getSettingValue('membershipextras_membership_period_rules_days_to_act_on_membership_period_with_overdue_payment');
+
+    return $daysToDisableMP;
+  }
+
+  /**
+   * Returns the admin preferred end date for overdue membership periods.
+   * 1. for update the membership period end date to the overdue payment receive date
+   * 2. for Today (i.e, the date the membership period became 'overdue').
+   *
+   * @return int
+   */
+  public static function getEndDatePreferredForOverdueMembershipPeriods() {
+    $endDate = (int) self::getSettingValue('membershipextras_membership_period_rules_update_the_period_end_date_to');
+
+    return $endDate;
+  }
+
+  /**
+   * Returns the number of days to pad the end date of overdue membership periods with.
+   *
+   * @return int
+   */
+  public static function getOffsetToPadOverdueMembershipPeriodsEndDate() {
+    $offset = (int) self::getSettingValue('membershipextras_membership_period_rules_update_the_period_end_date_to');
+
+    return $offset;
   }
 
   public static function getCustomFieldsIdsToExcludeForAutoRenew() {
