@@ -102,9 +102,12 @@ return [
     'title' => "Automatic action to take when a membership period payment is overdue",
     'html_type' => 'radio',
     'is_required' => FALSE,
-    'description' => "Automatically update a membership period when it's payment is overdue",
-    'help_text' => "Automatically update a membership period when it's payment is overdue",
+    'description' => '',
+    'help_text' => '',
     'options' => ['1' => ts('Deactivate the period'), '2' => ts('Update the period end date')],
+    'separator' => '&nbsp;<a class="helpicon" title=" Help" aria-label=" Help" href="#" onclick="CRM.help(&quot;&quot;, {
+        &quot;id&quot;:&quot;membershipextras_membership_period_rules_action_on_period_with_overdue_payment_1&quot;,&quot;file&quot;:&quot;CRM\/MembershipExtras\/Form\/PeriodRules&quot;
+      }); return false;">&nbsp;</a><br/>',
     'has_children' => TRUE,
     'show_children_only_when_true' => TRUE,
   ],

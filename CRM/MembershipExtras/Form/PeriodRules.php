@@ -66,7 +66,8 @@ class CRM_MembershipExtras_Form_PeriodRules extends CRM_Core_Form {
       $options[] = $this->createElement('radio', NULL, NULL, $option, $key, $attributes);
     }
 
-    $group = $this->addGroup($options, $field['name'], $field['title']);
+    $separator = isset($field['separator']) ? $field['separator'] : NULL;
+    $group = $this->addGroup($options, $field['name'], $field['title'], $separator);
     $optionEditKey = 'data-option-edit-path';
     if (!empty($attributes[$optionEditKey])) {
       $group->setAttribute($optionEditKey, $attributes[$optionEditKey]);
