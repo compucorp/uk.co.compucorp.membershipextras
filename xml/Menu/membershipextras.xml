@@ -83,4 +83,10 @@
     <title>Membership Period Contributions</title>
     <access_arguments>access CiviMember</access_arguments>
   </item>
+  <item>
+    <path>civicrm/admin/membership/period/rules</path>
+    <page_callback>CRM_MembershipExtras_Form_MembershipPeriod_PeriodRules</page_callback>
+    <title>Membership Period Rules</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
 </menu>
