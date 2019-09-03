@@ -37,12 +37,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
       return;
     }
 
+    $totalAmount = CRM_Utils_Array::value('total_amount', $this->params, 0);
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $financialType = CRM_Utils_Array::value('financial_type_id', $this->params, []);
     $rate = CRM_Utils_Array::value($financialType, $taxRates, 0);
 
     $this->params['tax_amount'] = MoneyUtilities::roundToCurrencyPrecision(
-      ($this->params['total_amount'] * ($rate / 100)) / (1 + ($rate / 100))
+      ($totalAmount * ($rate / 100)) / (1 + ($rate / 100))
     );
   }
 
