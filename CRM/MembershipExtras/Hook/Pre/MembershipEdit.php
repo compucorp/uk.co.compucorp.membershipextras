@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 
 /**
  * Implements hook to be run before a membership is created/edited.
@@ -48,7 +49,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   public function preProcess() {
     if ($this->paymentContributionPreviousParams) {
-      if($this->isOfflineNonPendingPaymentPlanMembership()) {
+      if ($this->isOfflineNonPendingPaymentPlanMembership()) {
         $this->preventExtendingPaymentPlanMembership();
         $this->correctStartDateIfRenewingExpiredPaymentPlanMembership();
       }
@@ -115,6 +116,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * a payment plan.
    *
    * @param $recurringContributionID
+   *
    * @return bool
    */
   private function isOfflineNonPendingPaymentPlanContribution($recurringContributionID) {
@@ -124,11 +126,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     ])['values'][0];
 
     $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
-
-    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
-    $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
-      in_array($recurringContribution['payment_processor_id'], $manualPaymentProcessors);
-
+    $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor($recurringContribution['payment_processor_id']);
     $pendingContributionStatusId = array_search('Pending', CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name'));
     $isNonPending = !($recurringContribution['contribution_status_id'] == $pendingContributionStatusId);
     if (!empty($this->recurContributionPreviousStatus)) {
@@ -148,6 +146,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * @return int|null
    *   The recurring contribution ID or NULL
    *   if no recurring contribution exist.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function getPaymentRecurringContributionID() {
     $paymentContribution = civicrm_api3('Contribution', 'get', [
@@ -176,7 +176,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
 
     $contributionPreviousStatus = $this->paymentContributionPreviousParams['contribution_status'];
 
-    $isCompletingPendingContribution = in_array($contributionPreviousStatus, ['Pending', 'Partially paid']) && $contributionCurrentStatus == 'Completed';
+    $isCompletingPendingContribution = in_array($contributionPreviousStatus, [
+        'Pending',
+        'Partially paid',
+      ]) && $contributionCurrentStatus == 'Completed';
 
     $paymentMethodsThatAlwaysActivateMemberships = SettingsManager::getPaymentMethodsThatAlwaysActivateMemberships();
     $isPaymentMethodAlwaysActivate = in_array($this->paymentContributionPreviousParams['payment_instrument_id'], $paymentMethodsThatAlwaysActivateMemberships);
@@ -193,6 +196,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * are changed by the payment made.
    *
    * @return array
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function getContributionCurrentParams() {
     $contributionParamsResponse = civicrm_api3('Contribution', 'get', [

@@ -125,6 +125,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * into a clss attribute.
    *
    * @param $recurringContributionID
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function setCurrentRecurringContribution($recurringContributionID) {
     $this->currentRecurContributionID = $recurringContributionID;
@@ -161,6 +163,27 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
+   * Gets contribution Statuses Name to value Mapping
+   *
+   * @return array $contributionStatusesNameMap
+   */
+  private function setContributionStatusesNameMap() {
+    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
+      'sequential' => 1,
+      'return' => ['name', 'value'],
+      'option_group_id' => 'contribution_status',
+      'options' => ['limit' => 0],
+    ])['values'];
+
+    $contributionStatusesNameMap = [];
+    foreach ($contributionStatuses as $status) {
+      $contributionStatusesNameMap[$status['name']] = $status['value'];
+    }
+
+    $this->contributionStatusesNameMap = $contributionStatusesNameMap;
+  }
+
+  /**
    * Loads setting and assigns it to a class attribute.
    */
   private function setDaysToRenewInAdvance() {
@@ -177,8 +200,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Renews the given payment plan.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function run() {
+    $exceptions = [];
     $paymentPlans = $this->getRecurringContributions();
 
     foreach ($paymentPlans as $recurContribution) {
@@ -190,12 +216,16 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         $this->dispatchMembershipRenewalHook();
       } catch (Exception $e) {
         $transaction->rollback();
-        $message = "An error occurred renewing a payment plan with id({$this->currentRecurringContribution['contribution_recur_id']}): " . $e->getMessage();
+        $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
 
-        throw new Exception($message);
+        continue;
       }
 
       $transaction->commit();
+    }
+
+    if (count($exceptions)) {
+      throw new CRM_Core_Exception(implode(";\n", $exceptions));
     }
   }
   
@@ -429,8 +459,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function calculateSingleInstallmentAmount($amount) {
     $resultAmount =  $amount;
 
-    if ($this->newRecurringContribution['installments'] > 1) {
-      $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->newRecurringContribution['installments']));
+    if ($this->currentRecurringContribution['installments'] > 1) {
+      $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->currentRecurringContribution['installments']));
     }
 
     return $resultAmount;

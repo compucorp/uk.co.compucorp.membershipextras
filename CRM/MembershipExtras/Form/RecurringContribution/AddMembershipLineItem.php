@@ -103,7 +103,9 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   }
 
   /**
-   * Creates new line item associaated to the rcurring contribution.
+   * Checks if recurring line item exists for membership type in next period,
+   * and updates it if finds one. Otherwise, creates new line item associated to
+   * the recurring contribution.
    *
    * @return array
    */
@@ -116,7 +118,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       $this->lineItemParams['amount'] * $taxRate / 100
     );
 
-    $lineItem = civicrm_api3('LineItem', 'create', [
+    $lineItemParams = [
       'sequential' => 1,
       'entity_table' => 'civicrm_membership',
       'entity_id' => $membership['id'],
@@ -128,16 +130,95 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'price_field_value_id' => $priceFieldValue['id'],
       'financial_type_id' => $priceFieldValue['financial_type_id'],
       'tax_amount' => $taxAmount,
-    ]);
+    ];
 
-    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+    $existingLineItem = $this->getExistingLineItemForMembershipType($membership['membership_type_id']);
+    if (CRM_Utils_Array::value('id', $existingLineItem, false)) {
+      $lineItemParams['id'] = $existingLineItem['line_item_id'];
+    }
+    $lineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
+
+    $recurringSubscriptionLineParams = [
       'contribution_recur_id' => $this->recurringContribution['id'],
       'line_item_id' => $lineItem['id'],
       'start_date' => $this->lineItemParams['start_date'],
       'auto_renew' => $this->lineItemParams['auto_renew'],
-    ]);
+    ];
+
+    if (CRM_Utils_Array::value('id', $existingLineItem, false)) {
+      $recurringSubscriptionLineParams['id'] = $existingLineItem['id'];
+    }
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create($recurringSubscriptionLineParams);
 
     return array_shift($lineItem['values']);
+  }
+
+  /**
+   * Loops through line items on next period and returns the first line item
+   * with the same membership type as the given one.
+   *
+   * @param int $membershipTypeID
+   *
+   * @return array
+   */
+  private function getExistingLineItemForMembershipType($membershipTypeID) {
+    $nextPeriodLines = $this->getNextPeriodLineItems();
+
+    foreach ($nextPeriodLines as $lineItem) {
+      $priceFieldValue = $lineItem['price_field_value'];
+      $lineMembershipType = $priceFieldValue['membership_type_id'];
+
+      if ($membershipTypeID == $lineMembershipType) {
+        return $lineItem;
+      }
+    }
+
+    return [];
+  }
+
+  /**
+   * Obtains list of line items for the next period.
+   *
+   * @return array
+   */
+  private function getNextPeriodLineItems() {
+    $lineItems = array();
+
+    $params = [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->recurringContribution['id'],
+      'auto_renew' => TRUE,
+      'is_removed' => 0,
+      'options' => ['limit' => 0],
+      'api.LineItem.getsingle' => [
+        'id' => '$value.line_item_id',
+        'entity_table' => ['IS NOT NULL' => 1],
+        'entity_id' => ['IS NOT NULL' => 1],
+        'api.PriceFieldValue.getsingle' => [
+          'id' => '$value.price_field_value_id',
+        ],
+      ],
+    ];
+
+    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 0);
+    if ($installments <= 1) {
+      $params['end_date'] = ['IS NULL' => 1];
+    }
+
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', $params);
+    if ($result['count'] > 0) {
+      foreach ($result['values'] as $lineItemData) {
+        $lineDetails = $lineItemData['api.LineItem.getsingle'];
+        $lineDetails['price_field_value'] = $lineDetails['api.PriceFieldValue.getsingle'];
+
+        unset($lineDetails['id']);
+        unset($lineDetails['api.PriceFieldValue.getsingle']);
+        unset($lineItemData['api.LineItem.getsingle']);
+        $lineItems[] = array_merge($lineItemData, $lineDetails);
+      }
+    }
+
+    return $lineItems;
   }
 
   /**
@@ -189,7 +270,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'id' => $membership['id'],
       'start_date' => $this->lineItemParams['start_date'],
       'end_date' => $this->lineItemParams['end_date'],
-      'contribution_recur_id' => $this->recurringContribution['id'],
+      'contribution_recur_id' => $this->recurringContribution['auto_renew'] ? $this->recurringContribution['id'] : '',
     ]);
 
     return array_shift($result['values']);
@@ -225,6 +306,8 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
    * Creates a new membership for the recurring contribution.
    */
   private function createMembership() {
+    $autoRenew = $this->recurringContribution['auto_renew'] && $this->lineItemParams['auto_renew'];
+
     $result = civicrm_api3('Membership', 'create', [
       'sequential' => 1,
       'contact_id' => $this->recurringContribution['contact_id'],
@@ -232,7 +315,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'join_date' => date('YmdHis'),
       'start_date' => $this->lineItemParams['start_date'],
       'end_date' => $this->lineItemParams['end_date'],
-      'contribution_recur_id' => $this->recurringContribution['id'],
+      'contribution_recur_id' => $autoRenew ? $this->recurringContribution['id'] : '',
     ]);
 
     return array_shift($result['values']);

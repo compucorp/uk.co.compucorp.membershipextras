@@ -19,14 +19,19 @@
 </div>
 
 <p>
-  {ts}Please note the new line will be added to all pending instalments starting from {$newLineItem.start_date|date_format} immediately after clicking "Apply".{/ts}
+  {ts}Please note the new line will be added to all pending instalments starting from {$newLineItem.start_date|crmDate} immediately after clicking "Apply".{/ts}
 </p>
 <div class="crm-section">
   <div>
     {$form.adjust_first_amount.label}
     {$form.adjust_first_amount.html}
   </div>
-  <div id="amount_container">{$form.first_installment_amount.html}</div>
+  <div id="amount_container">{$form.first_installment_amount.html}
+    {if $daysRemainingUntilNextCycleDate}
+      <div class="description">Pro-rated for the {$daysRemainingUntilNextCycleDate} days until the next billing cycle </div>
+    {/if}
+  </div>
+
 </div>
 
 <div class="crm-submit-buttons">

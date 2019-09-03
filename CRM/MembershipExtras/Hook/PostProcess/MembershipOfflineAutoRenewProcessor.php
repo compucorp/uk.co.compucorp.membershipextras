@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+
 class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
 
   /**
@@ -42,18 +44,19 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
       return;
     }
 
-    $isPaymentPlanPayment = $this->isPaymentPlanPayment();
-    if ($isPaymentPlanPayment) {
+    $isPaymentPlanWithAtLeastOneInstallment = $this->isPaymentPlanWithAtLeastOneInstallment();
+    if ($isPaymentPlanWithAtLeastOneInstallment) {
       $recurContributionID = $this->getMembershipLastRecurContributionID();
     }
     else {
       $recurContributionID = $this->createAutoRenewRecurContribution();
       $this->updateContributionRecurringContribution($recurContributionID);
+      $this->createRecurringSubscriptionLineItems($recurContributionID);
     }
 
     $this->setMembershipToAutoRenew($recurContributionID);
 
-    if ($isPaymentPlanPayment) {
+    if ($isPaymentPlanWithAtLeastOneInstallment) {
       $this->setRecurContributionAutoRenew($recurContributionID);
       $this->setRecurringLineItemsAsAutoRenew($recurContributionID);
     }
@@ -85,7 +88,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
    *
    * @return bool
    */
-  private function isPaymentPlanPayment() {
+  private function isPaymentPlanWithAtLeastOneInstallment() {
     $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
@@ -245,6 +248,17 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
         'contribution_recur_id' => $recurContributionID,
       ]);
     }
+  }
+
+  /**
+   * Creates recurring contribution's line items to set up current and next
+   * periods.
+   *
+   * @param $recurContributionID
+   */
+  private function createRecurringSubscriptionLineItems($recurContributionID ) {
+    $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
+    $lineItemCreator->create();
   }
 
   /**

@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+
 /**
  * Alters UpdateSubscription form.
  */
@@ -48,7 +50,8 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
    * Implements modifications to UpdateSubscription form.
    */
   public function buildForm() {
-    if (!$this->isManualPaymentPlan()) {
+    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($this->recurringContribution['payment_processor_id']);
+    if (!$isManualPaymentPlan) {
       return;
     }
 
@@ -89,21 +92,6 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
         'name' => ts('Cancel'),
       ],
     ]);
-  }
-
-  /**
-   * Checks if recurring contribution is using manual payment processor.
-   */
-  private function isManualPaymentPlan() {
-    $paymentProcessorID = $this->recurringContribution['payment_processor_id'];
-    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
-    $isOfflineContribution = in_array($paymentProcessorID, $manualPaymentProcessors);
-
-    if ($isOfflineContribution || empty($paymentProcessorID)) {
-      return true;
-    }
-
-    return false;
   }
 
 }
