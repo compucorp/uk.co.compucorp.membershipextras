@@ -392,6 +392,10 @@ function membershipextras_civicrm_pageRun($page) {
       'page-header'
     );
   }
+
+  if (get_class($page) === 'CRM_Member_Page_Tab') {
+    Civi::resources()->addStyleFile('uk.co.compucorp.membershipextras', 'css/membershipPeriodsNestedView.css');
+  }
 }
 
 /**
@@ -455,10 +459,6 @@ function membershipextras_civicrm_preProcess($formName, $form) {
   if ($formName === 'CRM_Contribute_Form_ContributionView') {
     $preProcessor = new CRM_MembershipExtras_Hook_PreProcess_ContributionView($form);
     $preProcessor->preProcess();
-  }
-
-  if (get_class($page) === 'CRM_Member_Page_Tab') {
-    Civi::resources()->addStyleFile('uk.co.compucorp.membershipextras', 'css/membershipPeriodsNestedView.css');
   }
 }
 
