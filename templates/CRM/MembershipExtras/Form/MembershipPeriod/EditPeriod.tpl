@@ -134,3 +134,11 @@
   }
   {/literal}
 </script>
+<style type="text/css">
+{literal}
+  .crm-container.ui-dialog .ui-dialog-buttonset [data-op='no'] {
+    float: left;
+    margin-left: 0 !important;
+  }
+{/literal}
+</style>

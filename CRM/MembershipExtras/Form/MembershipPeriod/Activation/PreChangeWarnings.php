@@ -14,9 +14,9 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Activation_PreChangeWarnings {
 
     $period = CRM_MembershipExtras_BAO_MembershipPeriod::getMembershipPeriodById($periodId);
 
-    $message['content'] = '<div class="crm-form-block"><p><strong>';
+    $message['content'] = '<p><strong>';
     $message['content'] .= self::getValidationMessage($period, $newActiveStatus);
-    $message['content'] .= '</p></strong></div>';
+    $message['content'] .= '</strong></p>';
     CRM_Utils_JSON::output($message);
   }
 
@@ -36,8 +36,9 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Activation_PreChangeWarnings {
   }
 
   public static function getActivationMessage($period) {
-    $startDate = CRM_Utils_Date::customFormat($period->start_date);
-    $endDate = CRM_Utils_Date::customFormat($period->end_date);
+    $config = CRM_Core_Config::singleton();
+    $startDate = CRM_Utils_Date::customFormat($period->start_date, $config->dateformatFull);
+    $endDate = CRM_Utils_Date::customFormat($period->end_date, $config->dateformatFull);
 
     if (self::isPaymentStarted($period)) {
       return "Would you like to activate membership period {$startDate} to
