@@ -14,9 +14,9 @@ class CRM_MembershipExtras_Form_MembershipPeriod_Activation_PreChangeWarnings {
 
     $period = CRM_MembershipExtras_BAO_MembershipPeriod::getMembershipPeriodById($periodId);
 
-    $message['content'] = '<div class="crm-form-block"><p><strong>';
+    $message['content'] = '<p><strong>';
     $message['content'] .= self::getValidationMessage($period, $newActiveStatus);
-    $message['content'] .= '</p></strong></div>';
+    $message['content'] .= '</strong></p>';
     CRM_Utils_JSON::output($message);
   }
 
