@@ -4,6 +4,7 @@
  * Helps manage settings for the extension.
  */
 class CRM_MembershipExtras_SettingsManager {
+  const COLOUR_SETTINGS_KEY = 'membership_type_colour';
 
   /**
    * Returns the details of the default payment processor as per payment plan
@@ -124,10 +125,19 @@ class CRM_MembershipExtras_SettingsManager {
   }
 
   private static function getSettingValue($settingName) {
-    return civicrm_api3('Setting', 'get', [
-      'sequential' => 1,
-      'return' => [$settingName],
-    ])['values'][0][$settingName];
+    try {
+      $result = civicrm_api3('Setting', 'get', [
+        'sequential' => 1,
+        'return' => [$settingName],
+      ]);
+      if ($result['count'] > 1) {
+        return $result['values'][0][$settingName];
+      }
+    } catch (Exception $e) {
+      return null;
+    }
+
+    return null;
   }
 
   /**
@@ -150,6 +160,45 @@ class CRM_MembershipExtras_SettingsManager {
     return civicrm_api3('Setting', 'getfields',[
       'filters' =>[ 'group' => 'membershipextras_paymentplan'],
     ])['values'];
+  }
+
+  /**
+   * Receives a background color in hexadecimal format and determines
+   * what the text colour should be based on the intensity of the background
+   * colour. Returns black or white in hex format.
+   *
+   * @param string $hex
+   *
+   * @return string
+   */
+  public static function computeTextColor($hex) {
+    if ($hex == 'inherit') {
+      return 'inherit';
+    }
+
+    list($r, $g, $b) = array_map('hexdec', str_split(trim($hex, '#'), 2));
+    $uiColours = [$r / 255, $g / 255, $b / 255];
+    $c = array_map('self::calcColour', $uiColours);
+
+    $luminance = (0.2126 * $c[0]) + (0.7152 * $c[1]) + (0.0722 * $c[2]);
+
+    return ($luminance > 0.179) ? '#000000' : '#ffffff';
+  }
+
+  /**
+   * Calculate colour for RGB values.
+   *
+   * @param string $c
+   *
+   * @return float|int
+   */
+  private static function calcColour($c) {
+    if ($c <= 0.03928) {
+      return $c / 12.92;
+    }
+    else {
+      return pow(($c + 0.055) / 1.055, 2.4);
+    }
   }
 
 }

@@ -57,9 +57,10 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    * fields.
    */
   public function postProcess() {
-    $this->updateMembership();
+    $this->updateMemberships();
     $this->updateRelatedInstallments();
     $this->updateRecurringContribution();
+    $this->updateSubscriptionLineItems();
   }
 
   /**
@@ -80,30 +81,53 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
   }
 
   /**
+   * Updates recurring line items associated to the recurring contribution.
+   */
+  private function updateSubscriptionLineItems() {
+    $autoRenew = $this->form->getElementValue('auto_renew');
+
+    if (!$autoRenew) {
+      return;
+    }
+
+    civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->recurringContribution['id'],
+      'is_removed' => 0,
+      'options' => ['limit' => 0],
+      'api.ContributionRecurLineItem.create' => [
+        'id' => '$value.id',
+        'auto_renew' => $autoRenew,
+      ],
+    ]);
+  }
+
+  /**
    * Updates membership if necessary.
    */
-  private function updateMembership() {
+  private function updateMemberships() {
     $autoRenew = $this->form->getElementValue('auto_renew');
-    $membershipID = $this->getRelatedMembershipID();
+    $memberships = $this->getRelatedMembershipIDs();
 
-    if ($autoRenew && $membershipID) {
-      civicrm_api3('Membership', 'create', [
-        'id' => $membershipID,
-        'contribution_recur_id' => $this->recurringContribution['id'],
-      ]);
-    } elseif (!$autoRenew) {
-      civicrm_api3('Membership', 'create', [
-        'id' => $membershipID,
+    foreach ($memberships as $relatedMembership) {
+      $params = [
+        'id' => $relatedMembership,
         'contribution_recur_id' => '',
-      ]);
+      ];
+
+      if ($autoRenew) {
+        $params['contribution_recur_id'] = $this->recurringContribution['id'];
+      }
+
+      civicrm_api3('Membership', 'create', $params);
     }
   }
 
   /**
-   * Obtains membership ID of payments done with contributions related to
+   * Obtains membership IDs of payments done with contributions related to
    * current recurring contribution.
    */
-  private function getRelatedMembershipID() {
+  private function getRelatedMembershipIDs() {
     $result = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
       'contribution_recur_id' => $this->recurringContribution['id'],
@@ -111,19 +135,25 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       'options' => ['limit' => 0, 'sort' => 'id DESC'],
     ]);
 
-    if ($result['count']) {
-      foreach ($result['values'] as $relatedContribution) {
-        $membershipPaymentResult = $relatedContribution['api.MembershipPayment.get'];
+    if (!$result['count']) {
+      return [];
+    }
 
-        if ($membershipPaymentResult['count'] > 0) {
-          $paymentData = array_shift($membershipPaymentResult['values']);
+    $relatedMemberships = [];
+    foreach ($result['values'] as $relatedContribution) {
+      $membersipPayments = $relatedContribution['api.MembershipPayment.get'];
+      if (!$membersipPayments['count']) {
+        continue;
+      }
 
-          return $paymentData['membership_id'];
+      foreach ($membersipPayments['values'] as $payment) {
+        if (!in_array($payment['membership_id'], $relatedMemberships)) {
+          $relatedMemberships[] = $payment['membership_id'];
         }
       }
     }
 
-    return false;
+    return $relatedMemberships;
   }
 
   /**
@@ -178,7 +208,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       return $result['values'];
     }
 
-    return array();
+    return [];
   }
 
   /**
@@ -201,7 +231,8 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
     if ($difference > 0) {
       $date->add(new DateInterval($interval));
-    } elseif ($difference < 0) {
+    }
+    elseif ($difference < 0) {
       $date->sub(new DateInterval($interval));
     }
 

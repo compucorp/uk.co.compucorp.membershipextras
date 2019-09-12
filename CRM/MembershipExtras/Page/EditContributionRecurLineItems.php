@@ -70,14 +70,14 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @return array
    */
-  private function getAvailableMembershipTypes($currentLineItems) {
+  private function getAvailableMembershipTypes($currentLineItems, $period) {
     $memberhipTypes = civicrm_api3('MembershipType', 'get', [
       'options' => ['limit' => 0],
     ])['values'];
 
     $allowedTypes = [];
     foreach ($memberhipTypes as $type) {
-      if ($this->isAllowedMembershipType($type, $currentLineItems)) {
+      if ($this->isAllowedMembershipType($type, $currentLineItems, $period)) {
         $allowedTypes[] = $type;
       }
     }
@@ -94,9 +94,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @return bool
    */
-  private function isAllowedMembershipType($membershipType, $currentLineItems) {
+  private function isAllowedMembershipType($membershipType, $currentLineItems, $period) {
     foreach ($currentLineItems as $lineItem) {
-      if ($lineItem['entity_table'] != 'civicrm_membership') {
+      $matchAutoRenewLineItems = ($period == 'current_period') ? $lineItem['auto_renew'] : !$lineItem['auto_renew'];
+      if ($lineItem['entity_table'] != 'civicrm_membership' || $matchAutoRenewLineItems ) {
         continue;
       }
 
@@ -117,21 +118,25 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return array
    */
   private function getMembershipTypeFromMembershipID($membershipID) {
-    $result = civicrm_api3('Membership', 'getsingle', [
-      'id' => $membershipID,
-      'api.MembershipType.getsingle' => [
-        'id' => '$value.membership_type_id',
-      ],
-    ]);
+    try {
+      $result = civicrm_api3('Membership', 'getsingle', [
+        'id' => $membershipID,
+        'api.MembershipType.getsingle' => [
+          'id' => '$value.membership_type_id',
+        ],
+      ]);
 
-    return $result['api.MembershipType.getsingle'];
+      return $result['api.MembershipType.getsingle'];
+    } catch (Exception $e) {
+      return [];
+    }
   }
 
   /**
    * @inheritdoc
    */
   public function run() {
-    CRM_Utils_System::setTitle(E::ts('Manage Instalment'));
+    CRM_Utils_System::setTitle(E::ts('Manage Installments'));
 
     $this->assign('currentDate', date('Y-m-d'));
     $this->assign('recurringContribution', $this->contribRecur);
@@ -142,17 +147,16 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $currentPeriodLineItems = $this->getCurrentPeriodLineItems();
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
-    $this->assign('membershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems));
+    $this->assign('currentPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'current_period'));
+    $this->assign('nextPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'next_period'));
     $this->assign('lineItems', $currentPeriodLineItems);
+
+    $nextPeriodLineItems = $this->getNextPeriodLineItems();
     $this->assign('showNextPeriodTab', $this->showNextPeriodTab());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
     $this->assign('currencySymbol', $this->getCurrencySymbol());
-    $this->assign('nextPeriodLineItems', $this->getLineItems([
-      'auto_renew' => TRUE,
-      'end_date' => ['IS NULL' => 1],
-      'is_removed' => 0,
-    ]));
+    $this->assign('nextPeriodLineItems', $nextPeriodLineItems);
 
     parent::run();
   }
@@ -166,16 +170,33 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $conditions = [
       'is_removed' => 0,
       'start_date' => ['IS NOT NULL' => 1],
-      'end_date' => ['IS NULL' => 1],
     ];
 
-    if (!$this->contribRecur['installments']) {
+    $installments = CRM_Utils_Array::value('installments', $this->contribRecur, 0);
+    if ($installments <= 1) {
       $conditions['end_date'] = ['IS NULL' => 1];
     }
 
-    $currentPeriodLineItems = $this->getLineItems($conditions);
+    return $this->getLineItems($conditions);
+  }
 
-    return $currentPeriodLineItems;
+  /**
+   * Obtains list of line items for the next period.
+   *
+   * @return array
+   */
+  private function getNextPeriodLineItems() {
+    $conditions = [
+      'auto_renew' => TRUE,
+      'is_removed' => 0,
+    ];
+
+    $installments = CRM_Utils_Array::value('installments', $this->contribRecur, 0);
+    if ($installments <= 1) {
+      $conditions['end_date'] = ['IS NULL' => 1];
+    }
+
+    return $this->getLineItems($conditions);
   }
 
   /**
@@ -216,12 +237,30 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   }
 
   /**
+   * Gets the memberships identified by givenn ID.
+   *
+   * @param $membershipID
+   *
+   * @return array
+   */
+  private function getMembership($membershipID) {
+    if (empty($membershipID)) {
+      return [];
+    }
+    $membership = civicrm_api3('Membership', 'getsingle', [
+      'sequential' => 1,
+      'id' => $membershipID,
+    ]);
+    return $membership;
+  }
+
+  /**
    * Checks if auto-renew is enabled for recurring contribution.
    *
    * @return boolean
    */
   private function showNextPeriodTab() {
-    return CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur)) && count($this->getMemberships());
+    return CRM_Utils_String::strtobool(CRM_Utils_Array::value('auto_renew', $this->contribRecur));
   }
 
   /**
@@ -230,8 +269,11 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return string
    */
   private function calculateNextPeriodStartDate() {
-    $nextPeriodStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
-    $intervalLength = CRM_Utils_Array::value('frequency_interval', $this->contribRecur) * CRM_Utils_Array::value('installments', $this->contribRecur);
+    $numberOfInstallments = 1;
+    if (!empty($this->contribRecur['installments'])) {
+      $numberOfInstallments = $this->contribRecur['installments'];
+    }
+    $intervalLength = CRM_Utils_Array::value('frequency_interval', $this->contribRecur, 0) * $numberOfInstallments;
 
     switch (CRM_Utils_Array::value('frequency_unit', $this->contribRecur)) {
       case 'month':
@@ -245,6 +287,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
         break;
     }
 
+    $nextPeriodStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
     $nextPeriodStartDate->add(new DateInterval($interval));
 
     return $nextPeriodStartDate->format('Y-m-d');
@@ -285,38 +328,6 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     }
 
     return $lineItems;
-  }
-
-  /**
-   * Gets the memberships identified by givenn ID.
-   *
-   * @param $membershipID
-   *
-   * @return array
-   */
-  private function getMembership($membershipID) {
-    if (empty($membershipID)) {
-      return [];
-    }
-
-    $membership = civicrm_api3('Membership', 'getsingle', [
-      'sequential' => 1,
-      'id' => $membershipID,
-    ]);
-
-    return $membership;
-  }
-
-  /**
-   * Gets the memberships associated with the current recurring contribution
-   *
-   * @return array
-   */
-  private function getMemberships() {
-    return civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $this->contribRecur['id'],
-    ])['values'];
   }
 
   /**

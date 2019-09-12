@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
 
   /***
@@ -22,13 +24,14 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * contributions upfront for the payment plan.
    */
   public function postProcess() {
-    if (!$this->isPaymentPlanPayment()) {
+    if (!$this->isPaymentPlanPaymentWithMoreThanOneInstallment()) {
       return;
     }
 
     $recurContributionID = $this->getMembershipLastRecurContributionID();
     $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+    $this->createRecurringSubscriptionLineItems($recurContributionID);
   }
 
   /**
@@ -37,7 +40,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    *
    * @return bool
    */
-  private function isPaymentPlanPayment() {
+  private function isPaymentPlanPaymentWithMoreThanOneInstallment() {
     $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
@@ -65,6 +68,17 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     ])['values'][0]['contribution_id.contribution_recur_id'];
 
     return $recurContributionID;
+  }
+
+  /**
+   * Creates recurring contribution's line items to set up current and next
+   * periods.
+   *
+   * @param $recurContributionID
+   */
+  private function createRecurringSubscriptionLineItems($recurContributionID ) {
+    $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
+    $lineItemCreator->create();
   }
 
 }

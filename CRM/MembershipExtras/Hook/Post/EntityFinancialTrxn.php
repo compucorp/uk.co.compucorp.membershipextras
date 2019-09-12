@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+
 class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
 
   /**
@@ -34,8 +36,9 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
       return;
     }
 
+    $isManualPaymentPlanTransaction = ManualPaymentProcessors::isManualPaymentProcessor($this->recurContribution['payment_processor_id']);
     $this->setRecurContribution();
-    if (empty($this->recurContribution) || !$this->isManualPaymentPlanTransaction()) {
+    if (empty($this->recurContribution) || !$isManualPaymentPlanTransaction) {
       return;
     }
 
@@ -51,48 +54,9 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
 
     if ($newStatus == 'Completed') {
       $updateParams['end_date'] = $this->generateNewPaymentPlanEndDate();
-      $this->updateSubscriptionLinesEndDate($updateParams['end_date']);
     }
 
     civicrm_api3('ContributionRecur', 'create', $updateParams);
-  }
-
-  /**
-   * Updates subscription line items end date.
-   *
-   * @param string $date
-   */
-  private function updateSubscriptionLinesEndDate($date) {
-    $subscriptionLines = $this->getSubscriptionLines();
-
-    foreach($subscriptionLines as $line) {
-      if (!empty($line['start_date']) && empty($line['end_date'])) {
-        civicrm_api3('ContributionRecurLineItem', 'create', [
-          'id' => $line['id'],
-          'end_date' => $date,
-        ]);
-      }
-    }
-  }
-
-  /**
-   * Returns LineItems associated to a recurring contribution
-   * 
-   * @return array
-   */
-  private function getSubscriptionLines() {
-    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $this->recurContribution['id'],
-      'options' => ['limit' => 0],
-    ]);
-
-    $subscriptionLines = [];
-    if ($result['count']) {
-      $subscriptionLines = $result['values'];
-    }
-    
-    return $subscriptionLines;
   }
 
   /**
@@ -129,23 +93,6 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
 
     $this->recurContribution =  $recurContribution['values'][0];
-  }
-
-  /**
-   * Determines if the transaction is a payment
-   * plan transaction.
-   *
-   * @return bool
-   */
-  private function isManualPaymentPlanTransaction() {
-    $payLaterProcessorID = 0;
-    $manualPaymentProcessorsIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
-
-    if (in_array($this->recurContribution['payment_processor_id'], $manualPaymentProcessorsIDs)) {
-      return TRUE;
-    }
-
-    return FALSE;
   }
 
   /**
