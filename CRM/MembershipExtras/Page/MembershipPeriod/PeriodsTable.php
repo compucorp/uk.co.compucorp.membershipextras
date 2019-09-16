@@ -15,14 +15,53 @@ class CRM_MembershipExtras_Page_MembershipPeriod_PeriodsTable extends CRM_Core_P
 
     $termNumber = 1;
     $membershipPeriods = [];
+
     while ($membershipPeriodEntity->N && $membershipPeriodEntity->fetch()) {
+      $isMembershipPeriodActive = $membershipPeriodEntity->is_active;
+      $links = array(
+        CRM_Core_Action::VIEW => array(
+          'name' => ts('View'),
+          'url' => 'civicrm/membership/period/view',
+          'qs' => 'id=%%id%%',
+          'title' => ts('View Membership'),
+        ),
+        CRM_Core_Action::UPDATE => array(
+          'name' => ts('Edit'),
+          'url' => 'civicrm/membership/period/edit',
+          'qs' => 'id=%%id%%',
+          'title' => ts('Edit Membership Period'),
+        ),
+        CRM_Core_Action::RENEW => array(
+          'name' => ts($isMembershipPeriodActive ? 'Activate' : 'Deactivate'),
+          'url' => 'civicrm/membership/period/' . $isMembershipPeriodActive ? 'activate' : 'deactivate',
+          'qs' => 'id=%%id%%',
+          'title' => ts($isMembershipPeriodActive ? 'Activate' : 'Deactivate' . 'Membership Period'),
+        ),
+        CRM_Core_Action::DELETE => array(
+          'name' => ts('Delete'),
+          'url' => 'civicrm/membership/period/delete',
+          'qs' => 'id=%%id%%',
+          'title' => ts('Delete Membership Period'),
+        ),
+      );
+
       $membershipPeriods[] = [
         'id' => $membershipPeriodEntity->id,
         'term_number' => $termNumber++,
-        'start_date' => $membershipPeriodEntity->start_date,
-        'end_date' => $membershipPeriodEntity->end_date,
-        'is_active' => $membershipPeriodEntity->is_active,
+        'start_date' => CRM_Utils_Date::customFormat($membershipPeriodEntity->start_date, '%Y%m%d'),
+        'end_date' => CRM_Utils_Date::customFormat($membershipPeriodEntity->end_date, '%Y%m%d'),
         'css_class' => $this->getPeriodCSSClass($membershipPeriodEntity),
+        'action' => CRM_Core_Action::formLink($links,
+          null,
+          array(
+            'id' => $membershipPeriodEntity->id,
+          ),
+          ts('more'),
+          FALSE,
+          'period.table.manage',
+          'Period Table',
+          $membershipPeriodEntity->id
+        ),
       ];
     }
 
