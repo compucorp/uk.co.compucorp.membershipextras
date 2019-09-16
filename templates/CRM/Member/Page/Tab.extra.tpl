@@ -13,7 +13,7 @@
       }
 
       var rowMembershipId = (CRM.$(this).attr('id')).replace('crm-membership_', '');
-      var label = CRM.$('td.crm-membership-membership_type', this).html();
+      var label = CRM.$('td.crm-membership-membership_type', this).text();
       var url = '{/literal}{crmURL p="civicrm/membership/periods"}{literal}' + '?id=' + rowMembershipId;
       var expandPeriodsHTML = '<a class="nowrap bold period-expand-row membership-period-collapse-icon" href="' + url + '">' + label + '</a>';
 
@@ -42,7 +42,7 @@
         $(this).toggleClass('period-extended');
         e.preventDefault();
       });
-    
+
     // Refreshes memberships when a period is modified.
     $('body').on('crmPopupFormSuccess ', function (e, data) {
       let eventTarget = $(e.target);
