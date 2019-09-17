@@ -130,7 +130,7 @@ class CRM_MembershipExtras_SettingsManager {
         'sequential' => 1,
         'return' => [$settingName],
       ]);
-      if ($result['count'] > 1) {
+      if ($result['count'] > 0) {
         return $result['values'][0][$settingName];
       }
     } catch (Exception $e) {
