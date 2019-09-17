@@ -279,6 +279,9 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
 
     $errors = [];
     $membershipPeriods = self::getOrderedMembershipPeriods($membershipID);
+    if (!isset($membershipPeriods)) {
+      return;
+    }
 
     $term = 0;
     while ($membershipPeriods->N && $membershipPeriods->fetch()) {
