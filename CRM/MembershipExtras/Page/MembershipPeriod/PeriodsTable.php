@@ -12,38 +12,37 @@ class CRM_MembershipExtras_Page_MembershipPeriod_PeriodsTable extends CRM_Core_P
   private function getMembershipPeriodsRows() {
     $membershipId = CRM_Utils_Request::retrieve('id', 'Positive');
     $membershipPeriodEntity = MembershipPeriod::getOrderedMembershipPeriods($membershipId);
-
     $termNumber = 1;
     $membershipPeriods = [];
 
     while ($membershipPeriodEntity->N && $membershipPeriodEntity->fetch()) {
       $isMembershipPeriodActive = $membershipPeriodEntity->is_active;
-      $links = array(
-        CRM_Core_Action::VIEW => array(
+      $links = [
+        CRM_Core_Action::VIEW => [
           'name' => ts('View'),
           'url' => 'civicrm/membership/period/view',
           'qs' => 'id=%%id%%',
           'title' => ts('View Membership'),
-        ),
-        CRM_Core_Action::UPDATE => array(
+        ],
+        CRM_Core_Action::UPDATE => [
           'name' => ts('Edit'),
           'url' => 'civicrm/membership/period/edit',
           'qs' => 'id=%%id%%',
           'title' => ts('Edit Membership Period'),
-        ),
-        CRM_Core_Action::RENEW => array(
-          'name' => ts($isMembershipPeriodActive ? 'Activate' : 'Deactivate'),
-          'url' => 'civicrm/membership/period/' . $isMembershipPeriodActive ? 'activate' : 'deactivate',
+        ],
+        CRM_Core_Action::RENEW => [
+          'name' => ts($isMembershipPeriodActive ? 'Deactivate' : 'Activate'),
+          'url' => 'civicrm/membership/period/' . $isMembershipPeriodActive ? 'deactivate' : 'activate',
           'qs' => 'id=%%id%%',
-          'title' => ts($isMembershipPeriodActive ? 'Activate' : 'Deactivate' . 'Membership Period'),
-        ),
-        CRM_Core_Action::DELETE => array(
+          'title' => ts($isMembershipPeriodActive ? 'Deactivate' : 'Activate' . 'Membership Period'),
+        ],
+        CRM_Core_Action::DELETE => [
           'name' => ts('Delete'),
           'url' => 'civicrm/membership/period/delete',
           'qs' => 'id=%%id%%',
           'title' => ts('Delete Membership Period'),
-        ),
-      );
+        ],
+      ];
 
       $membershipPeriods[] = [
         'id' => $membershipPeriodEntity->id,
@@ -53,9 +52,9 @@ class CRM_MembershipExtras_Page_MembershipPeriod_PeriodsTable extends CRM_Core_P
         'css_class' => $this->getPeriodCSSClass($membershipPeriodEntity),
         'action' => CRM_Core_Action::formLink($links,
           null,
-          array(
+          [
             'id' => $membershipPeriodEntity->id,
-          ),
+          ],
           ts('more'),
           FALSE,
           'period.table.manage',
