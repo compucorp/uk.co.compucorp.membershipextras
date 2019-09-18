@@ -29,6 +29,13 @@ class CRM_MembershipExtras_Hook_PostProcess_ContributionForm {
    * Post-processes the form.
    */
   public function postProcess() {
+    $this->fixMembershipEndDateInRenewalNotificaiton();
+  }
+
+  /**
+   * Fixes the status message built by CiviCRM with the wrong end date.
+   */
+  private function fixMembershipEndDateInRenewalNotificaiton() {
     $isEditAction = $this->form->getAction() & CRM_Core_Action::UPDATE;
     if (!$isEditAction) {
       return;
@@ -47,4 +54,5 @@ class CRM_MembershipExtras_Hook_PostProcess_ContributionForm {
       );
     }
   }
+
 }
