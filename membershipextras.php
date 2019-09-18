@@ -322,6 +322,11 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
     $membershipTypeHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour($form);
     $membershipTypeHook->process();
   }
+
+  if ($formName === 'CRM_Contribute_Form_Contribution') {
+    $contributionFormHook = new CRM_MembershipExtras_Hook_PostProcess_ContributionForm($form);
+    $contributionFormHook->postProcess();
+  }
 }
 
 /**
