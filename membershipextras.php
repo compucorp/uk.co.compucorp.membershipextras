@@ -292,6 +292,11 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_ContributionEdit($objectRef);
     $membershipPaymentPostHook->process();
   }
+
+  if ($objectName == 'Contribution' && $op == 'delete') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_ContributionDelete($objectRef);
+    $membershipPaymentPostHook->process();
+  }
 }
 
 /**
