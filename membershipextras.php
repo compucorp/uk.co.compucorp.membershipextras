@@ -376,6 +376,7 @@ function membershipextras_civicrm_alterContent(&$content, $context, $tplName, &$
     $memberTabPage  = new CRM_MembershipExtras_Hook_AlterContent_MemberTabPage($content, $object);
     $memberTabPage->alterContent();
   }
+
 }
 
 /**

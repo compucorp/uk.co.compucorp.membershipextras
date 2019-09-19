@@ -182,6 +182,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     if (count($recurringLineItems)) {
       foreach ($recurringLineItems as $lineItem) {
         unset($lineItem['id']);
+
+        $isUpgraded = $this->autoUpgradeMembershipLineItem($lineItem, $currentContribution);
+        if ($isUpgraded) {
+          return;
+        }
+
         $lineItem['unit_price'] = $this->calculateLineItemUnitPrice($lineItem);
         $lineItem['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItem['unit_price'] * $lineItem['qty']);
         $lineItem['tax_amount'] = $this->calculateLineItemTaxAmount($lineItem['line_total'], $lineItem['financial_type_id']);
@@ -224,6 +230,94 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     }
 
     return $result;
+  }
+
+  private function autoUpgradeMembershipLineItem($lineItem, $currentRecurContribution) {
+    $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : NULL;
+    if (!$this->isMembershipLineItem($lineItem, $priceFieldValue)) {
+      return FALSE;
+    }
+
+    if ($lineItem['entity_table'] == 'civicrm_membership') {
+      $currentMembershipTypeId = civicrm_api3('Membership', 'getsingle', [
+        'id' => $lineItem['entity_id'],
+      ])['membership_type_id'];
+    } else {
+      $currentMembershipTypeId = $priceFieldValue['membership_type_id'];
+    }
+
+    $currentMembershipTypeName = civicrm_api3('MembershipType', 'getvalue', [
+      'return' => 'name',
+      'id' => $currentMembershipTypeId,
+    ]);
+
+    // todo : student replaced with JSON grabber
+    if ($currentMembershipTypeName == 'Student') {
+      $membershipTypeAllowedLimitNum = 1; // todo : fetch from JSON
+      $membershipTypeAllowedLimitTerm = 'year'; // todo : fetch from JSON
+      $totalPeriodsCount = 0;
+      $membershipPeriods = CRM_MembershipExtras_BAO_MembershipPeriod::getOrderedMembershipPeriods($lineItem['entity_id']);
+      while ($membershipPeriods->N && $membershipPeriods->fetch()) {
+        if ($membershipPeriods->is_active && !empty($membershipPeriods->end_date)) {
+          $startDate = new DateTime($membershipPeriods->start_date);
+          $endDate = new DateTime($membershipPeriods->end_date);
+          $endDate->add(new DateInterval('P1D'));
+          $diff = $endDate->diff($startDate);
+
+          $timeAmount = 0;
+          switch($membershipTypeAllowedLimitTerm) {
+            case 'year':
+              $timeAmount = $diff->format('%y');
+              break;
+            case 'month':
+              $timeAmount = $diff->format('%m'); //todo : change  and add other time types
+              break;
+            case 'day':
+              $timeAmount = $diff->format('%a');
+              break;
+          }
+
+          $totalPeriodsCount += $timeAmount;
+        }
+      }
+
+      if ($totalPeriodsCount >= $membershipTypeAllowedLimitNum) {
+        $newMembershipType = civicrm_api3('MembershipType', 'get', [
+          'sequential' => 1,
+          'name' => 'Test 1 Year', // todo : fetch from JSON
+        ])['values'][0];
+
+        $newPriceFieldValue= civicrm_api3('PriceFieldValue', 'get', [
+          'sequential' => 1,
+          'membership_type_id' => $newMembershipType['id'],
+          'options' => ['limit' => 1, 'sort' => 'id asc'],
+        ])['values'][0];
+
+        $newMembershipLineItem = civicrm_api3('LineItem', 'create', [
+          'label' => $newMembershipType['name'],
+          'entity_id' => $currentRecurContribution['id'],
+          'qty' => 1.0,
+          'unit_price' => 15,
+          'line_total' => 15,
+          'tax_amount' => 0,
+          'financial_type_id' => $newMembershipType['financial_type_id'],
+          'price_field_id' => $newPriceFieldValue['price_field_id'],
+          'price_field_value_id' => $newPriceFieldValue['id'],
+          'entity_table' => 'civicrm_contribution_recur',
+        ]);
+
+        $newContributionRecurLineItem = civicrm_api3('ContributionRecurLineItem', 'create', [
+          'contribution_recur_id' => $currentRecurContribution['id'],
+          'line_item_id' => $newMembershipLineItem['id'],
+          'auto_renew' => 1,
+        ]);
+
+
+        //todo : create activity : see js file
+
+        return;
+      }
+    }
   }
 
   /**
