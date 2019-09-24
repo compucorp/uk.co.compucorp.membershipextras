@@ -283,13 +283,18 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
     $periodId = $objectId;
   }
 
-  if ($objectName == 'MembershipPayment') {
-    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef, $periodId);
+  if ($objectName == 'MembershipPayment' && $op == 'create') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPaymentCreate($objectId, $objectRef, $periodId);
     $membershipPaymentPostHook->postProcess();
   }
 
   if ($objectName == 'Contribution' && $op == 'edit') {
     $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_ContributionEdit($objectRef);
+    $membershipPaymentPostHook->process();
+  }
+
+  if ($objectName == 'Contribution' && $op == 'delete') {
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_ContributionDelete($objectRef);
     $membershipPaymentPostHook->process();
   }
 }

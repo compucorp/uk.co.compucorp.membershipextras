@@ -411,6 +411,28 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     return TRUE;
   }
 
+  /**
+   * Unlink periods linked to the specified
+   * payment entity.
+   *
+   * @param int $entityID
+   * @param int $entityTable
+   */
+  public static function unlinkPaymentEntity($entityID, $entityTable) {
+    $membershipPeriod = new self();
+    $membershipPeriod->entity_id = $entityID;
+    $membershipPeriod->payment_entity_table = $entityTable;
+    $membershipPeriod->find();
+    while ($membershipPeriod->fetch()) {
+      $processedPeriod = new self();
+      $processedPeriod->id = $membershipPeriod->id;
+      $processedPeriod->entity_id = 'NULL';
+      $processedPeriod->payment_entity_table = 'NULL';
+      $processedPeriod->save();
+    }
+
+  }
+
   public static function deleteById($id) {
     $membershipPeriod = self::getMembershipPeriodById($id);
     $membershipId = $membershipPeriod->membership_id;

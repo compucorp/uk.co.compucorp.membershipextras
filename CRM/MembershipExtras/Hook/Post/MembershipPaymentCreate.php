@@ -4,16 +4,9 @@ use CRM_MembershipExtras_BAO_MembershipPeriod as MembershipPeriod;
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
 
 /**
- * Post processes membership payments after creation or update.
+ * Post processes membership payments after creation
  */
-class CRM_MembershipExtras_Hook_Post_MembershipPayment {
-
-  /**
-   * Operation being done on the line item
-   *
-   * @var string
-   */
-  private $operation;
+class CRM_MembershipExtras_Hook_Post_MembershipPaymentCreate {
 
   /**
    * ID of the record.
@@ -68,14 +61,10 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   private static $paymentIds = [];
 
   /**
-   * CRM_MembershipExtras_Hook_Post_MembershipPayment constructor.
-   *
-   * @param $operation
    * @param $objectId
    * @param \CRM_Member_DAO_MembershipPayment $objectRef
    */
-  public function __construct($operation, $objectId, CRM_Member_DAO_MembershipPayment $objectRef, $periodId) {
-    $this->operation = $operation;
+  public function __construct($objectId, CRM_Member_DAO_MembershipPayment $objectRef, $periodId) {
     $this->id = $objectId;
     self::$paymentIds[] = $objectId;
     $this->membershipPayment = $objectRef;
@@ -99,15 +88,13 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   }
 
   /**
-   * Post-processes a membership payment on creation and update.
+   * Post-processes a membership payment on creation.
    */
   public function postProcess() {
-    if ($this->operation == 'create') {
-      $this->fixRecurringLineItemMembershipReferences();
-      $this->createMissingMembershipPeriod();
-      $this->linkPaymentToMembershipPeriod();
-      $this->updateMembershipStatusBasedOnPaymentMethod();
-    }
+    $this->fixRecurringLineItemMembershipReferences();
+    $this->createMissingMembershipPeriod();
+    $this->linkPaymentToMembershipPeriod();
+    $this->updateMembershipStatusBasedOnPaymentMethod();
   }
 
   /**
