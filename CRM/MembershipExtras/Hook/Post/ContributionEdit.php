@@ -13,6 +13,7 @@ class CRM_MembershipExtras_Hook_Post_ContributionEdit {
    */
   public function process() {
     $this->correctContributionPeriodsPaymentEntity();
+    $this->updateRelatedRecurringContribution();
   }
 
   /**
@@ -38,6 +39,30 @@ class CRM_MembershipExtras_Hook_Post_ContributionEdit {
       $periodToUpdate->payment_entity_table = 'civicrm_contribution_recur';
       $periodToUpdate->save();
     }
+  }
+
+  /**
+   * If receive date of earliest contribution has changed, payment payment plan
+   * should be updated accordingly.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function updateRelatedRecurringContribution() {
+    if (empty($this->contribution->contribution_recur_id)) {
+      return;
+    }
+
+    $result = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['receive_date'],
+      'contribution_recur_id' => $this->contribution->contribution_recur_id,
+      'options' => ['sort' => 'receive_date ASC', 'limit' => 1],
+    ]);
+
+    civicrm_api3('ContributionRecur', 'create', [
+      'id' => $this->contribution->contribution_recur_id,
+      'start_date' => $result['values'][0]['receive_date'],
+    ]);
   }
 
 }
