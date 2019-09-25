@@ -200,12 +200,14 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         $this->dispatchMembershipRenewalHook();
       } catch (Exception $e) {
         $transaction->rollback();
+        $transaction->__destruct();
         $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
 
         continue;
       }
 
       $transaction->commit();
+      $transaction->__destruct();
     }
 
     if (count($exceptions)) {
@@ -593,7 +595,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $lineTotal = MoneyUtilities::roundToCurrencyPrecision($unitPrice * $lineItem['qty']);
       $taxAmount = $this->calculateLineItemTaxAmount($lineTotal, $lineItem['financial_type_id']);
 
-      switch ($lineItem['entity_id']) {
+      switch ($lineItem['entity_table']) {
         case 'civicrm_contribution':
         case 'civicrm_contribution_recur':
           $entityID = 'null';
