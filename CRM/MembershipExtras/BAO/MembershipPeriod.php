@@ -59,6 +59,10 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
   }
 
   public static function getMembershipPeriodById($periodId) {
+    if (empty($periodId)) {
+      return NULL;
+    }
+
     $membershipPeriod = new self();
     $membershipPeriod->id = $periodId;
     if ($membershipPeriod->find(TRUE) > 0) {
@@ -261,8 +265,8 @@ class CRM_MembershipExtras_BAO_MembershipPeriod extends CRM_MembershipExtras_DAO
     $periodNewEndDate = CRM_Utils_Array::value('end_date', $periodParams, '');
     $periodIsActive = CRM_Utils_Array::value('is_active', $periodParams, '');
 
-    if (!empty($periodID)) {
-      $membershipPeriod = self::getMembershipPeriodById($periodID);
+    $membershipPeriod = self::getMembershipPeriodById($periodID);
+    if (isset($membershipPeriod)) {
       $membershipID = $membershipID ?: $membershipPeriod->membership_id;
       $periodNewStartDate = $periodNewStartDate ?: $membershipPeriod->start_date;
       $periodNewEndDate = $periodNewEndDate ?: $membershipPeriod->end_date;
