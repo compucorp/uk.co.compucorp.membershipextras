@@ -215,7 +215,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       $result = civicrm_api3('CustomField', 'get', [
         'sequential' => 1,
         'name' => $customField['name'],
-        'custom_group_name' => 'related_payment_plan_periods',
+        'custom_group_id' => 'related_payment_plan_periods',
       ]);
   
       if ($result['count'] > 0) {
@@ -233,7 +233,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'is_active' => 1,
         'is_view' => 1,
         'is_selector' => 0,
-        'custom_group_name' => 'related_payment_plan_periods',
+        'custom_group_id' => 'related_payment_plan_periods',
         'column_name' => $customField['name'],
       ]); 
     }
@@ -249,7 +249,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ];
     civicrm_api3('CustomField', 'get', [
       'name' => ['IN' => $customFields],
-      'custom_group_name' => 'related_payment_plan_periods',
+      'custom_group_id' => 'related_payment_plan_periods',
       'api.CustomField.delete' => ['id' => '$value.id'],
     ]);
 
