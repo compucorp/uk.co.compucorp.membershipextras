@@ -146,10 +146,12 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
 
     $currentPeriodLineItems = $this->getCurrentPeriodLineItems();
-    $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
+    $largestMembershipEndDate = $this->getLargestMembershipEndDate($currentPeriodLineItems);
+    $this->setCurrentPeriodPresentationalData($currentPeriodLineItems, $largestMembershipEndDate);
+    $this->assign('largestMembershipEndDate', $largestMembershipEndDate);
     $this->assign('currentPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'current_period'));
     $this->assign('nextPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'next_period'));
-    $this->assign('lineItems', $currentPeriodLineItems);
+    $this->assign('currentPeriodLineItems', $currentPeriodLineItems);
 
     $nextPeriodLineItems = $this->getNextPeriodLineItems();
     $this->assign('showNextPeriodTab', $this->showNextPeriodTab());
@@ -328,6 +330,31 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     }
 
     return $lineItems;
+  }
+
+  /**
+   * Sets data for a line item for presentational purpose only
+   *
+   * @param array $lineItem
+   * @param string $largestMembershipEndDate
+   */
+  private function setCurrentPeriodPresentationalData(&$lineItems, $largestMembershipEndDate) {
+    foreach($lineItems as &$lineItem) {
+      if ($lineItem['entity_table'] == 'civicrm_membership') {
+        $membership = $this->getMembership($lineItem['entity_id']);
+
+        if (!isset($membership['end_date'])) {
+          $lineItem['end_date'] = NULL;
+          continue;
+        }
+
+        $membershipEndDate = new DateTime($membership['end_date']);
+        $lineItem['end_date'] = $membershipEndDate->format('Y-m-d');
+        continue;
+      }
+
+      $lineItem['end_date'] = $largestMembershipEndDate;
+    }
   }
 
   /**

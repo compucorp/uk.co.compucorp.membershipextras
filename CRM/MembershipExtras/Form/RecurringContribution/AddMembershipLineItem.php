@@ -269,11 +269,24 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'sequential' => 1,
       'id' => $membership['id'],
       'start_date' => $this->lineItemParams['start_date'],
-      'end_date' => $this->lineItemParams['end_date'],
+      'end_date' => $this->calculateEndDateFromMembershipType(),
       'contribution_recur_id' => $this->recurringContribution['auto_renew'] ? $this->recurringContribution['id'] : '',
     ]);
 
     return array_shift($result['values']);
+  }
+
+  /**
+   * Returns NULL for lifetime membership types
+   * 
+   * @return string|NULL
+   */
+  private function calculateEndDateFromMembershipType() {
+    if ($this->membershipType['duration_unit'] == 'lifetime') {
+      return NULL;
+    }
+
+    return $this->lineItemParams['end_date'];
   }
 
   /**
@@ -314,7 +327,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'membership_type_id' => $this->membershipType['id'],
       'join_date' => date('YmdHis'),
       'start_date' => $this->lineItemParams['start_date'],
-      'end_date' => $this->lineItemParams['end_date'],
+      'end_date' => $this->calculateEndDateFromMembershipType(),
       'contribution_recur_id' => $autoRenew ? $this->recurringContribution['id'] : '',
     ]);
 
