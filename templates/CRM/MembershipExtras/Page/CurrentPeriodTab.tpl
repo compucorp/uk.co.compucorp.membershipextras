@@ -39,20 +39,14 @@
     {assign var='taxTotal' value=0}
     {assign var='installmentTotal' value=0}
 
-    {foreach from=$currentPeriodLineItems item='currentItem'}
+    {foreach from=$lineItems item='currentItem'}
       {assign var='subTotal' value=$subTotal+$currentItem.line_total}
       {assign var='taxTotal' value=$taxTotal+$currentItem.tax_amount}
 
       <tr id="lineitem-{$currentItem.id}" data-item-data='{$currentItem|@json_encode}' class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
         <td>{$currentItem.label}</td>
         <td>{$currentItem.start_date|date_format:"%Y-%m-%d"|crmDate}</td>
-        <td>
-          {if $currentItem.end_date eq NULL}
-            {ts}N/A{/ts}
-          {else}
-            {$currentItem.end_date|crmDate}
-          {/if}
-        </td>
+        <td>{$largestMembershipEndDate|crmDate}</td>
         {if $recurringContribution.auto_renew}
           <td>
               <input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} />
@@ -83,7 +77,7 @@
         <input data-crm-datepicker="{ldelim}&quot;time&quot;:false, &quot;allowClear&quot;:false{rdelim}" aria-label="Start Date" name="newline_start_date" type="text" value="{$currentDate}" id="newline_start_date" class="crm-form-text crm-hidden-date">
       </td>
       <td nowrap>
-        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false, &quot;allowClear&quot;:false{rdelim}" aria-label="End Date" name="newline_end_date" type="text" value="{$currentItem.end_date}" id="newline_end_date" class="crm-form-text crm-hidden-date">
+        <input data-crm-datepicker="{ldelim}&quot;time&quot;:false, &quot;allowClear&quot;:false{rdelim}" aria-label="End Date" name="newline_end_date" type="text" value="{$largestMembershipEndDate}" id="newline_end_date" class="crm-form-text crm-hidden-date">
       </td>
       {if $recurringContribution.auto_renew}
         <td>
