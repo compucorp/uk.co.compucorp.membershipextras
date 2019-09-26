@@ -67,8 +67,8 @@ var nextPeriodMembershipTypes = {$nextPeriodMembershipTypes|@json_encode};
     <td>
       <select name="newline_membership_type" class="crm-form-select" id="newMembershipItem">
         <option value="">- {ts}select{/ts} -</option>
-        {foreach from=$nextPeriodMembershipTypes item="membership"}
-          <option value="{$membership.id}">{$membership.name}</option>
+        {foreach from=$nextPeriodMembershipTypes item="membershipType"}
+          <option value="{$membershipType.id}">{$membershipType.name}</option>
         {/foreach}
       </select>
     </td>

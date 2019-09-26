@@ -70,19 +70,19 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @return array
    */
-  private function getAvailableMembershipTypes($currentLineItems, $period) {
-    $memberhipTypes = civicrm_api3('MembershipType', 'get', [
+  private function getAvailableMembershipTypes($lineItems, $period) {
+    $membershipTypes = civicrm_api3('MembershipType', 'get', [
       'options' => ['limit' => 0],
     ])['values'];
 
-    $allowedTypes = [];
-    foreach ($memberhipTypes as $type) {
-      if ($this->isAllowedMembershipType($type, $currentLineItems, $period)) {
-        $allowedTypes[] = $type;
+    $allowedMembershipTypes = [];
+    foreach ($membershipTypes as $membershipType) {
+      if ($this->isAllowedMembershipType($membershipType, $lineItems, $period)) {
+        $allowedMembershipTypes[] = $membershipType;
       }
     }
 
-    return $allowedTypes;
+    return $allowedMembershipTypes;
   }
 
   /**
@@ -90,12 +90,12 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * associated with the recurring contribution.
    *
    * @param $membershipType
-   * @param $currentLineItems
+   * @param $lineItems
    *
    * @return bool
    */
-  private function isAllowedMembershipType($membershipType, $currentLineItems, $period) {
-    foreach ($currentLineItems as $lineItem) {
+  private function isAllowedMembershipType($membershipType, $lineItems, $period) {
+    foreach ($lineItems as $lineItem) {
       $matchAutoRenewLineItems = ($period == 'current_period') ? $lineItem['auto_renew'] : !$lineItem['auto_renew'];
       if ($lineItem['entity_table'] != 'civicrm_membership' || $matchAutoRenewLineItems ) {
         continue;
@@ -105,9 +105,36 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       if ($membershipType['member_of_contact_id'] == $lineItemMembershipType['member_of_contact_id']) {
         return FALSE;
       }
+
+      $membershipForContact = $this->membershipTypeExistsForContact(
+        $lineItem['price_field_value_id'],
+        $membershipType['id']
+      );
+      if ($membershipForContact) {
+        return FALSE;
+      }
     }
 
     return TRUE;
+  }
+
+  /**
+   * Searches for membership type in contact's active memberships.
+   *
+   * @param $priceFieldValueID
+   * @param $membershipTypeID
+   *
+   * @return bool
+   */
+  private function membershipTypeExistsForContact($priceFieldValueID, $membershipTypeID) {
+    $membershipResult = civicrm_api3('PriceFieldValue', 'getcount', [
+      'sequential' => 1,
+      'price_field_value_id' => $priceFieldValueID,
+      'membership_type_id' => $membershipTypeID,
+      'options' => ['sort' => 'id desc'],
+    ]);
+
+    return boolval($membershipResult);
   }
 
   /**
@@ -150,10 +177,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->setCurrentPeriodPresentationalData($currentPeriodLineItems, $largestMembershipEndDate);
     $this->assign('largestMembershipEndDate', $largestMembershipEndDate);
     $this->assign('currentPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'current_period'));
-    $this->assign('nextPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'next_period'));
     $this->assign('currentPeriodLineItems', $currentPeriodLineItems);
 
     $nextPeriodLineItems = $this->getNextPeriodLineItems();
+    $this->assign('nextPeriodMembershipTypes', $this->getAvailableMembershipTypes($nextPeriodLineItems, 'next_period'));
     $this->assign('showNextPeriodTab', $this->showNextPeriodTab());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
