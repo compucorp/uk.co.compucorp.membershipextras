@@ -59,14 +59,14 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
       }
     }
 
-    if ($this->isManualPaymentPlan()) {
+    /**if ($this->isManualPaymentPlan()) {
       $this->links[] = [
         'name' => 'View/Modify Future Instalments',
         'url' => 'civicrm/recurring-contribution/edit-lineitems',
         'qs' => 'reset=1&crid=%%crid%%&cid=%%cid%%&context=contribution',
         'title' => 'View/Modify Future Instalments',
       ];
-    }
+    }**/
   }
 
   /**
