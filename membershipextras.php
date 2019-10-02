@@ -284,6 +284,19 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
   }
 
   if ($objectName == 'MembershipPayment') {
+    /*
+     * We need to make sure the given period corresponds to the payment, as the
+     * period ID is stored in a static variable, on renewal jobs this ID can
+     * bleed into other payment plans.
+     */
+    if (isset($periodId)) {
+      $payment = CRM_Member_BAO_MembershipPayment::findById($objectId);
+      $period = CRM_MembershipExtras_BAO_MembershipPeriod::getMembershipPeriodById($periodId);
+      if ($period->membership_id != $payment->membership_id) {
+        $periodId = NULL;
+      }
+    }
+
     $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef, $periodId);
     $membershipPaymentPostHook->postProcess();
   }
