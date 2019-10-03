@@ -213,8 +213,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       } catch (Exception $e) {
         $transaction->rollback();
         $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
-
-        continue;
       }
 
       $transaction->commit();
@@ -224,7 +222,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       throw new CRM_Core_Exception(implode(";\n", $exceptions));
     }
   }
-  
+
   /**
    * Retunrs an array of recurring contributions that need to be renewed.
    *
