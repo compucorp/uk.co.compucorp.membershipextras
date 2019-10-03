@@ -29,9 +29,13 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     }
 
     $recurContributionID = $this->getMembershipLastRecurContributionID();
-    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
-    $installmentsHandler->createRemainingInstalmentContributionsUpfront();
     $this->createRecurringSubscriptionLineItems($recurContributionID);
+
+    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
+    if ($installmentsCount > 1) {
+      $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
+      $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+    }
   }
 
   /**
@@ -40,12 +44,11 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    *
    * @return bool
    */
-  private function isPaymentPlanPayment() {
-    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
+  private function isPaymentPlan() {
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+    if ($isSavingContribution && $contributionIsPaymentPlan) {
       return TRUE;
     }
 
