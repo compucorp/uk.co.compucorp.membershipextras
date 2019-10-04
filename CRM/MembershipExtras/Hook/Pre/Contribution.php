@@ -69,15 +69,15 @@ class CRM_MembershipExtras_Hook_Pre_Contribution {
     $calculatedTotalAmount = 0;
     $calculatedTaxAmount = 0;
     $lineItems = $this->getContributionLineItems();
+
     foreach ($lineItems as $line) {
       $lineTax = CRM_Utils_Array::value('tax_amount', $line, 0);
       $calculatedTotalAmount += $line['line_total'] + $lineTax;
       $calculatedTaxAmount += $lineTax;
     }
-    if ($calculatedTotalAmount != $givenTotalAmount || $calculatedTaxAmount != $givenTaxAmount) {
-      $this->params['total_amount'] = $calculatedTotalAmount;
-      $this->params['tax_amount'] = $calculatedTaxAmount;
-    }
+
+    $this->params['total_amount'] = $calculatedTotalAmount;
+    $this->params['tax_amount'] = $calculatedTaxAmount;
   }
 
   /**
