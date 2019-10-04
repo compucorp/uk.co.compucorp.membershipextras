@@ -54,19 +54,29 @@ class CRM_MembershipExtras_Hook_Pre_Contribution {
    * Checks if total amount is ok vs sum of line items.
    */
   private function rectifyAmountsBasedOnLineItems() {
-    $lineItems = $this->getContributionLineItems();
-    $totalAmount = 0;
-    $taxAmount = 0;
+    $givenTotalAmount = CRM_Utils_Array::value('total_amount', $this->params, NULL);
+    $givenTaxAmount = CRM_Utils_Array::value('tax_amount', $this->params, NULL);
 
-    foreach ($lineItems as $line) {
-      $lineTax = CRM_Utils_Array::value('tax_amount', $line, 0);
-      $totalAmount += $line['line_total'] + $lineTax;
-      $taxAmount += $lineTax;
+    /*
+     * If amount is not being changed WE SHOULD NOT UPDATE AMOUNT! Doing so will
+     * cause line items to be updated, using total amount of contribution as
+     * line total and adding taxes again!
+     */
+    if (!isset($givenTotalAmount)) {
+      return;
     }
 
-    if ($totalAmount != $this->params['total_amount'] || $taxAmount != $this->params['tax_amount']) {
-      $this->params['total_amount'] = $totalAmount;
-      $this->params['tax_amount'] = $taxAmount;
+    $calculatedTotalAmount = 0;
+    $calculatedTaxAmount = 0;
+    $lineItems = $this->getContributionLineItems();
+    foreach ($lineItems as $line) {
+      $lineTax = CRM_Utils_Array::value('tax_amount', $line, 0);
+      $calculatedTotalAmount += $line['line_total'] + $lineTax;
+      $calculatedTaxAmount += $lineTax;
+    }
+    if ($calculatedTotalAmount != $givenTotalAmount || $calculatedTaxAmount != $givenTaxAmount) {
+      $this->params['total_amount'] = $calculatedTotalAmount;
+      $this->params['tax_amount'] = $calculatedTaxAmount;
     }
   }
 
