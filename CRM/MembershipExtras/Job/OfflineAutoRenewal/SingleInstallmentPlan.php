@@ -37,6 +37,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $manualPaymentProcessorsIDs = implode(',', $this->manualPaymentProcessorIDs);
     $cancelledStatusID = $this->contributionStatusesNameMap['Cancelled'];
     $refundedStatusID = $this->contributionStatusesNameMap['Refunded'];
+    $pendingStatusID = $this->contributionStatusesNameMap['Pending'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
@@ -76,7 +77,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
    LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
    LEFT JOIN civicrm_value_payment_plan_periods ppp ON ppp.entity_id = ccr.id
+   LEFT JOIN civicrm_contribution cc ON ccr.id = cc.contribution_recur_id AND cc.contribution_status_id = {$pendingStatusID}
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
+         AND cc.id IS NULL
          AND ccr.end_date IS NULL
          AND (
           ccr.installments < 2
