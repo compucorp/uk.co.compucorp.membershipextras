@@ -36,8 +36,8 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
       return;
     }
 
-    $isManualPaymentPlanTransaction = ManualPaymentProcessors::isManualPaymentProcessor($this->recurContribution['payment_processor_id']);
     $this->setRecurContribution();
+    $isManualPaymentPlanTransaction = ManualPaymentProcessors::isManualPaymentProcessor($this->recurContribution['payment_processor_id']);
     if (empty($this->recurContribution) || !$isManualPaymentPlanTransaction) {
       return;
     }
