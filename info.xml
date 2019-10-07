@@ -2,11 +2,11 @@
 <extension key="uk.co.compucorp.membershipextras" type="module">
   <file>membershipextras</file>
   <name>uk.co.compucorp.membershipextras</name>
-  <description>Provides "Offline recurring contribution" Payment Processor and "Manual recurring payment" Payment Processor type which supports offline recurring payment. Implements offline recurring processor for Membership payments to not extend Membership dates.</description>
+  <description>This extension includes a huge amount of untility features that completes CiviCRM's membership management process. Notebly membership payment in instalments, payment plan management, Direct Debit integration and more.</description>
   <license>AGPL-3.0</license>
   <maintainer>
-    <author>Kacper Warda</author>
-    <email>kacper@compucorp.co.uk</email>
+    <author>Compucorp Ltd.</author>
+    <email>info@compucorp.co.uk</email>
   </maintainer>
   <releaseDate>2019-10-07</releaseDate>
   <version>1.0.0</version>
