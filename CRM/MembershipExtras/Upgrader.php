@@ -296,6 +296,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'options' => ['sort' => 'id DESC', 'limit' => 1],
       'contribution_recur_id' => $paymentPlanId,
     ]);
+
+    return $result;
   }
 
   /**
