@@ -217,11 +217,11 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'name' => $customField['name'],
         'custom_group_id' => 'related_payment_plan_periods',
       ]);
-  
+
       if ($result['count'] > 0) {
         continue;
       }
-  
+
       civicrm_api3('CustomField', 'create', [
         'name' => $customField['name'],
         'label' => $customField['label'],
@@ -235,7 +235,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'is_selector' => 0,
         'custom_group_id' => 'related_payment_plan_periods',
         'column_name' => $customField['name'],
-      ]); 
+      ]);
     }
   }
 
@@ -261,7 +261,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   /**
    * Returns all existing manual payment plans
-   * 
+   *
    * @return array
    */
   private function getManualPaymentPlans() {
@@ -282,9 +282,9 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   /**
    * Gets the last instalment of a payment plan
-   * 
+   *
    * @param string $paymentPlanId
-   * 
+   *
    * @return array
    */
   private function getLastInstalmentForPaymentPlan($paymentPlanId) {
@@ -292,19 +292,23 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       return [];
     }
 
-    $result = civicrm_api3('Contribution', 'getsingle', [
+    $result = civicrm_api3('Contribution', 'get', [
       'options' => ['sort' => 'id DESC', 'limit' => 1],
       'contribution_recur_id' => $paymentPlanId,
     ]);
 
-    return $result;
+    if ($result['count'] > 0) {
+      return $result['values'][0];
+    }
+
+    return [];
   }
 
   /**
    * Get the contributions associated to a contribution id
-   * 
+   *
    * @param string $contributionId
-   * 
+   *
    * @return array
    */
   private function getLineItemsForContribution($contributionId) {
@@ -325,7 +329,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   /**
    * Copy a payment plan's line items and create subscription
    * lines for each copied line item
-   * 
+   *
    * @param array $paymentPlan
    * @param array $lineItems
    */
@@ -375,8 +379,11 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     foreach ($manualRecurContributions as $paymentPlan) {
       $lastInstalment = $this->getLastInstalmentForPaymentPlan($paymentPlan['id']);
-      $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
+      if (empty($lastInstalment['id'])) {
+        continue;
+      }
 
+      $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
       $this->copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems);
 
       $isMatch = (
@@ -391,9 +398,9 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   /**
    * Checks if a date is older than 1 month
-   * 
+   *
    * @param string $date
-   * 
+   *
    * @return bool
    */
   private function isMoreThanOneMonthOld($date = null) {
@@ -415,7 +422,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       if ($result['count'] > 0) {
         continue;
       }
-      
+
       civicrm_api3('OptionValue', 'create', [
         'option_group_id' => 'activity_type',
         'name' => $optionValue['name'],
