@@ -293,12 +293,13 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     }
 
     $result = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
       'options' => ['sort' => 'id DESC', 'limit' => 1],
       'contribution_recur_id' => $paymentPlanId,
     ]);
 
     if ($result['count'] > 0) {
-      return $result['values'][0];
+      return array_shift($result['values']);
     }
 
     return [];
