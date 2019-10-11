@@ -400,8 +400,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     civicrm_api3('ContributionRecur', 'create', [
       'id' => $paymentPlanId,
-      'custom_' . $nextPeriodCustomFieldId => 0,
-      'custom_' . $prevPeriodCustomFieldId => 0,
+      'custom_' . $nextPeriodCustomFieldId => 'null',
+      'custom_' . $prevPeriodCustomFieldId => 'null',
     ]);
   }
 
