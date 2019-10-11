@@ -46,7 +46,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
           ccr.contribution_status_id != {$cancelledStatusID} 
           AND ccr.contribution_status_id != {$refundedStatusID}
          )
-         AND ppp.next_period IS NULL
+         AND (ppp.next_period IS NULL OR ppp.next_period = 0)
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
          AND msl.end_date IS NOT NULL
