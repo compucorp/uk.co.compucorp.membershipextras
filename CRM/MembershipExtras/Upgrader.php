@@ -335,6 +335,15 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * @param array $lineItems
    */
   private function copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems) {
+    /*
+     * If there is an exception thrown at some point, we need to make this
+     * idempotent, so line items are not duplicated if the upgrader is ran more
+     * than once.
+     */
+    if ($this->linesExistForPaymentPlan($paymentPlan)) {
+      $this->deleteLineITemsForPaymentPlan($paymentPlan);
+    }
+
     foreach ($lineItems as $lineItem) {
       unset($lineItem['id']);
       unset($lineItem['contribution_id']);
@@ -352,6 +361,60 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       civicrm_api3('LineItem', 'create', $params);
     }
   }
+
+  /**
+   * Checks if payment plan already has lines.
+   *
+   * @param array $paymentPlan
+   *   Data for the payment plan.
+   *
+   * @return bool
+   *   TRUE if it finds a line item, FALSE otherwise.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function linesExistForPaymentPlan($paymentPlan) {
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlan['id'],
+    ]);
+
+    if ($result['count'] > 0) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Deletes lines for the given payment plan.
+   *
+   * @param array $paymentPlan
+   *   Payment plan's data.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function deleteLineITemsForPaymentPlan($paymentPlan) {
+    $options = [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlan['id'],
+      'api.LineItem.getsingle' => [
+        'id' => '$value.line_item_id',
+        'entity_table' => ['IS NOT NULL' => 1],
+        'entity_id' => ['IS NOT NULL' => 1]
+      ],
+    ];
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', $options);
+
+    if ($result['count'] < 1) {
+      return;
+    }
+
+    foreach ($result['values'] as $lineItem) {
+      civicrm_api3('LineItem', 'delete', ['id' => $lineItem['api.LineItem.getsingle']['id']]);
+    }
+  }
+
   private function getCustomFieldId($customGroupName, $customFieldName) {
     return civicrm_api3('CustomField', 'getvalue', [
       'return' => 'id',
