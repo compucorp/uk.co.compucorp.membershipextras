@@ -761,11 +761,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    */
   private function isDuplicateLineItem($lineItem) {
     $result = civicrm_api3('LineItem', 'get', [
-      'entity_table' => $lineItem['entity_table'],
-      'entity_id' => $lineItem['entity_id'],
-      'contribution_id' => $lineItem['contribution_id'],
-      'price_field_value_id' => $lineItem['price_field_value_id'],
-      'price_field_id' => $lineItem['price_field_id'],
+      'entity_table' => CRM_Utils_Array::value('entity_table', $lineItem),
+      'entity_id' => CRM_Utils_Array::value('entity_id', $lineItem),
+      'contribution_id' => CRM_Utils_Array::value('contribution_id', $lineItem),
+      'price_field_value_id' => CRM_Utils_Array::value('price_field_value_id', $lineItem),
+      'price_field_id' => CRM_Utils_Array::value('price_field_id', $lineItem),
     ]);
 
     if ($result['count'] > 0) {
