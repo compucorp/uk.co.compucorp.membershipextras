@@ -413,6 +413,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $manualRecurContributions = $this->getManualPaymentPlans();
 
     foreach ($manualRecurContributions as $paymentPlan) {
+      $this->recalculateCycleDay($paymentPlan);
+
       $lastInstalment = $this->getLastInstalmentForPaymentPlan($paymentPlan['id']);
       if (empty($lastInstalment['id'])) {
         continue;
@@ -429,6 +431,22 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         $this->createCustomValueForPaymentPlan($paymentPlan['id']);
       }
     }
+  }
+
+  /**
+   * Updates cycle day by recalculating it from the plan's start date.
+   *
+   * @param $paymentPlan
+   *   Data for the payment plan.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function recalculateCycleDay($paymentPlan) {
+    $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($paymentPlan['start_date'], $paymentPlan['frequency_unit']);
+    civicrm_api3('ContributionRecur', 'create', [
+      'id' => $paymentPlan['id'],
+      'cycle_day' => $cycleDay,
+    ]);
   }
 
   /**
