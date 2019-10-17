@@ -34,12 +34,9 @@ class CRM_MembershipExtras_Upgrader_Setup_PaymentPlanUpdater {
       $lineItems = $this->getLineItemsForContribution($lastInstalment['id']);
       $this->copyLastInstalmentLineItemsToRecurContrib($paymentPlan, $lineItems);
 
-      $isManualPlanOlderThanAMonth = (
-        ($paymentPlan['installments'] > 0) && $paymentPlan['auto_renew'] &&
-        $this->isMoreThanOneMonthOld($paymentPlan['end_date'])
-      );
-      if ($isManualPlanOlderThanAMonth) {
-        $this->createCustomValueForPaymentPlan($paymentPlan['id'], $lineItems);
+      $isAutoRenewPlanWithMultipleInstallments = ($paymentPlan['installments'] > 0) && $paymentPlan['auto_renew'];
+      if ($isAutoRenewPlanWithMultipleInstallments) {
+        $this->setPeriodLinkCustomFieldValues($paymentPlan['id'], $lineItems);
       }
     }
   }
@@ -197,26 +194,22 @@ class CRM_MembershipExtras_Upgrader_Setup_PaymentPlanUpdater {
   }
 
   /**
-   * Checks if a date is older than 1 month
+   * Creates values on new custom groups to link previous and next periods.
    *
-   * @param string $date
-   *
-   * @return bool
-   */
-  private function isMoreThanOneMonthOld($date = null) {
-    return $date && (strtotime($date) < strtotime('-30 days'));
-  }
-
-  /**
-   * Creates values on new custom groups so existing payment plans are
-   * well-formed for extension.
+   * A new custom group, with next_period and previous_period fields has been
+   * added to record the relationship between successive recurring contributions
+   * created as part of an auto-renewable payment plan with multiple
+   * installments. This fields are used by auto-renew job to check which payment
+   * plans are eligible for renewal (plans with next_period = NULL). Thus, old
+   * plans need to be updated and these values set to avoid reneweing plans that
+   * should not be renewed.
    *
    * @param $paymentPlanId
    * @param $lineItems
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function createCustomValueForPaymentPlan($paymentPlanId, $lineItems) {
+  private function setPeriodLinkCustomFieldValues($paymentPlanId, $lineItems) {
     $nextPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'next_period');
     $prevPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'previous_period');
 
