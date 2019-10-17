@@ -194,17 +194,6 @@ class CRM_MembershipExtras_Upgrader_Setup_PaymentPlanUpdater {
   }
 
   /**
-   * Checks if a date is older than 1 month
-   *
-   * @param string $date
-   *
-   * @return bool
-   */
-  private function isMoreThanOneMonthOld($date = null) {
-    return $date && (strtotime($date) < strtotime('-30 days'));
-  }
-
-  /**
    * Creates values on new custom groups to link previous and next periods.
    *
    * A new custom group, with next_period and previous_period fields has been
