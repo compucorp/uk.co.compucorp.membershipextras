@@ -50,13 +50,7 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     $this->operation = $op;
     $this->recurringContribution = $this->getRecurringContribution($id);
     $this->params = &$params;
-
-    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => 'contribution_status',
-    ]);
-    foreach ($contributionStatuses['values'] as $currentStatus) {
-      $this->contributionStatusValueMap[$currentStatus['name']] = $currentStatus['value'];
-    }
+    $this->contributionStatusValueMap = $this->getContributionStatusesValueMap();
   }
 
   /**
@@ -75,6 +69,24 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
       'sequential' => 1,
       'id' => $id,
     ]);
+  }
+
+  /**
+   * Builds an array mapping contribution status name's to their value.
+   *
+   * @return array
+   */
+  private function getContributionStatusesValueMap() {
+    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
+      'option_group_id' => 'contribution_status',
+      'options' => ['limit' => 0],
+    ]);
+    $contributionStatusValueMap = [];
+    foreach ($contributionStatuses['values'] as $currentStatus) {
+      $contributionStatusValueMap[$currentStatus['name']] = $currentStatus['value'];
+    }
+
+    return $contributionStatusValueMap;
   }
 
   /**
