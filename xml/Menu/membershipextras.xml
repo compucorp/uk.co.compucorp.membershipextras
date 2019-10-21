@@ -8,8 +8,32 @@
   </item>
   <item>
     <path>civicrm/recurring-contribution/cancel</path>
-    <page_callback>CRM_MembershipExtras_Form_CancelRecurringContribution</page_callback>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_Cancel</page_callback>
     <title>Cancel Recurring Contribution</title>
     <access_arguments>edit contributions,edit memberships</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/recurring-contribution/edit-lineitems</path>
+    <page_callback>CRM_MembershipExtras_Page_EditContributionRecurLineItems</page_callback>
+    <title>EditContributionRecurLineItems</title>
+    <access_arguments>edit contributions</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/recurring-contribution/remove-lineitems</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems</page_callback>
+    <title>RecurringContribution_RemoveLineItems</title>
+    <access_arguments>edit contributions</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/recurring-contribution/add-membership-lineitem</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem</page_callback>
+    <title>RecurringContribution_AddMembershipLineItem</title>
+    <access_arguments>edit contributions,edit memberships</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/recurring-contribution/add-donation-lineitem</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_AddDonationLineItem</page_callback>
+    <title>RecurringContribution_AddDonationLineItem</title>
+    <access_arguments>access CiviCRM</access_arguments>
   </item>
 </menu>

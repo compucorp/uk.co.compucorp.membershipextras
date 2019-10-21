@@ -46,6 +46,13 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
    * @return string
    */
   public function calculate($contributionNumber = 1) {
+    $receiveDate = $this->calculateReceiveDate($contributionNumber);
+    $newReceiveDate = $this->rectifyReceiveDateBasedOnCurrentCycleDay($receiveDate);
+
+    return $newReceiveDate->format('Y-m-d');
+  }
+
+  private function calculateReceiveDate($contributionNumber) {
     $firstDate = $this->startDate;
     $intervalFrequency = $this->recurContribution['frequency_interval'];
     $frequencyUnit = $this->recurContribution['frequency_unit'];
@@ -74,7 +81,7 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
         break;
     }
 
-    return $receiveDate->format('Y-m-d');
+    return $receiveDate;
   }
 
   /**
@@ -85,7 +92,7 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
    * we want it to be 2018-02-28 instead.
    *
    * This method ensure that adding months
-   * to a date get caculated properly.
+   * to a date get calculated properly.
    *
    *
    * @param DateTime $startDate
@@ -118,6 +125,55 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
     $day = sprintf('%02s', $day);
 
     return new DateTime("$year-$month-$day");
+  }
+
+  private function rectifyReceiveDateBasedOnCurrentCycleDay($receiveDate) {
+    $frequencyUnit = $this->recurContribution['frequency_unit'];
+
+    $originalCycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate(
+      $receiveDate->format('Y-m-d'),
+      $frequencyUnit
+    );
+    $currentCycleDay = $this->recurContribution['cycle_day'];
+    $daysToAddOrSubtract = $currentCycleDay - $originalCycleDay;
+
+    if ($daysToAddOrSubtract == 0) {
+      return $receiveDate;
+    }
+
+    $op = 'add';
+    if ($daysToAddOrSubtract < 0) {
+      $daysToAddOrSubtract = abs($daysToAddOrSubtract);
+      $op = 'sub';
+    }
+
+    switch ($frequencyUnit) {
+      case 'day':
+      case 'week':
+      case 'year':
+        $interval = "P{$daysToAddOrSubtract}D";
+        $receiveDate->{$op}(new DateInterval($interval));
+        break;
+      case 'month':
+        $receiveDate = $this->changeDayOfMonthInDate($receiveDate, $currentCycleDay);
+        break;
+    }
+
+    return $receiveDate;
+  }
+
+  private function changeDayOfMonthInDate($receiveDate, $newMonthDay) {
+    $month = (int) $receiveDate->format('n');
+    $year = (int) $receiveDate->format('Y');
+    $numberOfDaysInMonth = (new DateTime("$year-$month-01"))->format('t');
+    $newDay = $newMonthDay;
+    if ($newDay > $numberOfDaysInMonth) {
+      $newDay = $numberOfDaysInMonth;
+    }
+
+    $newDay = sprintf('%02s', $newDay);
+
+    return new DateTime("$year-$month-$newDay");
   }
 
 }

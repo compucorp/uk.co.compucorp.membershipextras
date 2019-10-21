@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/MembershipExtras</base>
+  <class>ContributionRecurLineItem</class>
+  <name>membershipextras_subscription_line</name>
+  <comment>Implements a relationship between recurring contributions and line items, used to store the current values for pending installments.</comment>
+  <add>5.0</add>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Discount Item ID</comment>
+    <add>5.0</add>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>contribution_recur_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of the recurring contribution.</comment>
+    <add>5.0</add>
+  </field>
+  <foreignKey>
+    <name>contribution_recur_id</name>
+    <table>civicrm_contribution_recur</table>
+    <key>id</key>
+    <add>5.0</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+  <field>
+    <name>line_item_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of the line item related to the recurring contribution.</comment>
+    <add>5.0</add>
+  </field>
+  <foreignKey>
+    <name>line_item_id</name>
+    <table>civicrm_line_item</table>
+    <key>id</key>
+    <add>5.0</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <index>
+    <name>index_contribrecurid_lineitemid</name>
+    <fieldName>contribution_recur_id</fieldName>
+    <fieldName>line_item_id</fieldName>
+    <unique>true</unique>
+  </index>
+
+  <field>
+    <name>start_date</name>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Start date of the period for the membership/recurring contribution.</comment>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>end_date</name>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>End date of the period for the membership/recurring contribution.</comment>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>auto_renew</name>
+    <type>boolean</type>
+    <required>true</required>
+    <default>false</default>
+    <comment>If the line-item should be auto-renewed or not.</comment>
+    <add>5.0</add>
+  </field>
+
+  <field>
+    <name>is_removed</name>
+    <type>boolean</type>
+    <required>true</required>
+    <default>false</default>
+    <comment>If the line-item has been marked as removed or not.</comment>
+    <add>5.0</add>
+  </field>
+
+</table>

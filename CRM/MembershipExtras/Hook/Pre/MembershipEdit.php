@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 
 /**
  * Implements hook to be run before a membership is created/edited.
@@ -42,10 +43,14 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       $this->preventExtendingPaymentPlanMembership();
     }
 
-    $isPaymentPlanPayment = $this->isPaymentPlanWithMoreThanOneInstallment();
+    $isMultipleInstallmentsPaymentPlan = $this->isPaymentPlanWithMoreThanOneInstallment();
     $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
-    if ($isMembershipRenewal && $isPaymentPlanPayment) {
+    if ($isMembershipRenewal && $isMultipleInstallmentsPaymentPlan) {
       $this->extendPendingPaymentPlanMembershipOnRenewal();
+    }
+
+    if ($this->isOfflinePaymentPlanMembership()) {
+      $this->verifyMembershipStartDate();
     }
   }
 
@@ -99,11 +104,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     ])['values'][0];
 
     $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
-
-    $manualPaymentProcessors = CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs();
-    $isOfflineContribution = empty($recurringContribution['payment_processor_id']) ||
-      in_array($recurringContribution['payment_processor_id'], $manualPaymentProcessors);
-
+    $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor($recurringContribution['payment_processor_id']);
     if ($isOfflineContribution && $isPaymentPlanRecurringContribution) {
       return TRUE;
     }
@@ -152,6 +153,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
+   *
    * Extends the membership at renewal if the selected
    * payment status is pending.
    *
@@ -173,6 +175,68 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     }
 
     $this->params['end_date'] = MembershipEndDateCalculator::calculate($this->id);
+  }
+
+  /**
+   * Checks if the start_date set in $params array is changed and if so, if it
+   * makes sense within payment plan. If not, it corrects it.
+   */
+  private function verifyMembershipStartDate() {
+    if (empty($this->params['start_date']) || $this->startDateSetInForm()) {
+      return;
+    }
+
+    $membershipStartDate = $this->getCurrentMembershipStartDate();
+    if ($this->params['start_date'] == $membershipStartDate) {
+      return;
+    }
+
+    $this->params['start_date'] = $membershipStartDate;
+  }
+
+  /**
+   * Checks if start_date has been sent on a form by checkin if the value is on
+   * the request.
+   *
+   * @return bool
+   */
+  private function startDateSetInForm() {
+    try {
+      $startDateFromForm =  CRM_Utils_Request::retrieve('start_date', 'Date');
+    } catch (CRM_Core_Exception $e) {
+      return false;
+    }
+
+    if (empty($startDateFromForm)) {
+      return false;
+    }
+
+    $formDate = new Date($startDateFromForm);
+    $paramsDate = new Date($this->params['start_date']);
+
+    if ($formDate === $paramsDate) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Returns start_date of membership to be updated.
+   *
+   * @return string
+   */
+  private function getCurrentMembershipStartDate() {
+    try {
+      $membership = civicrm_api3('Membership', 'getsingle', [
+        'sequential' => 1,
+        'id' => $this->id,
+      ]);
+    } catch (Exception $e) {
+      return '';
+    }
+
+    return $membership['start_date'];
   }
 
 }

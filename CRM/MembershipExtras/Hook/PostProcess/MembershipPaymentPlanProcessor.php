@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
 
   /***
@@ -21,14 +23,19 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * For now, it basically create the remaining installments
    * contributions upfront for the payment plan.
    */
-  public function process() {
+  public function postProcess() {
     if (!$this->isPaymentPlanPayment()) {
       return;
     }
 
     $recurContributionID = $this->getMembershipLastRecurContributionID();
-    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
-    $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+    $this->createRecurringSubscriptionLineItems($recurContributionID);
+
+    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
+    if ($installmentsCount > 1) {
+      $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
+      $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+    }
   }
 
   /**
@@ -38,11 +45,10 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * @return bool
    */
   private function isPaymentPlanPayment() {
-    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+    if ($isSavingContribution && $contributionIsPaymentPlan) {
       return TRUE;
     }
 
@@ -65,6 +71,17 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     ])['values'][0]['contribution_id.contribution_recur_id'];
 
     return $recurContributionID;
+  }
+
+  /**
+   * Creates recurring contribution's line items to set up current and next
+   * periods.
+   *
+   * @param $recurContributionID
+   */
+  private function createRecurringSubscriptionLineItems($recurContributionID ) {
+    $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
+    $lineItemCreator->create();
   }
 
 }

@@ -22,8 +22,11 @@
 {ts}Number of days in advance of membership end date should an offline auto-renew membership get renewed.{/ts}
 {/htxt}
 
+{htxt id="membershipextras_customgroups_to_exclude_for_autorenew-title"}
+{ts}Custom groups to be excluded when auto-renew{/ts}
+{/htxt}
 {htxt id="membershipextras_customgroups_to_exclude_for_autorenew"}
 {ts}Information in selected custom groups will not be copied over to any new installments 
- of an existing payment plan when it auto-renew.{/ts}
+ of an existing payment plan when it auto-renews.{/ts}
 {/htxt}
 

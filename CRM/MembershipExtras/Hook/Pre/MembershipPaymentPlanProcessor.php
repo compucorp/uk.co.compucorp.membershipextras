@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
 
   /**
@@ -64,7 +66,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   private function createRecurringContribution() {
     $amountPerInstallment = $this->calculateSingleInstallmentAmount($this->params['total_amount']);
 
-    $PaymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
+    $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'name',
       'option_group_id' => 'payment_instrument',
       'value' => $this->params['payment_instrument_id'],
@@ -92,7 +94,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'cycle_day' => $cycleDay,
       'payment_processor_id' => $payLaterPaymentProcessorId,
       'financial_type_id' =>  $financialType,
-      'payment_instrument_id' => $PaymentInstrument,
+      'payment_instrument_id' => $paymentInstrument,
       'campaign_id' => $this->params['campaign_id'],
     ];
 
@@ -145,7 +147,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
 
-    return round(($totalAmount * ($rate / 100)) / (1 + ($rate / 100)), 2);
+    return MoneyUtilities::roundToCurrencyPrecision(
+      ($totalAmount * ($rate / 100)) / (1 + ($rate / 100))
+    );
   }
 
   /**
@@ -172,7 +176,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    * @return float
    */
   private function calculateSingleInstallmentAmount($amount) {
-    return round($amount / $this->installmentsCount, 2);
+    return MoneyUtilities::roundToCurrencyPrecision($amount / $this->installmentsCount);
   }
 
 }
