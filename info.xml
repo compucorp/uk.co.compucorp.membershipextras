@@ -10,9 +10,9 @@
   </maintainer>
   <releaseDate>2019-10-07</releaseDate>
   <version>1.0.0</version>
-  <develStage>beta</develStage>
+  <develStage>stable</develStage>
   <compatibility>
-    <ver>5.17.4</ver>
+    <ver>5.13.5</ver>
   </compatibility>
   <comments/>
   <civix>
