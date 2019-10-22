@@ -103,9 +103,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       'id' => $recurringContributionID,
     ])['values'][0];
 
-    $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
     $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor($recurringContribution['payment_processor_id']);
-    if ($isOfflineContribution && $isPaymentPlanRecurringContribution) {
+    if ($isOfflineContribution) {
       return TRUE;
     }
 
