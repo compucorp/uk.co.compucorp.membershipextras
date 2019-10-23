@@ -12,10 +12,16 @@
   <version>1.0.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.13.5</ver>
+    <ver>5.13</ver>
   </compatibility>
-  <comments/>
+  <comments>
+    Supported CiviCRM versions  :
+    - 5.13.5
+  </comments>
   <civix>
     <namespace>CRM/MembershipExtras</namespace>
   </civix>
+  <urls>
+    <url desc="Documentation">https://github.com/compucorp/uk.co.compucorp.membershipextras/blob/master/readme.md</url>
+  </urls>
 </extension>
