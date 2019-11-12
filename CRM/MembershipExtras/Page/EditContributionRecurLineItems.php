@@ -19,6 +19,29 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   private $financialTypes = array();
 
   /**
+   * Contains the list of all membership types
+   *
+   * @var array
+   */
+  private $allMembershipTypes = [];
+
+  /**
+   * Contains the list of all current line items
+   * membership types
+   *
+   * @var array
+   */
+  private $currentLineItemMembershipTypes = [];
+
+  /**
+   * Contains the list of all next line items
+   * membership types
+   *
+   * @var array
+   */
+  private $nextLineItemMembershipTypes = [];
+
+  /**
    * @inheritdoc
    */
   public function __construct($title = NULL, $mode = NULL) {
@@ -26,6 +49,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $this->contribRecur = $this->getRecurringContribution();
     $this->financialTypes = $this->getFinancialTypes();
+    $this->setAllMembershipTypes();
   }
 
   /**
@@ -64,50 +88,48 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     return $financialTypes;
   }
 
-  /**
-   * Returns list of available membership types to add to the current recurring
-   * contribution.
-   *
-   * @return array
-   */
-  private function getAvailableMembershipTypes($currentLineItems, $period) {
-    $memberhipTypes = civicrm_api3('MembershipType', 'get', [
+  private function setAllMembershipTypes() {
+    $result = civicrm_api3('MembershipType', 'get', [
       'options' => ['limit' => 0],
-    ])['values'];
+    ]);
 
-    $allowedTypes = [];
-    foreach ($memberhipTypes as $type) {
-      if ($this->isAllowedMembershipType($type, $currentLineItems, $period)) {
-        $allowedTypes[] = $type;
+    if ($result['count'] > 0) {
+      $this->allMembershipTypes = $result['values'];
+    }
+  }
+
+  private function getCurrentTabMembershipTypes() {
+    $allowedTypes = $this->allMembershipTypes;
+    foreach ($allowedTypes as $key => $type) {
+      $lineItemIndex = array_search($type['member_of_contact_id'], array_column($this->currentLineItemMembershipTypes, 'org_id'));
+      if ($lineItemIndex !== FALSE) {
+        unset($allowedTypes[$key]);
       }
     }
 
     return $allowedTypes;
   }
 
-  /**
-   * Checks if given membership type's organization is already in a membership
-   * associated with the recurring contribution.
-   *
-   * @param $membershipType
-   * @param $currentLineItems
-   *
-   * @return bool
-   */
-  private function isAllowedMembershipType($membershipType, $currentLineItems, $period) {
-    foreach ($currentLineItems as $lineItem) {
-      $matchAutoRenewLineItems = ($period == 'current_period') ? $lineItem['auto_renew'] : !$lineItem['auto_renew'];
-      if ($lineItem['entity_table'] != 'civicrm_membership' || $matchAutoRenewLineItems ) {
-        continue;
+  private function getNextTabMembershipTypes() {
+    $allowedTypes = $this->allMembershipTypes;
+    foreach ($allowedTypes as $key => $type) {
+      $lineItemIndex = array_search($type['member_of_contact_id'], array_column($this->currentLineItemMembershipTypes, 'org_id'));
+      if ($lineItemIndex !== FALSE) {
+        $lineItemType = $this->currentLineItemMembershipTypes[$lineItemIndex];
+        if ($lineItemType['is_autorenew']) {
+          unset($allowedTypes[$key]);
+          continue;
+        }
       }
 
-      $lineItemMembershipType = $this->getMembershipTypeFromMembershipID($lineItem['entity_id']);
-      if ($membershipType['member_of_contact_id'] == $lineItemMembershipType['member_of_contact_id']) {
-        return FALSE;
+      $lineItemIndex = array_search($type['member_of_contact_id'], array_column($this->nextLineItemMembershipTypes, 'org_id'));
+      if ($lineItemIndex !== FALSE) {
+        unset($allowedTypes[$key]);
+        continue;
       }
     }
 
-    return TRUE;
+    return $allowedTypes;
   }
 
   /**
@@ -132,6 +154,24 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     }
   }
 
+  private function getMembershipTypeFromPriceFieldValue($priceFieldValueId) {
+    $priceFieldMembershipType = civicrm_api3('PriceFieldValue', 'get', [
+      'sequential' => 1,
+      'id' => $priceFieldValueId,
+      'options' => ['sort' => 'id desc'],
+    ]);
+
+    if (!empty($priceFieldMembershipType['values'][0]['membership_type_id'])) {
+      $lineItemMembershipTypeId = $priceFieldMembershipType['values'][0]['membership_type_id'];
+      return civicrm_api3('MembershipType', 'get', [
+        'sequential' => 1,
+        'id' => $lineItemMembershipTypeId,
+      ])['values'][0];
+    }
+
+    return NULL;
+  }
+
   /**
    * @inheritdoc
    */
@@ -146,9 +186,14 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
 
     $currentPeriodLineItems = $this->getCurrentPeriodLineItems();
+    $this->setCurrentLineItemMembershipTypes($currentPeriodLineItems);
+    $this->setNextLineItemMembershipTypes($currentPeriodLineItems);
+
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
-    $this->assign('currentPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'current_period'));
-    $this->assign('nextPeriodMembershipTypes', $this->getAvailableMembershipTypes($currentPeriodLineItems, 'next_period'));
+
+    $this->assign('currentPeriodMembershipTypes', $this->getCurrentTabMembershipTypes());
+    $this->assign('nextPeriodMembershipTypes', $this->getNextTabMembershipTypes());
+
     $this->assign('lineItems', $currentPeriodLineItems);
 
     $nextPeriodLineItems = $this->getNextPeriodLineItems();
@@ -178,6 +223,40 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     }
 
     return $this->getLineItems($conditions);
+  }
+
+  private function setCurrentLineItemMembershipTypes($currentPeriodLineItems) {
+    foreach ($currentPeriodLineItems as $lineItem) {
+      if ($lineItem['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      $typeDetails = [];
+
+      $typeDetails['is_autorenew'] = $lineItem['auto_renew'];
+
+      $lineItemMembershipType = $this->getMembershipTypeFromMembershipID($lineItem['entity_id']);
+      $typeDetails['name'] = $lineItemMembershipType['name'];
+      $typeDetails['org_id'] = $lineItemMembershipType['member_of_contact_id'];
+
+      $this->currentLineItemMembershipTypes[] = $typeDetails;
+    }
+  }
+
+  private function setNextLineItemMembershipTypes($currentPeriodLineItems) {
+    foreach ($currentPeriodLineItems as $lineItem) {
+      if ($lineItem['entity_table'] != 'civicrm_contribution_recur') {
+        continue;
+      }
+
+      $typeDetails = [];
+
+      $lineItemMembershipType = $this->getMembershipTypeFromPriceFieldValue($lineItem['price_field_value_id']);
+      $typeDetails['name'] = $lineItemMembershipType['name'];
+      $typeDetails['org_id'] = $lineItemMembershipType['member_of_contact_id'];
+
+      $this->nextLineItemMembershipTypes[] = $typeDetails;
+    }
   }
 
   /**
@@ -265,7 +344,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
   /**
    * Calculates next period's start date
-   * 
+   *
    * @return string
    */
   private function calculateNextPeriodStartDate() {
@@ -295,7 +374,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
   /**
    * Obtains list of line items for the current recurring contribution.
-   * 
+   *
    * @param array $conditions
    *
    * @return array
