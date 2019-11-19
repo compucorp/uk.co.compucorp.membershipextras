@@ -187,7 +187,9 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $currentPeriodLineItems = $this->getCurrentPeriodLineItems();
     $this->setCurrentLineItemMembershipTypes($currentPeriodLineItems);
-    $this->setNextLineItemMembershipTypes($currentPeriodLineItems);
+
+    $nextPeriodLineItems = $this->getNextPeriodLineItems();
+    $this->setNextLineItemMembershipTypes($nextPeriodLineItems);
 
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
 
@@ -196,7 +198,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $this->assign('lineItems', $currentPeriodLineItems);
 
-    $nextPeriodLineItems = $this->getNextPeriodLineItems();
+
     $this->assign('showNextPeriodTab', $this->showNextPeriodTab());
     $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
@@ -243,19 +245,17 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     }
   }
 
-  private function setNextLineItemMembershipTypes($currentPeriodLineItems) {
-    foreach ($currentPeriodLineItems as $lineItem) {
-      if ($lineItem['entity_table'] != 'civicrm_contribution_recur') {
-        continue;
-      }
-
+  private function setNextLineItemMembershipTypes($nextPeriodLineItems) {
+    foreach ($nextPeriodLineItems as $lineItem) {
       $typeDetails = [];
 
       $lineItemMembershipType = $this->getMembershipTypeFromPriceFieldValue($lineItem['price_field_value_id']);
-      $typeDetails['name'] = $lineItemMembershipType['name'];
-      $typeDetails['org_id'] = $lineItemMembershipType['member_of_contact_id'];
+      if (!empty($lineItemMembershipType)) {
+        $typeDetails['name'] = $lineItemMembershipType['name'];
+        $typeDetails['org_id'] = $lineItemMembershipType['member_of_contact_id'];
 
-      $this->nextLineItemMembershipTypes[] = $typeDetails;
+        $this->nextLineItemMembershipTypes[] = $typeDetails;
+      }
     }
   }
 
