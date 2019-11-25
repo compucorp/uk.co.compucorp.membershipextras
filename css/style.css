@@ -16,6 +16,11 @@ div.period-dates {
 
 }
 
+#currentPeriodLineItems tr.columnheader th,
+#nextPeriodLineItems tr.columnheader th {
+  white-space: nowrap;
+}
+
 tr.disabled-row th,
 tr.disabled-row td {
   color: #ddd !important;
@@ -28,7 +33,11 @@ tr.rc-new-line-item input.required,
 }
 
 #newline_amount, #newline_donation_amount {
-  width: 50%;
+  width: 60%;
+}
+
+#newline_donation_item {
+  width: 75%;
 }
 
 tr.rc-line-item td {

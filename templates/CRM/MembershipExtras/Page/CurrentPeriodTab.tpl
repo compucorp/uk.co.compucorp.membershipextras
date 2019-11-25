@@ -21,7 +21,7 @@
 </div>
 <form>
   <input name="recurringContributionID" id="recurringContributionID" value="{$recurringContributionID}" type="hidden" />
-  <table class="selector row-highlight">
+  <table class="selector row-highlight" id="currentPeriodLineItems">
     <tbody>
     <tr class="columnheader">
       <th scope="col">{ts}Item{/ts}</th>
