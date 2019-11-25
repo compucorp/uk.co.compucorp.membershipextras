@@ -1,3 +1,7 @@
+div.period-dates {
+  margin-bottom: 10px;
+}
+
 .crm-container a:hover .crm-i.fa-check,
 .crm-container a:hover .crm-i.fa-times,
 .crm-container a:hover .crm-i.fa-trash {
@@ -27,7 +31,15 @@ tr.rc-new-line-item input.required,
   width: 50%;
 }
 
+tr.rc-line-item td {
+  white-space: nowrap;
+}
+
 tr.rc-new-line-item td, td.confirmation-icons {
+  vertical-align: middle;
+}
+
+tr.rc-new-line-item td select.crm-form-select {
   vertical-align: middle;
 }
 

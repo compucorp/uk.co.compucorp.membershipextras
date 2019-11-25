@@ -14,7 +14,7 @@
 </script>
 <div id="confirmLineItemDeletion" style="display: none;"></div>
 
-<div class="right">
+<div class="right period-dates">
   Period Start Date: {$periodStartDate|date_format:"%Y-%m-%d"|crmDate}
   &nbsp;&nbsp;&nbsp;
   Period End Date: {$periodEndDate|date_format:"%Y-%m-%d"|crmDate}
@@ -51,7 +51,7 @@
           <td>
               <input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} />
           </td>
-        {/if}&nbsp;
+        {/if}
         <td>{$currentItem.financial_type}</td>
         <td>{if $currentItem.tax_rate == 0}N/A{else}{$currentItem.tax_rate}%{/if}</td>
         <td nowrap>{$currentItem.line_total|crmMoney}</td>
@@ -83,7 +83,7 @@
         <td>
             <input name="newline_auto_renew" id="newline_auto_renew" type="checkbox" checked />&nbsp;
         </td>
-      {/if}&nbsp;
+      {/if}
       <td id="newline_financial_type"> - </td>
       <td id="newline_tax_rate" nowrap> - </td>
       <td><input name="newline_amount" id="newline_amount" class="crm-form-text"/></td>

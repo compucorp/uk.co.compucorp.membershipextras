@@ -1,7 +1,7 @@
 <script>
 var nextPeriodMembershipTypes = {$nextPeriodMembershipTypes|@json_encode};
 </script>
-<div class="right">
+<div class="right period-dates">
   Period Start Date: {$nextPeriodStartDate|date_format:"%Y-%m-%d"|crmDate}
 </div>
 <table class="selector row-highlight" id="nextPeriodLineItems">
