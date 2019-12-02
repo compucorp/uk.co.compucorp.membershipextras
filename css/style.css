@@ -18,7 +18,7 @@ div.period-dates {
 
 #currentPeriodLineItems tr.columnheader th,
 #nextPeriodLineItems tr.columnheader th {
-  white-space: nowrap;
+  line-height: 23px;
 }
 
 tr.disabled-row th,
