@@ -510,9 +510,14 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Renews/Extend the related payment plan memberships to be auto-renewed
    * for one term.
+   *
+   * @param int $sourceRecurringContribution
+   *   ID of the recurring contribution to be used to copy line items.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
-  protected function renewPaymentPlanMemberships() {
-    $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+  protected function renewPaymentPlanMemberships($sourceRecurringContribution) {
+    $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($sourceRecurringContribution);
     $existingMembershipID = null;
 
     foreach ($recurringLineItems as $lineItem) {
@@ -618,7 +623,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $lineTotal = MoneyUtilities::roundToCurrencyPrecision($unitPrice * $lineItem['qty']);
       $taxAmount = $this->calculateLineItemTaxAmount($lineTotal, $lineItem['financial_type_id']);
 
-      switch ($lineItem['entity_id']) {
+      switch ($lineItem['entity_table']) {
         case 'civicrm_contribution':
         case 'civicrm_contribution_recur':
           $entityID = 'null';

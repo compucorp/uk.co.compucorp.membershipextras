@@ -74,7 +74,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
    */
   public function renew() {
     $this->createRecurringContribution();
-    $this->renewPaymentPlanMemberships();
+    $this->renewPaymentPlanMemberships($this->newRecurringContributionID);
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
