@@ -1,3 +1,7 @@
+div.period-dates {
+  margin-bottom: 10px;
+}
+
 .crm-container a:hover .crm-i.fa-check,
 .crm-container a:hover .crm-i.fa-times,
 .crm-container a:hover .crm-i.fa-trash {
@@ -12,6 +16,11 @@
 
 }
 
+#currentPeriodLineItems tr.columnheader th,
+#nextPeriodLineItems tr.columnheader th {
+  line-height: 23px;
+}
+
 tr.disabled-row th,
 tr.disabled-row td {
   color: #ddd !important;
@@ -24,10 +33,22 @@ tr.rc-new-line-item input.required,
 }
 
 #newline_amount, #newline_donation_amount {
-  width: 50%;
+  width: 60%;
+}
+
+#newline_donation_item {
+  width: 75%;
+}
+
+tr.rc-line-item td {
+  white-space: nowrap;
 }
 
 tr.rc-new-line-item td, td.confirmation-icons {
+  vertical-align: middle;
+}
+
+tr.rc-new-line-item td select.crm-form-select {
   vertical-align: middle;
 }
 
