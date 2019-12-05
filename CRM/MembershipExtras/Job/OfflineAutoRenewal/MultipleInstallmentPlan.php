@@ -74,7 +74,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
    */
   public function renew() {
     $this->createRecurringContribution();
-    $this->renewPaymentPlanMemberships();
+    $this->renewPaymentPlanMemberships($this->newRecurringContributionID);
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
@@ -127,7 +127,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     $this->copyRecurringLineItems($currentRecurContribution, $newRecurringContribution);
     $this->updateRecurringContributionAmount($newRecurringContribution['id']);
 
-    // The new recurring contribution is now the current one.
     $this->newRecurringContribution = $newRecurringContribution;
     $this->newRecurringContributionID = $newRecurringContribution['id'];
   }
