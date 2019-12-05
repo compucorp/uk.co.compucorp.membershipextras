@@ -751,9 +751,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
-   * Checks if given line item already exists, by checking if there is already a
-   * line item with same entity_table, entity_id, contribution_id,
-   * price_field_value_id, and price_field_id.
+   * Checks if given line item already exists.
+   *
+   * Checks if there is already a similar line item related to the contribution,
+   * by checking if there is already a line item with same entity_table,
+   * entity_id, contribution_id, price_field_value_id, and price_field_id.
    *
    * @param array $lineItem
    *   Data for the line item to be used to check if it already exists.
@@ -765,12 +767,18 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @throws \CiviCRM_API3_Exception
    */
   private function isDuplicateLineItem($lineItem) {
+    $priceFieldID = CRM_Utils_Array::value('price_field_id', $lineItem);
+    $priceFieldValueID = CRM_Utils_Array::value('price_field_value_id', $lineItem);
+    if (!$priceFieldID || !$priceFieldValueID) {
+      return FALSE;
+    }
+
     $result = civicrm_api3('LineItem', 'get', [
       'entity_table' => CRM_Utils_Array::value('entity_table', $lineItem),
       'entity_id' => CRM_Utils_Array::value('entity_id', $lineItem),
       'contribution_id' => CRM_Utils_Array::value('contribution_id', $lineItem),
-      'price_field_value_id' => CRM_Utils_Array::value('price_field_value_id', $lineItem),
-      'price_field_id' => CRM_Utils_Array::value('price_field_id', $lineItem),
+      'price_field_id' => $priceFieldID,
+      'price_field_value_id' => $priceFieldValueID,
     ]);
 
     if ($result['count'] > 0) {

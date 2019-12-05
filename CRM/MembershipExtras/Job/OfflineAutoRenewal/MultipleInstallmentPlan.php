@@ -127,7 +127,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     $this->copyRecurringLineItems($currentRecurContribution, $newRecurringContribution);
     $this->updateRecurringContributionAmount($newRecurringContribution['id']);
 
-    // The new recurring contribution is now the current one.
     $this->newRecurringContribution = $newRecurringContribution;
     $this->newRecurringContributionID = $newRecurringContribution['id'];
   }
