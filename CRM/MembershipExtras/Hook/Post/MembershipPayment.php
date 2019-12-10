@@ -38,7 +38,24 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   public function postProcess() {
     if ($this->operation == 'create') {
       $this->fixRecurringLineItemMembershipReferences();
+      $this->recalculateMembershipStatus();
     }
+  }
+
+  /**
+   * Recaalculates the status of the related membership.
+   *
+   * Recalculates the statos of the related membership to check if payment plan }
+   * related events imply a status change (eg. In Arrears).
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function recalculateMembershipStatus() {
+    $membership = civicrm_api3('Membership', 'getsingle', ['id' => $this->membershipPayment->membership_id]);
+    $membership['id'] = $this->membershipPayment->membership_id;
+    $membership['skipStatusCal'] = 0;
+
+    civicrm_api3('Membership', 'create', $membership);
   }
 
   /**
