@@ -45,7 +45,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   /**
    * Recaalculates the status of the related membership.
    *
-   * Recalculates the statos of the related membership to check if payment plan }
+   * Recalculates the status of the related membership to check if payment plan
    * related events imply a status change (eg. In Arrears).
    *
    * @throws \CiviCRM_API3_Exception
