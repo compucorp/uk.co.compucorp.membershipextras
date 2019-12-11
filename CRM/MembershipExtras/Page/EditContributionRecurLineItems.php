@@ -278,7 +278,14 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @throws \Exception
    */
   private function calculateCurrentPeriodStartDate() {
-    return $this->getEarliestMembershipStartDate($this->currentPeriodLineItems);
+    $earliestStartDate = new DateTime($this->getEarliestMembershipStartDate($this->currentPeriodLineItems));
+    $recurringContributionStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
+
+    if ($earliestStartDate > $recurringContributionStartDate) {
+      return $earliestStartDate->format('Y-m-d');
+    }
+
+    return $recurringContributionStartDate->format('Y-m-d');
   }
 
   /**
@@ -286,9 +293,39 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @return string
    *   End date of current period.
+   *
+   * @throws \Exception
    */
   private function calculateCurrentPeriodEndDate() {
-    return $this->getLargestMembershipEndDate($this->currentPeriodLineItems);
+    if (!isset($this->contribRecur['end_date'])) {
+      return $this->getLargestMembershipEndDate($this->currentPeriodLineItems);
+    }
+
+    $numberOfInstallments = 1;
+    if (!empty($this->contribRecur['installments'])) {
+      $numberOfInstallments = $this->contribRecur['installments'];
+    }
+
+    $intervalLength = CRM_Utils_Array::value('frequency_interval', $this->contribRecur, 0) * $numberOfInstallments;
+    switch (CRM_Utils_Array::value('frequency_unit', $this->contribRecur)) {
+      case 'month':
+        $interval = 'P' . $intervalLength . 'M';
+        break;
+      case 'day':
+        $interval = 'P' . $intervalLength .'D';
+        break;
+      case 'year':
+        $interval = 'P' . $intervalLength .'Y';
+        break;
+    }
+
+    $nextPeriodStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
+    $nextPeriodStartDate->add(new DateInterval($interval));
+
+    $currentPeriodEndDate = new DateTime($nextPeriodStartDate->format('Y-m-d'));
+    $currentPeriodEndDate->sub(new DateInterval('P1D'));
+
+    return $currentPeriodEndDate->format('Y-m-d');
   }
 
   /**
