@@ -182,15 +182,14 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('recurringContribution', $this->contribRecur);
     $this->assign('recurringContributionID', $this->contribRecur['id']);
 
-    $this->assign('periodStartDate', CRM_Utils_Array::value('start_date', $this->contribRecur));
-    $this->assign('periodEndDate', CRM_Utils_Array::value('end_date', $this->contribRecur));
-
     $currentPeriodLineItems = $this->getCurrentPeriodLineItems();
     $this->setCurrentLineItemMembershipTypes($currentPeriodLineItems);
 
     $nextPeriodLineItems = $this->getNextPeriodLineItems();
     $this->setNextLineItemMembershipTypes($nextPeriodLineItems);
 
+    $this->assign('periodStartDate', $this->getEarliestMembershipStartDate($currentPeriodLineItems));
+    $this->assign('periodEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($currentPeriodLineItems));
 
     $this->assign('currentPeriodMembershipTypes', $this->getCurrentTabMembershipTypes());
@@ -198,9 +197,8 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     $this->assign('lineItems', $currentPeriodLineItems);
 
-
     $this->assign('showNextPeriodTab', $this->showNextPeriodTab());
-    $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
+    $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate($currentPeriodLineItems));
     $this->assign('financialTypes', $this->financialTypes);
     $this->assign('currencySymbol', $this->getCurrencySymbol());
     $this->assign('nextPeriodLineItems', $nextPeriodLineItems);
@@ -257,6 +255,38 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
         $this->nextLineItemMembershipTypes[] = $typeDetails;
       }
     }
+  }
+
+  /**
+   * Obtains earliest Start Date from the given line items.
+   *
+   * @param array $lineItems
+   *   List of line items for the period.
+   *
+   * @return string
+   *   Earliest start date for the period.
+   *
+   * @throws \Exception
+   */
+  private function getEarliestMembershipStartDate($lineItems) {
+    $earliestDate = null;
+
+    foreach ($lineItems as $line) {
+      if ($line['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      $membership = $this->getMembership($line['entity_id']);
+      $membershipStartDate = new DateTime($membership['start_date']);
+
+      if (!isset($earliestDate)) {
+        $earliestDate = $membershipStartDate;
+      } elseif ($earliestDate > $membershipStartDate) {
+        $earliestDate = $membershipStartDate;
+      }
+    }
+
+    return isset($earliestDate) ? $earliestDate->format('Y-m-d') : '';
   }
 
   /**
@@ -345,31 +375,19 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   /**
    * Calculates next period's start date
    *
+   * @param array $lineItems
+   *   Line items to be used in calculating start date of next period.
+   *
    * @return string
+   *   Start date for next period.
+   *
+   * @throws \Exception
    */
-  private function calculateNextPeriodStartDate() {
-    $numberOfInstallments = 1;
-    if (!empty($this->contribRecur['installments'])) {
-      $numberOfInstallments = $this->contribRecur['installments'];
-    }
-    $intervalLength = CRM_Utils_Array::value('frequency_interval', $this->contribRecur, 0) * $numberOfInstallments;
+  private function calculateNextPeriodStartDate($lineItems) {
+    $membershipDate = new DateTime($this->getLargestMembershipEndDate($lineItems));
+    $membershipDate->add(new DateInterval('P1D'));
 
-    switch (CRM_Utils_Array::value('frequency_unit', $this->contribRecur)) {
-      case 'month':
-        $interval = 'P' . $intervalLength . 'M';
-        break;
-      case 'day':
-        $interval = 'P' . $intervalLength .'D';
-        break;
-      case 'year':
-        $interval = 'P' . $intervalLength .'Y';
-        break;
-    }
-
-    $nextPeriodStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
-    $nextPeriodStartDate->add(new DateInterval($interval));
-
-    return $nextPeriodStartDate->format('Y-m-d');
+    return $membershipDate->format('Y-m-d');
   }
 
   /**
