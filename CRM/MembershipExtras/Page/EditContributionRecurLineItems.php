@@ -201,7 +201,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('recurringContributionID', $this->contribRecur['id']);
 
     $this->assign('periodStartDate', $this->calculateCurrentPeriodStartDate());
-    $this->assign('periodEndDate', $this->calculateCurrentPeriodEndDate());
+
+    $currentPeriodEndDate = $this->calculateCurrentPeriodEndDate();
+    $this->assign('periodEndDate', $currentPeriodEndDate);
+    $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate($currentPeriodEndDate));
     $this->assign('largestMembershipEndDate', $this->getLargestMembershipEndDate($this->currentPeriodLineItems));
 
     $this->assign('currentPeriodMembershipTypes', $this->getCurrentTabMembershipTypes());
@@ -210,7 +213,6 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     $this->assign('lineItems', $this->currentPeriodLineItems);
 
     $this->assign('showNextPeriodTab', $this->showNextPeriodTab());
-    $this->assign('nextPeriodStartDate', $this->calculateNextPeriodStartDate());
     $this->assign('financialTypes', $this->financialTypes);
     $this->assign('currencySymbol', $this->getCurrencySymbol());
     $this->assign('nextPeriodLineItems', $this->nextPeriodLineItems);
@@ -278,14 +280,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @throws \Exception
    */
   private function calculateCurrentPeriodStartDate() {
-    $earliestStartDate = new DateTime($this->getEarliestMembershipStartDate($this->currentPeriodLineItems));
-    $recurringContributionStartDate = new DateTime(CRM_Utils_Array::value('start_date', $this->contribRecur));
-
-    if ($earliestStartDate > $recurringContributionStartDate) {
-      return $earliestStartDate->format('Y-m-d');
-    }
-
-    return $recurringContributionStartDate->format('Y-m-d');
+    return $this->getEarliestLineStartDate($this->currentPeriodLineItems);
   }
 
   /**
@@ -339,21 +334,16 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @throws \Exception
    */
-  private function getEarliestMembershipStartDate($lineItems) {
+  private function getEarliestLineStartDate($lineItems) {
     $earliestDate = null;
 
     foreach ($lineItems as $line) {
-      if ($line['entity_table'] != 'civicrm_membership') {
-        continue;
-      }
-
-      $membership = $this->getMembership($line['entity_id']);
-      $membershipStartDate = new DateTime($membership['start_date']);
+      $startDate = new DateTime($line['start_date']);
 
       if (!isset($earliestDate)) {
-        $earliestDate = $membershipStartDate;
-      } elseif ($earliestDate > $membershipStartDate) {
-        $earliestDate = $membershipStartDate;
+        $earliestDate = $startDate;
+      } elseif ($earliestDate > $startDate) {
+        $earliestDate = $startDate;
       }
     }
 
@@ -451,8 +441,8 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @throws \Exception
    */
-  private function calculateNextPeriodStartDate() {
-    $membershipDate = new DateTime($this->getLargestMembershipEndDate($this->currentPeriodLineItems));
+  private function calculateNextPeriodStartDate($currentPeriodEndDate) {
+    $membershipDate = new DateTime($currentPeriodEndDate);
     $membershipDate->add(new DateInterval('P1D'));
 
     return $membershipDate->format('Y-m-d');

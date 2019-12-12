@@ -529,7 +529,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $existingMembershipID = $this->getExistingMembershipForLineItem($lineItem, $priceFieldValue);
 
       if ($existingMembershipID) {
-        $this->extendExistingMembership($existingMembershipID);
+        $this->extendExistingMembership($existingMembershipID, $lineItem);
       } else {
         $existingMembershipID = $this->createMembership($lineItem, $priceFieldValue);
       }
@@ -602,10 +602,14 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * Extend membership identified by given ID.
    *
    * @param int $membershipID
+   *   ID of the membership to be extended.
+   * @param array $lineItem
+   *   Data with the line item the membership belongs to.
    */
-  private function extendExistingMembership($membershipID) {
+  private function extendExistingMembership($membershipID, $lineItem) {
     $membership = new CRM_Member_DAO_Membership();
     $membership->id = $membershipID;
+    $membership->start_date = $lineItem['start_date'];
     $membership->end_date = MembershipEndDateCalculator::calculate($membershipID);
     $membership->save();
   }

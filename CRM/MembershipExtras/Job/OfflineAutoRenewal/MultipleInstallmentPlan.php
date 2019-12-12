@@ -218,7 +218,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
 
     $result = [];
     foreach ($lineItems['values'] as $line) {
-      $lineData = $line['api.LineItem.getsingle'];
+      $lineData = $line;
+      $lineData['subscription_line_id'] = $line['id'];
+      unset($lineData['id']);
+      unset($lineData['api.LineItem.getsingle']);
+      $lineData = array_merge($lineData, $line['api.LineItem.getsingle']);
+
       $result[] =  $lineData;
     }
 
