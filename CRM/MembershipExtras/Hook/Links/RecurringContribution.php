@@ -30,16 +30,40 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
   private $mask;
 
   /**
+   * Data associated to the recurring contribution.
+   *
+   * @var array
+   */
+  private $recurringContribution;
+
+  /**
    * CRM_MembershipExtras_Hook_Links_RecurringContribution constructor.
    *
    * @param int $contributionID
    * @param array $links
    * @param int $mask
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   public function __construct($contributionID, &$links, &$mask) {
     $this->recurringContributionID = $contributionID;
+    $this->recurringContribution = $this->getRecurringContribution();
     $this->links = &$links;
     $this->mask = &$mask;
+  }
+
+  /**
+   * Loads recurring contribution.
+   *
+   * @return array
+   *   Array with recurring contribution's data.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getRecurringContribution() {
+    return civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $this->recurringContributionID
+    ]);
   }
 
   /**
@@ -59,7 +83,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
       }
     }
 
-    if ($this->isManualPaymentPlan()) {
+    if ($this->isLastRenewalOfManualPaymentPlan()) {
       $this->links[] = [
         'name' => 'View/Modify Future Instalments',
         'url' => 'civicrm/recurring-contribution/edit-lineitems',
@@ -75,12 +99,51 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    * @return bool
    */
   private function isManualPaymentPlan() {
-    $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
-      'id' => $this->recurringContributionID
-    ]);
-    $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
+    $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $this->recurringContribution);
 
     return ManualPaymentProcessors::isManualPaymentProcessor($paymentProcessorID);
+  }
+
+  /**
+   * Checks if current recurring contribution is the last in a payment plan.
+   *
+   * @return bool
+   *   TRUE if the recurring contribution is the last in a succession of
+   *   renewals, FALSE otherwise.
+   *
+   * @throws \Exception
+   */
+  private function isLastRenewalOfManualPaymentPlan() {
+    $nextPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'next_period');
+
+    if (CRM_Utils_Array::value('custom_' . $nextPeriodFieldID, $this->recurringContribution, FALSE)) {
+      return FALSE;
+    }
+
+    return $this->isManualPaymentPlan();
+  }
+
+  /**
+   * Obtains ID for custom field name in given group.
+   *
+   * @param $fieldGroup
+   * @param $fieldName
+   *
+   * @return int
+   * @throws \Exception
+   */
+  protected function getCustomFieldID($fieldGroup, $fieldName) {
+    $result = civicrm_api3('CustomField', 'get', [
+      'sequential' => 1,
+      'custom_group_id' => $fieldGroup,
+      'name' => $fieldName,
+    ]);
+
+    if ($result['count'] > 0) {
+      return $result['values'][0]['id'];
+    }
+
+    throw new Exception("Cannot find customfield $fieldName in $fieldGroup group.");
   }
 
 }
