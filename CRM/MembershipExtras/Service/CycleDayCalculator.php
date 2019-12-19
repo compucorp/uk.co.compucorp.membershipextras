@@ -15,7 +15,7 @@ class CRM_MembershipExtras_Service_CycleDayCalculator {
    *
    * @return int
    */
-  public static function calculate($targetDate, $frequencyUnit) {;
+  public static function calculate($targetDate, $frequencyUnit) {
     $recurContStartDate = new DateTime($targetDate);
 
     switch ($frequencyUnit) {
