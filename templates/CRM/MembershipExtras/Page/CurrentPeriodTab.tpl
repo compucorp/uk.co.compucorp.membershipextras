@@ -46,7 +46,7 @@
       <tr id="lineitem-{$currentItem.id}" data-item-data='{$currentItem|@json_encode}' class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
         <td>{$currentItem.label}</td>
         <td>{$currentItem.start_date|date_format:"%Y-%m-%d"|crmDate}</td>
-        <td>{$largestMembershipEndDate|crmDate}</td>
+        <td>{$periodEndDate|crmDate}</td>
         {if $recurringContribution.auto_renew}
           <td>
               <input type="checkbox" class="auto-renew-line-checkbox"{if $currentItem.auto_renew} checked{/if} />
