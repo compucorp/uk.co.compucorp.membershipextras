@@ -39,7 +39,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    if ($this->paymentContributionID) {
+    if ($this->paymentContributionID || $this->isRecordingPayment()) {
       $this->preventExtendingPaymentPlanMembership();
     }
 
@@ -52,6 +52,21 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     if ($this->isOfflinePaymentPlanMembership()) {
       $this->verifyMembershipStartDate();
     }
+  }
+
+  private function isRecordingPayment() {
+    $isAddAction = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::ADD;
+    $isContributionComponent = CRM_Utils_Request::retrieve('component', 'String') === 'contribution';
+    $idContribution = CRM_Utils_Request::retrieve('id', 'String');
+    $isRecordPayment = CRM_Utils_Request::retrieve('_qf_AdditionalPayment_upload', 'String') === 'Record Payment';
+
+    if ($isAddAction && $isContributionComponent && $isRecordPayment && $idContribution) {
+      $this->paymentContributionID = $idContribution;
+
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**
