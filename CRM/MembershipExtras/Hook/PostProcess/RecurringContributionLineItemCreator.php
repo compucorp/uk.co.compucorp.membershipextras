@@ -10,6 +10,8 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
 
   private $previousPeriodFieldID;
 
+  private $calculateAutorenewalFlag = FALSE;
+
   public function __construct($recurContributionID){
     $this->recurContributionID = $recurContributionID;
     $this->previousPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'previous_period');
@@ -28,6 +30,16 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
     }
 
     $this->recurContribution =  $recurContribution['values'][0];
+  }
+
+  /**
+   * When called, it will force the class
+   * to calculate the auto-renew flag if
+   * it should be set or not when
+   * creating the line items.
+   */
+  public function forceAutorenewalFlagCalculation() {
+    $this->calculateAutorenewalFlag = TRUE;
   }
 
   public function create() {
@@ -58,14 +70,20 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
       return NULL;
     }
 
-    $lastContributionLineItems = civicrm_api3('LineItem', 'get', [
+    $lineItemsFilterParams = [
       'sequential' => 1,
       'return' => ['entity_table', 'entity_id', 'price_field_id',
         'label', 'qty', 'unit_price', 'line_total', 'participant_count', 'id',
         'price_field_value_id', 'financial_type_id', 'non_deductible_amount', 'tax_amount'],
       'contribution_id' => $lastContributionId,
       'options' => ['limit' => 0],
-    ]);
+    ];
+
+    if ($this->calculateAutorenewalFlag) {
+      $lineItemsFilterParams['api.Membership.get'] = ['id' => '$value.entity_id'];
+    }
+
+    $lastContributionLineItems = civicrm_api3('LineItem', 'get', $lineItemsFilterParams);
     if ($lastContributionLineItems['count'] < 1) {
       return NULL;
     }
@@ -74,6 +92,11 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
   }
 
   private function createRecurLineItem($lineItemParams) {
+    $autoRenew = TRUE;
+    if ($this->calculateAutorenewalFlag) {
+      $autoRenew = $this->calculateAutorenewalFlag($lineItemParams);
+    }
+
     unset($lineItemParams['id']);
     $lineItemCopy = civicrm_api3('LineItem', 'create', $lineItemParams);
 
@@ -81,7 +104,7 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
       'contribution_recur_id' => $this->recurContributionID,
       'line_item_id' => $lineItemCopy['id'],
       'start_date' => $this->recurContribution['start_date'],
-      'auto_renew' => TRUE,
+      'auto_renew' => $autoRenew,
     ]);
   }
 
@@ -97,6 +120,20 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
     }
 
     return 0;
+  }
+
+  private function calculateAutorenewalFlag($lineItemParams) {
+    if ($lineItemParams['entity_table'] == 'civicrm_membership') {
+      $autoRenew = TRUE;
+      if (empty($lineItemParams['api.Membership.get']['values'][0]['contribution_recur_id'])) {
+        $autoRenew = FALSE;
+      }
+    }
+    else {
+      $autoRenew = $this->autoRenewAddOnContributions;
+    }
+
+    return $autoRenew;
   }
 
 }
