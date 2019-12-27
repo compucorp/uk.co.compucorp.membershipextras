@@ -123,14 +123,13 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
   }
 
   private function calculateAutorenewalFlag($lineItemParams) {
-    if ($lineItemParams['entity_table'] == 'civicrm_membership') {
-      $autoRenew = TRUE;
-      if (empty($lineItemParams['api.Membership.get']['values'][0]['contribution_recur_id'])) {
-        $autoRenew = FALSE;
-      }
+    if ($lineItemParams['entity_table'] != 'civicrm_membership') {
+      return FALSE;
     }
-    else {
-      $autoRenew = $this->autoRenewAddOnContributions;
+
+    $autoRenew = TRUE;
+    if (empty($lineItemParams['api.Membership.get']['values'][0]['contribution_recur_id'])) {
+      $autoRenew = FALSE;
     }
 
     return $autoRenew;
