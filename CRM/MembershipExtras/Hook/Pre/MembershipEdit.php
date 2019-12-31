@@ -55,18 +55,45 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   private function isRecordingPayment() {
-    $isAddAction = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::ADD;
-    $isContributionComponent = CRM_Utils_Request::retrieve('component', 'String') === 'contribution';
-    $idContribution = CRM_Utils_Request::retrieve('id', 'String');
+    $paymentRecordingDetails = $this->parsePaymentRecordingInformation();
+
+    if (empty($paymentRecordingDetails)) {
+      return FALSE;
+    }
+
+    $isAddAction = FALSE;
+    if (!empty($paymentRecordingDetails['action']) && $paymentRecordingDetails['action'] == 'add') {
+      $isAddAction = TRUE;
+    }
+
+    $contributionId = NULL;
+    if (!empty($paymentRecordingDetails['id'])) {
+      $contributionId = $paymentRecordingDetails['id'];
+    }
+
     $isRecordPayment = CRM_Utils_Request::retrieve('_qf_AdditionalPayment_upload', 'String') === 'Record Payment';
 
-    if ($isAddAction && $isContributionComponent && $isRecordPayment && $idContribution) {
-      $this->paymentContributionID = $idContribution;
+    if ($isAddAction && $contributionId && $isRecordPayment) {
+      $this->paymentContributionID = $contributionId;
 
       return TRUE;
     }
 
     return FALSE;
+  }
+
+  private function parsePaymentRecordingInformation() {
+    $recordPaymentEntryURL = CRM_Utils_Request::retrieve('entryURL', 'String');
+    $recordPaymentEntryURL = html_entity_decode($recordPaymentEntryURL);
+
+    $urlParts = parse_url($recordPaymentEntryURL);
+
+    if(!empty($urlParts['query'])) {
+      parse_str($urlParts['query'], $urlParams);
+      return $urlParams;
+    }
+
+    return [];
   }
 
   /**
