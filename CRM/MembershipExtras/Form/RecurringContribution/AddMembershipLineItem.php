@@ -312,7 +312,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'sequential' => 1,
       'contact_id' => $this->recurringContribution['contact_id'],
       'membership_type_id' => $this->membershipType['id'],
-      'join_date' => date('YmdHis'),
+      'join_date' => $this->lineItemParams['start_date'],
       'start_date' => $this->lineItemParams['start_date'],
       'end_date' => $this->lineItemParams['end_date'],
       'contribution_recur_id' => $autoRenew ? $this->recurringContribution['id'] : '',
