@@ -311,6 +311,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     foreach ($lineItems as $line) {
       $startDate = new DateTime($line['start_date']);
+      if ($line['entity_table'] === 'civicrm_membership') {
+        $membership = $this->getMembership($line['entity_id']);
+        $startDate = new DateTime($membership['start_date']);
+      }
 
       if (!isset($earliestDate)) {
         $earliestDate = $startDate;
