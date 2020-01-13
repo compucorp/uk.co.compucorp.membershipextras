@@ -77,13 +77,10 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
     $this->membership = $membership;
     $this->calculationArguments = $arguments;
 
-    // If membership is being created, it should start in 'Pending' status.
+    // If membership is being created, we won't be able to tell if it's for a
+    // payment plan or not.
     $isMembershipExist = CRM_Utils_Array::value('id', $this->membership, false);
     if (!$isMembershipExist) {
-      $pendingMembershipStaus = $this->getMembershipStatus('Pending');
-      $calculatedStatus['id'] = $pendingMembershipStaus['id'];
-      $calculatedStatus['name'] = $pendingMembershipStaus['name'];
-
       return;
     }
 

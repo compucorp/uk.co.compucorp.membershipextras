@@ -17,37 +17,6 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   private $membershipType;
 
   /**
-   * Maps the names of contribution statuses to their corresponding values.
-   *
-   * @var array
-   */
-  private static $contributionStatusValueMap = [];
-
-  /**
-   * CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem constructor.
-   *
-   * @param null $state
-   * @param int $action
-   * @param string $method
-   * @param null $name
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  public function __construct($state = NULL, $action = CRM_Core_Action::NONE, $method = 'post', $name = NULL) {
-    parent::__construct($state, $action, $method, $name);
-
-    if (count(self::$contributionStatusValueMap) == 0) {
-      $contributionStatuses = civicrm_api3('OptionValue', 'get', [
-        'option_group_id' => "contribution_status",
-      ]);
-
-      foreach ($contributionStatuses['values'] as $currentStatus) {
-        self::$contributionStatusValueMap[$currentStatus['name']] = $currentStatus['value'];
-      }
-    }
-  }
-
-  /**
    * @inheritdoc
    */
   public function preProcess() {
@@ -335,10 +304,14 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
 
   /**
    * Creates a new membership for the recurring contribution.
+   *
+   * @return array
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function createMembership() {
     $autoRenew = $this->recurringContribution['auto_renew'] && $this->lineItemParams['auto_renew'];
-    $membershipParams = [
+    $result = civicrm_api3('Membership', 'create', [
       'sequential' => 1,
       'contact_id' => $this->recurringContribution['contact_id'],
       'membership_type_id' => $this->membershipType['id'],
@@ -346,9 +319,9 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'start_date' => $this->lineItemParams['start_date'],
       'end_date' => $this->lineItemParams['end_date'],
       'contribution_recur_id' => $autoRenew ? $this->recurringContribution['id'] : '',
-    ];
-
-    $result = civicrm_api3('Membership', 'create', $membershipParams);
+      'status_id' => 'Pending',
+      'skipStatusCal' => 1,
+    ]);
 
     return array_shift($result['values']);
   }
