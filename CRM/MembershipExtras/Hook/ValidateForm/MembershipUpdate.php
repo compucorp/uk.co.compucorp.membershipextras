@@ -1,4 +1,5 @@
 <?php
+use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 
 /**
  * Class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate.
@@ -45,7 +46,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
    * @throws \CiviCRM_API3_Exception
    */
   public function validate() {
-    if ($this->isMembershipTypeChanged()) {
+    if ($this->isPaymentPlan() && $this->isMembershipTypeChanged()) {
       $this->errors['membership_type_id'] = ts(
         'This membership is part of an ongoing payment plan and cannot be 
         edited directly. To modify the active memberships in this payment plan 
@@ -54,6 +55,82 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
         can add or remove memberships.'
       );
     }
+  }
+
+  /**
+   * Checks if the membership was paid for with a payment plan.
+   *
+   * @return bool
+   *   TRUE if membership is part of a payment plan, FALSE otherwise.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function isPaymentPlan() {
+    $contribution = $this->getLastMembershipPayment();
+
+    if (empty($contribution['contribution_recur_id'])) {
+      return FALSE;
+    }
+
+    $recurringContribution = $this->getRecurringContribution($contribution['contribution_recur_id']);
+    $processorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
+    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($processorID);
+
+    if ($isManualPaymentPlan) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Obtains payment processor ID used for the last membership payment.
+   *
+   * Returns tha las payment processor ID used to pay for the membership with a
+   * recurring contribution.
+   *
+   * @return mixed
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getLastMembershipPayment() {
+    $contribution = civicrm_api3('MembershipPayment', 'get', [
+      'sequential' => 1,
+      'membership_id' => $this->form->_id,
+      'options' => [
+        'limit' => 1,
+        'sort' => 'contribution_id DESC',
+      ],
+      'return' => [
+        'contribution_id',
+        'contribution_id.contribution_recur_id',
+      ],
+    ]);
+
+    return $contribution['values'][0];
+  }
+
+  /**
+   * Obtains information for the given recurring contribution ID.
+   *
+   * @param int $recurringContributionID
+   *   ID of the recurring contribution.
+   *
+   * @return array
+   *   Data for the recurring contribution.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getRecurringContribution($recurringContributionID) {
+    if (empty($recurringContributionID)) {
+      return [];
+    }
+
+    return civicrm_api3('ContributionRecur', 'getsingle', [
+      'sequential' => 1,
+      'id' => $recurringContributionID,
+      'options' => ['limit' => 0]
+    ]);
   }
 
   /**
