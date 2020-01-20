@@ -84,12 +84,9 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
   }
 
   /**
-   * Obtains payment processor ID used for the last membership payment.
+   * Obtains last payment used for the membership.
    *
-   * Returns tha las payment processor ID used to pay for the membership with a
-   * recurring contribution.
-   *
-   * @return mixed
+   * @return array
    *
    * @throws \CiviCRM_API3_Exception
    */
@@ -107,7 +104,11 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
       ],
     ]);
 
-    return $contribution['values'][0];
+    if ($contribution['count'] > 0) {
+      return $contribution['values'][0];
+    }
+
+    return [];
   }
 
   /**
@@ -127,9 +128,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
     }
 
     return civicrm_api3('ContributionRecur', 'getsingle', [
-      'sequential' => 1,
       'id' => $recurringContributionID,
-      'options' => ['limit' => 0]
     ]);
   }
 
