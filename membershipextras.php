@@ -365,6 +365,9 @@ function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$f
     if ($contributionIsPaymentPlan) {
       $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
       $paymentPlanValidateHook->validate();
+    } else {
+      $contributionValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipContribution($form, $fields, $errors);
+      $contributionValidateHook->validate();
     }
   }
 }
