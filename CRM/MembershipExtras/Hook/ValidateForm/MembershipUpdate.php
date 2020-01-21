@@ -68,11 +68,11 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
   private function isPaymentPlan() {
     $contribution = $this->getLastMembershipPayment();
 
-    if (empty($contribution['contribution_recur_id'])) {
+    if (empty($contribution['contribution_id.contribution_recur_id'])) {
       return FALSE;
     }
 
-    $recurringContribution = $this->getRecurringContribution($contribution['contribution_recur_id']);
+    $recurringContribution = $this->getRecurringContribution($contribution['contribution_id.contribution_recur_id']);
     $processorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
     $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($processorID);
 
