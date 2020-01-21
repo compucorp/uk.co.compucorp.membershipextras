@@ -29,6 +29,18 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private $paymentContributionID;
 
+  /**
+   * We don't want to extend the same membership
+   * more than one time if for whatever reason
+   * this hook get called more than one time
+   * during the same session, so here
+   * we keep the list of already extended
+   * memberships to achieve that.
+   *
+   * @var array
+   */
+  private static $extendedMemberships = [];
+
   public function __construct($id, &$params, $contributionID) {
     $this->id = $id;
     $this->params = &$params;
@@ -43,10 +55,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       $this->preventExtendingPaymentPlanMembership();
     }
 
-    $isMultipleInstallmentsPaymentPlan = $this->isPaymentPlanWithMoreThanOneInstallment();
-    $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
-    if ($isMembershipRenewal && $isMultipleInstallmentsPaymentPlan) {
-      $this->extendPendingPaymentPlanMembershipOnRenewal();
+    if (!in_array($this->id, self::$extendedMemberships)) {
+      $isMultipleInstallmentsPaymentPlan = $this->isPaymentPlanWithMoreThanOneInstallment();
+      $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
+      if ($isMembershipRenewal && $isMultipleInstallmentsPaymentPlan) {
+        self::$extendedMemberships[] = $this->id;
+        $this->extendPendingPaymentPlanMembershipOnRenewal();
+      }
     }
 
     if ($this->isOfflinePaymentPlanMembership()) {
