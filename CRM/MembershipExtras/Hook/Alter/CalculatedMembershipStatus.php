@@ -90,15 +90,6 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
       return;
     }
 
-    // If recurring contribution is pending, membership should be pending.
-    if ($this->doesRecurringContributionHaveStatus('Pending')) {
-      $pendingMembershipStaus = $this->getMembershipStatus('Pending');
-      $calculatedStatus['id'] = $pendingMembershipStaus['id'];
-      $calculatedStatus['name'] = $pendingMembershipStaus['name'];
-
-      return;
-    }
-
     // Otherwise, recalculate status taking into account arrears related events.
     $this->recalculateMembershipStatus($calculatedStatus);
   }
@@ -133,42 +124,6 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
     }
 
     return FALSE;
-  }
-
-  /**
-   * Checks if the status of the recurring contribution matches the given name.
-   *
-   * @param string $statusName
-   *
-   * @return bool
-   */
-  private function doesRecurringContributionHaveStatus($statusName) {
-    $statusID = self::$contributionStatusValueMap[$statusName];
-
-    if ($this->recurringContribution['contribution_status_id'] === $statusID) {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-  /**
-   * Searches given status name in all membership statuses and returns its data.
-   *
-   * @param string $statusName
-   *   Name for the membership status.
-   *
-   * @return array
-   *   Data associated to the status.
-   */
-  private function getMembershipStatus($statusName) {
-    foreach (self::$memberShipStatuses as $memberShipStatus) {
-      if ($memberShipStatus['name'] === $statusName) {
-        return $memberShipStatus;
-      }
-    }
-
-    return NULL;
   }
 
   /**
