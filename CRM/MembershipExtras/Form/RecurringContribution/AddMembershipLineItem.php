@@ -319,8 +319,6 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'start_date' => $this->lineItemParams['start_date'],
       'end_date' => $this->lineItemParams['end_date'],
       'contribution_recur_id' => $autoRenew ? $this->recurringContribution['id'] : '',
-      'status_id' => 'Pending',
-      'skipStatusCal' => 1,
     ]);
 
     return array_shift($result['values']);
