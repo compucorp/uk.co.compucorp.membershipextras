@@ -304,15 +304,18 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
 
   /**
    * Creates a new membership for the recurring contribution.
+   *
+   * @return array
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function createMembership() {
     $autoRenew = $this->recurringContribution['auto_renew'] && $this->lineItemParams['auto_renew'];
-
     $result = civicrm_api3('Membership', 'create', [
       'sequential' => 1,
       'contact_id' => $this->recurringContribution['contact_id'],
       'membership_type_id' => $this->membershipType['id'],
-      'join_date' => date('YmdHis'),
+      'join_date' => $this->lineItemParams['start_date'],
       'start_date' => $this->lineItemParams['start_date'],
       'end_date' => $this->lineItemParams['end_date'],
       'contribution_recur_id' => $autoRenew ? $this->recurringContribution['id'] : '',

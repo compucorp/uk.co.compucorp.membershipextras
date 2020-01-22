@@ -14,6 +14,13 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
   private $membership;
 
   /**
+   * Array with the recurring contribution's data.
+   *
+   * @var array
+   */
+  private $recurringContribution;
+
+  /**
    * Dates used by CiviCRM to calculate status, ie. start_date, end_date and
    * join_date.
    *
@@ -39,6 +46,7 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
     if (count(self::$memberShipStatuses) == 0) {
       $membershipStatuses = civicrm_api3('MembershipStatus', 'get', [
         'sequential' => 1,
+        'is_active' => 1,
         'options' => ['sort' => 'weight ASC', 'limit' => 0],
       ]);
       self::$memberShipStatuses = $membershipStatuses['values'];
@@ -69,52 +77,21 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
     $this->membership = $membership;
     $this->calculationArguments = $arguments;
 
+    // If membership is being created, we won't be able to tell if it's for a
+    // payment plan or not.
     $isMembershipExist = CRM_Utils_Array::value('id', $this->membership, false);
     if (!$isMembershipExist) {
       return;
     }
 
+    // If membership was not last paid for with a payment plan, no need to process
     $isPaymentPlanMembership = $this->checkMembershipPaymentPlan();
-
-    // If membership was not last payed for with a payment plan, no need to process
     if (!$isPaymentPlanMembership) {
       return;
     }
 
-    foreach (self::$memberShipStatuses as $status) {
-      $startEventIsArrearsRelated = stripos($status['start_event'], 'arrears') !== false;
-      $endEventIsArrearsRelated = stripos($status['end_event'], 'arrears') !== false;
-
-      if (!$startEventIsArrearsRelated && !$endEventIsArrearsRelated) {
-        // If we reach calculated status, we don't need to consider other options by weight.
-        if ($calculatedStatus['id'] == $status['id']) {
-          break;
-        }
-
-        // No arrears, so we continue with next status.
-        continue;
-      }
-
-      $startEvent = $this->checkEvent(
-        CRM_Utils_Array::value('start_event', $status),
-        $arguments['status_date'],
-        CRM_Utils_Array::value('start_event_adjust_unit', $status),
-        CRM_Utils_Array::value('start_event_adjust_interval', $status)
-      );
-
-      $endEvent = $this->checkEvent(
-        CRM_Utils_Array::value('end_event', $status),
-        $arguments['status_date'],
-        CRM_Utils_Array::value('start_event_adjust_unit', $status),
-        CRM_Utils_Array::value('start_event_adjust_interval', $status)
-      );
-
-      if ($startEvent && !$endEvent) {
-        $calculatedStatus['id'] = $status['id'];
-        $calculatedStatus['name'] = $status['name'];
-        break;
-      }
-    }
+    // Otherwise, recalculate status taking into account arrears related events.
+    $this->recalculateMembershipStatus($calculatedStatus);
   }
 
   /**
@@ -139,6 +116,10 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
     $pendingContributionsResult->fetch();
 
     if (!empty($pendingContributionsResult->recurid)) {
+      $this->recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
+        'id' => $pendingContributionsResult->recurid,
+      ]);
+
       return TRUE;
     }
 
@@ -146,9 +127,54 @@ class CRM_MembershipExtras_Hook_Alter_CalculatedMembershipStatus {
   }
 
   /**
+   * Reevaluates the membership status rules taking into account arrears events.
+   *
+   * @param array $calculatedStatus
+   */
+  private function recalculateMembershipStatus(&$calculatedStatus) {
+    foreach (self::$memberShipStatuses as $status) {
+      $statusStartEvent = CRM_Utils_Array::value('start_event', $status);
+      $startEventIsArrearsRelated = stripos($statusStartEvent, 'arrears') !== false;
+
+      $statusEndEvent = CRM_Utils_Array::value('end_event', $status);
+      $endEventIsArrearsRelated = stripos($statusEndEvent, 'arrears') !== false;
+
+      if (!$startEventIsArrearsRelated && !$endEventIsArrearsRelated) {
+        // If we reach calculated status, we don't need to consider other options by weight.
+        if ($calculatedStatus['id'] == $status['id']) {
+          break;
+        }
+
+        // No arrears, so we continue with next status.
+        continue;
+      }
+
+      $startEvent = $this->checkEvent(
+        CRM_Utils_Array::value('start_event', $status),
+        $this->calculationArguments['status_date'],
+        CRM_Utils_Array::value('start_event_adjust_unit', $status),
+        CRM_Utils_Array::value('start_event_adjust_interval', $status)
+      );
+
+      $endEvent = $this->checkEvent(
+        CRM_Utils_Array::value('end_event', $status),
+        $this->calculationArguments['status_date'],
+        CRM_Utils_Array::value('start_event_adjust_unit', $status),
+        CRM_Utils_Array::value('start_event_adjust_interval', $status)
+      );
+
+      if ($startEvent && !$endEvent) {
+        $calculatedStatus['id'] = $status['id'];
+        $calculatedStatus['name'] = $status['name'];
+        break;
+      }
+    }
+  }
+
+  /**
    * Checks if the given event has presented itself on the given membership.
    *
-   * @param $event
+   * @param string $event
    *   Event to be checked
    * @param string $referenceDate
    *   Date to use as reference to check start date
