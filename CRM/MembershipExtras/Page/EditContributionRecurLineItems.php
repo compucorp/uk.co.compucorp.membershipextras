@@ -56,6 +56,13 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   private $nextPeriodLineItems = [];
 
   /**
+   * Cache of memberships that have been loaded into the page.
+   *
+   * @var array
+   */
+  private $membershipsCache = [];
+
+  /**
    * @inheritdoc
    */
   public function __construct($title = NULL, $mode = NULL) {
@@ -393,11 +400,16 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     if (empty($membershipID)) {
       return [];
     }
-    $membership = civicrm_api3('Membership', 'getsingle', [
-      'sequential' => 1,
-      'id' => $membershipID,
-    ]);
-    return $membership;
+
+    if (!isset($this->membershipsCache[$membershipID])) {
+      $membership = civicrm_api3('Membership', 'getsingle', [
+        'sequential' => 1,
+        'id' => $membershipID,
+      ]);
+      $this->membershipsCache[$membershipID] = $membership;
+    }
+
+    return $this->membershipsCache[$membershipID];
   }
 
   /**
@@ -451,6 +463,10 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
         $lineDetails = $lineItemData['api.LineItem.getsingle'];
         $lineDetails['tax_rate'] = $this->getTaxRateForFinancialType($lineDetails['financial_type_id']);
         $lineDetails['financial_type'] = $this->getFinancialTypeName($lineDetails['financial_type_id']);
+
+        if ($lineDetails['entity_table'] === 'civicrm_membership') {
+          $lineDetails['related_membership'] = $this->getMembership($lineDetails['entity_id']);
+        }
 
         unset($lineDetails['id']);
         unset($lineItemData['api.LineItem.getsingle']);
