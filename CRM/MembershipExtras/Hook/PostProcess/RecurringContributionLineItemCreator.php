@@ -58,8 +58,6 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
     foreach ($lastContributionLineItems as $lineItemParams) {
       $this->createRecurLineItem($lineItemParams, $earliestStartDate);
     }
-
-    $this->updateRecurringContribution($earliestStartDate);
   }
 
   private function getLastContributionLineItems() {
@@ -141,13 +139,6 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
       'line_item_id' => $lineItemCopy['id'],
       'start_date' => $lineStartDate,
       'auto_renew' => $autoRenew,
-    ]);
-  }
-
-  private function updateRecurringContribution($recurringContributionStartDate) {
-    civicrm_api3('ContributionRecur', 'create', [
-      'id' => $this->recurContributionID,
-      'start_date' => $recurringContributionStartDate,
     ]);
   }
 
