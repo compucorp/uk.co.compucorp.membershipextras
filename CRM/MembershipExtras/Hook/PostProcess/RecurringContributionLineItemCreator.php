@@ -54,8 +54,9 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
       return;
     }
 
+    $earliestStartDate = $this->getEarliestMembershipStartDate($lastContributionLineItems);
     foreach ($lastContributionLineItems as $lineItemParams) {
-      $this->createRecurLineItem($lineItemParams);
+      $this->createRecurLineItem($lineItemParams, $earliestStartDate);
     }
   }
 
@@ -66,32 +67,65 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
         'contribution_recur_id' => $this->recurContributionID,
         'options' => ['limit' => 1, 'sort' => 'id DESC'],
       ]);
+      $lineItemsFilterParams = [
+        'sequential' => 1,
+        'return' => ['entity_table', 'entity_id', 'price_field_id',
+          'label', 'qty', 'unit_price', 'line_total', 'participant_count', 'id',
+          'price_field_value_id', 'financial_type_id', 'non_deductible_amount', 'tax_amount'],
+        'contribution_id' => $lastContributionId,
+        'api.Membership.get' => ['id' => '$value.entity_id'],
+        'options' => ['limit' => 0],
+      ];
+
+      $lastContributionLineItems = civicrm_api3('LineItem', 'get', $lineItemsFilterParams);
     } catch (CiviCRM_API3_Exception $exception) {
-      return NULL;
+      return [];
     }
 
-    $lineItemsFilterParams = [
-      'sequential' => 1,
-      'return' => ['entity_table', 'entity_id', 'price_field_id',
-        'label', 'qty', 'unit_price', 'line_total', 'participant_count', 'id',
-        'price_field_value_id', 'financial_type_id', 'non_deductible_amount', 'tax_amount'],
-      'contribution_id' => $lastContributionId,
-      'options' => ['limit' => 0],
-    ];
-
-    if ($this->calculateAutorenewalFlag) {
-      $lineItemsFilterParams['api.Membership.get'] = ['id' => '$value.entity_id'];
-    }
-
-    $lastContributionLineItems = civicrm_api3('LineItem', 'get', $lineItemsFilterParams);
     if ($lastContributionLineItems['count'] < 1) {
-      return NULL;
+      return [];
     }
 
     return $lastContributionLineItems['values'];
   }
 
-  private function createRecurLineItem($lineItemParams) {
+  /**
+   * Obtains earliest membership start date from the given line items.
+   *
+   * @param array $lineItems
+   *   List of line items to check.
+   *
+   * @return null|string
+   *   Earliest membership end date, if at least one membership is found. Null
+   *   if no memberships are part of the payment plan.
+   *
+   * @throws \Exception
+   */
+  private function getEarliestMembershipStartDate($lineItems) {
+    $earliestDate = NULL;
+
+    foreach ($lineItems as $line) {
+      if ($line['entity_table'] !== 'civicrm_membership') {
+        continue;
+      }
+
+      $startDate = new DateTime($line['api.Membership.get']['values'][0]['start_date']);
+
+      if (!isset($earliestDate)) {
+        $earliestDate = $startDate;
+      } elseif ($earliestDate > $startDate) {
+        $earliestDate = $startDate;
+      }
+    }
+
+    if ($earliestDate) {
+      return $earliestDate->format('Y-m-d');
+    }
+
+    return NULL;
+  }
+
+  private function createRecurLineItem($lineItemParams, $lineStartDate) {
     $autoRenew = TRUE;
     if ($this->calculateAutorenewalFlag) {
       $autoRenew = $this->calculateAutorenewalFlag($lineItemParams);
@@ -103,7 +137,7 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
     CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
       'contribution_recur_id' => $this->recurContributionID,
       'line_item_id' => $lineItemCopy['id'],
-      'start_date' => $this->recurContribution['start_date'],
+      'start_date' => $lineStartDate,
       'auto_renew' => $autoRenew,
     ]);
   }
