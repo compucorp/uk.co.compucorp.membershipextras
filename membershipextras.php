@@ -286,6 +286,11 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
  * Implements hook_civicrm_buildForm()
  */
 function membershipextras_civicrm_buildForm($formName, &$form) {
+  if ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::UPDATE)) {
+    $offlineAutoRenew = new CRM_MembershipExtras_Hook_BuildForm_MembershipEdit($form);
+    $offlineAutoRenew->buildForm();
+  }
+
   if (
     ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD))
     || ($formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW))
