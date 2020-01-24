@@ -91,13 +91,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
    *
    * The new recurring contribution will then be set to be the current recurring
    * contribution.
+   *
+   * @throws \Exception
    */
   private function createRecurringContribution() {
     $currentRecurContribution = $this->currentRecurringContribution;
     $paymentProcessorID = !empty($currentRecurContribution['payment_processor_id']) ? $currentRecurContribution['payment_processor_id'] : NULL;
 
-    $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($currentRecurContribution);
-    $this->paymentPlanStartDate = $installmentReceiveDateCalculator->calculate($currentRecurContribution['installments'] + 1);
+    $this->paymentPlanStartDate = $this->calculateNewPeriodStartDate();
     $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
 
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
@@ -129,6 +130,63 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
 
     $this->newRecurringContribution = $newRecurringContribution;
     $this->newRecurringContributionID = $newRecurringContribution['id'];
+  }
+
+  /**
+   * Calculates the new period's start date from the largest membership end date
+   * of the previous period.
+   *
+   * @return string
+   *   The new period's start date.
+   * @throws \Exception
+   */
+  private function calculateNewPeriodStartDate() {
+    $latestDate = NULL;
+    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+    foreach ($currentPeriodLines as $lineItem) {
+      if ($lineItem['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      $membership = $this->getMembership($lineItem['entity_id']);
+      $membershipDate = new DateTime($membership['end_date']);
+
+      if (!isset($latestDate)) {
+        $latestDate = $membershipDate;
+      } elseif ($latestDate < $membershipDate) {
+        $latestDate = $membershipDate;
+      }
+    }
+
+    if ($latestDate) {
+      $latestDate->add(new DateInterval('P1D'));
+      return $latestDate->format('Y-m-d');
+    }
+
+    $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($this->currentRecurringContribution);
+    return $installmentReceiveDateCalculator->calculate($this->currentRecurringContribution['installments'] + 1);
+  }
+
+  /**
+   * Obtains membership identified with provided ID.
+   *
+   * @param int $id
+   *   ID of the membership.
+   *
+   * @return array
+   *   Membership's data.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getMembership($id) {
+    if (empty($id)) {
+      return [];
+    }
+
+    return civicrm_api3('Membership', 'getsingle', [
+      'sequential' => 1,
+      'id' => $id,
+    ]);
   }
 
   /**
