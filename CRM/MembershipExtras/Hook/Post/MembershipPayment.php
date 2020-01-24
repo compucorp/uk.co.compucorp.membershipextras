@@ -26,17 +26,6 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    */
   private $membershipPayment;
 
-  /**
-   * We don't want to recalculate the status
-   * for the same membership if it has more than
-   * one installment, so we store any already processed
-   * membership here to make sure that its status
-   * will not be recalculated twice.
-   *
-   * @var array
-   */
-  private static $recalculatedStatusMemberships = [];
-
   public function __construct($operation, $objectId, CRM_Member_DAO_MembershipPayment $objectRef) {
     $this->operation = $operation;
     $this->id = $objectId;
@@ -62,16 +51,20 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    * @throws \CiviCRM_API3_Exception
    */
   public function recalculateMembershipStatus() {
-    if (in_array($this->membershipPayment->membership_id, self::$recalculatedStatusMemberships)) {
-      return;
+    // we calculate the status here and assign it to the membership
+    // use DAO save method since it is more efficient than
+    // using membership API skipStatusCalc. But both should achieve same results
+    $newMembershipStatus = civicrm_api3('MembershipStatus', 'calc', [
+      'membership_id' => $this->membershipPayment->membership_id,
+    ]);
+
+    if (!empty($newMembershipStatus['id'])) {
+      $mem = new CRM_Member_DAO_Membership();
+      $mem->id = $this->membershipPayment->membership_id;
+      $mem->find(TRUE);
+      $mem->status_id = $newMembershipStatus['id'];
+      $mem->save();
     }
-    self::$recalculatedStatusMemberships[] = $this->membershipPayment->membership_id;
-
-    $membership = civicrm_api3('Membership', 'getsingle', ['id' => $this->membershipPayment->membership_id]);
-    $membership['id'] = $this->membershipPayment->membership_id;
-    $membership['skipStatusCal'] = 0;
-
-    civicrm_api3('Membership', 'create', $membership);
   }
 
   /**
