@@ -45,7 +45,13 @@
 
       <tr id="lineitem-{$currentItem.id}" data-item-data='{$currentItem|@json_encode}' class="crm-entity rc-line-item {cycle values="odd-row,even-row"}">
         <td>{$currentItem.label}</td>
-        <td>{$currentItem.start_date|date_format:"%Y-%m-%d"|crmDate}</td>
+        <td>
+          {if $currentItem.related_membership.start_date}
+            {$currentItem.related_membership.start_date|date_format:"%Y-%m-%d"|crmDate}
+          {else}
+            {$currentItem.start_date|date_format:"%Y-%m-%d"|crmDate}
+          {/if}
+        </td>
         <td>
           {if $currentItem.related_membership.end_date}
             {$currentItem.related_membership.end_date|date_format:"%Y-%m-%d"|crmDate}

@@ -9,6 +9,13 @@ use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
+   * List of line items to be renewed.
+   *
+   * @var array
+   */
+  private $linesToBeRenewed = [];
+
+  /**
    * Returns a list of payment plans with multiple installments that have at
    * least one line item ready to be renewed (ie. has an end date, is not
    * removed and is set to auto renew), mmeting these conditions:
@@ -91,13 +98,15 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
    *
    * The new recurring contribution will then be set to be the current recurring
    * contribution.
+   *
+   * @throws \Exception
    */
   private function createRecurringContribution() {
     $currentRecurContribution = $this->currentRecurringContribution;
     $paymentProcessorID = !empty($currentRecurContribution['payment_processor_id']) ? $currentRecurContribution['payment_processor_id'] : NULL;
 
-    $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($currentRecurContribution);
-    $this->paymentPlanStartDate = $installmentReceiveDateCalculator->calculate($currentRecurContribution['installments'] + 1);
+    $this->paymentPlanStartDate = $this->calculateNewPeriodStartDate();
+    $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate() ?: $this->paymentPlanStartDate;
     $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
 
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
@@ -129,6 +138,77 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
 
     $this->newRecurringContribution = $newRecurringContribution;
     $this->newRecurringContributionID = $newRecurringContribution['id'];
+  }
+
+  /**
+   * Calculates the new period's start date.
+   *
+   * @return string
+   *   The new period's start date.
+   * @throws \Exception
+   */
+  private function calculateNewPeriodStartDate() {
+    $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($this->currentRecurringContribution);
+
+    return $installmentReceiveDateCalculator->calculate($this->currentRecurringContribution['installments'] + 1);
+  }
+
+  /**
+   * Calculates the start date renewed memberships should have.
+   *
+   * @return string
+   *   Date the renewed memberships should have as start date.
+   *
+   * @throws \Exception
+   */
+  private function calculateRenewedMembershipsStartDate() {
+    $latestDate = NULL;
+    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+    foreach ($currentPeriodLines as $lineItem) {
+      if ($lineItem['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      if (empty($lineItem['memberhsip_end_date'])) {
+        continue;
+      }
+
+      $membershipEndDate = new DateTime($lineItem['memberhsip_end_date']);
+      if (!isset($latestDate)) {
+        $latestDate = $membershipEndDate;
+      } elseif ($latestDate < $membershipEndDate) {
+        $latestDate = $membershipEndDate;
+      }
+    }
+
+    if ($latestDate) {
+      $latestDate->add(new DateInterval('P1D'));
+      return $latestDate->format('Y-m-d');
+    }
+
+    return NULL;
+  }
+
+  /**
+   * Obtains membership identified with provided ID.
+   *
+   * @param int $id
+   *   ID of the membership.
+   *
+   * @return array
+   *   Membership's data.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getMembership($id) {
+    if (empty($id)) {
+      return [];
+    }
+
+    return civicrm_api3('Membership', 'getsingle', [
+      'sequential' => 1,
+      'id' => $id,
+    ]);
   }
 
   /**
@@ -174,6 +254,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
    *
    * @param array $currentContribution
    * @param array $nextContribution
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function copyRecurringLineItems($currentContribution, $nextContribution) {
     $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($currentContribution['id']);
@@ -189,7 +271,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
         CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
           'contribution_recur_id' => $nextContribution['id'],
           'line_item_id' => $newLineItem['id'],
-          'start_date' => $nextContribution['start_date'],
+          'start_date' => $this->paymentPlanStartDate,
           'auto_renew' => 1,
         ]);
       }
@@ -200,34 +282,27 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
    * @inheritdoc
    */
   protected function getRecurringContributionLineItemsToBeRenewed($recurringContributionID) {
-    $lineItems = civicrm_api3('ContributionRecurLineItem', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $recurringContributionID,
-      'auto_renew' => 1,
-      'is_removed' => 0,
-      'api.LineItem.getsingle' => [
-        'id' => '$value.line_item_id',
-        'entity_table' => ['IS NOT NULL' => 1],
-        'entity_id' => ['IS NOT NULL' => 1],
-      ],
-    ]);
+    if (!isset($this->linesToBeRenewed[$recurringContributionID])) {
+      $q = '
+      SELECT msl.*, li.*, m.end_date AS memberhsip_end_date
+      FROM membershipextras_subscription_line msl, civicrm_line_item li
+      LEFT JOIN civicrm_membership m ON li.entity_id = m.id
+      WHERE msl.line_item_id = li.id
+      AND msl.contribution_recur_id = %1
+      AND msl.auto_renew = 1
+      AND msl.is_removed = 0
+    ';
+      $dbResultSet = CRM_Core_DAO::executeQuery($q, [
+        1 => [$recurringContributionID, 'Integer'],
+      ]);
 
-    if (!$lineItems['count']) {
-      return [];
+      $this->linesToBeRenewed[$recurringContributionID] = [];
+      while ($dbResultSet->fetch()) {
+        $this->linesToBeRenewed[$recurringContributionID][] = $dbResultSet->toArray();
+      }
     }
 
-    $result = [];
-    foreach ($lineItems['values'] as $line) {
-      $lineData = $line;
-      $lineData['subscription_line_id'] = $line['id'];
-      unset($lineData['id']);
-      unset($lineData['api.LineItem.getsingle']);
-      $lineData = array_merge($lineData, $line['api.LineItem.getsingle']);
-
-      $result[] =  $lineData;
-    }
-
-    return $result;
+    return $this->linesToBeRenewed[$recurringContributionID];
   }
 
   /**

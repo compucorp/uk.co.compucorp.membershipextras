@@ -49,6 +49,13 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $paymentPlanStartDate;
 
   /**
+   * Start date for renewed memberships.
+   *
+   * @var
+   */
+  protected $membershipsStartDate;
+
+  /**
    * True if we should use the membership latest price
    * for renewal or false otherwise.
    *
@@ -529,7 +536,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $existingMembershipID = $this->getExistingMembershipForLineItem($lineItem, $priceFieldValue);
 
       if ($existingMembershipID) {
-        $this->extendExistingMembership($existingMembershipID, $lineItem['start_date']);
+        $this->extendExistingMembership($existingMembershipID, $this->membershipsStartDate);
       } else {
         $existingMembershipID = $this->createMembership($lineItem, $priceFieldValue);
       }
@@ -590,7 +597,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'contact_id' => $this->currentRecurringContribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
       'join_date' => date('YmdHis'),
-      'start_date' => $lineItem['start_date'],
+      'start_date' => $this->membershipsStartDate,
       'end_date' => $lineItem['end_date'],
       'contribution_recur_id' => $this->newRecurringContributionID,
     ]);
