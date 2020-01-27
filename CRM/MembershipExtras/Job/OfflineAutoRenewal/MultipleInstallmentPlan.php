@@ -106,7 +106,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     $paymentProcessorID = !empty($currentRecurContribution['payment_processor_id']) ? $currentRecurContribution['payment_processor_id'] : NULL;
 
     $this->paymentPlanStartDate = $this->calculateNewPeriodStartDate();
-    $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
+    $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate() ?: $this->paymentPlanStartDate;
     $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
 
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
@@ -141,8 +141,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
   }
 
   /**
-   * Calculates the new period's start date from the largest membership end date
-   * of the previous period.
+   * Calculates the new period's start date.
    *
    * @return string
    *   The new period's start date.
@@ -170,6 +169,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
         continue;
       }
 
+      if (empty($lineItem['memberhsip_end_date'])) {
+        continue;
+      }
+
       $membershipEndDate = new DateTime($lineItem['memberhsip_end_date']);
       if (!isset($latestDate)) {
         $latestDate = $membershipEndDate;
@@ -183,7 +186,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
       return $latestDate->format('Y-m-d');
     }
 
-    return $this->calculateNewPeriodStartDate();
+    return NULL;
   }
 
   /**
