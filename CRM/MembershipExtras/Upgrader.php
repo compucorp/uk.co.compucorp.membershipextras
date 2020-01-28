@@ -17,6 +17,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
     $this->updatePaymentPlans();
     $this->createManageInstallmentActivityTypes();
+    $this->createFutureMembershipStatusRule();
   }
 
   /**
@@ -116,6 +117,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType->toggle(TRUE);
 
     $this->toggleOfflineAutoRenewalScheduledJob(TRUE);
+    $this->toggleFutureMembershipStatusRule(TRUE);
   }
 
   public function disable() {
@@ -126,6 +128,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType->toggle(FALSE);
 
     $this->toggleOfflineAutoRenewalScheduledJob(FALSE);
+    $this->toggleFutureMembershipStatusRule(FALSE);
   }
 
   /**
@@ -141,6 +144,13 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ]);
   }
 
+  private function toggleFutureMembershipStatusRule($newStatus) {
+    civicrm_api3('MembershipStatus', 'get', [
+      'name' => 'current_renew',
+      'api.MembershipStatus.create' => ['id' => '$value.id', 'is_active' => $newStatus],
+    ]);
+  }
+
   public function uninstall() {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
     $paymentProcessor->remove();
@@ -152,6 +162,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->removeCustomExternalIDs();
     $this->removePeriodLinkCustomGroupAndFields();
     $this->removeManageInstallmentActivityTypes();
+    $this->removeFutureMembershipStatusRule();
   }
 
   /**
@@ -292,6 +303,40 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     }
   }
 
+  /**
+   * Creates a future membership
+   * status rule called "current"
+   * that apply when the created membership
+   * start date is larger than today date.
+   */
+  private function createFutureMembershipStatusRule() {
+    $membershipStatusRule = civicrm_api3('MembershipStatus', 'get', [
+      'sequential' => 1,
+      'name' => 'current_renew',
+    ]);
+
+    if ($membershipStatusRule['count'] > 0) {
+      return;
+    }
+
+    $maxStatusWeight = civicrm_api3('MembershipStatus', 'getvalue', [
+      'return' => 'weight',
+      'options' => ['sort' => 'weight DESC', 'limit' => 1],
+    ]);
+
+    civicrm_api3('MembershipStatus', 'create', [
+      'name' => 'current_renew',
+      'label' => 'Current',
+      'start_event' => 'start_date',
+      'start_event_adjust_unit' => 'year',
+      'start_event_adjust_interval' => -100,
+      'end_event' => 'start_date',
+      'is_current_member' => 1,
+      'is_active' => 1,
+      'weight' => $maxStatusWeight + 1
+    ]);
+  }
+
   private function removeManageInstallmentActivityTypes() {
     civicrm_api3('OptionValue', 'get', [
       'option_group_id' => 'activity_type',
@@ -299,6 +344,13 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'IN' => ['update_payment_plan_next_period', 'update_payment_plan_current_period'],
       ],
       'api.OptionValue.delete' => ['id' => '$value.id'],
+    ]);
+  }
+
+  private function removeFutureMembershipStatusRule() {
+    civicrm_api3('MembershipStatus', 'get', [
+      'name' => 'current_renew',
+      'api.MembershipStatus.delete' => ['id' => '$value.id'],
     ]);
   }
 
@@ -312,6 +364,12 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->createPeriodLinkCustomGroupAndFields();
     $this->updatePaymentPlans();
     $this->createManageInstallmentActivityTypes();
+
+    return TRUE;
+  }
+
+  public function upgrade_0002() {
+    $this->createFutureMembershipStatusRule();
 
     return TRUE;
   }

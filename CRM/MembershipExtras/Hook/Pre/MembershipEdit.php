@@ -29,6 +29,18 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private $paymentContributionID;
 
+  /**
+   * We don't want to extend the same membership
+   * more than one time if for whatever reason
+   * this hook get called more than one time
+   * during the same session, so here
+   * we keep the list of already extended
+   * memberships to achieve that.
+   *
+   * @var array
+   */
+  private static $extendedMemberships = [];
+
   public function __construct($id, &$params, $contributionID) {
     $this->id = $id;
     $this->params = &$params;
@@ -39,19 +51,64 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    if ($this->paymentContributionID) {
+    if ($this->paymentContributionID || $this->isRecordingPayment()) {
       $this->preventExtendingPaymentPlanMembership();
     }
 
-    $isMultipleInstallmentsPaymentPlan = $this->isPaymentPlanWithMoreThanOneInstallment();
-    $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
-    if ($isMembershipRenewal && $isMultipleInstallmentsPaymentPlan) {
-      $this->extendPendingPaymentPlanMembershipOnRenewal();
+    if (!in_array($this->id, self::$extendedMemberships)) {
+      $isMultipleInstallmentsPaymentPlan = $this->isPaymentPlanWithMoreThanOneInstallment();
+      $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
+      if ($isMembershipRenewal && $isMultipleInstallmentsPaymentPlan) {
+        self::$extendedMemberships[] = $this->id;
+        $this->extendPendingPaymentPlanMembershipOnRenewal();
+      }
     }
 
     if ($this->isOfflinePaymentPlanMembership()) {
       $this->verifyMembershipStartDate();
     }
+  }
+
+  private function isRecordingPayment() {
+    $paymentRecordingDetails = $this->parsePaymentRecordingInformation();
+
+    if (empty($paymentRecordingDetails)) {
+      return FALSE;
+    }
+
+    $isAddAction = FALSE;
+    if (!empty($paymentRecordingDetails['action']) && $paymentRecordingDetails['action'] == 'add') {
+      $isAddAction = TRUE;
+    }
+
+    $contributionId = NULL;
+    if (!empty($paymentRecordingDetails['id'])) {
+      $contributionId = $paymentRecordingDetails['id'];
+    }
+
+    $isRecordPayment = CRM_Utils_Request::retrieve('_qf_AdditionalPayment_upload', 'String') === 'Record Payment';
+
+    if ($isAddAction && $contributionId && $isRecordPayment) {
+      $this->paymentContributionID = $contributionId;
+
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  private function parsePaymentRecordingInformation() {
+    $recordPaymentEntryURL = CRM_Utils_Request::retrieve('entryURL', 'String');
+    $recordPaymentEntryURL = html_entity_decode($recordPaymentEntryURL);
+
+    $urlParts = parse_url($recordPaymentEntryURL);
+
+    if(!empty($urlParts['query'])) {
+      parse_str($urlParts['query'], $urlParams);
+      return $urlParams;
+    }
+
+    return [];
   }
 
   /**
@@ -103,9 +160,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       'id' => $recurringContributionID,
     ])['values'][0];
 
-    $isPaymentPlanRecurringContribution = !empty($recurringContribution['installments']);
     $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor($recurringContribution['payment_processor_id']);
-    if ($isOfflineContribution && $isPaymentPlanRecurringContribution) {
+    if ($isOfflineContribution) {
       return TRUE;
     }
 

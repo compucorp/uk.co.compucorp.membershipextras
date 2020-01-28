@@ -38,6 +38,32 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   public function postProcess() {
     if ($this->operation == 'create') {
       $this->fixRecurringLineItemMembershipReferences();
+      $this->recalculateMembershipStatus();
+    }
+  }
+
+  /**
+   * Recaalculates the status of the related membership.
+   *
+   * Recalculates the status of the related membership to check if payment plan
+   * related events imply a status change (eg. In Arrears).
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function recalculateMembershipStatus() {
+    // we calculate the status here and assign it to the membership
+    // use DAO save method since it is more efficient than
+    // using membership API skipStatusCalc. But both should achieve same results
+    $newMembershipStatus = civicrm_api3('MembershipStatus', 'calc', [
+      'membership_id' => $this->membershipPayment->membership_id,
+    ]);
+
+    if (!empty($newMembershipStatus['id'])) {
+      $mem = new CRM_Member_DAO_Membership();
+      $mem->id = $this->membershipPayment->membership_id;
+      $mem->find(TRUE);
+      $mem->status_id = $newMembershipStatus['id'];
+      $mem->save();
     }
   }
 

@@ -94,11 +94,22 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
    * contribution.
    */
   public function preProcess() {
+    if ($this->operation == 'create') {
+      $this->calculateCycleDay();
+    }
+
     $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $this->recurringContribution, 0);
     $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($paymentProcessorID);
 
     if ($this->operation == 'edit' && $isManualPaymentPlan) {
       $this->rectifyPaymentPlanStatus();
+    }
+  }
+
+  private function calculateCycleDay() {
+    if (!empty($this->params['start_date']) && !empty($this->params['frequency_unit'])) {
+      $this->params['cycle_day'] =
+        CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['start_date'], $this->params['frequency_unit']);
     }
   }
 

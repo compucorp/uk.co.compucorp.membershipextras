@@ -270,20 +270,16 @@ function roundUp(num, decimalPlaces) {
 }
 
 /**
- * @param {string} memTypeId 
- * 
+ * @param {string} memTypeId
+ *
  * @returns {Object}
  */
-function getMembershipType(memTypeId) { 
-  var result = CRM.$.grep(nextPeriodMembershipTypes, function(membershipType){
-    return membershipType.id == memTypeId;
-  });
-  
-  if (result.length === 0) {
-    return {};
+function getMembershipType(memTypeId) {
+  if (memTypeId in nextPeriodMembershipTypes) {
+    return nextPeriodMembershipTypes[memTypeId];
   }
 
-  return result[0];
+  return  {};
 }
 
 function showNextPeriodLineItemRemovalConfirmation(lineItemData) {

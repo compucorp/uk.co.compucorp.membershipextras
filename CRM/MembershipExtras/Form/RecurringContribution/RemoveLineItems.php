@@ -12,6 +12,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
   private $recurringContributionID;
   private $lineItemID;
   private $recurringLineItemData = [];
+  private $lineItemEndDate;
 
   /**
    * @inheritdoc
@@ -20,6 +21,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
     $this->recurringContributionID = CRM_Utils_Request::retrieve('contribution_recur_id', 'Positive', $this);
     $this->lineItemID = CRM_Utils_Request::retrieve('line_item_id', 'Positive', $this);
     $this->recurringLineItemData = $this->getRecurringLineItemData();
+    $this->lineItemEndDate = date('Y-m-d');
   }
 
   /**
@@ -27,7 +29,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    */
   public function setDefaultValues() {
     return [
-      'end_date' => date('Y-m-d')
+      'end_date' => date('Y-m-d'),
     ];
   }
 
@@ -98,8 +100,11 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * @inheritdoc
    */
   public function postProcess() {
-    $tx = new CRM_Core_Transaction();
+    if ($this->getElementValue('adjust_end_date')) {
+      $this->lineItemEndDate = $this->getElementValue('end_date');
+    }
 
+    $tx = new CRM_Core_Transaction();
     try {
       if ($this->isLineItemAMembership()) {
         $this->cancelMembership();
@@ -124,7 +129,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       $tx->rollback();
 
       CRM_Core_Session::setStatus(
-        "An error ocurred trying to remove {$this->recurringLineItemData['label']} from the current recurring contribution:" . $e->getMessage(),
+        "An error ocurred trying to remove {$this->recurringLineItemData['label']} from the current recurring contribution: " . $e->getMessage(),
         "Error Removing {$this->recurringLineItemData['label']}",
         'error'
       );
@@ -188,17 +193,11 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * date as the membership's end date.
    */
   private function cancelMembership() {
-    if ($this->getElementValue('adjust_end_date')) {
-      $endDate = $this->getElementValue('end_date');
-    } else {
-      $endDate = date('Y-m-d');
-    }
-
     civicrm_api3('Membership', 'create', [
       'id' => $this->recurringLineItemData['entity_id'],
       'status_override_end_date' => '',
       'contribution_recur_id' => '',
-      'end_date' => $endDate,
+      'end_date' => $this->lineItemEndDate,
     ]);
   }
 
@@ -207,7 +206,12 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * line items and adjusting amounts.
    */
   private function adjustPendingContributions() {
-    foreach ($this->getPendingContributions() as $contribution) {
+    $pendingContributions = $this->getPendingContributions();
+    if (count($pendingContributions) < 1) {
+      throw new CRM_Core_Exception('No pending installments found for the payment plan after the selected end date: ' . $this->lineItemEndDate . '.');
+    }
+
+    foreach ($pendingContributions as $contribution) {
       $lineItemBefore = $this->getCorrespondingContributionLineItem($contribution['id']);
       if (!isset($lineItemBefore['id']) || empty($lineItemBefore['id'])) {
         continue;
@@ -241,17 +245,11 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * @return array
    */
   private function getPendingContributions() {
-    if ($this->getElementValue('adjust_end_date')) {
-      $endDate = $this->getElementValue('end_date');
-    } else {
-      $endDate = date('Y-m-d');
-    }
-
     $result = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
       'contribution_recur_id' => $this->recurringContributionID,
       'contribution_status_id' => 'Pending',
-      'receive_date' => ['>=' => $endDate],
+      'receive_date' => ['>=' => $this->lineItemEndDate],
       'options' => ['limit' => 0],
     ]);
 
@@ -296,19 +294,12 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * renew option.
    */
   private function updateRecurringLineItem() {
-    $params = [
+    civicrm_api3('ContributionRecurLineItem', 'create', [
       'id' => $this->recurringLineItemData['id'],
       'auto_renew' => false,
       'is_removed' => true,
-    ];
-
-    if ($this->getElementValue('adjust_end_date')) {
-      $params['end_date'] = $this->getElementValue('end_date');
-    } else {
-      $params['end_date'] = date('Y-m-d');
-    }
-
-    civicrm_api3('ContributionRecurLineItem', 'create', $params);
+      'end_date' => $this->lineItemEndDate,
+    ]);
   }
 
 }

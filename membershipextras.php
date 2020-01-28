@@ -218,6 +218,20 @@ function _membershipextras_isPaymentPlanWithAtLeastOneInstallment() {
   return FALSE;
 }
 
+function membershipextras_civicrm_preSave_civicrm_contribution($dao) {
+  if (!empty($dao->id)) {
+    $membershipPreSaveHook = new CRM_MembershipExtras_Hook_PreSave_Membership();
+    $membershipPreSaveHook->setContributionId($dao->id);
+  }
+}
+
+function membershipextras_civicrm_preSave_civicrm_membership($dao) {
+  if (!empty($dao->id) && !empty($dao->status_id)) {
+    $membershipPreSaveHook = new CRM_MembershipExtras_Hook_PreSave_Membership($dao);
+    $membershipPreSaveHook->preventCancellationOnInstallmentCancellation();
+  }
+}
+
 /**
  * Implements hook_civicrm_post()
  */
@@ -272,6 +286,11 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
  * Implements hook_civicrm_buildForm()
  */
 function membershipextras_civicrm_buildForm($formName, &$form) {
+  if ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::UPDATE)) {
+    $offlineAutoRenew = new CRM_MembershipExtras_Hook_BuildForm_MembershipEdit($form);
+    $offlineAutoRenew->buildForm();
+  }
+
   if (
     ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD))
     || ($formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW))
@@ -342,16 +361,25 @@ function membershipextras_civicrm_pageRun($page) {
  * Implements hook_civicrm_validateForm()
  */
 function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-  $isNewMembershipForm = $formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD);
-  $isRenewMembershipForm = $formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW);
-
+  $formAction = $form->getAction();
+  $isNewMembershipForm = ($formName === 'CRM_Member_Form_Membership' && ($formAction & CRM_Core_Action::ADD));
+  $isRenewMembershipForm = ($formName === 'CRM_Member_Form_MembershipRenewal' && ($formAction & CRM_Core_Action::RENEW));
   if ($isNewMembershipForm || $isRenewMembershipForm) {
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
     if ($contributionIsPaymentPlan) {
       $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
       $paymentPlanValidateHook->validate();
+    } else {
+      $contributionValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipContribution($form, $fields, $errors);
+      $contributionValidateHook->validate();
     }
+  }
+
+  $isMembershipUpdateForm = $formName === 'CRM_Member_Form_Membership' && ($formAction & CRM_Core_Action::UPDATE);
+  if ($isMembershipUpdateForm) {
+    $membershipUpdateValidationHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate($form, $fields, $errors);
+    $membershipUpdateValidationHook->validate();
   }
 }
 
