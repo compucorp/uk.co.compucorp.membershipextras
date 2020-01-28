@@ -799,4 +799,40 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     return FALSE;
   }
 
+  /**
+   * Calculates the start date renewed memberships should have.
+   *
+   * @return string
+   *   Date the renewed memberships should have as start date.
+   *
+   * @throws \Exception
+   */
+  protected function calculateRenewedMembershipsStartDate() {
+    $latestDate = NULL;
+    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+    foreach ($currentPeriodLines as $lineItem) {
+      if ($lineItem['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      if (empty($lineItem['memberhsip_end_date'])) {
+        continue;
+      }
+
+      $membershipEndDate = new DateTime($lineItem['memberhsip_end_date']);
+      if (!isset($latestDate)) {
+        $latestDate = $membershipEndDate;
+      } elseif ($latestDate < $membershipEndDate) {
+        $latestDate = $membershipEndDate;
+      }
+    }
+
+    if ($latestDate) {
+      $latestDate->add(new DateInterval('P1D'));
+      return $latestDate->format('Y-m-d');
+    }
+
+    return NULL;
+  }
+
 }
