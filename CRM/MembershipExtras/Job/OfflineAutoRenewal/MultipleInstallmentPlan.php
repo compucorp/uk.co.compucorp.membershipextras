@@ -154,42 +154,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
   }
 
   /**
-   * Calculates the start date renewed memberships should have.
-   *
-   * @return string
-   *   Date the renewed memberships should have as start date.
-   *
-   * @throws \Exception
-   */
-  private function calculateRenewedMembershipsStartDate() {
-    $latestDate = NULL;
-    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
-    foreach ($currentPeriodLines as $lineItem) {
-      if ($lineItem['entity_table'] != 'civicrm_membership') {
-        continue;
-      }
-
-      if (empty($lineItem['memberhsip_end_date'])) {
-        continue;
-      }
-
-      $membershipEndDate = new DateTime($lineItem['memberhsip_end_date']);
-      if (!isset($latestDate)) {
-        $latestDate = $membershipEndDate;
-      } elseif ($latestDate < $membershipEndDate) {
-        $latestDate = $membershipEndDate;
-      }
-    }
-
-    if ($latestDate) {
-      $latestDate->add(new DateInterval('P1D'));
-      return $latestDate->format('Y-m-d');
-    }
-
-    return NULL;
-  }
-
-  /**
    * Obtains membership identified with provided ID.
    *
    * @param int $id
@@ -291,7 +255,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
       AND msl.contribution_recur_id = %1
       AND msl.auto_renew = 1
       AND msl.is_removed = 0
-    ';
+      ';
       $dbResultSet = CRM_Core_DAO::executeQuery($q, [
         1 => [$recurringContributionID, 'Integer'],
       ]);
