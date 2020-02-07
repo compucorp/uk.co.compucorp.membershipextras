@@ -19,6 +19,7 @@
   &nbsp;&nbsp;&nbsp;
   Period End Date: {$periodEndDate|date_format:"%Y-%m-%d"|crmDate}
 </div>
+<span id="current_period_end_date" style="display: none;">{$periodEndDate}</span>
 <form>
   <input name="recurringContributionID" id="recurringContributionID" value="{$recurringContributionID}" type="hidden" />
   <table class="selector row-highlight" id="currentPeriodLineItems">
