@@ -569,6 +569,12 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       return false;
     }
 
+    var periodEndDate = new Date(CRM.$('#current_period_end_date').html());
+    if (endDate > periodEndDate) {
+      CRM.alert('<p>Additional memberships must end on or before the end date of the period. Please select a different end date for the membership.</p>', 'Dates Validation', 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
+      return false;
+    }
+
     return true;
   };
 
