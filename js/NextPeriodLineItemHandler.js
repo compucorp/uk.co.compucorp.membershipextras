@@ -344,6 +344,7 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
       }
     });
   }).on('crmConfirm:no', function() {
+    CRM.refreshParent('#periodsContainer');
     return;
   });
 }
