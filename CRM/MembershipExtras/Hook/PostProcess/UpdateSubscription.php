@@ -75,9 +75,28 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
     if ($this->isUpdatedCycleDate()) {
       $params['next_sched_contribution_date'] = $this->nextContributionDate;
+      $params['start_date'] = $this->calculateNewStartDate();
     }
 
     civicrm_api3('ContributionRecur', 'create', $params);
+  }
+
+  /**
+   * Calculates the new start date for the recurring contribution.
+   *
+   * Uses cycle day to calculate the start date for the contribution.
+   *
+   * @return string
+   */
+  private function calculateNewStartDate() {
+    $formValues = $this->form->exportValues();
+    $currentStartDate = new DateTime($this->recurringContribution['start_date']);
+
+    $newStartDate = new DateTime(
+      $currentStartDate->format('Y-m-') . $formValues['cycle_day']
+    );
+
+    return $newStartDate->format('Y-m-d');
   }
 
   /**
