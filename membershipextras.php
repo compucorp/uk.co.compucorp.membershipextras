@@ -424,3 +424,14 @@ function membershipextras_civicrm_preProcess($formName, $form) {
     $preProcessor->preProcess();
   }
 }
+
+/**
+ * Implements alterMailParams hook.
+ *
+ * @param array $params
+ * @param $context
+ */
+function membershipextras_civicrm_alterMailParams(&$params, $context) {
+  $alterMailParamsHook = new CRM_MembershipExtras_Hook_Alter_MailParamsHandler($params);
+  $alterMailParamsHook->handle();
+}
