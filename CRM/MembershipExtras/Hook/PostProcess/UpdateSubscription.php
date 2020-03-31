@@ -85,7 +85,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    */
   private function updateSubscriptionLineItems() {
     $autoRenew = $this->form->getElementValue('auto_renew');
-    
+
     if (!$autoRenew) {
       return;
     }
@@ -101,7 +101,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       ]
     ]);
   }
-  
+
   /**
    * Updates membership if necessary.
    */
