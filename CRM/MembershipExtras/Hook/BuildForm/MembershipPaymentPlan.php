@@ -46,6 +46,10 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
    * juggles around exiting ones.
    */
   private function addPaymentPlanSection() {
+    if ($this->form->_mode === 'live') {
+      return;
+    }
+
     $paymentToggler = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String', $this->form, FALSE);
     $this->form->assign('contribution_type_toggle', $paymentToggler ?: 'contribution');
 
