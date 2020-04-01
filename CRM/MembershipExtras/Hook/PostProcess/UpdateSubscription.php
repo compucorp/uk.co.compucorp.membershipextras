@@ -265,7 +265,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     }
 
     $params = [];
-    if ($this->isUpdatedCycleDate() && $this->isReceiveDateInTheFuture($contribution)) {
+    if ($this->isUpdatedCycleDate() && !$this->isReceiveDateInThePast($contribution)) {
       $params['receive_date'] = $this->receiveDateCalculator->calculate($installmentNumber);
 
       if (empty($this->nextContributionDate)) {
@@ -291,11 +291,11 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    * @return bool
    * @throws \Exception
    */
-  private function isReceiveDateInTheFuture($contribution) {
+  private function isReceiveDateInThePast($contribution) {
     $now = new DateTime();
     $receiveDate = new DateTime($contribution['receive_date']);
 
-    if ($receiveDate > $now) {
+    if ($receiveDate < $now) {
       return TRUE;
     }
 
