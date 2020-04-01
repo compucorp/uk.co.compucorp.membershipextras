@@ -75,28 +75,25 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
     if ($this->isUpdatedCycleDate()) {
       $params['next_sched_contribution_date'] = $this->nextContributionDate;
-      $params['start_date'] = $this->calculateNewStartDate();
+      $params['start_date'] = $this->getReceiveDateOfFirstInstallment() ?: $params['start_date'];
     }
 
     civicrm_api3('ContributionRecur', 'create', $params);
   }
 
   /**
-   * Calculates the new start date for the recurring contribution.
-   *
-   * Uses cycle day to calculate the start date for the contribution.
+   * Obteins the start date of the first contribution.
    *
    * @return string
    */
-  private function calculateNewStartDate() {
-    $formValues = $this->form->exportValues();
-    $currentStartDate = new DateTime($this->recurringContribution['start_date']);
+  private function getReceiveDateOfFirstInstallment() {
+    $contributions = $this->getContributions();
 
-    $newStartDate = new DateTime(
-      $currentStartDate->format('Y-m-') . $formValues['cycle_day']
-    );
+    if (count($contributions)) {
+      return $contributions[0]['receive_date'];
+    }
 
-    return $newStartDate->format('Y-m-d');
+    return '';
   }
 
   /**
@@ -198,13 +195,8 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
     foreach ($contributions as $payment) {
       $installmentCount++;
-
-      if ($payment['contribution_status'] != 'Pending') {
-        continue;
-      }
-
       $this->updateContribution(
-        $payment['id'],
+        $payment,
         $formValues['payment_instrument_id'],
         $installmentCount
       );
@@ -261,14 +253,19 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    * Respectively updates receive date and/or payment instrument if either of
    * those were modified for the current recurring contribution.
    *
-   * @param int $contributionID
+   * @param array $contribution
    * @param int $instrumentID
    * @param int $installmentNumber
+   *
+   * @throws \Exception
    */
-  private function updateContribution($contributionID, $instrumentID, $installmentNumber) {
-    $params = [];
+  private function updateContribution($contribution, $instrumentID, $installmentNumber) {
+    if ($contribution['contribution_status'] != 'Pending') {
+      return;
+    }
 
-    if ($this->isUpdatedCycleDate()) {
+    $params = [];
+    if ($this->isUpdatedCycleDate() && $this->isReceiveDateInTheFuture($contribution)) {
       $params['receive_date'] = $this->receiveDateCalculator->calculate($installmentNumber);
 
       if (empty($this->nextContributionDate)) {
@@ -281,9 +278,28 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     }
 
     if (!empty($params)) {
-      $params['id'] = $contributionID;
+      $params['id'] = $contribution['id'];
       civicrm_api3('Contribution', 'create', $params);
     }
+  }
+
+  /**
+   * Checks if the given contribution has a receive date in the future.
+   *
+   * @param array $contribution
+   *
+   * @return bool
+   * @throws \Exception
+   */
+  private function isReceiveDateInTheFuture($contribution) {
+    $now = new DateTime();
+    $receiveDate = new DateTime($contribution['receive_date']);
+
+    if ($receiveDate > $now) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**
