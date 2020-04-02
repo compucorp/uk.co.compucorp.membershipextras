@@ -308,7 +308,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    * @throws \Exception
    */
   private function isReceiveDateInThePast($contribution) {
-    $now = new DateTime();
+    $now = new DateTime(date('Y-m-d 00:00:00'));
     $receiveDate = new DateTime($contribution['receive_date']);
 
     if ($receiveDate < $now) {
