@@ -4,6 +4,14 @@ use CRM_Member_BAO_MembershipType as MembershipType;
 
 class CRM_MembershipExtras_Test_Fabricator_MembershipType {
 
+  /**
+   * Fabricates a membership type.
+   *
+   * @param array $params
+   * @param bool $saveObject
+   *
+   * @return \CRM_Member_BAO_MembershipType
+   */
   public static function fabricate($params = [], $saveObject = FALSE) {
     $params = array_merge(static::getDefaultParams(), $params);
 
