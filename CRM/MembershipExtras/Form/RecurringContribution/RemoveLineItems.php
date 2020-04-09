@@ -235,6 +235,13 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
 
       // Record financial item on cancellation of lineitem
       CRM_MembershipExtras_Service_FinancialTransactionManager::insertFinancialItemOnLineItemDeletion($lineItemBefore);
+
+      // Remove line item from contribution
+      civicrm_api3('LineItem', 'create', [
+        'id' => $lineItemBefore['id'],
+        'label' => $lineItemBefore['label'] . " - Line removed from contribution [{$lineItemBefore['contribution_id']}]",
+        'contribution_id' => 'null',
+      ]);
     }
   }
 
