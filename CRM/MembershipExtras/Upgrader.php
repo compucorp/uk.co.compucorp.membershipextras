@@ -17,7 +17,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
     $this->updatePaymentPlans();
     $this->createManageInstallmentActivityTypes();
-    $this->createFutureMembershipStatusRule();
+    $this->createFutureMembershipStatusRules();
   }
 
   /**
@@ -117,7 +117,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType->toggle(TRUE);
 
     $this->toggleOfflineAutoRenewalScheduledJob(TRUE);
-    $this->toggleFutureMembershipStatusRule(TRUE);
+    $this->toggleFutureMembershipStatusRules(TRUE);
   }
 
   public function disable() {
@@ -128,7 +128,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessorType->toggle(FALSE);
 
     $this->toggleOfflineAutoRenewalScheduledJob(FALSE);
-    $this->toggleFutureMembershipStatusRule(FALSE);
+    $this->toggleFutureMembershipStatusRules(FALSE);
   }
 
   /**
@@ -144,9 +144,14 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ]);
   }
 
-  private function toggleFutureMembershipStatusRule($newStatus) {
+  private function toggleFutureMembershipStatusRules($newStatus) {
     civicrm_api3('MembershipStatus', 'get', [
-      'name' => 'current_renew',
+      'name' => 'current_renewed',
+      'api.MembershipStatus.create' => ['id' => '$value.id', 'is_active' => $newStatus],
+    ]);
+
+    civicrm_api3('MembershipStatus', 'get', [
+      'name' => 'future_start',
       'api.MembershipStatus.create' => ['id' => '$value.id', 'is_active' => $newStatus],
     ]);
   }
@@ -162,7 +167,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->removeCustomExternalIDs();
     $this->removePeriodLinkCustomGroupAndFields();
     $this->removeManageInstallmentActivityTypes();
-    $this->removeFutureMembershipStatusRule();
+    $this->removeFutureMembershipStatusRules();
   }
 
   /**
@@ -304,15 +309,61 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
-   * Creates a future membership
-   * status rule called "current"
-   * that apply when the created membership
-   * start date is larger than today date.
+   * Creates membership status rule
+   * that handles cases when the start
+   * date of the membership is in the future.
    */
-  private function createFutureMembershipStatusRule() {
+  private function createFutureMembershipStatusRules() {
+    $this->createCurrentRenewMembershipStatusRule();
+    $this->createFutureStartMembershipStatusRule();
+  }
+
+  /**
+   * Creates a membership status rule that
+   * applies when the membership join date
+   * is in the past, but the membership
+   * start date is in the future
+   */
+  private function createCurrentRenewMembershipStatusRule() {
     $membershipStatusRule = civicrm_api3('MembershipStatus', 'get', [
       'sequential' => 1,
-      'name' => 'current_renew',
+      'name' => 'current_renewed',
+    ]);
+
+    if ($membershipStatusRule['count'] > 0) {
+      return;
+    }
+
+    $minStatusWeight = civicrm_api3('MembershipStatus', 'getvalue', [
+      'return' => 'weight',
+      'options' => ['sort' => 'weight ASC', 'limit' => 1],
+    ]);
+
+    civicrm_api3('MembershipStatus', 'create', [
+      'name' => 'current_renewed',
+      'label' => 'Current Renewed',
+      'start_event' => 'join_date',
+      'start_event_adjust_unit' => 'day',
+      'start_event_adjust_interval' => 1,
+      'end_event' => 'start_date',
+      'end_event_adjust_unit' => 'day',
+      'end_event_adjust_interval' => -1,
+      'is_current_member' => 1,
+      'is_active' => 1,
+      'weight' => $minStatusWeight - 1
+    ]);
+  }
+
+  /**
+   * Creates a membership status rule that
+   * applies when the membership join date
+   * and the  membership start date
+   * are in the future
+   */
+  private function createFutureStartMembershipStatusRule() {
+    $membershipStatusRule = civicrm_api3('MembershipStatus', 'get', [
+      'sequential' => 1,
+      'name' => 'future_start',
     ]);
 
     if ($membershipStatusRule['count'] > 0) {
@@ -325,13 +376,13 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ]);
 
     civicrm_api3('MembershipStatus', 'create', [
-      'name' => 'current_renew',
-      'label' => 'Current',
-      'start_event' => 'start_date',
+      'name' => 'future_start',
+      'label' => 'Future Start',
+      'start_event' => 'join_date',
       'start_event_adjust_unit' => 'year',
-      'start_event_adjust_interval' => -100,
+      'start_event_adjust_interval' => -1000,
       'end_event' => 'start_date',
-      'is_current_member' => 1,
+      'is_current_member' => 0,
       'is_active' => 1,
       'weight' => $maxStatusWeight + 1
     ]);
@@ -347,9 +398,14 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ]);
   }
 
-  private function removeFutureMembershipStatusRule() {
+  private function removeFutureMembershipStatusRules() {
     civicrm_api3('MembershipStatus', 'get', [
-      'name' => 'current_renew',
+      'name' => 'current_renewed',
+      'api.MembershipStatus.delete' => ['id' => '$value.id'],
+    ]);
+
+    civicrm_api3('MembershipStatus', 'get', [
+      'name' => 'future_start',
       'api.MembershipStatus.delete' => ['id' => '$value.id'],
     ]);
   }
@@ -369,7 +425,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   public function upgrade_0002() {
-    $this->createFutureMembershipStatusRule();
+    $this->createFutureMembershipStatusRules();
 
     return TRUE;
   }
