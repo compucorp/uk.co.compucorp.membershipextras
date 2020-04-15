@@ -79,10 +79,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       $params['next_sched_contribution_date'] = $this->nextContributionDate;
 
       $firstInstallment = $this->getFirstInstallment();
-      $isInstallmentPending = $firstInstallment['contribution_status'] == 'Pending';
-      $isReceiveDateInFuture = !$this->isReceiveDateInThePast($firstInstallment);
-
-      if ($isInstallmentPending && $isReceiveDateInFuture) {
+      if ($firstInstallment['contribution_status'] == 'Pending') {
         $params['start_date'] = $firstInstallment['receive_date'];
       }
     }
