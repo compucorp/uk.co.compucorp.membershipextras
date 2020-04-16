@@ -268,10 +268,12 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
   }
 
   /**
-   * Obtains information about the line item that corresponds to the one being
-   * deleted from the recurring contribution for the given contribution.
+   * Returns line item to be deleted from the contribution.
    *
-   * @param $contributionID
+   * Obtains information about the line item that corresponds to the one being
+   * deleted from the recurring contribution for the given contribution ID.
+   *
+   * @param int $contributionID
    *
    * @return array
    */
@@ -280,20 +282,28 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       $contributionID : $this->recurringLineItemData['entity_id']
     ;
 
+    $lineITem = [];
     try {
-      $lineItem = civicrm_api3('LineItem', 'getsingle', [
+      $apiResponse = civicrm_api3('LineItem', 'get', [
         'sequential' => 1,
         'entity_table' => $this->recurringLineItemData['entity_table'],
         'contribution_id' => $contributionID,
         'entity_id' => $entityID,
         'price_field_id' => $this->recurringLineItemData['price_field_id'],
         'price_field_value_id' => $this->recurringLineItemData['price_field_value_id'],
+        'financial_type_id' => $this->recurringLineItemData['price_field_value_id'],
+        'qty' => $this->recurringLineItemData['qty'],
+        'unit_price' => $this->recurringLineItemData['unit_price'],
+        'options' => ['limit' => 1],
       ]);
+      if ($apiResponse['count'] > 0) {
+        $lineITem = $apiResponse['values'][0];
+      }
     } catch (Exception $e) {
-      $lineItem = [];
+      return [];
     }
 
-    return $lineItem;
+    return $lineITem;
   }
 
   /**
