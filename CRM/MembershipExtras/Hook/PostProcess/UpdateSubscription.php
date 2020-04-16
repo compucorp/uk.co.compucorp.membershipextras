@@ -65,6 +65,8 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
   /**
    * Updates data for recurring contribution.
+   *
+   * @throws \Exception
    */
   private function updateRecurringContribution() {
     $autoRenew = $this->form->getElementValue('auto_renew');
@@ -73,11 +75,38 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       'auto_renew' => $autoRenew,
     ];
 
-    if ($this->isUpdatedCycleDate()) {
+    if ($this->isUpdatedCycleDay()) {
       $params['next_sched_contribution_date'] = $this->nextContributionDate;
+
+      $firstInstallment = $this->getFirstInstallment();
+      if ($firstInstallment['contribution_status'] == 'Pending') {
+        $params['start_date'] = $firstInstallment['receive_date'];
+      }
     }
 
     civicrm_api3('ContributionRecur', 'create', $params);
+  }
+
+  /**
+   * Obtains the start date of the first contribution.
+   *
+   * @return array
+   *   Array with the data for the first installment.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getFirstInstallment() {
+    $contributions = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $this->recurringContribution['id'],
+      'options' => ['limit' => 1, 'sort' => 'receive_date ASC'],
+    ]);
+
+    if ($contributions['count'] > 0) {
+      return $contributions['values'][0];
+    }
+
+    return [];
   }
 
   /**
@@ -85,7 +114,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    */
   private function updateSubscriptionLineItems() {
     $autoRenew = $this->form->getElementValue('auto_renew');
-    
+
     if (!$autoRenew) {
       return;
     }
@@ -101,7 +130,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       ]
     ]);
   }
-  
+
   /**
    * Updates membership if necessary.
    */
@@ -179,13 +208,8 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
     foreach ($contributions as $payment) {
       $installmentCount++;
-
-      if ($payment['contribution_status'] != 'Pending') {
-        continue;
-      }
-
       $this->updateContribution(
-        $payment['id'],
+        $payment,
         $formValues['payment_instrument_id'],
         $installmentCount
       );
@@ -242,14 +266,19 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    * Respectively updates receive date and/or payment instrument if either of
    * those were modified for the current recurring contribution.
    *
-   * @param int $contributionID
+   * @param array $contribution
    * @param int $instrumentID
    * @param int $installmentNumber
+   *
+   * @throws \Exception
    */
-  private function updateContribution($contributionID, $instrumentID, $installmentNumber) {
-    $params = [];
+  private function updateContribution($contribution, $instrumentID, $installmentNumber) {
+    if ($contribution['contribution_status'] != 'Pending') {
+      return;
+    }
 
-    if ($this->isUpdatedCycleDate()) {
+    $params = [];
+    if ($this->isUpdatedCycleDay() && !$this->isReceiveDateInThePast($contribution)) {
       $params['receive_date'] = $this->receiveDateCalculator->calculate($installmentNumber);
 
       if (empty($this->nextContributionDate)) {
@@ -262,9 +291,28 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     }
 
     if (!empty($params)) {
-      $params['id'] = $contributionID;
+      $params['id'] = $contribution['id'];
       civicrm_api3('Contribution', 'create', $params);
     }
+  }
+
+  /**
+   * Checks if the given contribution has a receive date in the future.
+   *
+   * @param array $contribution
+   *
+   * @return bool
+   * @throws \Exception
+   */
+  private function isReceiveDateInThePast($contribution) {
+    $now = new DateTime(date('Y-m-d 00:00:00'));
+    $receiveDate = new DateTime($contribution['receive_date']);
+
+    if ($receiveDate < $now) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**
@@ -273,7 +321,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    * @return bool
    *   True if the value was changed by user, false otherwise.
    */
-  private function isUpdatedCycleDate() {
+  private function isUpdatedCycleDay() {
     $formValues = $this->form->exportValues();
     $oldCycleDay = CRM_Utils_Request::retrieve('old_cycle_day', 'Integer', $this->form, TRUE);
 
