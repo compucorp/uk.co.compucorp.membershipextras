@@ -282,7 +282,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       $contributionID : $this->recurringLineItemData['entity_id']
     ;
 
-    $lineITem = [];
+    $lineItem = [];
     try {
       $apiResponse = civicrm_api3('LineItem', 'get', [
         'sequential' => 1,
@@ -297,13 +297,13 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
         'options' => ['limit' => 1],
       ]);
       if ($apiResponse['count'] > 0) {
-        $lineITem = $apiResponse['values'][0];
+        $lineItem = $apiResponse['values'][0];
       }
     } catch (Exception $e) {
       return [];
     }
 
-    return $lineITem;
+    return $lineItem;
   }
 
   /**
