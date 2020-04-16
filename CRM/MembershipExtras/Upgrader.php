@@ -430,4 +430,27 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     return TRUE;
   }
 
+  /**
+   * Compuclient Database is already
+   * upgrader to upgrade_0002 which means
+   * that the old current_renew status
+   * is still on it. This upgrader is to provide
+   * support for Compuclient sites by removing
+   * the old status and force creating the new
+   * ones.
+   */
+  public function upgrade_0003() {
+    $this->removeOldCurrentRenewMembershipStatusRule();
+    $this->createFutureMembershipStatusRules();
+
+    return TRUE;
+  }
+
+  private function removeOldCurrentRenewMembershipStatusRule() {
+    civicrm_api3('MembershipStatus', 'get', [
+      'name' => 'current_renew',
+      'api.MembershipStatus.delete' => ['id' => '$value.id'],
+    ]);
+  }
+
 }
