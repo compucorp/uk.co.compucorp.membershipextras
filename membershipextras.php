@@ -319,6 +319,11 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
     $membershipTypeHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipTypeColour($form);
     $membershipTypeHook->buildForm();
   }
+
+  if ($formName === 'CRM_Contribute_Form_Contribution') {
+    $membershipTypeHook = new CRM_MembershipExtras_Hook_BuildForm_ContributionEdit();
+    $membershipTypeHook->buildForm();
+  }
 }
 
 /**
