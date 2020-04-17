@@ -399,6 +399,17 @@ function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$
     $recurContribuLinksHook = new CRM_MembershipExtras_Hook_Links_RecurringContribution($objectId, $links, $mask);
     $recurContribuLinksHook->alterLinks();
   }
+
+  if ($op == 'contribution.selector.row' && $objectName == 'Contribution') {
+    if (CRM_Core_Permission::check('edit contributions')) {
+      $links[] = [
+        'name' => 'Duplicate As New Pending Contribution',
+        'url' => 'civicrm/contribution/duplicate-contribution',
+        'qs' => 'reset=1&crid=%%id%%',
+        'title' => 'Duplicate As New Pending Contribution',
+      ];
+    }
+  }
 }
 
 /**
