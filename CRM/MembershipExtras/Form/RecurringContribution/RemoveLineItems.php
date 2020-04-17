@@ -291,7 +291,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
         'entity_id' => $entityID,
         'price_field_id' => $this->recurringLineItemData['price_field_id'],
         'price_field_value_id' => $this->recurringLineItemData['price_field_value_id'],
-        'financial_type_id' => $this->recurringLineItemData['price_field_value_id'],
+        'financial_type_id' => $this->recurringLineItemData['financial_type_id'],
         'qty' => $this->recurringLineItemData['qty'],
         'unit_price' => $this->recurringLineItemData['unit_price'],
         'options' => ['limit' => 1],
