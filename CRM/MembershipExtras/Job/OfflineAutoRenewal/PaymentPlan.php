@@ -243,27 +243,18 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   abstract public function renew();
 
   /**
-   * Dispatches postOfflineAutoRenewal hook for each membership line item in the
-   * new payment plan.
+   * Dispatches postOfflineAutoRenewal hook for the recurring contribution.
    */
   private function dispatchMembershipRenewalHook() {
-    $recurringLineItems = $this->getNewPaymentPlanActiveLineItems();
-
-    foreach ($recurringLineItems as $lineItem) {
-      if ($lineItem['entity_table'] != 'civicrm_membership') {
-        continue;
-      }
-
-      $nullObject = CRM_Utils_Hook::$_nullObject;
-      CRM_Utils_Hook::singleton()->invoke(
-        ['membershipId', 'recurContributionId', 'previousRecurContributionId'],
-        $lineItem['entity_id'],
-        $this->newRecurringContributionID,
-        $this->currentRecurContributionID,
-        $nullObject, $nullObject, $nullObject,
-        'membershipextras_postOfflineAutoRenewal'
-      );
-    }
+    $nullObject = CRM_Utils_Hook::$_nullObject;
+    CRM_Utils_Hook::singleton()->invoke(
+      ['membershipId', 'recurContributionId', 'previousRecurContributionId'],
+      $nullObject,
+      $this->newRecurringContributionID,
+      $this->currentRecurContributionID,
+      $nullObject, $nullObject, $nullObject,
+      'membershipextras_postOfflineAutoRenewal'
+    );
   }
 
   /**
