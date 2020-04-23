@@ -131,7 +131,7 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
         'contact_id' => $softContribution['contact_id'],
         'contribution_id' => $this->duplicateContribution->id,
         'currency' => $this->duplicateContribution->currency,
-        'amount' => $this->duplicateContribution->amount,
+        'amount' => $this->duplicateContribution->total_amount,
       ];
       CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
     }
