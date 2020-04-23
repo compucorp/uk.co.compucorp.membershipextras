@@ -81,7 +81,7 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
       'id' => $this->contributionId,
       'return' => ['currency', 'contact_id',  'total_amount', 'receive_date',
         'payment_instrument_id', 'financial_type_id', 'is_test',
-        'is_pay_later', 'contribution_recur_id', 'tax_amount',
+        'contribution_recur_id', 'tax_amount',
         'contribution_page_id', 'campaign_id'],
     ])['values'][0];
 
@@ -97,7 +97,7 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
       'financial_type_id' => $contribution['financial_type_id'],
       'is_test' => $contribution['is_test'],
       'contribution_status_id' => $this->getPendingStatusId(),
-      'is_pay_later' => $contribution['is_pay_later'],
+      'is_pay_later' => 1,
       'skipLineItem' => 1,
       'skipCleanMoney' => TRUE,
       'contribution_recur_id' => CRM_Utils_Array::value('contribution_recur_id', $contribution),
@@ -213,7 +213,7 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
     }
 
     $updateParams = [
-      'id' => $this->recurContribution['id'],
+      'id' => $recurContributionId,
       'contribution_status_id' => $newStatus,
     ];
 

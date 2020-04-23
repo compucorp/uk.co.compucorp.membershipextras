@@ -41,7 +41,7 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
       'id' => $this->recurContributionId,
     ])['values'][0];
 
-    $this->installmentsCount = CRM_Utils_Array::value('installments', $this->$recurContribution, 0);
+    $this->installmentsCount = CRM_Utils_Array::value('installments', $recurContribution, 0);
     $this->currentStatusId = $recurContribution['contribution_status_id'];
   }
 
