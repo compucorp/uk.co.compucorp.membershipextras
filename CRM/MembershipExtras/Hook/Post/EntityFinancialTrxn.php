@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_PaymentPlanStatusCalculator as PaymentPlanStatusCalculator;
 
 class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
 
@@ -101,27 +102,8 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
    * @return string|NULL
    */
   private function generatePaymentPlanNewStatus() {
-    $paidInstallmentsCount = civicrm_api3('Contribution', 'getcount', [
-      'contribution_recur_id' => $this->recurContribution['id'],
-      'contribution_status_id' => 'Completed',
-    ]);
-
-    $partiallyPaidInstallmentsCount = civicrm_api3('Contribution', 'getcount', [
-      'contribution_recur_id' => $this->recurContribution['id'],
-      'contribution_status_id' => 'Partially paid',
-    ]);
-
-    $newStatus = NULL;
-    if ($paidInstallmentsCount >= 1 || $partiallyPaidInstallmentsCount >=  1) {
-      $newStatus = 'In Progress';
-    }
-
-    $arePaymentsCompleted = $paidInstallmentsCount >= $this->recurContribution['installments'];
-    if ($arePaymentsCompleted && $this->recurContribution['installments'] > 1) {
-      $newStatus = 'Completed';
-    }
-
-    return $newStatus;
+    $paymentPlanStatusCalculator = new PaymentPlanStatusCalculator($this->recurContribution['id']);
+    return $paymentPlanStatusCalculator->calculate();
   }
 
   private function generateNewPaymentPlanEndDate() {

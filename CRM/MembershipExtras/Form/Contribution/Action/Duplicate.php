@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_PaymentPlanStatusCalculator as PaymentPlanStatusCalculator;
+
 class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_Form {
 
   /**
@@ -59,6 +61,7 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
       $this->createMembershipPaymentRecord();
       $this->copyCustomFields();
       $this->createLineItems();
+      $this->updateRecurContributionStatus();
 
       $transaction->commit();
     }
@@ -195,6 +198,30 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $this->duplicateContribution, TRUE);
       }
     }
+  }
+
+  private function updateRecurContributionStatus() {
+    if(empty($this->duplicateContribution->contribution_recur_id)) {
+      return;
+    }
+    $recurContributionId = $this->duplicateContribution->contribution_recur_id;
+
+    $paymentPlanStatusCalculator = new PaymentPlanStatusCalculator($recurContributionId);
+    $newStatus = $paymentPlanStatusCalculator->calculate();
+    if ($newStatus == NULL) {
+      return;
+    }
+
+    $updateParams = [
+      'id' => $this->recurContribution['id'],
+      'contribution_status_id' => $newStatus,
+    ];
+
+    if ($newStatus != PaymentPlanStatusCalculator::CONTRIBUTION_STATUS_COMPLETED) {
+      $updateParams['end_date'] = '';
+    }
+
+    civicrm_api3('ContributionRecur', 'create', $updateParams);
   }
 
   private function showNotification() {
