@@ -231,6 +231,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
 
     $paymentPlanContributionsCount = civicrm_api3('Contribution', 'getcount', [
       'contribution_recur_id' => $this->currentRecurContributionID,
+      'contribution_status_id' => ['Pending', 'Completed'],
     ]);
 
     return $installmentReceiveDateCalculator->calculate($paymentPlanContributionsCount + 1);
