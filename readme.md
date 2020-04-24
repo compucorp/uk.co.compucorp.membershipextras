@@ -53,12 +53,12 @@ Our patch fixes this by making sure every time the validation fails, the members
 
 The PR with the bug fix can be seen [here](https://github.com/civicrm/civicrm-core/pull/15895).
 
-#### I am a user
+### If I am a user
 You can get the latest release of Membership Extras from [CiviCRM extension directory page](https://civicrm.org/extensions/membership-extras) or our [Github repository release page](https://github.com/compucorp/uk.co.compucorp.membershipextras/releases).
 
 If you are using Drupal and you would like to use Membership Extras with Webform CiviCRM, you can simply download and install [the companion Drupal module](https://github.com/compucorp/webform_civicrm_membership_extras/releases) and there you have it!
 
-#### I am a developer
+### If I am a developer
 You can get the bleeding edge version of the extension by downloading [the repository](https://github.com/compucorp/uk.co.compucorp.membershipextras) and checking out the master branch.
 
 Also, the repository of our webform companion Drupal module is [here](https://github.com/compucorp/webform_civicrm_membership_extras).
