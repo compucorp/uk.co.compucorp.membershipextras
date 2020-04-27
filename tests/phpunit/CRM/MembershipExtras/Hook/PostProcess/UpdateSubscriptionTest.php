@@ -305,7 +305,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
   }
 
   public function testUpdatingCycleDayUpdatesReceiveDatesOfContributionsInFuture() {
-    $startDate = date('Y-m-d', strtotime('-6 months'));
+    $startDate = date('Y-m-01', strtotime('-6 months'));
     $this->recurringContributionParams['start_date'] = $startDate;
     $this->contributionParams['receive_date'] = $startDate;
 
@@ -314,11 +314,32 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
       $this->lineItemsParams,
       $this->contributionParams
     );
+
     $installmentsBeforeUpdating = $this->getPaymentPlanInstallments($paymentPlan['id']);
     $this->assertEquals(12, count($installmentsBeforeUpdating));
 
     $newCycleDay = 15;
+    $this->simulateUpdateCycleDayWithForm($paymentPlan, $newCycleDay);
 
+    $updateHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription($this->updateSubscriptionForm);
+    $updateHook->postProcess();
+
+    $i = 1;
+    foreach ($installmentsBeforeUpdating as $installment) {
+      $this->assertInstallmentReceiveDateIsOK($installment, $newCycleDay, $i);
+      $i++;
+    }
+  }
+
+  /**
+   * Updates the payment plan to the given cycle day, setting up the form.
+   *
+   * @param $paymentPlan
+   * @param $newCycleDay
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function simulateUpdateCycleDayWithForm($paymentPlan, $newCycleDay) {
     $this->updateSubscriptionForm->set('crid', $paymentPlan['id']);
     $this->updateSubscriptionForm->buildForm();
     $this->updateSubscriptionForm->set('update_installments', 1);
@@ -332,6 +353,27 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
       'payment_instrument_id' => $this->eftPaymentInstrumentID,
     ]);
 
+    $this->updateRecurringContributionCycleDay($paymentPlan['id'], $newCycleDay);
+  }
+
+  public function testOnlyPEndingContributionsChangeReceiveDateOnCycleDayUpdate() {
+    $startDate = date('Y-m-01', strtotime('+1 month'));
+    $this->recurringContributionParams['start_date'] = $startDate;
+    $this->contributionParams['receive_date'] = $startDate;
+
+    $paymentPlan = PaymentPlanFabricator::fabricate(
+      $this->recurringContributionParams,
+      $this->lineItemsParams,
+      $this->contributionParams
+    );
+    $installmentsBeforeUpdating = $this->getPaymentPlanInstallments($paymentPlan['id']);
+    $this->changeContributionStatusToCompleted($installmentsBeforeUpdating[0]['id']);
+    $this->changeContributionStatusToCompleted($installmentsBeforeUpdating[1]['id']);
+    $this->changeContributionStatusToCompleted($installmentsBeforeUpdating[2]['id']);
+
+    $newCycleDay = 15;
+    $this->simulateUpdateCycleDayWithForm($paymentPlan, $newCycleDay);
+
     $updateHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription($this->updateSubscriptionForm);
     $updateHook->postProcess();
 
@@ -340,6 +382,38 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
       $this->assertInstallmentReceiveDateIsOK($installment, $newCycleDay, $i);
       $i++;
     }
+  }
+
+  /**
+   * Completes the given installment.
+   *
+   * @param $installmentID
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function changeContributionStatusToCompleted($installmentID) {
+    civicrm_api3('Contribution', 'create', [
+      'sequential' => 1,
+      'id' => $installmentID,
+      'contribution_status_id' => 'Completed',
+      'options' => ['limit' => 0],
+    ]);
+  }
+
+  /**
+   * Updates cycle day for recurring contribution.
+   *
+   * @param $recurringContributionID
+   * @param $cycleDay
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function updateRecurringContributionCycleDay($recurringContributionID, $cycleDay) {
+    civicrm_api3('ContributionRecur', 'create', [
+      'sequential' => 1,
+      'id' => $recurringContributionID,
+      'cycle_day' => $cycleDay,
+    ]);
   }
 
   /**
@@ -360,17 +434,17 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
     $originalReceiveDate = new DateTime($installmentBeforeUpdate['receive_date']);
     $newReceiveDate = new DateTime($installmentAfterUpdate['receive_date']);
 
-    if ($originalReceiveDate < $now) {
-      $this->assertEquals(
-        $installmentBeforeUpdate['receive_date'],
-        $installmentAfterUpdate['receive_date'],
-        "Installment $nth changed receive_date and it should not have! Original receive date: {$originalReceiveDate->format('Y-m-d')} / Current Date: {$newReceiveDate->format('Y-m-d')}"
-      );
-    } else {
+    if ($originalReceiveDate >= $now && $installmentAfterUpdate['contribution_status_id'] === $this->contributionPendingStatusValue) {
       $this->assertEquals(
         $originalReceiveDate->format('Y-m-') . $newCycleDay,
         $newReceiveDate->format('Y-m-d'),
         "Installment $nth did not get updated! Original date: {$originalReceiveDate->format('Y-m-d')} / Current Date: {$newReceiveDate->format('Y-m-d')}"
+      );
+    } else {
+      $this->assertEquals(
+        $installmentBeforeUpdate['receive_date'],
+        $installmentAfterUpdate['receive_date'],
+        "Installment $nth changed receive_date and it should not have! Original receive date: {$originalReceiveDate->format('Y-m-d')} / Current Date: {$newReceiveDate->format('Y-m-d')}"
       );
     }
   }
