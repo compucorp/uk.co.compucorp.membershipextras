@@ -1,0 +1,43 @@
+name: PHPUnit-tests
+
+on:
+  pull_request:
+    branches: 
+     - "**"
+jobs:
+  run-phpunit-test:
+
+    runs-on: ubuntu-latest
+    container: erawat/civicrm-extension-test:compuclient-1.0.0
+    
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+        - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Create compuclient databases 
+      run: |
+        echo "create database compuclient_civicrm; create database compuclient_drupal;" | mysql -u root --password=root --host=mysql
+        echo "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));" | mysql -u root --password=root --host=mysql
+        mysql -u root --password=root --host=mysql compuclient_civicrm < /compucorp/civicrm.sql
+        mysql -u root --password=root --host=mysql compuclient_drupal < /compucorp/drupal.sql 
+        cd /compucorp/build/compuclient/profiles/compuclient/modules/contrib/civicrm/bin && ./setup.sh
+        
+    - name: Prepare Membership Extension inside Compuclient
+      run : |
+        rm -R /compucorp/build/compuclient/profiles/compuclient/modules/contrib/civicrm/ext/uk.co.compucorp.membershipextras
+        cp -R ../uk.co.compucorp.membershipextras /compucorp/build/compuclient/profiles/compuclient/modules/contrib/civicrm/ext/uk.co.compucorp.membershipextras
+        cd /compucorp/build/compuclient/ && drush updb -y && drush cvupdb -y && drush cc all && drush cc civicrm
+
+    - name: Run PHP Unit tests
+      run: | 
+        cd /compucorp/build/compuclient/profiles/compuclient/modules/contrib/civicrm/ext/uk.co.compucorp.membershipextras
+        phpunit5 
