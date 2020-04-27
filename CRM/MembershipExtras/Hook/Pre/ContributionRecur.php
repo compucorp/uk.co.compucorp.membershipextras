@@ -1,14 +1,11 @@
 <?php
 
 use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
-
+use CRM_MembershipExtras_Service_PaymentPlanStatusCalculator as PaymentPlanStatusCalculator;
 /**
  * Implements pre hook on ContributionRecur entity.
  */
 class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
-  const CONTRIBUTION_STATUS_PENDING = 'Pending';
-  const CONTRIBUTION_STATUS_INPROGRESS = 'In Progress';
-  const CONTRIBUTION_STATUS_COMPLETED = 'Completed';
 
   /**
    * Operation being performed.
@@ -33,13 +30,6 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
   private $params;
 
   /**
-   * List of possible contribution statuses, mapping names to machine values.
-   *
-   * @var array
-   */
-  private $contributionStatusValueMap;
-
-  /**
    * CRM_MembershipExtras_Hook_Pre_ContributionRecur constructor.
    *
    * @param string $op
@@ -50,7 +40,6 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     $this->operation = $op;
     $this->recurringContribution = $this->getRecurringContribution($id);
     $this->params = &$params;
-    $this->contributionStatusValueMap = $this->getContributionStatusesValueMap();
   }
 
   /**
@@ -69,24 +58,6 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
       'sequential' => 1,
       'id' => $id,
     ]);
-  }
-
-  /**
-   * Builds an array mapping contribution status name's to their value.
-   *
-   * @return array
-   */
-  private function getContributionStatusesValueMap() {
-    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => 'contribution_status',
-      'options' => ['limit' => 0],
-    ]);
-    $contributionStatusValueMap = [];
-    foreach ($contributionStatuses['values'] as $currentStatus) {
-      $contributionStatusValueMap[$currentStatus['name']] = $currentStatus['value'];
-    }
-
-    return $contributionStatusValueMap;
   }
 
   /**
@@ -117,22 +88,18 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
    * Calculates recurring contribution status.
    */
   private function rectifyPaymentPlanStatus() {
-    $currentContributionStatus = $this->recurringContribution['contribution_status_id'];
-    $processableContributionStatuses = [
-      $this->contributionStatusValueMap[self::CONTRIBUTION_STATUS_PENDING],
-      $this->contributionStatusValueMap[self::CONTRIBUTION_STATUS_COMPLETED],
-      $this->contributionStatusValueMap[self::CONTRIBUTION_STATUS_INPROGRESS],
-    ];
-    if (!in_array($currentContributionStatus, $processableContributionStatuses)) {
+    $paymentPlanStatusCalculator = new PaymentPlanStatusCalculator($this->recurringContribution['id']);
+    $newStatus = $paymentPlanStatusCalculator->calculate();
+
+    if ($newStatus == NULL) {
       return;
     }
 
-    $status = $this->calculateRecurringContributionStatus();
     $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    $statusID = array_search($status, $contributionStatus);
+    $statusID = array_search($newStatus, $contributionStatus);
     $this->params['contribution_status_id'] = $statusID;
 
-    if ($status === self::CONTRIBUTION_STATUS_COMPLETED && $this->recurringContribution['installments'] > 1) {
+    if ($newStatus === PaymentPlanStatusCalculator::CONTRIBUTION_STATUS_COMPLETED && $this->recurringContribution['installments'] > 1) {
       $this->params['end_date'] = $this->generateNewPaymentPlanEndDate();
     }
   }
@@ -156,42 +123,6 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     }
 
     return $endDate;
-  }
-
-  /**
-   * Calculates the status of the current recurring contribution.
-   *
-   * @return string
-   */
-  private function calculateRecurringContributionStatus() {
-    $paidInstallmentsCount = civicrm_api3('Contribution', 'getcount', [
-      'contribution_recur_id' => $this->recurringContribution['id'],
-      'contribution_status_id' => self::CONTRIBUTION_STATUS_COMPLETED,
-    ]);
-
-    $partiallyPaidInstallmentsCount = civicrm_api3('Contribution', 'getcount', [
-      'contribution_recur_id' => $this->recurringContribution['id'],
-      'contribution_status_id' => 'Partially paid',
-    ]);
-
-    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 0);
-    $allPaid = $paidInstallmentsCount >= $installments;
-    $moreThanOneInstallment = $installments > 1;
-
-    switch (true) {
-      case $moreThanOneInstallment && $allPaid:
-        $status = self::CONTRIBUTION_STATUS_COMPLETED;
-        break;
-
-      case $paidInstallmentsCount >= 1 || $partiallyPaidInstallmentsCount >=  1:
-        $status = self::CONTRIBUTION_STATUS_INPROGRESS;
-        break;
-
-      default:
-        $status = self::CONTRIBUTION_STATUS_PENDING;
-    }
-
-    return $status;
   }
 
 }
