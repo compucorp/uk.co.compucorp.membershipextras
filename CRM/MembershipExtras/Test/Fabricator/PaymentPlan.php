@@ -5,6 +5,9 @@ use CRM_MembershipExtras_Test_Fabricator_LineItem as LineItemFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Contribution as ContributionFabricator;
 
+/**
+ * Class CRM_MembershipExtras_Test_Fabricator_PaymentPlan
+ */
 class CRM_MembershipExtras_Test_Fabricator_PaymentPlan {
 
   /**
@@ -155,7 +158,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlan {
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createFirstInstallment($recurringContribution, $contributionParams, $lineItems) {
+  private static function createFirstInstallment($recurringContribution, $contributionParams, &$lineItems) {
     $params = array_merge(
       [
         'is_pay_later' => TRUE,
@@ -170,25 +173,38 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlan {
 
     foreach($lineItems as &$line) {
       unset($line['line_item']['id']);
-      $line['line_item']['contribution_id'] = $contribution->id;
+      $line['line_item']['contribution_id'] = $contribution['id'];
 
       if ($line['line_item']['entity_table'] === 'civicrm_contribution') {
-        $line['line_item']['entity_id'] = $contribution->id;
+        $line['line_item']['entity_id'] = $contribution['id'];
       }
 
-      $newLineItem = CRM_Price_BAO_LineItem::create($line['line_item']);
-      CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
+      self::createLineItemForContribution($contribution['id'], $line);
+    }
+  }
 
-      if (!empty($contribution->tax_amount) && !empty($newLineItem->tax_amount)) {
-        CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
-      }
+  /**
+   * Creates the line item for the contribution identified by the given ID.
+   *
+   * @param int $contributionID
+   * @param array $line
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private static function createLineItemForContribution($contributionID, $line) {
+    $contribution = CRM_Contribute_BAO_Contribution::findById($contributionID);
+    $newLineItem = CRM_Price_BAO_LineItem::create($line['line_item']);
+    CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
 
-      if (self::isMembershipLineItem($line)) {
-        CRM_Member_BAO_MembershipPayment::create([
-          'membership_id' => $line['entity_id'],
-          'contribution_id' => $contribution->id,
-        ]);
-      }
+    if (!empty($contribution->tax_amount) && !empty($newLineItem->tax_amount)) {
+      CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
+    }
+
+    if (self::isMembershipLineItem($line)) {
+      CRM_Member_BAO_MembershipPayment::create([
+        'membership_id' => $line['entity_id'],
+        'contribution_id' => $contribution->id,
+      ]);
     }
   }
 

@@ -1,21 +1,17 @@
 <?php
+use CRM_MembershipExtras_Test_Fabricator_Base as BaseFabricator;
 
 /**
  * Class CRM_MembershipExtras_Test_Fabricator_RecurringContribution.
  *
  */
-class CRM_MembershipExtras_Test_Fabricator_RecurringContribution {
+class CRM_MembershipExtras_Test_Fabricator_RecurringContribution extends BaseFabricator {
 
   /**
-   * Fabricates recurring contribution with given parameters.
+   * Entity name.
    *
-   * @param array $params
-   *
-   * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @var string
    */
-  public static function fabricate($params) {
-    return civicrm_api3('ContributionRecur', 'create', $params)['values'][0];
-  }
+  protected static $entityName = 'ContributionRecur';
 
 }

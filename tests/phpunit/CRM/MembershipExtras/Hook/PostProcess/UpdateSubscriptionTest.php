@@ -4,7 +4,6 @@ use CRM_MembershipExtras_Test_Fabricator_PaymentPlan as PaymentPlanFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
 use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringContributionPaymentProcessor;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
-use CRM_MembershipExtras_Test_Fabricator_PriceSet as PriceSetFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PriceField as PriceFieldFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabricator;
 
@@ -220,6 +219,9 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
     ];
   }
 
+  /**
+   * Sets up the update recurring contribution form.
+   */
   private function setUpUpdateSubscriptionForm() {
     $controller = new CRM_Core_Controller();
     $this->updateSubscriptionForm = new CRM_Contribute_Form_UpdateSubscription();

@@ -2,6 +2,9 @@
 
 use CRM_Member_BAO_MembershipType as MembershipType;
 
+/**
+ * Class CRM_MembershipExtras_Test_Fabricator_MembershipType
+ */
 class CRM_MembershipExtras_Test_Fabricator_MembershipType {
 
   /**

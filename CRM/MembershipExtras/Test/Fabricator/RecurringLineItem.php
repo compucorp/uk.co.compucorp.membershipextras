@@ -1,19 +1,16 @@
 <?php
+use CRM_MembershipExtras_Test_Fabricator_Base as BaseFabricator;
 
 /**
  * Class CRM_MembershipExtras_Test_Fabricator_RecurringLineItems.
  */
-class CRM_MembershipExtras_Test_Fabricator_RecurringLineItem {
+class CRM_MembershipExtras_Test_Fabricator_RecurringLineItem extends BaseFabricator {
 
   /**
-   * Fabricates a recurring line item with the given parameters.
+   * Entity name.
    *
-   * @param array $params
-   *
-   * @return \CRM_MembershipExtras_DAO_ContributionRecurLineItem|NULL
+   * @var string
    */
-  public static function fabricate($params) {
-    return CRM_MembershipExtras_BAO_ContributionRecurLineItem::create($params);
-  }
-
+  protected static $entityName = 'ContributionRecurLineItem';
+  
 }

@@ -28,7 +28,7 @@ abstract class CRM_MembershipExtras_Test_Fabricator_Base {
    * @throws \CiviCRM_API3_Exception
    * @throws \Exception
    */
-  public static function fabricate(array $params) {
+  public static function fabricate(array $params = []) {
     if (empty(static::$entityName)) {
       throw new \Exception('Entity name cannot be empty!');
     }

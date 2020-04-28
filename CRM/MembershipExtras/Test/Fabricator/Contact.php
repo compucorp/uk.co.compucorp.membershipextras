@@ -1,16 +1,24 @@
 <?php
+use CRM_MembershipExtras_Test_Fabricator_Base as BaseFabricator;
 
 /**
  * Class CRM_MembershipExtras_Test_Fabricator_Contact.
  */
-class CRM_MembershipExtras_Test_Fabricator_Contact {
+class CRM_MembershipExtras_Test_Fabricator_Contact extends BaseFabricator {
+
+  /**
+   * Entity's name.
+   *
+   * @var string
+   */
+  protected static $entityName = 'Contact';
 
   /**
    * Array if default parameters to be used to create a contact.
    *
    * @var array
    */
-  private static $defaultParams = [
+  protected static $defaultParams = [
     'contact_type' => 'Individual',
     'first_name'   => 'Bruce',
     'last_name'    => 'Wayne',
@@ -25,13 +33,11 @@ class CRM_MembershipExtras_Test_Fabricator_Contact {
    * @return array
    * @throws \CiviCRM_API3_Exception
    */
-  public static function fabricate($params = []) {
-    $params = array_merge(self::$defaultParams, $params);
+  public static function fabricate(array $params = []) {
+    $params = array_merge(static::$defaultParams, $params);
     $params['display_name'] = "{$params['first_name']} {$params['last_name']}";
 
-    $result = civicrm_api3('Contact', 'create', $params);
-
-    return array_shift($result['values']);
+    return parent::fabricate($params);
   }
 
   /**
@@ -69,13 +75,7 @@ class CRM_MembershipExtras_Test_Fabricator_Contact {
       ? 'Organization ' . rand(1000, 9999)
       : $params['organization_name'];
 
-    $result = civicrm_api3(
-      'Contact',
-      'create',
-      $params
-    );
-
-    return array_shift($result['values']);
+    return parent::fabricate($params);
   }
 
 }
