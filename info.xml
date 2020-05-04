@@ -2,21 +2,21 @@
 <extension key="uk.co.compucorp.membershipextras" type="module">
   <file>membershipextras</file>
   <name>uk.co.compucorp.membershipextras</name>
-  <description>This extension includes a huge amount of untility features that completes CiviCRM's membership management process. Notebly membership payment in instalments, payment plan management, Direct Debit integration and more.</description>
+  <description>This extension includes a huge amount of untility features that completes CiviCRM's membership management process. Notebly membership payment in instalments, payment plan management and more.</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>Compucorp Ltd.</author>
     <email>info@compucorp.co.uk</email>
   </maintainer>
-  <releaseDate>2020-01-28</releaseDate>
-  <version>2.0.0</version>
+  <releaseDate>2020-05-04</releaseDate>
+  <version>2.1.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.19</ver>
+    <ver>5.24</ver>
   </compatibility>
   <comments>
     Supported CiviCRM versions  :
-    - 5.19.4
+    - 5.24.6
   </comments>
   <civix>
     <namespace>CRM/MembershipExtras</namespace>
