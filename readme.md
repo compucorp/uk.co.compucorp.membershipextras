@@ -24,24 +24,45 @@ This will allow staff to modify a members benefits during the current membership
 CiviCRM has support for many payment processors, including several Direct Debit payment processors. With these “online” payment processors, when the membership comes to renew, the logic is actually managed by the payment processor in order to renew the membership and take next years payment. CiviCRM doesn’t however have any functionality for memberships where the payment is “offline” i.e. some Direct Debit processes or where you invoice clients in advance of receiving the payment. With Membership extras CiviCRM now fully supports offline automated renewal including sending email notifications with invoices for payment. We also have created a new offline batch direct debit export module which allows for full management of high volume direct debits through export processes.
 
 ## How do I get Membership Extras?
-Membership Extras is designed to work with CiviCRM 4.7.x or 5.x plus. If you are on an earlier version of CiviCRM, you will need to upgrade your site first or contact info@compucorp.co.uk if you needs assistance to do so.
+Membership Extras is designed to work with a patched version CiviCRM 5.24.4 plus. If you are on an earlier version of CiviCRM, you will need to upgrade your site first or contact info@compucorp.co.uk if you need assistance to do so.
 
-If your CiviCRM is already on CiviCRM 4.7.x or 5.x plus and this is the first time you use an extension,  please see [Here](http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions "CiviCRM Extensions Installation") for full instructions and information on how to set and configure extensions.
+The patched versions of CiviCRM includes bug fixes and functionalities required by membership extras, that are not yet part of CiviCRM core. You can find this compatible CiviCRM version here: [CiviCRM v5.24.4](https://bitbucket.org/compucorp/civicrm-core/downloads/civicrm-5.24.4-patch.6d00820.tar.gz)
 
-#### I am an user
+If your CiviCRM is already on the patched version of 5.24.4 plus and this is the first time you use an extension,  please see [Here](http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions "CiviCRM Extensions Installation") for full instructions and information on how to set and configure extensions.
+
+### What Exactly is Being Patched?
+Currently, we are maintaining two patches, required for Membership Extras extension to work. The first one will prevent a membership to be cancelled if one of the installments of a payment plan gets cancelled. The second one fixes a known bug in CiviCRM where a failed validation on the form to create a membership (eg. if you failed to fill in a required field), will cause taxes to be recalculated and added again to the membership fee.
+
+#### Patch #1: Prevent Cancelled Installments From Cancelling Membership
+TL;DR: We've added a way to intercept a membership update before it is stored in the database, to prevent the membership from being cancelled when a single installment in the payment plan is cancelled.
+
+The technical overview of this is we've proposed to CiviCRM core team a new hook that runs before saving information to a table that is associated to an entity DAO. Currently, there is already a `hook_civicrm_postSave_table_name` hook that is run *after* a write operation is done on a table associated to a DAO. But on many cases it is useful to have a hook that runs before the write operation. This hook takes the form `hook_civicrm_preSave_table_name`, and we use it precisely to prevent cancelling the membership when a single installment in the payment plan is cancelled by checking the status of the plan and other installments *before* actually updating the membership.
+
+The change is being discussed on [this lab ticket](https://lab.civicrm.org/dev/core/issues/161), if you'd like to participate, and help push for the change to be accepted into core.
+
+The PR with the implementation for the feature can be checked [here](https://github.com/civicrm/civicrm-core/pull/12253).
+
+#### Patch #2: Prevent Taxes to be Recalculated and Added to Membership Fee Each Time a Validation Fails
+There is a known bug in CiviCRM, tracked [here](https://lab.civicrm.org/dev/core/issues/778), where when creating a membership and clicking save, if a validation fails (say for example if the user skipped a required field), taxes would be recalculated and added again to the membership's fee. So, for example, if a membership's price was $100 with a 10% tax, the full price would be calculated to $110 before saving the membership. After the first validation error, the price would be recalculated to $121, then to $133.10 on the second failed validation, and so on every time the validation failed.
+
+Our patch fixes this by making sure every time the validation fails, the membership's fee without tax is used to calculate taxes. This is a temporary fix, though, as CiviCRM core team has laid down new groundwork on which we can base a more permanent solution that can be part of CiviCRM core in the near future.
+
+The PR with the bug fix can be seen [here](https://github.com/civicrm/civicrm-core/pull/15895).
+
+### If I am a user
 You can get the latest release of Membership Extras from [CiviCRM extension directory page](https://civicrm.org/extensions/membership-extras) or our [Github repository release page](https://github.com/compucorp/uk.co.compucorp.membershipextras/releases).
 
 If you are using Drupal and you would like to use Membership Extras with Webform CiviCRM, you can simply download and install [the companion Drupal module](https://github.com/compucorp/webform_civicrm_membership_extras/releases) and there you have it!
 
-#### I am a developer
-You can get the bleeding edge version of the extension by downloading [the repository](https://github.com/compucorp/uk.co.compucorp.membershipextras) and checking out the develop branch.
+### If I am a developer
+You can get the bleeding edge version of the extension by downloading [the repository](https://github.com/compucorp/uk.co.compucorp.membershipextras) and checking out the master branch.
 
-Also the repository of our webform companion Drupal module is [here](https://github.com/compucorp/webform_civicrm_membership_extras).
+Also, the repository of our webform companion Drupal module is [here](https://github.com/compucorp/webform_civicrm_membership_extras).
 
 ## Do I need to configure Membership Extras?
-Membership Extras is a plug and play extension. Most of the generic functionality works out of the box. 
+Membership Extras is a plug and play extension. Most of the generic functionality works out of the box.
 
-There are a few exceptions where we chose to not presumptively configure for you during the extension installation mainly due to those configurations vary largely from organisation to organisation. 
+There are a few exceptions where we chose to not presumptively configure for you during the extension installation mainly due to those configurations vary largely from organisation to organisation.
 
 #### 1. Offline auto-renew
 If you would like to allow those offline memberships which opted into auto-renew to be renewed by the system automatically, you will need to enable the “Renew offline auto-renewal memberships” scheduled job.
@@ -72,13 +93,15 @@ In a typical example where a membership should be set to inactive after a paymen
 
 Please note that once you saved the new status rule, it will need to be moved to the top of the list in order to take effect (because payment check should have priority over date check).
 
+We also recommend to enable the **Update Membership Statuses** scheduled job, so these rules are maintained and applied consistently throught all memberships.
+
 #### 3. (Advanced) Offline payment processor for back office
 If you happen to have another offline payment processor (payment processor that uses Payment_Manual class) and you would like all payment plan created in the back office to use that payment processor instead, you will be able to make that change in the “Offline payment processor for back office” setting by going to **Administer -> Payment Plan Settings**.
 
 This is particularly useful if you are going to use our [Manual Direct Debit extension](https://github.com/compucorp/uk.co.compucorp.manualdirectdebit).
 
 #### 4. (Advanced) Custom groups to be excluded when auto-renew
-When new contributions are being generated by the auto-renewal scheduled job, the custom fields information from the previous contributions will also be copied over by default. This is to allow any additional information that forms a part of your organisation’s payment process being preserved during automated process. 
+When new contributions are being generated by the auto-renewal scheduled job, the custom fields information from the previous contributions will also be copied over by default. This is to allow any additional information that forms a part of your organisation’s payment process being preserved during automated process.
 
 A good example is, if one contribution has a link to a Direct Debit Mandate, the newly generated contributions under the same recurring contribution will likely need the same link. This is all taken care of by default.
 
