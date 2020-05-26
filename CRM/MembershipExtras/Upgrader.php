@@ -297,14 +297,18 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       ]);
 
       if ($result['count'] > 0) {
-        continue;
+        $updateParams = [
+          'id' => $result['id'],
+          'filter' => 1,
+          'is_reserved' => 1,
+        ];
+        civicrm_api3('OptionValue', 'create', $updateParams);
+      } else {
+        $optionValue['option_group_id'] = 'activity_type';
+        $optionValue['filter'] = 1;
+        $optionValue['is_reserved'] = 1;
+        civicrm_api3('OptionValue', 'create', $optionValue);
       }
-
-      civicrm_api3('OptionValue', 'create', [
-        'option_group_id' => 'activity_type',
-        'name' => $optionValue['name'],
-        'label' => $optionValue['label'],
-      ]);
     }
   }
 
@@ -451,6 +455,18 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'name' => 'current_renew',
       'api.MembershipStatus.delete' => ['id' => '$value.id'],
     ]);
+  }
+
+  /**
+   * We here recreate manage installment
+   * activity types if they do not exist,
+   * if they do then we update them to be
+   * reserved and hidden.
+   */
+  public function upgrade_0004() {
+    $this->createManageInstallmentActivityTypes();
+
+    return TRUE;
   }
 
 }
