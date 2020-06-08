@@ -26,10 +26,27 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    */
   private $membershipPayment;
 
+  /**
+   * The membership that is attached
+   * to this payment.
+   *
+   * @var array
+   */
+  private $membership;
+
   public function __construct($operation, $objectId, CRM_Member_DAO_MembershipPayment $objectRef) {
     $this->operation = $operation;
     $this->id = $objectId;
     $this->membershipPayment = $objectRef;
+    $this->setMembership();
+  }
+
+  private function setMembership() {
+    $this->membership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'id' => $this->membershipPayment->membership_id,
+      'return' => ['membership_type_id', 'is_override', 'status_override_end_date'],
+    ])['values'][0];
   }
 
   /**
@@ -51,9 +68,13 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    * @throws \CiviCRM_API3_Exception
    */
   public function recalculateMembershipStatus() {
+    if ($this->isMembershipStatusOverridden()) {
+      return;
+    }
+
     // we calculate the status here and assign it to the membership
-    // use DAO save method since it is more efficient than
-    // using membership API skipStatusCalc. But both should achieve same results
+    // using DAO save method since it is more efficient than
+    // using membership API skipStatusCalc.
     $newMembershipStatus = civicrm_api3('MembershipStatus', 'calc', [
       'membership_id' => $this->membershipPayment->membership_id,
     ]);
@@ -65,6 +86,30 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
       $mem->status_id = $newMembershipStatus['id'];
       $mem->save();
     }
+  }
+
+  /**
+   * Checks if the membership status
+   * is overridden or not.
+   *
+   * @return bool
+   */
+  private function isMembershipStatusOverridden() {
+    if (empty($this->membership['is_override'])) {
+      return FALSE;
+    }
+
+    if ($this->membership['is_override'] == CRM_Member_StatusOverrideTypes::PERMANENT) {
+      return TRUE;
+    }
+
+    $todayDate = date('Y-m-d');
+    $overrideEndDate = CRM_Utils_Array::value('status_override_end_date', $this->membership);
+    if (!empty($overrideEndDate) && $overrideEndDate > $todayDate) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**
@@ -104,11 +149,6 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    * @return array
    */
   private function getRelatedRecurringLineItem() {
-    $membershipTypeID = civicrm_api3('Membership', 'getvalue', [
-      'id' => $this->membershipPayment->membership_id,
-      'return' => 'membership_type_id',
-    ]);
-
     $recurringContributionID = civicrm_api3('Contribution', 'getvalue', [
       'id' => $this->membershipPayment->contribution_id,
       'return' => 'contribution_recur_id',
@@ -135,7 +175,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
           'id' => $lineItem['api.LineItem.getsingle']['price_field_value_id'],
         ]);
 
-        if (CRM_Utils_Array::value('membership_type_id', $priceFieldValueData, 0) == $membershipTypeID) {
+        if (CRM_Utils_Array::value('membership_type_id', $priceFieldValueData, 0) == $this->membership['membership_type_id']) {
           return $lineItem['api.LineItem.getsingle'];
         }
       }
