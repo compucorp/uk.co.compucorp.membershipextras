@@ -238,6 +238,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
     $lineItems = civicrm_api3('LineItem', 'get', [
       'sequential' => 1,
       'contribution_id' => $this->lastContribution['id'],
+      'options' => ['limit' => 0],
     ])['values'];
 
     foreach($lineItems as $lineItem) {
@@ -245,7 +246,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
         $entityID = $contribution->id;
       }
-      
+
       $lineItemParms = [
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,

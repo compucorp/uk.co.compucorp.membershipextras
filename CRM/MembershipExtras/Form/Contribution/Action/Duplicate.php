@@ -166,6 +166,7 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
     $lineItems = civicrm_api3('LineItem', 'get', [
       'sequential' => 1,
       'contribution_id' => $this->contributionId,
+      'options' => ['limit' => 0],
     ])['values'];
 
     foreach($lineItems as $lineItem) {
