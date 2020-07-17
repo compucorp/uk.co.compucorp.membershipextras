@@ -8,8 +8,8 @@
     <author>Compucorp Ltd.</author>
     <email>info@compucorp.co.uk</email>
   </maintainer>
-  <releaseDate>2020-06-24</releaseDate>
-  <version>2.2.0</version>
+  <releaseDate>2020-07-17</releaseDate>
+  <version>2.3.0</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.24</ver>
