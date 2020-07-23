@@ -41,7 +41,7 @@ jobs:
 
       - uses: actions/checkout@v2
         with:
-          path: ${{ env.CIVICRM_EXTENSIONS_DIR }}/uk.co.compucorp.manualdirectdebit
+          path: ${{ env.CIVICRM_EXTENSIONS_DIR }}/uk.co.compucorp.membershipextras
 
       - name: Installing Membership Extras
         working-directory: ${{ env.CIVICRM_EXTENSIONS_DIR }}
