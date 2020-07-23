@@ -1,0 +1,52 @@
+name: Tests
+
+on: pull_request
+
+jobs:
+  run-unit-tests:
+
+    runs-on: ubuntu-latest
+    container: compucorp/civicrm-buildkit:1.0.0
+
+    env:
+      CIVICRM_EXTENSIONS_DIR: site/web/sites/all/modules/civicrm/tools/extensions
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+
+      - name: Config mysql database as per CiviCRM requirement
+        run: echo "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));" | mysql -u root --password=root --host=mysql
+
+      - name: Config amp
+        run : amp config:set --mysql_dsn=mysql://root:root@mysql:3306
+
+      - name: Build Drupal site
+        run: civibuild create drupal-clean --civi-ver 5.24.6 --web-root $GITHUB_WORKSPACE/site
+
+      - uses: compucorp/apply-patch@1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          repo: compucorp/civicrm-core
+          version: 5.24.6
+          path: site/web/sites/all/modules/civicrm
+
+      - uses: actions/checkout@v2
+        with:
+          path: ${{ env.CIVICRM_EXTENSIONS_DIR }}/uk.co.compucorp.manualdirectdebit
+
+      - name: Installing Membership Extras
+        working-directory: ${{ env.CIVICRM_EXTENSIONS_DIR }}
+        run: cv en uk.co.compucorp.membershipextras
+
+      - name: Run phpunit tests
+        working-directory: ${{ env.CIVICRM_EXTENSIONS_DIR }}/uk.co.compucorp.membershipextras
+        run: phpunit5
