@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<ruleset name="PHP Custom Ruleset">
+  <description>CiviCRM Coder Ruleset</description>
+  <rule ref="bin/civicrm/coder/coder_sniffer/Drupal"></rule>
+  <exclude-pattern>tests/phpunit/bootstrap.php</exclude-pattern>
+  <exclude-pattern>membershipextras.civix.php</exclude-pattern>
+  <exclude-pattern>CRM/MembershipExtras/Upgrader/Base.php</exclude-pattern>
+</ruleset>
