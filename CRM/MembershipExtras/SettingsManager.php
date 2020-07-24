@@ -79,6 +79,20 @@ class CRM_MembershipExtras_SettingsManager {
   }
 
   /**
+   * Gets Update start date renewal configuration
+   *
+   * @return int
+   */
+  public static function getUpdateStartDateRenewal() {
+    $updateStartDateRenewal = self::getSettingValue('membershipextras_paymentplan_update_start_date_renewal');
+    if (empty($updateStartDateRenewal)) {
+      $updateStartDateRenewal = 0;
+    }
+
+    return $updateStartDateRenewal;
+  }
+
+  /**
    * Calculate colour for RGB values.
    *
    * @param string $c
