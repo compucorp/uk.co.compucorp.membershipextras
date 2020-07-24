@@ -1,6 +1,7 @@
 <?php
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
+use CRM_MembershipExtras_SettingsManager as SettingsManager;
 
 /**
  * Renews a payment plan.
@@ -514,6 +515,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @throws \CiviCRM_API3_Exception
    */
+
   protected function renewPaymentPlanMemberships($sourceRecurringContribution) {
     $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($sourceRecurringContribution);
     $existingMembershipID = null;
@@ -799,11 +801,23 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @throws \Exception
    */
   protected function calculateRenewedMembershipsStartDate() {
+    $isUpdateStartDateRenewal = self::isUpdateStartDateRenewal();
     $latestDate = NULL;
     $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+
     foreach ($currentPeriodLines as $lineItem) {
       if ($lineItem['entity_table'] != 'civicrm_membership') {
         continue;
+      }
+
+      //if user opt-out for update start date renewal
+      //then get an existing start date from the renewal membership
+      if (!$isUpdateStartDateRenewal) {
+        $existingStartDate =  self::getExistingMembershipStartDate($lineItem['entity_id']);
+        if (!empty($existingStartDate)) {
+          $startDate =  new DateTime($existingStartDate);
+          return $startDate->format('Y-m-d');
+        }
       }
 
       if (empty($lineItem['memberhsip_end_date'])) {
@@ -816,6 +830,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       } elseif ($latestDate < $membershipEndDate) {
         $latestDate = $membershipEndDate;
       }
+
     }
 
     if ($latestDate) {
@@ -825,5 +840,32 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
     return NULL;
   }
+
+  /**
+   * Check if update start date renewal is selected.
+   *
+   * @return bool
+   */
+  public static function isUpdateStartDateRenewal() {
+    $updateStartDateRenewalSetting = SettingsManager::getUpdateStartDateRenewal();
+    if ($updateStartDateRenewalSetting == 1) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Get existing membership start date by membership id
+   *
+   * @param $id
+   * @return mixed
+   */
+  public static function getExistingMembershipStartDate($id) {
+    return civicrm_api3('Membership', 'getsingle', [
+      'return' => ["start_date"],
+      'id' => $id,
+    ])['start_date'];
+  }
+
 
 }
