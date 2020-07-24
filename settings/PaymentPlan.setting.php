@@ -23,7 +23,7 @@ return [
     'quick_form_type' => 'Element',
     'add' => '4.7',
     'pseudoconstant' => [
-      'name' =>  'paymentProcessor',
+      'name' => 'paymentProcessor',
     ],
     'title' => 'Offline payment processor for back office',
     'html_type' => 'select',

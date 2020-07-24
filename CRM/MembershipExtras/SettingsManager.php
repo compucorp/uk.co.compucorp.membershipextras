@@ -6,6 +6,7 @@
 class CRM_MembershipExtras_SettingsManager {
 
   const COLOUR_SETTINGS_KEY = 'membership_type_colour';
+
   /**
    * Returns the details of the default payment processor as per payment plan
    * settings, or NULL if it does not exist.
@@ -48,7 +49,7 @@ class CRM_MembershipExtras_SettingsManager {
     }
 
     $customFieldsIdsToExcludeForAutoRenew = [];
-    foreach($customFieldsToExcludeForAutoRenew['values'] as $customField) {
+    foreach ($customFieldsToExcludeForAutoRenew['values'] as $customField) {
       $customFieldsIdsToExcludeForAutoRenew[] = $customField['id'];
     }
 
