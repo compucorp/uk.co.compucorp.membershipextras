@@ -39,7 +39,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
-      SELECT ccr.id as contribution_recur_id, ccr.installments 
+      SELECT ccr.id as contribution_recur_id, ccr.installments
         FROM civicrm_contribution_recur ccr
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
@@ -47,16 +47,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
    LEFT JOIN civicrm_value_payment_plan_periods ppp ON ppp.entity_id = ccr.id
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
          AND ccr.installments > 1
-         AND ccr.end_date IS NOT NULL
-         AND ccr.auto_renew = 1 
+         AND ccr.auto_renew = 1
          AND (
-          ccr.contribution_status_id != {$cancelledStatusID} 
+          ccr.contribution_status_id != {$cancelledStatusID}
           AND ccr.contribution_status_id != {$refundedStatusID}
          )
          AND (ppp.next_period IS NULL OR ppp.next_period = 0)
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
-         AND msl.end_date IS NOT NULL
     GROUP BY ccr.id
       HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
           OR (
