@@ -289,7 +289,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     $result = [];
     foreach ($lineItems['values'] as $line) {
       $lineData = $line['api.LineItem.getsingle'];
-      $result[] =  $lineData;
+      $result[] = $lineData;
     }
 
     return $result;
