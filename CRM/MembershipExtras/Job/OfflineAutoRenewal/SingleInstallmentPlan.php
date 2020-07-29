@@ -44,7 +44,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $manualPaymentProcessorsIDs = implode(',', $this->manualPaymentProcessorIDs);
     $cancelledStatusID = $this->contributionStatusesNameMap['Cancelled'];
     $refundedStatusID = $this->contributionStatusesNameMap['Refunded'];
-    $pendingStatusID = $this->contributionStatusesNameMap['Pending'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
@@ -78,30 +77,28 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
             END,
             INTERVAL frequency_interval YEAR
           )
-        END AS next_run_date 
+        END AS next_run_date
         FROM civicrm_contribution_recur ccr
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
    LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
    LEFT JOIN civicrm_value_payment_plan_periods ppp ON ppp.entity_id = ccr.id
-   LEFT JOIN civicrm_contribution cc ON ccr.id = cc.contribution_recur_id AND cc.contribution_status_id = {$pendingStatusID}
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
-         AND cc.id IS NULL
          AND ccr.end_date IS NULL
          AND (
           ccr.installments < 2
           OR ccr.installments IS NULL
          )
-         AND ccr.auto_renew = 1 
+         AND ccr.auto_renew = 1
          AND (
-          ccr.contribution_status_id != {$cancelledStatusID} 
+          ccr.contribution_status_id != {$cancelledStatusID}
           AND ccr.contribution_status_id != {$refundedStatusID}
          )
          AND ppp.next_period IS NULL
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
          AND msl.end_date IS NULL
-         
+
     GROUP BY ccr.id
       HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
       OR (
