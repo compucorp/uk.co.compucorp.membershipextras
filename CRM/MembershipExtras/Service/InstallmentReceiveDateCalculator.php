@@ -20,7 +20,13 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
 
   public function __construct($recurContribution) {
     $this->recurContribution = $recurContribution;
+
     $this->startDate = $this->recurContribution['start_date'];
+
+    // MAE-354 + ACU-238 : temporary hack for issues in imported data
+    if(!empty($this->recurContribution['next_sched_contribution_date'])) {
+      $this->startDate = $this->recurContribution['next_sched_contribution_date'];
+    }
   }
 
   /**
