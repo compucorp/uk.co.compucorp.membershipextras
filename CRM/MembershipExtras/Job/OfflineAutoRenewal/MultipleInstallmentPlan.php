@@ -105,8 +105,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     $currentRecurContribution = $this->currentRecurringContribution;
     $paymentProcessorID = !empty($currentRecurContribution['payment_processor_id']) ? $currentRecurContribution['payment_processor_id'] : NULL;
 
+    $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
     $this->paymentPlanStartDate = $this->calculateNewPeriodStartDate();
-    $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate() ?: $this->paymentPlanStartDate;
     $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
 
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
@@ -149,8 +149,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
    */
   private function calculateNewPeriodStartDate() {
     $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($this->currentRecurringContribution);
-
-    return $installmentReceiveDateCalculator->calculate($this->currentRecurringContribution['installments'] + 1);
+    $installmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
+    return $installmentReceiveDateCalculator->calculate();
   }
 
   /**
@@ -235,7 +235,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
         CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
           'contribution_recur_id' => $nextContribution['id'],
           'line_item_id' => $newLineItem['id'],
-          'start_date' => $this->paymentPlanStartDate,
+          'start_date' => $this->membershipsStartDate,
           'auto_renew' => 1,
         ]);
       }

@@ -531,7 +531,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $existingMembershipID = $this->getExistingMembershipForLineItem($lineItem, $priceFieldValue);
 
       if ($existingMembershipID) {
-        $this->extendExistingMembership($existingMembershipID, $this->membershipsStartDate);
+        $this->extendExistingMembership($existingMembershipID);
       }
       else {
         $existingMembershipID = $this->createMembership($lineItem, $priceFieldValue);
@@ -607,13 +607,18 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @param int $membershipID
    *   ID of the membership to be extended.
-   * @param string $startDate
-   *   New start date for the membership.
    */
-  private function extendExistingMembership($membershipID, $startDate) {
+  private function extendExistingMembership($membershipID) {
     $membership = new CRM_Member_DAO_Membership();
     $membership->id = $membershipID;
-    $membership->start_date = $startDate;
+
+    //if user opt-out for update start date renewal
+    //then get an existing start date from the renewal membership
+    $isUpdateStartDateRenewal = self::isUpdateStartDateRenewal();
+    if ($isUpdateStartDateRenewal) {
+      $membership->start_date = $this->membershipsStartDate;
+    }
+
     $membership->end_date = MembershipEndDateCalculator::calculate($membershipID);
     $membership->save();
   }
@@ -805,23 +810,12 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @throws \Exception
    */
   protected function calculateRenewedMembershipsStartDate() {
-    $isUpdateStartDateRenewal = self::isUpdateStartDateRenewal();
     $latestDate = NULL;
     $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
 
     foreach ($currentPeriodLines as $lineItem) {
       if ($lineItem['entity_table'] != 'civicrm_membership') {
         continue;
-      }
-
-      //if user opt-out for update start date renewal
-      //then get an existing start date from the renewal membership
-      if (!$isUpdateStartDateRenewal) {
-        $existingStartDate = self::getExistingMembershipStartDate($lineItem['entity_id']);
-        if (!empty($existingStartDate)) {
-          $startDate = new DateTime($existingStartDate);
-          return $startDate->format('Y-m-d');
-        }
       }
 
       if (empty($lineItem['memberhsip_end_date'])) {
