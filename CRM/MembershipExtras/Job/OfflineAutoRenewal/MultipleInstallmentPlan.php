@@ -280,6 +280,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
         'entity_table' => ['IS NOT NULL' => 1],
         'entity_id' => ['IS NOT NULL' => 1],
       ],
+      'options' => ['limit' => 0],
     ]);
 
     if (!$lineItems['count']) {
