@@ -25,7 +25,10 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends Base
     $originalDurationDays = 360;
     $calculatedDays = 60;
     $membershipType = MembershipTypeFabricator::fabricate(['minimum_fee' => 120]);
-    $expectedProrata = 20; //i.e 60/360 *120
+
+    // Expected prorata: 60/360 * 120 = 20
+    $expectedProrata = 20;
+
     $membershipTypeDuration = $this->getMembershipTypeDuration($originalDurationDays, $calculatedDays);
     $taxAmount = 0;
     $membershipTypeTaxAmount = $this->getMembershipTypeTaxAmount($membershipType, $expectedProrata, $taxAmount);
@@ -39,9 +42,12 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends Base
     $originalDurationDays = 360;
     $calculatedDays = 60;
     $membershipType = MembershipTypeFabricator::fabricate(['minimum_fee' => 120], TRUE);
-    $expectedProrata = 20; //i.e 60/360 *120 + 10tax
+
+    // Expected Prorata: 60/360 * 120
+    $expectedProrata = 20;
     $taxAmount = 30;
-    $expectedTotal =  $expectedProrata + $taxAmount;
+    $expectedTotal = $expectedProrata + $taxAmount;
+
     $membershipTypeDuration = $this->getMembershipTypeDuration($originalDurationDays, $calculatedDays);
     $membershipTypeTaxAmount = $this->getMembershipTypeTaxAmount($membershipType, $expectedProrata, $taxAmount);
     $membershipTypeAmount = new MembershipTypeAmount($membershipTypeDuration, $membershipTypeTaxAmount);
@@ -65,5 +71,5 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends Base
 
     return $membershipTypeTaxAmount->reveal();
   }
-}
 
+}
