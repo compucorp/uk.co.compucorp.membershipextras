@@ -51,7 +51,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Start date for renewed memberships.
    *
-   * @var
+   * @var string
    */
   protected $membershipsStartDate;
 
@@ -66,7 +66,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * The list of line items to be created.
    *
-   * @var
+   * @var array
    */
   protected $lineItems;
 
@@ -158,7 +158,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * Loads value for Pending contribution status into a class attribute.
    */
   private function setContributionPendingStatusValue() {
-    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+    $this->contributionPendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
@@ -196,7 +196,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Loads list of manual payment processors into an array as a class attribute.
    */
-    private function setManualPaymentProcessorIDs() {
+  private function setManualPaymentProcessorIDs() {
     $payLaterProcessorID = 0;
     $this->manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
   }
@@ -217,7 +217,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         $this->setLastContribution();
         $this->renew();
         $this->dispatchMembershipRenewalHook();
-      } catch (Exception $e) {
+      }
+      catch (Exception $e) {
         $transaction->rollback();
         $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
       }
@@ -281,9 +282,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'return' => ['currency', 'contribution_source', 'net_amount',
-        'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
-        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
+      'return' => [
+        'currency', 'contribution_source', 'net_amount', 'contact_id',
+        'fee_amount', 'total_amount', 'payment_instrument_id', 'is_test',
+        'tax_amount', 'contribution_recur_id', 'financial_type_id',
+      ],
       'contribution_recur_id' => $this->currentRecurContributionID,
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];
@@ -293,6 +296,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'return' => ['contact_id', 'soft_credit_type_id'],
       'contribution_id' => $contribution['id'],
     ]);
+
     if (!empty($softContribution['values'][0])) {
       $softContribution = $softContribution['values'][0];
       $contribution['soft_credit'] = [
@@ -328,17 +332,20 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
+   * Calculates the unit price for the line item.
+   *
    * Calculates the unit price for the line item, checking if it is a membership
    * that requires its price to be updated to latest.
    *
    * @param array $lineItem
    *
    * @return float
+   * @throws \CiviCRM_API3_Exception
    */
   protected function calculateLineItemUnitPrice($lineItem) {
     $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
     if (!$this->isMembershipLineItem($lineItem, $priceFieldValue)) {
-      return  $lineItem['unit_price'];
+      return $lineItem['unit_price'];
     }
 
     $membershipMinimumFee = $this->getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue);
@@ -358,6 +365,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param int $priceFieldValueID
    *
    * @return array
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getPriceFieldValue($priceFieldValueID) {
     return civicrm_api3('PriceFieldValue', 'getsingle', [
@@ -516,7 +524,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    */
   protected function renewPaymentPlanMemberships($sourceRecurringContribution) {
     $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($sourceRecurringContribution);
-    $existingMembershipID = null;
+    $existingMembershipID = NULL;
 
     foreach ($recurringLineItems as $lineItem) {
       $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
@@ -528,7 +536,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
       if ($existingMembershipID) {
         $this->extendExistingMembership($existingMembershipID, $this->membershipsStartDate);
-      } else {
+      }
+      else {
         $existingMembershipID = $this->createMembership($lineItem, $priceFieldValue);
       }
 
@@ -551,14 +560,14 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function getExistingMembershipForLineItem($lineItem, $priceFieldValue) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       return $lineItem['entity_id'];
-    } else {
-      if (!$lineItem['price_field_value_id']) {
-        return 0;
-      }
+    }
 
-      if (!$priceFieldValue['membership_type_id']) {
-        return 0;
-      }
+    if (!$lineItem['price_field_value_id']) {
+      return 0;
+    }
+
+    if (!$priceFieldValue['membership_type_id']) {
+      return 0;
     }
 
     $memberships = civicrm_api3('Membership', 'get', [
@@ -655,7 +664,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $recurringContributionLineItems = $this->getNewPaymentPlanActiveLineItems();
 
     $lineItemsList = [];
-    foreach($recurringContributionLineItems as $lineItem) {
+    foreach ($recurringContributionLineItems as $lineItem) {
       $unitPrice = $this->calculateLineItemUnitPrice($lineItem);
       $lineTotal = MoneyUtilities::roundToCurrencyPrecision($unitPrice * $lineItem['qty']);
       $taxAmount = $this->calculateLineItemTaxAmount($lineTotal, $lineItem['financial_type_id']);
@@ -702,7 +711,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected function setTotalAndTaxAmount() {
     $totalAmount = 0;
     $taxAmount = 0;
-    foreach ($this->lineItems  as $lineItem) {
+    foreach ($this->lineItems as $lineItem) {
       $totalAmount += $lineItem['line_total'];
       if (!empty($lineItem['tax_amount'])) {
         $totalAmount += $lineItem['tax_amount'];
@@ -718,12 +727,12 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * Records the payment plan first contribution.
    */
   protected function recordPaymentPlanFirstContribution() {
-    $params =  [
+    $params = [
       'currency' => $this->lastContribution['currency'],
       'source' => $this->lastContribution['contribution_source'],
       'contact_id' => $this->lastContribution['contact_id'],
       'fee_amount' => $this->lastContribution['fee_amount'],
-      'net_amount' =>  $this->totalAmount - $this->lastContribution['fee_amount'],
+      'net_amount' => $this->totalAmount - $this->lastContribution['fee_amount'],
       'total_amount' => $this->totalAmount,
       'receive_date' => $this->paymentPlanStartDate,
       'payment_instrument_id' => $this->lastContribution['payment_instrument_id'],
@@ -760,7 +769,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'Contribution'
     );
 
-    foreach($this->lineItems as &$lineItem) {
+    foreach ($this->lineItems as &$lineItem) {
       $lineItem['contribution_id'] = $contribution->id;
 
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
@@ -848,7 +857,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $membershipEndDate = new DateTime($lineItem['memberhsip_end_date']);
       if (!isset($latestDate)) {
         $latestDate = $membershipEndDate;
-      } elseif ($latestDate < $membershipEndDate) {
+      }
+      elseif ($latestDate < $membershipEndDate) {
         $latestDate = $membershipEndDate;
       }
     }
