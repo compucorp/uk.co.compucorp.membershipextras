@@ -603,13 +603,48 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *   ID of the membership to be extended.
    * @param string $startDate
    *   New start date for the membership.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function extendExistingMembership($membershipID, $startDate) {
-    $membership = new CRM_Member_DAO_Membership();
-    $membership->id = $membershipID;
-    $membership->start_date = $startDate;
-    $membership->end_date = MembershipEndDateCalculator::calculate($membershipID);
-    $membership->save();
+    $endDate = MembershipEndDateCalculator::calculate($membershipID);
+    $relatedMemberships = $this->loadRelatedMembershipIDs($membershipID);
+    $membershipsToExtend = [$membershipID];
+    $membershipsToExtend = array_merge($membershipsToExtend, $relatedMemberships);
+
+    foreach ($membershipsToExtend as $relatedMembershipID) {
+      $membership = new CRM_Member_DAO_Membership();
+      $membership->id = $relatedMembershipID;
+      $membership->start_date = $startDate;
+      $membership->end_date = $endDate;
+      $membership->save();
+    }
+  }
+
+  /**
+   * Obtains list of memberships related to given membership ID.
+   *
+   * @param int $membershipID
+   *
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function loadRelatedMembershipIDs($membershipID) {
+    $result = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'owner_membership_id' => $membershipID,
+    ]);
+
+    if ($result['count'] < 1) {
+      return [];
+    }
+
+    $memberships = [];
+    foreach ($result['values'] as $row) {
+      $memberships[] = $row['id'];
+    }
+
+    return $memberships;
   }
 
   /**
