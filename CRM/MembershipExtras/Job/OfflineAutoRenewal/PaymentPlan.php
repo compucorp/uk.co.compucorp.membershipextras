@@ -381,7 +381,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @return boolean
    */
-  protected function isMembershipLineItem($lineItem, $priceFieldValue = null) {
+  protected function isMembershipLineItem($lineItem, $priceFieldValue = NULL) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       return TRUE;
     }
@@ -408,7 +408,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $membershipTypeID = civicrm_api3('Membership', 'getsingle', [
         'id' => $lineItem['entity_id'],
       ])['membership_type_id'];
-    } else {
+    }
+    else {
       $membershipTypeID = $priceFieldValue['membership_type_id'];
     }
 
@@ -457,7 +458,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return mixed
    */
   private function calculateSingleInstallmentAmount($amount) {
-    $resultAmount =  $amount;
+    $resultAmount = $amount;
 
     if ($this->currentRecurringContribution['installments'] > 1) {
       $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->currentRecurringContribution['installments']));
