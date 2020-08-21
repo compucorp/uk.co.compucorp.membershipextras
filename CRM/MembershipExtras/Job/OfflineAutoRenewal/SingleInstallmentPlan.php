@@ -169,7 +169,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
-        'entity_id' => ['IS NOT NULL' => 1]
+        'entity_id' => ['IS NOT NULL' => 1],
       ],
       'options' => ['limit' => 0],
     ]);
@@ -286,7 +286,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $result = [];
     foreach ($lineItems['values'] as $line) {
       $lineData = $line['api.LineItem.getsingle'];
-      $result[] =  $lineData;
+      $result[] = $lineData;
     }
 
     return $result;

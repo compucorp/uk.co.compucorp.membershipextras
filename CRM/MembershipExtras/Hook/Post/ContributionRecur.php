@@ -41,7 +41,7 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
     if ($contributionStatus === 'Completed' && $this->contributionRecurBAO->installments > 1) {
       $subscriptionLines = $this->getSubscriptionLines();
 
-      foreach($subscriptionLines as $line) {
+      foreach ($subscriptionLines as $line) {
         if (!empty($line['start_date']) && empty($line['end_date'])) {
           civicrm_api3('ContributionRecurLineItem', 'create', [
             'id' => $line['id'],
@@ -65,7 +65,7 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
-        'entity_id' => ['IS NOT NULL' => 1]
+        'entity_id' => ['IS NOT NULL' => 1],
       ],
     ]);
 
@@ -79,13 +79,15 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
   private function calculateSubscriptionLineItemEndDate($subscriptionLineItem) {
     $entityTable = $subscriptionLineItem['api.LineItem.getsingle']['entity_table'];
     if ($entityTable == 'civicrm_membership') {
-      $membershipId =  $subscriptionLineItem['api.LineItem.getsingle']['entity_id'];
-      return  civicrm_api3('Membership', 'getvalue', [
+      $membershipId = $subscriptionLineItem['api.LineItem.getsingle']['entity_id'];
+      return civicrm_api3('Membership', 'getvalue', [
         'return' => 'end_date',
         'id' => $membershipId,
       ]);
-    } else {
+    }
+    else {
       return $this->contributionRecurBAO->end_date;
     }
   }
+
 }
