@@ -125,13 +125,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    * @inheritdoc
    */
   public function renew() {
+    $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
+    $this->paymentPlanStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
+
     $this->endCurrentLineItemsAndCreateNewOnesForNextPeriod($this->currentRecurContributionID);
     $this->updateRecurringContributionAmount($this->currentRecurContributionID);
     $this->setNewRecurringContribution();
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
-    $this->paymentPlanStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
-    $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate() ?: $this->paymentPlanStartDate;
 
     $this->recordPaymentPlanFirstContribution();
     $this->renewPaymentPlanMemberships($this->currentRecurContributionID);
@@ -155,8 +156,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    * @param $recurringContributionID
    */
   private function endCurrentLineItemsAndCreateNewOnesForNextPeriod($recurringContributionID) {
-    $newStartDate = new DateTime($this->calculateNoInstallmentsPaymentPlanStartDate());
-    $newEndDate = new DateTime($newStartDate->format('Y-m-d'));
+    $newStartDate = new DateTime($this->membershipsStartDate);
+
+    $newEndDate = new DateTime($this->membershipsStartDate);
     $newEndDate->sub(new DateInterval('P1D'));
 
     $lineItems = civicrm_api3('ContributionRecurLineItem', 'get', [
@@ -167,7 +169,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
-        'entity_id' => ['IS NOT NULL' => 1]
+        'entity_id' => ['IS NOT NULL' => 1],
       ],
       'options' => ['limit' => 0],
     ]);
@@ -228,13 +230,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
       'id' => $this->currentRecurContributionID,
     ])['values'][0];
     $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($currentRecurContribution);
+    $installmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
 
-    $paymentPlanContributionsCount = civicrm_api3('Contribution', 'getcount', [
-      'contribution_recur_id' => $this->currentRecurContributionID,
-      'contribution_status_id' => ['Pending', 'Completed'],
-    ]);
-
-    return $installmentReceiveDateCalculator->calculate($paymentPlanContributionsCount + 1);
+    return $installmentReceiveDateCalculator->calculate();
   }
 
   /**
@@ -288,7 +286,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $result = [];
     foreach ($lineItems['values'] as $line) {
       $lineData = $line['api.LineItem.getsingle'];
-      $result[] =  $lineData;
+      $result[] = $lineData;
     }
 
     return $result;
