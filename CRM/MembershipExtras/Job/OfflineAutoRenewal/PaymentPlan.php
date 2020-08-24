@@ -1,6 +1,7 @@
 <?php
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
+use CRM_MembershipExtras_SettingsManager as SettingsManager;
 
 /**
  * Renews a payment plan.
@@ -51,7 +52,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Start date for renewed memberships.
    *
-   * @var
+   * @var date
    */
   protected $membershipsStartDate;
 
@@ -66,7 +67,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * The list of line items to be created.
    *
-   * @var
+   * @var array
    */
   protected $lineItems;
 
@@ -158,7 +159,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * Loads value for Pending contribution status into a class attribute.
    */
   private function setContributionPendingStatusValue() {
-    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+    $this->contributionPendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
@@ -196,7 +197,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Loads list of manual payment processors into an array as a class attribute.
    */
-    private function setManualPaymentProcessorIDs() {
+  private function setManualPaymentProcessorIDs() {
     $payLaterProcessorID = 0;
     $this->manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
   }
@@ -217,7 +218,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         $this->setLastContribution();
         $this->renew();
         $this->dispatchMembershipRenewalHook();
-      } catch (Exception $e) {
+      }
+      catch (Exception $e) {
         $transaction->rollback();
         $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
       }
@@ -283,7 +285,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'sequential' => 1,
       'return' => ['currency', 'contribution_source', 'net_amount',
         'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
-        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
+        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id',
+      ],
       'contribution_recur_id' => $this->currentRecurContributionID,
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];
@@ -338,7 +341,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected function calculateLineItemUnitPrice($lineItem) {
     $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
     if (!$this->isMembershipLineItem($lineItem, $priceFieldValue)) {
-      return  $lineItem['unit_price'];
+      return $lineItem['unit_price'];
     }
 
     $membershipMinimumFee = $this->getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue);
@@ -373,7 +376,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @return boolean
    */
-  protected function isMembershipLineItem($lineItem, $priceFieldValue = null) {
+  protected function isMembershipLineItem($lineItem, $priceFieldValue = NULL) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       return TRUE;
     }
@@ -400,7 +403,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $membershipTypeID = civicrm_api3('Membership', 'getsingle', [
         'id' => $lineItem['entity_id'],
       ])['membership_type_id'];
-    } else {
+    }
+    else {
       $membershipTypeID = $priceFieldValue['membership_type_id'];
     }
 
@@ -449,7 +453,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return mixed
    */
   private function calculateSingleInstallmentAmount($amount) {
-    $resultAmount =  $amount;
+    $resultAmount = $amount;
 
     if ($this->currentRecurringContribution['installments'] > 1) {
       $resultAmount = MoneyUtilities::roundToCurrencyPrecision(($amount / $this->currentRecurringContribution['installments']));
@@ -516,7 +520,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    */
   protected function renewPaymentPlanMemberships($sourceRecurringContribution) {
     $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($sourceRecurringContribution);
-    $existingMembershipID = null;
+    $existingMembershipID = NULL;
 
     foreach ($recurringLineItems as $lineItem) {
       $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
@@ -527,8 +531,9 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $existingMembershipID = $this->getExistingMembershipForLineItem($lineItem, $priceFieldValue);
 
       if ($existingMembershipID) {
-        $this->extendExistingMembership($existingMembershipID, $this->membershipsStartDate);
-      } else {
+        $this->extendExistingMembership($existingMembershipID);
+      }
+      else {
         $existingMembershipID = $this->createMembership($lineItem, $priceFieldValue);
       }
 
@@ -551,7 +556,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function getExistingMembershipForLineItem($lineItem, $priceFieldValue) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       return $lineItem['entity_id'];
-    } else {
+    }
+    else {
       if (!$lineItem['price_field_value_id']) {
         return 0;
       }
@@ -601,13 +607,18 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @param int $membershipID
    *   ID of the membership to be extended.
-   * @param string $startDate
-   *   New start date for the membership.
    */
-  private function extendExistingMembership($membershipID, $startDate) {
+  private function extendExistingMembership($membershipID) {
     $membership = new CRM_Member_DAO_Membership();
     $membership->id = $membershipID;
-    $membership->start_date = $startDate;
+
+    //if user opt-out for update start date renewal
+    //then get an existing start date from the renewal membership
+    $isUpdateStartDateRenewal = self::isUpdateStartDateRenewal();
+    if ($isUpdateStartDateRenewal) {
+      $membership->start_date = $this->membershipsStartDate;
+    }
+
     $membership->end_date = MembershipEndDateCalculator::calculate($membershipID);
     $membership->save();
   }
@@ -620,7 +631,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $recurringContributionLineItems = $this->getNewPaymentPlanActiveLineItems();
 
     $lineItemsList = [];
-    foreach($recurringContributionLineItems as $lineItem) {
+    foreach ($recurringContributionLineItems as $lineItem) {
       $unitPrice = $this->calculateLineItemUnitPrice($lineItem);
       $lineTotal = MoneyUtilities::roundToCurrencyPrecision($unitPrice * $lineItem['qty']);
       $taxAmount = $this->calculateLineItemTaxAmount($lineTotal, $lineItem['financial_type_id']);
@@ -667,7 +678,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected function setTotalAndTaxAmount() {
     $totalAmount = 0;
     $taxAmount = 0;
-    foreach ($this->lineItems  as $lineItem) {
+    foreach ($this->lineItems as $lineItem) {
       $totalAmount += $lineItem['line_total'];
       if (!empty($lineItem['tax_amount'])) {
         $totalAmount += $lineItem['tax_amount'];
@@ -683,12 +694,12 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * Records the payment plan first contribution.
    */
   protected function recordPaymentPlanFirstContribution() {
-    $params =  [
+    $params = [
       'currency' => $this->lastContribution['currency'],
       'source' => $this->lastContribution['contribution_source'],
       'contact_id' => $this->lastContribution['contact_id'],
       'fee_amount' => $this->lastContribution['fee_amount'],
-      'net_amount' =>  $this->totalAmount - $this->lastContribution['fee_amount'],
+      'net_amount' => $this->totalAmount - $this->lastContribution['fee_amount'],
       'total_amount' => $this->totalAmount,
       'receive_date' => $this->paymentPlanStartDate,
       'payment_instrument_id' => $this->lastContribution['payment_instrument_id'],
@@ -725,7 +736,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'Contribution'
     );
 
-    foreach($this->lineItems as &$lineItem) {
+    foreach ($this->lineItems as &$lineItem) {
       $lineItem['contribution_id'] = $contribution->id;
 
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
@@ -801,6 +812,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected function calculateRenewedMembershipsStartDate() {
     $latestDate = NULL;
     $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+
     foreach ($currentPeriodLines as $lineItem) {
       if ($lineItem['entity_table'] != 'civicrm_membership') {
         continue;
@@ -813,9 +825,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $membershipEndDate = new DateTime($lineItem['memberhsip_end_date']);
       if (!isset($latestDate)) {
         $latestDate = $membershipEndDate;
-      } elseif ($latestDate < $membershipEndDate) {
+      }
+      elseif ($latestDate < $membershipEndDate) {
         $latestDate = $membershipEndDate;
       }
+
     }
 
     if ($latestDate) {
@@ -824,6 +838,32 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     }
 
     return NULL;
+  }
+
+  /**
+   * Check if update start date renewal is selected.
+   *
+   * @return bool
+   */
+  public static function isUpdateStartDateRenewal() {
+    $updateStartDateRenewalSetting = SettingsManager::getUpdateStartDateRenewal();
+    if ($updateStartDateRenewalSetting == 1) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Get existing membership start date by membership id
+   *
+   * @param $id
+   * @return mixed
+   */
+  public static function getExistingMembershipStartDate($id) {
+    return civicrm_api3('Membership', 'getsingle', [
+      'return' => ["start_date"],
+      'id' => $id,
+    ])['start_date'];
   }
 
 }

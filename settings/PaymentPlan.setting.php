@@ -23,7 +23,7 @@ return [
     'quick_form_type' => 'Element',
     'add' => '4.7',
     'pseudoconstant' => [
-      'name' =>  'paymentProcessor',
+      'name' => 'paymentProcessor',
     ],
     'title' => 'Offline payment processor for back office',
     'html_type' => 'select',
@@ -59,5 +59,16 @@ return [
       'multiple' => 'multiple',
       'placeholder' => ts('- select -'),
     ],
+  ],
+  'membershipextras_paymentplan_update_start_date_renewal' => [
+    'group_name' => 'MembershipExtras: Payment Plan',
+    'group' => 'membershipextras_paymentplan',
+    'name' => 'membershipextras_paymentplan_update_start_date_renewal',
+    'title' => 'Update start date on renewal?',
+    'type' => 'Integer',
+    'html_type' => 'checkbox',
+    'quick_form_type' => 'Element',
+    'default' => FALSE,
+    'is_required' => FALSE,
   ],
 ];

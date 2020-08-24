@@ -6,6 +6,7 @@
 class CRM_MembershipExtras_SettingsManager {
 
   const COLOUR_SETTINGS_KEY = 'membership_type_colour';
+
   /**
    * Returns the details of the default payment processor as per payment plan
    * settings, or NULL if it does not exist.
@@ -48,7 +49,7 @@ class CRM_MembershipExtras_SettingsManager {
     }
 
     $customFieldsIdsToExcludeForAutoRenew = [];
-    foreach($customFieldsToExcludeForAutoRenew['values'] as $customField) {
+    foreach ($customFieldsToExcludeForAutoRenew['values'] as $customField) {
       $customFieldsIdsToExcludeForAutoRenew[] = $customField['id'];
     }
 
@@ -76,6 +77,20 @@ class CRM_MembershipExtras_SettingsManager {
     $luminance = (0.2126 * $c[0]) + (0.7152 * $c[1]) + (0.0722 * $c[2]);
 
     return ($luminance > 0.179) ? '#000000' : '#ffffff';
+  }
+
+  /**
+   * Gets Update start date renewal configuration
+   *
+   * @return int
+   */
+  public static function getUpdateStartDateRenewal() {
+    $updateStartDateRenewal = self::getSettingValue('membershipextras_paymentplan_update_start_date_renewal');
+    if (empty($updateStartDateRenewal)) {
+      $updateStartDateRenewal = 0;
+    }
+
+    return $updateStartDateRenewal;
   }
 
   /**

@@ -174,7 +174,8 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       ]);
 
       return $result['api.MembershipType.getsingle'];
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       return [];
     }
   }
@@ -314,18 +315,15 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @throws \Exception
    */
   private function getEarliestLineStartDate($lineItems) {
-    $earliestDate = null;
+    $earliestDate = NULL;
 
     foreach ($lineItems as $line) {
       $startDate = new DateTime($line['start_date']);
-      if ($line['entity_table'] === 'civicrm_membership') {
-        $membership = $this->getMembership($line['entity_id']);
-        $startDate = new DateTime($membership['start_date']);
-      }
 
       if (!isset($earliestDate)) {
         $earliestDate = $startDate;
-      } elseif ($earliestDate > $startDate) {
+      }
+      elseif ($earliestDate > $startDate) {
         $earliestDate = $startDate;
       }
     }
@@ -369,7 +367,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return string
    */
   private function getLargestMembershipEndDate($lineItems) {
-    $latestDate = null;
+    $latestDate = NULL;
 
     foreach ($lineItems as $line) {
       if ($line['entity_table'] != 'civicrm_membership') {
@@ -381,7 +379,8 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
       if (!isset($latestDate)) {
         $latestDate = $membershipDate;
-      } elseif ($latestDate < $membershipDate) {
+      }
+      elseif ($latestDate < $membershipDate) {
         $latestDate = $membershipDate;
       }
     }
@@ -452,7 +451,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
-        'entity_id' => ['IS NOT NULL' => 1]
+        'entity_id' => ['IS NOT NULL' => 1],
       ],
     ]);
 

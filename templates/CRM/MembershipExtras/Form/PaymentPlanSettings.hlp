@@ -30,3 +30,10 @@
  of an existing payment plan when it auto-renews.{/ts}
 {/htxt}
 
+{htxt id="membershipextras_paymentplan_update_start_date_renewal-title"}
+{ts}Update start date on renewal{/ts}
+{/htxt}
+{htxt id="membershipextras_paymentplan_update_start_date_renewal"}
+{ts}If the field is selected, on membership auto-renewed, 
+the start date of the membership period is set as the end date of the last period + 1 day, so the start date increases each period{/ts}
+{/htxt}
