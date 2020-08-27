@@ -247,6 +247,10 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
   }
 
   if ($objectName == 'MembershipPayment') {
+    $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithAtLeastOneInstallment();
+    if (!$isPaymentPlanPayment) {
+      return;
+    }
     $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment($op, $objectId, $objectRef);
     $membershipPaymentPostHook->postProcess();
   }
