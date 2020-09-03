@@ -34,11 +34,27 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    */
   private $membership;
 
+  /**
+   * The recur contribution (payment plan) this payment
+   * is attached to (if any).
+   *
+   * @var int
+   */
+  private $relatedRecurContributionId;
+
   public function __construct($operation, $objectId, CRM_Member_DAO_MembershipPayment $objectRef) {
     $this->operation = $operation;
     $this->id = $objectId;
     $this->membershipPayment = $objectRef;
     $this->setMembership();
+    $this->setRelatedRecurContributionId();
+  }
+
+  private function setRelatedRecurContributionId() {
+    $this->relatedRecurContributionId = civicrm_api3('Contribution', 'getvalue', [
+      'id' => $this->membershipPayment->contribution_id,
+      'return' => 'contribution_recur_id',
+    ]);
   }
 
   private function setMembership() {
@@ -53,7 +69,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    * Post-processes a membership payment on creation and update.
    */
   public function postProcess() {
-    if ($this->operation == 'create') {
+    if ($this->operation == 'create' && !empty($this->relatedRecurContributionId)) {
       $this->fixRecurringLineItemMembershipReferences();
       $this->recalculateMembershipStatus();
     }
@@ -149,18 +165,13 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    * @return array
    */
   private function getRelatedRecurringLineItem() {
-    $recurringContributionID = civicrm_api3('Contribution', 'getvalue', [
-      'id' => $this->membershipPayment->contribution_id,
-      'return' => 'contribution_recur_id',
-    ]);
-
     $recurringLineItems = civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
-      'contribution_recur_id' => $recurringContributionID,
+      'contribution_recur_id' => $this->relatedRecurContributionId,
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
-        'entity_id' => ['IS NOT NULL' => 1]
+        'entity_id' => ['IS NOT NULL' => 1],
       ],
     ]);
 
