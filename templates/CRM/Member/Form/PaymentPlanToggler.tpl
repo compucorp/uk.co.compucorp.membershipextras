@@ -12,7 +12,7 @@
     const membershipextrasAllMembershipData = {$allMembershipInfo};
     const membershipextrasTaxRatesStr = '{$taxRates}';
     const membershipextrasTaxTerm = '{$taxTerm}';
-    const membershipextrasCurrency = '{$currency}';
+    const membershipextrasCurrency = '{$currency_symbol}';
     {literal}
     const membershipextrasTaxRates = membershipextrasTaxRatesStr !== ''
       ? JSON.parse(membershipextrasTaxRatesStr)
