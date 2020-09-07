@@ -1,7 +1,5 @@
 <?php
 
-use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
-
 class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
 
   /**
@@ -30,40 +28,18 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
   }
 
   /**
-   * Processes the membership new/renew form
-   * to handle offline auto-renewal.
+   * Processes the membership offline auto-renewal.
    */
   public function postProcess() {
-    if (!$this->isOfflineAutoRenewMembership() || $this->membershipIsAlreadyAutoRenew()) {
+    if (!$this->isPaymentPlanWithAtLeastOneInstallment() ||  $this->isMembershipAlreadyAutoRenewed()) {
       return;
     }
 
-    $isPaymentPlanWithAtLeastOneInstallment = $this->isPaymentPlanWithAtLeastOneInstallment();
-    if ($isPaymentPlanWithAtLeastOneInstallment) {
-      $recurContributionID = $this->getMembershipLastRecurContributionID();
-    }
-    else {
-      $recurContributionID = $this->createAutoRenewRecurContribution();
-      $this->updateContributionRecurringContribution($recurContributionID);
-      $this->createRecurringSubscriptionLineItems($recurContributionID);
-    }
-
+    $recurContributionID = $this->getMembershipLastRecurContributionID();
     $this->setMembershipToAutoRenew($recurContributionID);
+    $this->setRecurContributionAutoRenew($recurContributionID);
+    $this->setRecurringLineItemsAsAutoRenew($recurContributionID);
 
-    if ($isPaymentPlanWithAtLeastOneInstallment) {
-      $this->setRecurContributionAutoRenew($recurContributionID);
-      $this->setRecurringLineItemsAsAutoRenew($recurContributionID);
-    }
-  }
-
-  /**
-   * Determines if the user selected
-   * offline auto-renew option or not.
-   *
-   * @return mixed
-   */
-  private function isOfflineAutoRenewMembership() {
-    return CRM_Utils_Request::retrieve('offline_auto_renew', 'Int');
   }
 
   /**
@@ -72,8 +48,20 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
    *
    * @return mixed
    */
-  private function membershipIsAlreadyAutoRenew() {
-    return CRM_Utils_Request::retrieve('membership_is_already_autorenew', 'Int');
+  private function isMembershipAlreadyAutoRenewed() {
+    $isAlreadyAutoRenew = FALSE;
+    if (!empty($this->form->_id)) {
+      $membership = civicrm_api3('Membership', 'get', [
+        'sequential' => 1,
+        'return' => ['contribution_recur_id'],
+        'id' => $this->form->_id,
+      ]);
+      if (!empty($membership['values'][0]['contribution_recur_id'])) {
+        $isAlreadyAutoRenew = TRUE;
+      }
+    }
+
+    return $isAlreadyAutoRenew;
   }
 
   /**
@@ -112,115 +100,6 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
   }
 
   /**
-   * Creates recurring contribution for the auto-renewed
-   * membership.
-   * (For contribution payment type)
-   *
-   * @return int
-   */
-  private function createAutoRenewRecurContribution() {
-    $paymentInstrument = 'null';
-    if (!empty($this->formSubmittedValues['payment_instrument_id'])) {
-      $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
-        'return' => 'name',
-        'option_group_id' => 'payment_instrument',
-        'value' => $this->formSubmittedValues['payment_instrument_id'],
-      ]);
-    }
-
-    $financialType = 'null';
-    if (!empty($this->formSubmittedValues['financial_type_id'])) {
-      $financialType = civicrm_api3('FinancialType', 'getvalue', [
-        'return' => 'name',
-        'id' => $this->formSubmittedValues['financial_type_id'],
-      ]);
-    }
-
-    $payLaterPaymentProcessorId = CRM_MembershipExtras_SettingsManager::getDefaultProcessorID();
-    $minimumFrequencyData =  $this->calculateMinimumFrequencyUnitAndInterval();
-
-    $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->formSubmittedValues['receive_date'], $minimumFrequencyData['unit']);
-
-    $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
-      'sequential' => 1,
-      'contact_id' => $this->form->_contactID,
-      'amount' => $this->formSubmittedValues['total_amount'],
-      'frequency_unit' => $minimumFrequencyData['unit'],
-      'frequency_interval' => $minimumFrequencyData['interval'],
-      'installments' => 'null',
-      'contribution_status_id' => 'Pending',
-      'is_test' => 0,
-      'cycle_day' => $cycleDay,
-      'auto_renew' => 1,
-      'payment_processor_id' => $payLaterPaymentProcessorId,
-      'financial_type_id' => $financialType,
-      'payment_instrument_id' => $paymentInstrument,
-      'start_date' => $this->formSubmittedValues['receive_date'],
-    ])['values'][0];
-
-    return $newRecurringContribution['id'];
-  }
-
-  /**
-   * Updates the contribution_recur_id field value for the
-   * membership contribution if it paid using "contribution" option
-   * to point to the auto-renew recurring contribution.
-   *
-   * @param $recurContributionID
-   */
-  private function updateContributionRecurringContribution($recurContributionID) {
-    $lastMembershipContribution = civicrm_api3('MembershipPayment', 'get', [
-      'sequential' => 1,
-      'return' => ['contribution_id'],
-      'membership_id' => $this->membershipIDs[0],
-      'options' => ['limit' => 1, 'sort' => 'id DESC'],
-    ]);
-
-    if (!empty($lastMembershipContribution['values'][0])){
-      civicrm_api3('Contribution', 'create', array(
-        'id' => $lastMembershipContribution['values'][0]['contribution_id'],
-        'contribution_recur_id' => $recurContributionID,
-      ));
-    }
-  }
-
-  /**
-   * If the membership is paid using PriceSet
-   * that allows the creation of more than
-   * one membership to be associated with
-   * the same recurring contribution, Then
-   * we use this method to determine the membership
-   * with the type that has the minimum frequency
-   * unit and interval so we can use it to set
-   * the recurring contribution unit and interval.
-   *
-   * @return array
-   *   With two keys, 'unit' and 'interval'
-   */
-  private function calculateMinimumFrequencyUnitAndInterval() {
-    $frequencyUnitOrderMap = [
-      'day'   => 1,
-      'week'  => 2,
-      'month' => 3,
-      'year'  => 4,
-    ];
-
-    $frequencyUnitsList= [];
-    $frequencyIntervalsList= [];
-    $allMembershipTypeDetails = CRM_Member_BAO_Membership::buildMembershipTypeValues($this->form, array(), TRUE);
-    $membershipsToBeCreatedTypes = $this->getMembershipFormProtectedPropertyValue('_memTypeSelected');
-    foreach($membershipsToBeCreatedTypes as $membershipTypeID) {
-      $unitName = $allMembershipTypeDetails[$membershipTypeID]['duration_unit'];
-      $frequencyUnitsList[] = $frequencyUnitOrderMap[$unitName];
-      $frequencyIntervalsList[] = $allMembershipTypeDetails[$membershipTypeID]['duration_interval'];
-    }
-
-    array_multisort($frequencyUnitsList, $frequencyIntervalsList);
-
-    return ['unit' => array_search($frequencyUnitsList[0], $frequencyUnitOrderMap), 'interval' => $frequencyIntervalsList[0]];
-  }
-
-  /**
    * Sets the created memberships
    * contribution_recur_id fielda to refer to
    * the created auto-renew recurring contribution.
@@ -237,17 +116,6 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
         'contribution_recur_id' => $recurContributionID,
       ]);
     }
-  }
-
-  /**
-   * Creates recurring contribution's line items to set up current and next
-   * periods.
-   *
-   * @param $recurContributionID
-   */
-  private function createRecurringSubscriptionLineItems($recurContributionID ) {
-    $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
-    $lineItemCreator->create();
   }
 
   /**
