@@ -287,8 +287,8 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
  */
 function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::UPDATE)) {
-    $offlineAutoRenew = new CRM_MembershipExtras_Hook_BuildForm_MembershipEdit($form);
-    $offlineAutoRenew->buildForm();
+    $membershipEdit = new CRM_MembershipExtras_Hook_BuildForm_MembershipEdit($form);
+    $membershipEdit->buildForm();
   }
 
   if (
