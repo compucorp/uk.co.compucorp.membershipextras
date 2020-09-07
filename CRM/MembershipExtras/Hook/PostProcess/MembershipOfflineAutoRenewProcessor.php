@@ -120,7 +120,6 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
     }
   }
 
-
   /**
    * Gets the value of the specified
    * protected (or private) form object
