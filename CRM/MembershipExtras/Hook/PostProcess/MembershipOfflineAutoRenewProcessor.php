@@ -10,6 +10,8 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
   private $form;
 
   /**
+   * @var int
+   *
    * The membership IDs that are created/renewed
    */
   private  $membershipIDs;
@@ -109,7 +111,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
    * @param $recurContributionID
    */
   private function setMembershipToAutoRenew($recurContributionID) {
-    foreach($this->membershipIDs as $membershipID) {
+    foreach ($this->membershipIDs as $membershipID) {
       civicrm_api3('Membership', 'create', [
         'sequential' => 1,
         'id' => $membershipID,
@@ -117,6 +119,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
       ]);
     }
   }
+
 
   /**
    * Gets the value of the specified
@@ -137,7 +140,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
   private function getMembershipFormProtectedPropertyValue($propertyName) {
     $formReflection = new ReflectionObject($this->form);
     $propertyReflection = $formReflection->getProperty($propertyName);
-    $propertyReflection->setAccessible(true);
+    $propertyReflection->setAccessible(TRUE);
     return $propertyReflection->getValue($this->form);
   }
 
