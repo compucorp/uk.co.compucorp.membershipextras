@@ -1,6 +1,6 @@
 <?php
 
-class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor{
+class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor {
 
   /**
    * @var \CRM_Member_Form
