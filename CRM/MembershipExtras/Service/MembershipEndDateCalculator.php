@@ -24,11 +24,11 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculator {
         break;
 
       case 'day':
-        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] .'D';
+        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] . 'D';
         break;
 
       case 'year':
-        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] .'Y';
+        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] . 'Y';
         break;
 
       default:

@@ -557,14 +557,13 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       return $lineItem['entity_id'];
     }
-    else {
-      if (!$lineItem['price_field_value_id']) {
-        return 0;
-      }
 
-      if (!$priceFieldValue['membership_type_id']) {
-        return 0;
-      }
+    if (!$lineItem['price_field_value_id']) {
+      return 0;
+    }
+
+    if (!$priceFieldValue['membership_type_id']) {
+      return 0;
     }
 
     $memberships = civicrm_api3('Membership', 'get', [
