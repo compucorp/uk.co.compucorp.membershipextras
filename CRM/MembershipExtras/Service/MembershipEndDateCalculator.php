@@ -18,21 +18,30 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculator {
     ])['values'][0];
 
     $currentEndDate = new DateTime($membershipDetails['end_date']);
-
     switch ($membershipDetails['membership_type_id.duration_unit']) {
       case 'month':
         $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] . 'M';
         break;
+
       case 'day':
-        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] .'D';
+        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] . 'D';
         break;
+
       case 'year':
-        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] .'Y';
+        $interval = 'P' . $membershipDetails['membership_type_id.duration_interval'] . 'Y';
+        break;
+
+      default:
+        $interval = NULL;
         break;
     }
 
-    $currentEndDate->add(new DateInterval($interval));
-    $newEndDate = $currentEndDate->format('Ymd');
+    $newEndDate = 'null';
+    if (!empty($interval)) {
+      $currentEndDate->add(new DateInterval($interval));
+      $newEndDate = $currentEndDate->format('Ymd');
+    }
+
     return $newEndDate;
   }
 
