@@ -173,8 +173,8 @@
     function updateContributionPaymentPlanView (tabOptionId) {
       if (tabOptionId === 'contribution') {
         $('#installments_row').hide();
-        $('#trxn_id').parent().parent().show();
         $('#first_installment').hide();
+        $('.crm-membership-form-block-trxn_id').show();
         $('.crm-membership-form-block-receive_date').show();
         $('.crm-membership-form-block-total_amount').show();
         $('.crm-membership-form-block-financial_type_id').show();
@@ -183,9 +183,9 @@
                 .insertBefore('.crm-membership-form-block-contribution_status_id');
       } else if (tabOptionId === 'payment_plan') {
         $('#installments_row').show();
-        $('#trxn_id').parent().parent().hide();
         $('#first_installment').show();
         $('#installments').change();
+        $('.crm-membership-form-block-trxn_id').hide();
         $('.crm-membership-form-block-receive_date').hide();
         $('.crm-membership-form-block-total_amount').hide();
         $('.crm-membership-form-block-financial_type_id').hide();
@@ -195,7 +195,6 @@
         if ($('#membership_type_id_1').val()) {
           $('#membership_type_id_1').change();
         }
-
       }
     }
 
@@ -407,7 +406,7 @@
   <tr id="first_installment">
     <td colspan="2">
       <fieldset>
-        <legend>{ts}First Installment Summary{/ts}</legend>
+        <legend>{ts}First Instalment Summary{/ts}</legend>
         <div class="crm-section billing_mode-section pay-later_info-section">
           <div class="crm-section check_number-section">
             <div class="label">Invoice Date</div>
@@ -428,7 +427,7 @@
   <tr id="following_installment">
     <td colspan="2">
       <fieldset>
-        <legend>{ts}Following Installment Summary{/ts}</legend>
+        <legend>{ts}Following Instalment Summary{/ts}</legend>
         <div class="crm-section billing_mode-section pay-later_info-section">
           <div class="crm-section check_number-section">
             <div class="label">Invoice Date</div>
