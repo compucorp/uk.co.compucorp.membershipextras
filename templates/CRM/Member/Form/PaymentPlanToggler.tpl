@@ -1,9 +1,5 @@
 <script type="text/javascript">
   {literal}
-  if (typeof buildAutoRenew !== 'function') {
-    function buildAutoRenew () {}
-  }
-
   let selectedPriceValueIds = [];
 
   (function ($) {
@@ -35,7 +31,6 @@
     function initializeMembershipForm () {
       $('#invoice_date_summary').html($('#receive_date').val());
       selectPaymentPlanTab(togglerValue);
-      toggleStatusOfPaymentAndAutoRenewCheckboxes($('#record_contribution'));
     }
 
     /**
@@ -117,7 +112,6 @@
           // updateInstalmentAmounts();
         }
 
-        toggleStatusOfPaymentAndAutoRenewCheckboxes($('#record_contribution'));
       });
     }
 
@@ -131,8 +125,6 @@
 
     /**
      * Adds events that enable toggling contribution/payment plan selection:
-     * - Enables/disables auto-renew checkbox if payment is going to be recorded
-     *   or not.
      * - Reloads original total amount if payment plan is selected.
      * - Changes total_amount field to readonly if payment plan is selected.
      * - Shows installments, frequency and frequency unit fields if payment plan
@@ -141,27 +133,11 @@
      * - Resets form to original state if contribution is selected.
      */
     function setupPayPlanTogglingEvents () {
-      $('#record_contribution').change(function () {
-        toggleStatusOfPaymentAndAutoRenewCheckboxes($(this));
-      });
-
       $('#payment_plan_fields_tabs li').click(function () {
         const tabOptionId = $(this).attr('data-selector');
 
         selectPaymentPlanTab(tabOptionId);
       });
-    }
-
-    /**
-     * Checks status of given checkbox and enables/disables auto-renew
-     * checkbox if checked/unchecked, respectively.
-     */
-    function toggleStatusOfPaymentAndAutoRenewCheckboxes(recordContributionCheckbox) {
-      if (recordContributionCheckbox.prop('checked')) {
-        $('#offline_auto_renew').prop('disabled', false);
-      } else {
-        $('#offline_auto_renew').prop('disabled', true);
-      }
     }
 
     /**
