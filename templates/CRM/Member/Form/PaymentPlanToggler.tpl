@@ -173,7 +173,6 @@
     function updateContributionPaymentPlanView (tabOptionId) {
       if (tabOptionId === 'contribution') {
         $('#installments_row').hide();
-        $("label[for='receive_date']").html('Received');
         $('#trxn_id').parent().parent().show();
         $('#first_installment').hide();
         $('.crm-membership-form-block-receive_date').show();
@@ -184,7 +183,6 @@
                 .insertBefore('.crm-membership-form-block-contribution_status_id');
       } else if (tabOptionId === 'payment_plan') {
         $('#installments_row').show();
-        $("label[for='receive_date']").html('Payment Plan Start Date');
         $('#trxn_id').parent().parent().hide();
         $('#first_installment').show();
         $('#installments').change();
