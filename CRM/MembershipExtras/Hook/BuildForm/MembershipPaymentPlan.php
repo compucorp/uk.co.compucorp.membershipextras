@@ -6,11 +6,11 @@
  */
 class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
 
-  CONST DEFAULT_INSTALLMENTS_NUMBER = 12;
+  const DEFAULT_INSTALLMENTS_NUMBER = 12;
 
-  CONST DEFAULT_INSTALLMENTS_FREQUENCY = 1;
+  const DEFAULT_INSTALLMENTS_FREQUENCY = 1;
 
-  CONST DEFAULT_INSTALLMENTS_FREQUENCY_UNIT = 'month';
+  const DEFAULT_INSTALLMENTS_FREQUENCY_UNIT = 'month';
 
   /**
    * @var string
@@ -61,7 +61,7 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
     $this->form->addRule('installments_frequency', ts('Instalments must be a number.'), 'numeric');
     $this->form->setDefaults(['installments_frequency' => self::DEFAULT_INSTALLMENTS_FREQUENCY]);
 
-    $this->form->add('select', 'instalments_frequency_unit',
+    $this->form->add('select', 'installments_frequency_unit',
       ts('Instalments Frequency Units'),
       CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
       FALSE
@@ -69,7 +69,8 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
     $this->form->setDefaults(['installments_frequency_unit' => self::DEFAULT_INSTALLMENTS_FREQUENCY_UNIT]);
 
     CRM_Core_Region::instance('page-body')->add([
-      'template' => "{$this->templatePath}/CRM/Member/Form/PaymentPlanToggler.tpl"
+      'template' => "{$this->templatePath}/CRM/Member/Form/PaymentPlanToggler.tpl",
     ]);
   }
+
 }
