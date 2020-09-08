@@ -397,7 +397,7 @@
   <tr id="first_installment">
     <td colspan="2">
       <fieldset>
-        <legend>{ts}First Installment Summary{/ts}</legend>
+        <legend>{ts}First Instalment Summary{/ts}</legend>
         <div class="crm-section billing_mode-section pay-later_info-section">
           <div class="crm-section check_number-section">
             <div class="label">Invoice Date</div>
@@ -418,7 +418,7 @@
   <tr id="following_installment">
     <td colspan="2">
       <fieldset>
-        <legend>{ts}Following Installment Summary{/ts}</legend>
+        <legend>{ts}Following Instalment Summary{/ts}</legend>
         <div class="crm-section billing_mode-section pay-later_info-section">
           <div class="crm-section check_number-section">
             <div class="label">Invoice Date</div>

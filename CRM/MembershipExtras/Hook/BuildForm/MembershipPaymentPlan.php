@@ -53,16 +53,16 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
     $paymentToggler = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String', $this->form, FALSE);
     $this->form->assign('contribution_type_toggle', $paymentToggler ?: 'contribution');
 
-    $this->form->add('text', 'installments', ts('Number of Installments'), '', FALSE);
-    $this->form->addRule('installments', ts('Installments must be a number.'), 'numeric');
+    $this->form->add('text', 'installments', ts('Number of Instalments'), '', FALSE);
+    $this->form->addRule('installments', ts('Instalments must be a number.'), 'numeric');
     $this->form->setDefaults(['installments' => self::DEFAULT_INSTALLMENTS_NUMBER]);
 
     $this->form->add('text', 'installments_frequency', ts('Interval'), '', FALSE);
-    $this->form->addRule('installments_frequency', ts('Installments must be a number.'), 'numeric');
+    $this->form->addRule('installments_frequency', ts('Instalments must be a number.'), 'numeric');
     $this->form->setDefaults(['installments_frequency' => self::DEFAULT_INSTALLMENTS_FREQUENCY]);
 
-    $this->form->add('select', 'installments_frequency_unit',
-      ts('Installments Frequency Units'),
+    $this->form->add('select', 'instalments_frequency_unit',
+      ts('Instalments Frequency Units'),
       CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
       FALSE
     );
