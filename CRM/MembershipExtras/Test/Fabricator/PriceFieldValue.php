@@ -18,8 +18,6 @@ class CRM_MembershipExtras_Test_Fabricator_PriceFieldValue extends BaseFabricato
    *
    * @var array
    */
-  protected static $defaultParams = [
-
-  ];
+  protected static $defaultParams = [];
 
 }

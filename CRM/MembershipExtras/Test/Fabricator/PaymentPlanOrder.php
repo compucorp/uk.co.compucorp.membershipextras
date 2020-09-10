@@ -8,7 +8,7 @@ use CRM_MembershipExtras_Test_Fabricator_Contribution as ContributionFabricator;
 /**
  * Class CRM_MembershipExtras_Test_Fabricator_PaymentPlan
  */
-class CRM_MembershipExtras_Test_Fabricator_PaymentPlan {
+class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
 
   /**
    * Fabricates a payment plan with the provided information.

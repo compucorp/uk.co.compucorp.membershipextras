@@ -28,7 +28,7 @@ class CRM_MembershipExtras_Test_Fabricator_PriceField extends BaseFabricator {
     'options_per_line' => '1',
     'is_active' => '1',
     'is_required' => '1',
-    'visibility_id' => '1'
+    'visibility_id' => '1',
   ];
 
 }

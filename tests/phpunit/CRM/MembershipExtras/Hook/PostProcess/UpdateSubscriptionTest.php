@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Test_Fabricator_PaymentPlan as PaymentPlanFabricator;
+use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
 use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringContributionPaymentProcessor;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
@@ -14,67 +14,14 @@ use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabri
  */
 class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseHeadlessTest {
 
-  /**
-   * Contact for the payment plan.
-   *
-   * @var array
-   */
   private $contact;
-
-  /**
-   * Membership type to use on tests.
-   *
-   * @var \CRM_Member_BAO_MembershipType
-   */
   private $membershipType;
-
-  /**
-   * Parameters for the recurring contribution.
-   *
-   * @var array
-   */
   private $recurringContributionParams = [];
-
-  /**
-   * Parameters for line items.
-   *
-   * @var array
-   */
   private $lineItemsParams = [];
-
-  /**
-   * Parameters for first installment.
-   *
-   * @var array
-   */
   private $contributionParams = [];
-
-  /**
-   * Data for the "Member Dues" financial type.
-   *
-   * @var array
-   */
   private $memberDuesFinancialType = [];
-
-  /**
-   * Payment instrument ID for EFT.
-   *
-   * @var int
-   */
   private $eftPaymentInstrumentID = 0;
-
-  /**
-   * ID of 'Pending' Contribution Status.
-   *
-   * @var int
-   */
   private $contributionPendingStatusValue = 0;
-
-  /**
-   * Data for the default membership price set.
-   *
-   * @var array
-   */
   private $defaultMembershipsPriceSet = [];
 
   /**
@@ -84,14 +31,9 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    */
   private $updateSubscriptionForm;
 
-  /**
-   * Sets up common data required to run tests.
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
   public function setUp() {
-    $this->loadParameters();
-    $this->fabricateRequiredEntities();
+    $this->setTestParameterValues();
+    $this->createRequiredTestEntities();
     $this->setUpDefaultPaymentPlanParameters();
     $this->setUpUpdateSubscriptionForm();
   }
@@ -101,7 +43,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function loadParameters() {
+  private function setTestParameterValues() {
     $this->contributionPendingStatusValue = $this->getPendingContributionStatusValue();
     $this->memberDuesFinancialType = $this->getMembershipDuesFinancialType();
     $this->eftPaymentInstrumentID = $this->getEFTPaymentInstrumentID();
@@ -148,7 +90,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function fabricateRequiredEntities() {
+  private function createRequiredTestEntities() {
     $this->contact = ContactFabricator::fabricate();
 
     $this->membershipType = MembershipTypeFabricator::fabricate(
@@ -311,7 +253,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
     $this->recurringContributionParams['start_date'] = $startDate;
     $this->contributionParams['receive_date'] = $startDate;
 
-    $paymentPlan = PaymentPlanFabricator::fabricate(
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate(
       $this->recurringContributionParams,
       $this->lineItemsParams,
       $this->contributionParams
@@ -363,7 +305,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
     $this->recurringContributionParams['start_date'] = $startDate;
     $this->contributionParams['receive_date'] = $startDate;
 
-    $paymentPlan = PaymentPlanFabricator::fabricate(
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate(
       $this->recurringContributionParams,
       $this->lineItemsParams,
       $this->contributionParams
