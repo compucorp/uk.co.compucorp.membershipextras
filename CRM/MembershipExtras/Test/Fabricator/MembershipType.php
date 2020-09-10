@@ -21,7 +21,7 @@ class CRM_MembershipExtras_Test_Fabricator_MembershipType extends BaseFabricator
     'fixed_period_rollover_day' => 1231,
     'domain_id' => 1,
     'member_of_contact_id' => 1,
-    'financial_type_id' => 1
+    'financial_type_id' => 1,
   ];
 
   /**

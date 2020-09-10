@@ -171,7 +171,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
     );
     $contribution = ContributionFabricator::fabricate($params);
 
-    foreach($lineItems as &$line) {
+    foreach ($lineItems as &$line) {
       unset($line['line_item']['id']);
       $line['line_item']['contribution_id'] = $contribution['id'];
 
@@ -221,8 +221,8 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
   /**
    * Checks if the given line item is a membership.
    *
-   * @param array $priceFieldValue
    * @param array $lineItem
+   * @param array $priceFieldValue
    *
    * @return bool
    */

@@ -22,7 +22,7 @@ class CRM_MembershipExtras_Test_Fabricator_Contact extends BaseFabricator {
     'contact_type' => 'Individual',
     'first_name'   => 'Bruce',
     'last_name'    => 'Wayne',
-    'sequential'   => 1
+    'sequential'   => 1,
   ];
 
   /**
@@ -43,19 +43,19 @@ class CRM_MembershipExtras_Test_Fabricator_Contact extends BaseFabricator {
   /**
    * Fabricates a contact with an e-mail address.
    *
-   * @param $params
+   * @param array $params
+   * @param string $email
    *
    * @return array
-   *
    * @throws \CiviCRM_API3_Exception
    */
-  public static function fabricateWithEmail($params = [], $email = 'johndoe@test.com') {
+  public static function fabricateWithEmail($params = [], $email = 'iamthe@batman.com') {
     $contact = self::fabricate($params);
 
     civicrm_api3('Email', 'create', [
       'email' => $email,
       'contact_id' => $contact['id'],
-      'is_primary' => 1
+      'is_primary' => 1,
     ]);
 
     return $contact;

@@ -71,8 +71,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * @throws \CiviCRM_API3_Exception
    */
   private function getDefaultPriceSet() {
-    $result = civicrm_api3(
-      'PriceSet', 'get', [
+    $result = civicrm_api3('PriceSet', 'get', [
       'sequential' => 1,
       'name' => 'default_membership_type_amount',
       'options' => ['limit' => 1],
@@ -136,7 +135,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
     $this->contributionParams = [
       'contact_id' => $this->contact['id'],
       'fee_amount' => 0,
-      'net_amount' =>  120,
+      'net_amount' => 120,
       'total_amount' => 120,
       'receive_date' => date('Y-m-d'),
       'payment_instrument_id' => $this->eftPaymentInstrumentID,
@@ -177,8 +176,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * @throws \CiviCRM_API3_Exception
    */
   private function getPayLaterProcessorID() {
-    $result = civicrm_api3(
-      'PaymentProcessor', 'get', [
+    $result = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
       'name' => OfflineRecurringContributionPaymentProcessor::NAME,
       'is_test' => '0',
@@ -199,8 +197,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * @throws \CiviCRM_API3_Exception
    */
   private function getMembershipDuesFinancialType() {
-    $result = civicrm_api3(
-      'FinancialType', 'get', [
+    $result = civicrm_api3('FinancialType', 'get', [
       'sequential' => 1,
       'name' => 'Member Dues',
       'options' => ['limit' => 1],
@@ -384,7 +381,8 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
         $newReceiveDate->format('Y-m-d'),
         "Installment $nth did not get updated! Original date: {$originalReceiveDate->format('Y-m-d')} / Current Date: {$newReceiveDate->format('Y-m-d')}"
       );
-    } else {
+    }
+    else {
       $this->assertEquals(
         $installmentBeforeUpdate['receive_date'],
         $installmentAfterUpdate['receive_date'],

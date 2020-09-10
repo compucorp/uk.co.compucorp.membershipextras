@@ -12,5 +12,5 @@ class CRM_MembershipExtras_Test_Fabricator_RecurringLineItem extends BaseFabrica
    * @var string
    */
   protected static $entityName = 'ContributionRecurLineItem';
-  
+
 }
