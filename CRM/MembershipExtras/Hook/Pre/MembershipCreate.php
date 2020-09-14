@@ -32,7 +32,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipCreate {
    * plan and/or user edits default total value for the contribution.
    */
   private function recalculateTaxAmount() {
-    if ($this->isUsingPriceSet()) {
+    if ($this->isUsingPriceSet() || !isset($this->params['total_amount'])) {
       return;
     }
 
