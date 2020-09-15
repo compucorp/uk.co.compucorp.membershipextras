@@ -341,7 +341,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessorT
   }
 
   /**
-   *
+   * Sets Membership Form
    */
   private function setUpMembershipForm() {
     $controller = new CRM_Core_Controller();

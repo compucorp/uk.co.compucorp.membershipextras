@@ -33,7 +33,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor 
    * Processes the membership offline auto-renewal.
    */
   public function postProcess() {
-    if (!$this->isPaymentPlanWithAtLeastOneInstallment() ||  $this->isMembershipAlreadyAutoRenewed()) {
+    if (!$this->isPaymentPlanWithAtLeastOneInstallment() ||  $this->isMembershipAlreadySetToAutoRenew()) {
       return;
     }
 
@@ -50,7 +50,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor 
    *
    * @return mixed
    */
-  private function isMembershipAlreadyAutoRenewed() {
+  private function isMembershipAlreadySetToAutoRenew() {
     $isAlreadyAutoRenew = FALSE;
     if (!empty($this->form->_id)) {
       $membership = civicrm_api3('Membership', 'get', [
