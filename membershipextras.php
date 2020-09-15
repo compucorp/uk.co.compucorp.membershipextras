@@ -264,11 +264,23 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
     ||
     ($formName === 'CRM_Member_Form_MembershipRenewal' && $isRenewAction)
   ) {
+
+    $contributionIsPaymentPlan =
+      CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
+
+    if (!$contributionIsPaymentPlan) {
+      return;
+    }
+
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor($form);
     $paymentPlanProcessor->postProcess();
 
-    $offlineAutoRenewProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
-    $offlineAutoRenewProcessor->postProcess();
+    if ($formName == 'CRM_Member_Form_Membership') {
+      $offlineAutoRenewProcessor =
+        new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
+      $offlineAutoRenewProcessor->postProcess();
+    }
+
   }
 
   if ($formName === 'CRM_Contribute_Form_UpdateSubscription') {
