@@ -73,11 +73,10 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor 
    * @return bool
    */
   private function isPaymentPlanWithAtLeastOneInstallment() {
-    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
-    $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
-    $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
+    $installmentsCount = $this->formSubmittedValues['installments'];
+    $isSavingContribution = $this->formSubmittedValues['record_contribution'];
 
-    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 0) {
+    if ($isSavingContribution && $installmentsCount > 0) {
       return TRUE;
     }
 
