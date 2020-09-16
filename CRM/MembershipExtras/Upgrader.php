@@ -469,4 +469,13 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     return TRUE;
   }
 
+  /**
+   * Adds membershipextras_auto_membership_upgrade_rule table to DB.
+   */
+  public function upgrade_0005() {
+    $this->executeSqlFile('sql/autoupgraderuletable_install.sql');
+
+    return TRUE;
+  }
+
 }
