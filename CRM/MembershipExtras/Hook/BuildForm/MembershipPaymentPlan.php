@@ -1,16 +1,12 @@
 <?php
 
+use CRM_MembershipExtras_ExtensionUtil as E;
+
 /**
  * Implements form changes needed to be done to add payment plan as an option to
  * pay for a membership.
  */
 class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
-
-  const DEFAULT_INSTALLMENTS_NUMBER = 12;
-
-  const DEFAULT_INSTALLMENTS_FREQUENCY = 1;
-
-  const DEFAULT_INSTALLMENTS_FREQUENCY_UNIT = 'month';
 
   /**
    * @var string
@@ -50,24 +46,10 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
       return;
     }
 
-    $paymentToggler = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String', $this->form, FALSE);
+    $paymentToggler =
+      CRM_Utils_Request::retrieve('contribution_type_toggle', 'String', $this->form, FALSE);
     $this->form->assign('contribution_type_toggle', $paymentToggler ?: 'contribution');
-
-    $this->form->add('text', 'installments', ts('Number of Instalments'), '', FALSE);
-    $this->form->addRule('installments', ts('Instalments must be a number.'), 'numeric');
-    $this->form->setDefaults(['installments' => self::DEFAULT_INSTALLMENTS_NUMBER]);
-
-    $this->form->add('text', 'installments_frequency', ts('Interval'), '', FALSE);
-    $this->form->addRule('installments_frequency', ts('Instalments must be a number.'), 'numeric');
-    $this->form->setDefaults(['installments_frequency' => self::DEFAULT_INSTALLMENTS_FREQUENCY]);
-
-    $this->form->add('select', 'installments_frequency_unit',
-      ts('Instalments Frequency Units'),
-      CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE),
-      FALSE
-    );
-    $this->form->setDefaults(['installments_frequency_unit' => self::DEFAULT_INSTALLMENTS_FREQUENCY_UNIT]);
-
+    $this->form->add('select', 'payment_plan_schedule', E::ts('Schedule'), [], TRUE);
     CRM_Core_Region::instance('page-body')->add([
       'template' => "{$this->templatePath}/CRM/Member/Form/PaymentPlanToggler.tpl",
     ]);
