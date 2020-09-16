@@ -1,7 +1,10 @@
 SET FOREIGN_KEY_CHECKS=0;
 DROP TABLE IF EXISTS `membershipextras_subscription_line`;
-
 SET FOREIGN_KEY_CHECKS=1;
+
+-- /*******************************************************
+-- * Create recurring contribution line items table
+-- *******************************************************/
 CREATE TABLE `membershipextras_subscription_line` (
   `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Discount Item ID',
   `contribution_recur_id` int unsigned NOT NULL   COMMENT 'ID of the recurring contribution.',
@@ -24,5 +27,5 @@ CREATE TABLE `membershipextras_subscription_line` (
 
   CONSTRAINT FK_membershipextras_subscription_line_line_item_id
     FOREIGN KEY (`line_item_id`) REFERENCES `civicrm_line_item`(`id`)
-    ON DELETE CASCADE  
+    ON DELETE CASCADE
 );
