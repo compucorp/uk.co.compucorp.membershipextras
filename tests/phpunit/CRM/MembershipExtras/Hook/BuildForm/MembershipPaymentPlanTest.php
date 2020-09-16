@@ -15,14 +15,14 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlanTest extends Base
     $this->membershipCreationForm->controller = $formController;
   }
 
-  public function testPaymentPlanTogglerGetsAddedToPayLaterMembershipCreationForm() {
+  public function testPaymentPlanTogglerGetsAddedToNotLiveMembershipCreationForm() {
     $this->membershipCreationForm->_mode = NULL;
 
     $mebershipBuildFormHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan($this->membershipCreationForm);
     $mebershipBuildFormHook->buildForm();
 
-    $installmentsField = $this->membershipCreationForm->getElement('installments');
-    $this->assertTrue(is_object($installmentsField));
+    $paymentPlanScheduleField = $this->membershipCreationForm->getElement('payment_plan_schedule');
+    $this->assertTrue(is_object($paymentPlanScheduleField));
   }
 
   public function testPaymentPlanTogglerIsNotAddedToCreditCardLiveMembershipCreationForm() {
@@ -32,7 +32,7 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlanTest extends Base
     $mebershipBuildFormHook->buildForm();
 
     $this->expectException(PEAR_Exception::class);
-    $this->membershipCreationForm->getElement('installments');
+    $this->membershipCreationForm->getElement('payment_plan_schedule');
   }
 
 }
