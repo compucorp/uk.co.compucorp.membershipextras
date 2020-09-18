@@ -8,7 +8,7 @@ class CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit im
 
   const DAYS = 3;
 
-  public function getAll() {
+  public static function getAll() {
     return [
       self::YEARS => 'Years',
       self::MONTHS => 'Months',

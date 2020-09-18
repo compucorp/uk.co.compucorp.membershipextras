@@ -9,10 +9,10 @@ use CRM_Member_BAO_MembershipType as MembershipType;
 class CRM_MembershipExtras_Test_Fabricator_MembershipType extends BaseFabricator {
 
   /**
-   * Default parameters that will be used to fabricate a membership type.
-   *
-   * @var array
-   */
+ * Default parameters that will be used to fabricate a membership type.
+ *
+ * @var array
+ */
   protected static $defaultParams = [
     'duration_unit' => 'year',
     'period_type' => 'fixed',

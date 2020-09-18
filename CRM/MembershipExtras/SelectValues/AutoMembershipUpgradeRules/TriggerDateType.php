@@ -6,7 +6,7 @@ class CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_TriggerDateTy
 
   const MEMBER_START = 2;
 
-  public function getAll() {
+  public static function getAll() {
     return [
       self::MEMBER_SINCE  => 'Member Since',
       self::MEMBER_START  => 'Member Start',
