@@ -168,4 +168,5 @@ class CRM_MembershipExtras_Form_AutomatedUpgradeRule extends CRM_Core_Form {
 
     CRM_MembershipExtras_BAO_AutoMembershipUpgradeRule::create($params);
   }
+
 }

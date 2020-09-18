@@ -37,7 +37,7 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRule extends CRM_MembershipE
     $upgradeRule->find(TRUE);
 
     if (!empty($upgradeRule->weight)) {
-     return $upgradeRule->weight + 1;
+      return $upgradeRule->weight + 1;
     }
 
     return 1;

@@ -12,4 +12,5 @@ class CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_TriggerDateTy
       self::MEMBER_START  => 'Member Start',
     ];
   }
+
 }

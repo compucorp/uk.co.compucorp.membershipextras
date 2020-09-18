@@ -8,5 +8,6 @@ interface CRM_MembershipExtras_SelectValues_SelectInterface {
    *
    * @return mixed
    */
-  static function getAll();
+  public static function getAll();
+
 }

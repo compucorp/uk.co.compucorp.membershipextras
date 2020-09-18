@@ -15,4 +15,5 @@ class CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit im
       self::DAYS => 'Days',
     ];
   }
+
 }

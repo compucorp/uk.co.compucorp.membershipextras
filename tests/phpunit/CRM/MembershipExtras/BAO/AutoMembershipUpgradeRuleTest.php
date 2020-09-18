@@ -5,6 +5,7 @@ use CRM_MembershipExtras_Test_Fabricator_Group as GroupFabricator;
 use CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit as PeriodUnitSelectValues;
 use CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_TriggerDateType as TriggerDateTypeSelectValues;
 use CRM_MembershipExtras_BAO_AutoMembershipUpgradeRule as AutoMembershipUpgradeRule;
+
 /**
  * Class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest
  *
@@ -48,7 +49,7 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
-    $params['filter_group'] =  $this->group['id'];
+    $params['filter_group'] = $this->group['id'];
     $params['is_active'] = 1;
 
     $newUpgradeRule = AutoMembershipUpgradeRule::create($params);
@@ -64,7 +65,7 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
-    $params['filter_group'] =  $this->group['id'];
+    $params['filter_group'] = $this->group['id'];
     $params['is_active'] = 1;
 
     $newUpgradeRule = AutoMembershipUpgradeRule::create($params);
@@ -79,7 +80,7 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
-    $params['filter_group'] =  $this->group['id'];
+    $params['filter_group'] = $this->group['id'];
     $params['is_active'] = 1;
 
     $newUpgradeRule = AutoMembershipUpgradeRule::create($params);
@@ -94,7 +95,7 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
-    $params['filter_group'] =  $this->group['id'];
+    $params['filter_group'] = $this->group['id'];
     $params['is_active'] = 1;
     AutoMembershipUpgradeRule::create($params);
 
@@ -152,13 +153,13 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
-    $params['filter_group'] =  $this->group['id'];
+    $params['filter_group'] = $this->group['id'];
     $params['is_active'] = 1;
     $params = [
       'name' => 'test_10',
       'label' => 'Test 10',
       'from_membership_type_id' => $this->fromMembershipType->id,
-      'to_membership_type_id' =>  $this->toMembershipType->id,
+      'to_membership_type_id' => $this->toMembershipType->id,
       'upgrade_trigger_date_type' => TriggerDateTypeSelectValues::MEMBER_SINCE,
       'period_length' => PeriodUnitSelectValues::YEARS,
       'period_length_unit' => 1,
