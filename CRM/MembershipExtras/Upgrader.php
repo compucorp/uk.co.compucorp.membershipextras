@@ -60,7 +60,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   private function createLineItemExternalIDCustomField() {
     $optionValues = civicrm_api3('OptionValue', 'get', [
       'option_group_id' => 'cg_extend_objects',
-      'name' => 'civicrm_line_item'
+      'name' => 'civicrm_line_item',
     ]);
 
     if (!$optionValues['count']) {
@@ -104,7 +104,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'is_active' => 0,
         'is_searchable' => 1,
         'column_name' => 'external_id',
-        'is_view' => 1
+        'is_view' => 1,
       ]);
     }
   }
@@ -303,7 +303,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
           'is_reserved' => 1,
         ];
         civicrm_api3('OptionValue', 'create', $updateParams);
-      } else {
+      }
+      else {
         $optionValue['option_group_id'] = 'activity_type';
         $optionValue['filter'] = 1;
         $optionValue['is_reserved'] = 1;
@@ -354,7 +355,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'end_event_adjust_interval' => -1,
       'is_current_member' => 1,
       'is_active' => 1,
-      'weight' => $minStatusWeight - 1
+      'weight' => $minStatusWeight - 1,
     ]);
   }
 
@@ -388,7 +389,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       'end_event' => 'start_date',
       'is_current_member' => 0,
       'is_active' => 1,
-      'weight' => $maxStatusWeight + 1
+      'weight' => $maxStatusWeight + 1,
     ]);
   }
 
