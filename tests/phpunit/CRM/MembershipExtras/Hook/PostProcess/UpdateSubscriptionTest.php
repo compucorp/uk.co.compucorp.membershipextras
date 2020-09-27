@@ -1,17 +1,14 @@
 <?php
 
-use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFabricator;
-use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
-use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
-use CRM_MembershipExtras_Test_Fabricator_PriceField as PriceFieldFabricator;
-use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabricator;
-
 /**
  * Class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest
  *
  * @group headless
  */
-class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BasePaymentPlanTest {
+class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseHeadlessTest {
+
+  private $eftPaymentInstrumentID = 0;
+  private $contributionPendingStatusValue = 0;
 
   /**
    * The form used to update recurring contributions.
@@ -21,87 +18,47 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseP
   private $updateSubscriptionForm;
 
   public function setUp() {
-    parent::setUp();
+    civicrm_api3('Setting', 'create', [
+      'membershipextras_paymentplan_days_to_renew_in_advance' => 0,
+    ]);
 
-    $this->createRequiredTestEntities();
-    $this->setUpDefaultPaymentPlanParameters();
-    $this->setUpUpdateSubscriptionForm();
-  }
+    civicrm_api3('Setting', 'create', [
+      'membershipextras_paymentplan_update_start_date_renewal' => 0,
+    ]);
 
-  /**
-   * Fabricates entities required for tests.
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function createRequiredTestEntities() {
-    $this->contact = ContactFabricator::fabricate();
+    $this->eftPaymentInstrumentID = $this->getEFTPaymentInstrumentID();
+    $this->contributionPendingStatusValue = $this->getPendingContributionStatusValue();
 
-    $this->membershipType = MembershipTypeFabricator::fabricate(
+    $this->testRollingMembershipType = CRM_MembershipExtras_Test_Fabricator_MembershipType::fabricate(
       [
         'name' => 'Test Rolling Membership',
         'period_type' => 'rolling',
         'minimum_fee' => 120,
-      ],
-      TRUE
-    );
-    $priceField = PriceFieldFabricator::fabricate([
-      'name' => 'default_price_set',
-      'label' => 'Member Dues',
-      'price_set_id' => $this->defaultMembershipsPriceSet['id'],
-    ]);
-    PriceFieldValueFabricator::fabricate([
-      'label' => $this->membershipType->name,
-      'amount' => $this->membershipType->minimum_fee,
-      'price_field_id' => $priceField['id'],
-      'membership_type_id' => $this->membershipType->id,
-      'financial_type_id' => $this->memberDuesFinancialType['id'],
-    ]);
+        'duration_interval' => 1,
+        'duration_unit' => 'year',
+      ]);
+
+    $this->testRollingMembershipTypePriceFieldValue = civicrm_api3('PriceFieldValue', 'get', [
+      'sequential' => 1,
+      'membership_type_id' => $this->testRollingMembershipType['id'],
+      'options' => ['limit' => 1],
+    ])['values'][0];
+
+    $this->setUpUpdateSubscriptionForm();
   }
 
-  private function setUpDefaultPaymentPlanParameters() {
-    $this->recurringContributionParams = [
-      'sequential' => 1,
-      'contact_id' => $this->contact['id'],
-      'amount' => 0,
-      'frequency_unit' => 'month',
-      'frequency_interval' => 1,
-      'installments' => 12,
-      'contribution_status_id' => 'Pending',
-      'is_test' => 0,
-      'auto_renew' => 1,
-      'cycle_day' => 1,
-      'payment_processor_id' => $this->getPayLaterProcessorID()['id'],
-      'financial_type_id' => $this->memberDuesFinancialType['id'],
-      'payment_instrument_id' => $this->eftPaymentInstrumentID,
-      'start_date' => date('Y-m-d'),
-    ];
-
-    $this->contributionParams = [
-      'contact_id' => $this->contact['id'],
-      'fee_amount' => 0,
-      'net_amount' => 120,
-      'total_amount' => 120,
-      'receive_date' => date('Y-m-d'),
-      'payment_instrument_id' => $this->eftPaymentInstrumentID,
-      'financial_type_id' => $this->memberDuesFinancialType['id'],
-      'contribution_status_id' => $this->contributionPendingStatusValue,
-      'is_pay_later' => TRUE,
-      'skipLineItem' => 1,
-      'skipCleanMoney' => TRUE,
-    ];
-
-    $priceFieldValue = $this->getDefaultPriceFieldValueID($this->membershipType->id);
-    $this->lineItemsParams[] = [
-      'entity_table' => 'civicrm_membership',
-      'price_field_id' => $priceFieldValue['price_field_id'],
-      'label' => 'Membership subscription',
-      'qty' => 1,
-      'unit_price' => 120,
-      'line_total' => 120,
-      'price_field_value_id' => $priceFieldValue['id'],
-      'financial_type_id' => $this->getMembershipDuesFinancialType()['id'],
-      'non_deductible_amount' => 0,
-    ];
+  /**
+   * Obtains value for the 'Pending' contribution status option value.
+   *
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getPendingContributionStatusValue() {
+    return civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => 'contribution_status',
+      'name' => 'Pending',
+    ]);
   }
 
   /**
@@ -113,16 +70,37 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseP
     $this->updateSubscriptionForm->controller = $controller;
   }
 
-  public function testUpdatingCycleDayUpdatesReceiveDatesOfContributionsInFuture() {
-    $startDate = date('Y-m-01', strtotime('-6 months'));
-    $this->recurringContributionParams['start_date'] = $startDate;
-    $this->contributionParams['receive_date'] = $startDate;
+  /**
+   * Obtains value for EFT payment instrument option value.
+   *
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getEFTPaymentInstrumentID() {
+    return civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => 'payment_instrument',
+      'label' => 'EFT',
+    ]);
+  }
 
-    $paymentPlan = PaymentPlanOrderFabricator::fabricate(
-      $this->recurringContributionParams,
-      $this->lineItemsParams,
-      $this->contributionParams
-    );
+  public function testUpdatingCycleDayUpdatesReceiveDatesOfContributionsInFuture() {
+    $paymentPlanMembershipOrder = new CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-01', strtotime('-6 months'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' =>  $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder::fabricate($paymentPlanMembershipOrder);
 
     $installmentsBeforeUpdating = $this->getPaymentPlanInstallments($paymentPlan['id']);
     $this->assertEquals(12, count($installmentsBeforeUpdating));
@@ -165,16 +143,24 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseP
     $this->updateRecurringContributionCycleDay($paymentPlan['id'], $newCycleDay);
   }
 
-  public function testOnlyPEndingContributionsChangeReceiveDateOnCycleDayUpdate() {
-    $startDate = date('Y-m-01', strtotime('+1 month'));
-    $this->recurringContributionParams['start_date'] = $startDate;
-    $this->contributionParams['receive_date'] = $startDate;
+  public function testOnlyPendingContributionsChangeReceiveDateOnCycleDayUpdate() {
+    $paymentPlanMembershipOrder = new CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-01', strtotime('+1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' =>  $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder::fabricate($paymentPlanMembershipOrder);
 
-    $paymentPlan = PaymentPlanOrderFabricator::fabricate(
-      $this->recurringContributionParams,
-      $this->lineItemsParams,
-      $this->contributionParams
-    );
     $installmentsBeforeUpdating = $this->getPaymentPlanInstallments($paymentPlan['id']);
     $this->changeContributionStatusToCompleted($installmentsBeforeUpdating[0]['id']);
     $this->changeContributionStatusToCompleted($installmentsBeforeUpdating[1]['id']);
