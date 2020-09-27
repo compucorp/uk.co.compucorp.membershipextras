@@ -44,8 +44,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
   public function testCreate() {
     $params['name'] = 'test_1';
     $params['label'] = 'Test 1';
-    $params['from_membership_type_id'] = $this->fromMembershipType->id;
-    $params['to_membership_type_id'] = $this->toMembershipType->id;
+    $params['from_membership_type_id'] = $this->fromMembershipType['id'];
+    $params['to_membership_type_id'] = $this->toMembershipType['id'];
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
@@ -60,8 +60,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
 
   public function testCreateWillGenerateNameAutomatically() {
     $params['label'] = 'Test 2';
-    $params['from_membership_type_id'] = $this->fromMembershipType->id;
-    $params['to_membership_type_id'] = $this->toMembershipType->id;
+    $params['from_membership_type_id'] = $this->fromMembershipType['id'];
+    $params['to_membership_type_id'] = $this->toMembershipType['id'];
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
@@ -75,8 +75,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
 
   public function testCreatingFirstRuleWillSetWeightToOne() {
     $params['label'] = 'Test 3';
-    $params['from_membership_type_id'] = $this->fromMembershipType->id;
-    $params['to_membership_type_id'] = $this->toMembershipType->id;
+    $params['from_membership_type_id'] = $this->fromMembershipType['id'];
+    $params['to_membership_type_id'] = $this->toMembershipType['id'];
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
@@ -90,8 +90,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
 
   public function testCreatingRuleWillSetWeightToMaxOfPreviousRulePlusOne() {
     $params['label'] = 'Test 4';
-    $params['from_membership_type_id'] = $this->fromMembershipType->id;
-    $params['to_membership_type_id'] = $this->toMembershipType->id;
+    $params['from_membership_type_id'] = $this->fromMembershipType['id'];
+    $params['to_membership_type_id'] = $this->toMembershipType['id'];
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
@@ -110,8 +110,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
 
   public function testCreateWillSetPeriodFieldsToOneYearIfNotSet() {
     $params['label'] = 'Test 7';
-    $params['from_membership_type_id'] = $this->fromMembershipType->id;
-    $params['to_membership_type_id'] = $this->toMembershipType->id;
+    $params['from_membership_type_id'] = $this->fromMembershipType['id'];
+    $params['to_membership_type_id'] = $this->toMembershipType['id'];
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['is_active'] = 1;
 
@@ -124,8 +124,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
 
   public function testCreateWillSetUpgradeDateTypeTriggerToMemberSinceDateIfNotSet() {
     $params['label'] = 'Test 8';
-    $params['from_membership_type_id'] = $this->fromMembershipType->id;
-    $params['to_membership_type_id'] = $this->toMembershipType->id;
+    $params['from_membership_type_id'] = $this->fromMembershipType['id'];
+    $params['to_membership_type_id'] = $this->toMembershipType['id'];
     $params['is_active'] = 1;
     $newUpgradeRule = AutoMembershipUpgradeRule::create($params);
     $newUpgradeRule->find(TRUE);
@@ -138,8 +138,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
     $this->expectExceptionMessage('DB Error: unknown error');
 
     $params['label'] = 'Test 9';
-    $params['from_membership_type_id'] = $this->fromMembershipType->id;
-    $params['to_membership_type_id'] = $this->toMembershipType->id;
+    $params['from_membership_type_id'] = $this->fromMembershipType['id'];
+    $params['to_membership_type_id'] = $this->toMembershipType['id'];
     $params['period_length_unit'] = -2;
     $params['is_active'] = 1;
     AutoMembershipUpgradeRule::create($params);
@@ -148,8 +148,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
   public function testGetById() {
     $params['name'] = 'test_1';
     $params['label'] = 'Test 1';
-    $params['from_membership_type_id'] = $this->fromMembershipType->id;
-    $params['to_membership_type_id'] = $this->toMembershipType->id;
+    $params['from_membership_type_id'] = $this->fromMembershipType['id'];
+    $params['to_membership_type_id'] = $this->toMembershipType['id'];
     $params['upgrade_trigger_date_type'] = TriggerDateTypeSelectValues::MEMBER_SINCE;
     $params['period_length'] = PeriodUnitSelectValues::YEARS;
     $params['period_length_unit'] = 1;
@@ -158,8 +158,8 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
     $params = [
       'name' => 'test_10',
       'label' => 'Test 10',
-      'from_membership_type_id' => $this->fromMembershipType->id,
-      'to_membership_type_id' => $this->toMembershipType->id,
+      'from_membership_type_id' => $this->fromMembershipType['id'],
+      'to_membership_type_id' => $this->toMembershipType['id'],
       'upgrade_trigger_date_type' => TriggerDateTypeSelectValues::MEMBER_SINCE,
       'period_length' => PeriodUnitSelectValues::YEARS,
       'period_length_unit' => 1,
