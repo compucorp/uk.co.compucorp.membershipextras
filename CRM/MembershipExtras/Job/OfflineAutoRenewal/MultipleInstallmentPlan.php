@@ -229,6 +229,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
         $lineItem['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItem['unit_price'] * $lineItem['qty']);
         $lineItem['tax_amount'] = $this->calculateLineItemTaxAmount($lineItem['line_total'], $lineItem['financial_type_id']);
 
+        unset($lineItem['line_item_id'], $lineItem['contribution_id']);
+
         $newLineItem = civicrm_api3('LineItem', 'create', $lineItem);
         CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
           'contribution_recur_id' => $nextContribution['id'],
