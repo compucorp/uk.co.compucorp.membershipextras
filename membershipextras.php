@@ -310,8 +310,6 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
     $membershipHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan($form);
     $membershipHook->buildForm();
 
-    $membershipAmountHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipAmountProRata($form);
-    $membershipAmountHook->buildForm();
   }
 
   if ($formName === 'CRM_Member_Form_MembershipStatus') {
