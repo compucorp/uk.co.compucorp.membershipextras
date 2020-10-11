@@ -121,4 +121,5 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest 
     $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
     return new MembershipTypeInstalmentAmount($membershipTypes, $membershipTypeTaxAmount, $membershipTypeDatesCalculator);
   }
+
 }

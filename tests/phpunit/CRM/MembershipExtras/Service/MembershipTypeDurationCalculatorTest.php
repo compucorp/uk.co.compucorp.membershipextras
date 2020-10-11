@@ -73,4 +73,5 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
     $expectedInterval = $expectedEndDate->diff($startDate)->format("%a") + 1;
     $this->assertEquals($expectedInterval, $numberOfDays);
   }
+
 }
