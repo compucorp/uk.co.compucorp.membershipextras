@@ -5,6 +5,7 @@ use CRM_MembershipExtras_Test_Fabricator_LineItem as LineItemFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Contribution as ContributionFabricator;
 use CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder as PaymentPlanMembershipOrderEntity;
+
 /**
  * Class CRM_MembershipExtras_Test_Fabricator_PaymentPlan
  */
@@ -15,7 +16,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
   /**
    * Fabricates payment plan order.
    *
-   * @param PaymentPlanMembershipOrderEntity $paymentPlanMembershipOrder
+   * @param CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder $paymentPlanMembershipOrder
    *
    * @return array
    */
@@ -92,11 +93,13 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
         $frequencyInterval = 1;
         $installments = 1;
         break;
+
       case 'Monthly':
         $frequencyUnit = 'month';
         $frequencyInterval = 1;
         $installments = 12;
         break;
+
       case 'Quarterly':
         $frequencyUnit = 'month';
         $frequencyInterval = 3;
@@ -141,20 +144,11 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
     foreach (self::$paymentPlanMembershipOrder->lineItems as $lineItem) {
       if (self::isMembershipLineItem($lineItem)) {
         $membershipID = self::createMembership($lineItem, $recurringContribution);
-        // Line item record is created with the Membership `Create` API call
-        // so we just need to fetch it here.
-        $newLineItem = civicrm_api3('LineItem', 'get', [
-          'sequential' => 1,
-          'entity_id' => $membershipID,
-          'entity_table' => 'civicrm_membership',
-          'contribution_id' => ['IS NULL' => 1],
-          'options' => ['sort' => 'id desc', 'limit' => 1],
-        ])['values'][0];
-      } else {
-        $newLineItem = LineItemFabricator::fabricate($lineItem);
+        $lineItem['entity_id'] = $membershipID;
+        $lineItem['entity_table'] = 'civicrm_membership';
       }
 
-
+      $newLineItem = LineItemFabricator::fabricate($lineItem);
       $recurringLineItem = RecurringLineItemFabricator::fabricate([
         'contribution_recur_id' => $recurringContribution['id'],
         'line_item_id' => $newLineItem['id'],
@@ -261,7 +255,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'total_amount' => $recurringContribution['amount'],
       'payment_instrument_id' => self::$paymentPlanMembershipOrder->paymentMethod,
       'financial_type_id' => self::$paymentPlanMembershipOrder->financialType,
-      'contribution_status_id' =>  self::$paymentPlanMembershipOrder->paymentPlanStatus,
+      'contribution_status_id' => self::$paymentPlanMembershipOrder->paymentPlanStatus,
     ];
     $contribution = ContributionFabricator::fabricate($params);
 

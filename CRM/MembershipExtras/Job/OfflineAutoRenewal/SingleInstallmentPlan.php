@@ -13,13 +13,6 @@ use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as Installment
 class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
-   * List of line items to be renewed.
-   *
-   * @var array
-   */
-  private $linesToBeRenewed = [];
-
-  /**
    * Obtains list of payment plans with a single installment that are ready to
    * be renewed. This means:
    *
@@ -128,11 +121,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $this->endCurrentLineItemsAndCreateNewOnesForNextPeriod($this->currentRecurContributionID);
     $this->updateRecurringContributionAmount($this->currentRecurContributionID);
     $this->setNewRecurringContribution();
+    $this->renewPaymentPlanMemberships($this->currentRecurContributionID);
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
-
     $this->recordPaymentPlanFirstContribution();
-    $this->renewPaymentPlanMemberships($this->currentRecurContributionID);
   }
 
   /**
@@ -174,7 +166,21 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     foreach ($lineItems['values'] as $line) {
       $this->endLineItem($line['id'], $newEndDate);
 
-      if ($line['auto_renew']) {
+      if (!$line['auto_renew']) {
+        continue;
+      }
+
+      $lineItemParams = $line['api.LineItem.getsingle'];
+      $upgradableMembershipTypeId = NULL;
+      if ($this->isMembershipLineItem($lineItemParams)) {
+        $autoUpgradableMembershipChecker = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
+        $upgradableMembershipTypeId = $autoUpgradableMembershipChecker->check($lineItemParams['entity_id']);
+      }
+
+      if (!empty($upgradableMembershipTypeId)) {
+        $this->createUpgradableSubscriptionMembershipLine($upgradableMembershipTypeId, $this->currentRecurContributionID, $newStartDate->format('Y-m-d'));
+      }
+      else {
         $this->duplicateSubscriptionLine($line, $newStartDate);
       }
     }
@@ -236,8 +242,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    * @inheritdoc
    */
   protected function getRecurringContributionLineItemsToBeRenewed($recurringContributionID) {
-    if (!isset($this->linesToBeRenewed[$recurringContributionID])) {
-      $q = '
+    $q = '
       SELECT msl.*, li.*, m.end_date AS memberhsip_end_date
       FROM membershipextras_subscription_line msl, civicrm_line_item li
       LEFT JOIN civicrm_membership m ON li.entity_id = m.id
@@ -247,17 +252,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
       AND msl.is_removed = 0
       AND msl.end_date IS NULL
       ';
-      $dbResultSet = CRM_Core_DAO::executeQuery($q, [
-        1 => [$recurringContributionID, 'Integer'],
-      ]);
+    $dbResultSet = CRM_Core_DAO::executeQuery($q, [
+      1 => [$recurringContributionID, 'Integer'],
+    ]);
 
-      $this->linesToBeRenewed[$recurringContributionID] = [];
-      while ($dbResultSet->fetch()) {
-        $this->linesToBeRenewed[$recurringContributionID][] = $dbResultSet->toArray();
-      }
+    $linesToBeRenewed = [];
+    while ($dbResultSet->fetch()) {
+      $linesToBeRenewed[] = $dbResultSet->toArray();
     }
 
-    return $this->linesToBeRenewed[$recurringContributionID];
+    return $linesToBeRenewed;
   }
 
   /**
