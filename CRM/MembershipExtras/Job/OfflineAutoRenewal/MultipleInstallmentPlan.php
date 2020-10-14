@@ -226,36 +226,33 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
       'options' => ['limit' => 0],
     ]);
 
-    if (count($recurringLineItems['values'])) {
-      foreach ($recurringLineItems['values'] as $lineItem) {
+    if (count($recurringLineItems['values']) == 0) {
+      return;
+    }
 
-        $lineItemParams = $lineItem['api.LineItem.getsingle'];
-        $upgradableMembershipTypeId = NULL;
-        if ($this->isMembershipLineItem($lineItemParams)) {
-          $autoUpgradableMembershipChecker = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
-          $upgradableMembershipTypeId = $autoUpgradableMembershipChecker->check($lineItemParams['entity_id']);
-        }
+    foreach ($recurringLineItems['values'] as $lineItem) {
 
-        if (!empty($upgradableMembershipTypeId)) {
-          $this->createUpgradableSubscriptionMembershipLine($upgradableMembershipTypeId, $nextContribution['id'], $this->membershipsStartDate);
-        }
-        else {
-          $lineItem = $lineItem['api.LineItem.getsingle'];
-          unset($lineItem['id']);
-          $lineItem['unit_price'] = $this->calculateLineItemUnitPrice($lineItem);
-          $lineItem['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItem['unit_price'] * $lineItem['qty']);
-          $lineItem['tax_amount'] = $this->calculateLineItemTaxAmount($lineItem['line_total'], $lineItem['financial_type_id']);
+      $lineItemParams = $lineItem['api.LineItem.getsingle'];
+      $upgradableMembershipTypeId = NULL;
+      if ($this->isMembershipLineItem($lineItemParams)) {
+        $upgradableMembershipTypeId = $this->autoUpgradableMembershipCheckService->calculateMembershipTypeToUpgradeTo($lineItemParams['entity_id']);
+      }
 
-          $newLineItem = civicrm_api3('LineItem', 'create', $lineItem);
-          CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
-            'contribution_recur_id' => $nextContribution['id'],
-            'line_item_id' => $newLineItem['id'],
-            'start_date' => $this->membershipsStartDate,
-            'auto_renew' => 1,
-          ]);
-        }
+      if (!empty($upgradableMembershipTypeId)) {
+        $this->createUpgradableSubscriptionMembershipLine($upgradableMembershipTypeId, $nextContribution['id'], $this->membershipsStartDate);
+        $this->makeSubscriptionLineItemNonRenewable($lineItem['id']);
+      }
+      else {
+        $this->duplicateSubscriptionLine($lineItemParams, $this->membershipsStartDate, $nextContribution['id']);
       }
     }
+  }
+
+  private function makeSubscriptionLineItemNonRenewable($subscriptionLineItemId) {
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+      'id' => $subscriptionLineItemId,
+      'auto_renew' => 0,
+    ]);
   }
 
   /**
