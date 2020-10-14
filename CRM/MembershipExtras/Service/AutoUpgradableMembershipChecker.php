@@ -12,6 +12,26 @@ use CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit as P
  */
 class CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker {
 
+  private $membershipUpgradeRules;
+
+  public function __construct() {
+    $this->membershipUpgradeRules = $this->getMembershipUpgradeRulesSortedByWeightAsc();
+  }
+
+  private function getMembershipUpgradeRulesSortedByWeightAsc() {
+    $membershipUpgradeRules = new CRM_MembershipExtras_BAO_AutoMembershipUpgradeRule();
+    $membershipUpgradeRules->is_active = TRUE;
+    $membershipUpgradeRules->orderBy('weight ASC');
+    $membershipUpgradeRules->find();
+
+    $membershipUpgradeRulesList = [];
+    while ($membershipUpgradeRules->fetch()) {
+      $membershipUpgradeRulesList[] = $membershipUpgradeRules->toArray();
+    }
+
+    return $membershipUpgradeRulesList;
+  }
+
   /**
    * Checks if given membership going to
    * be upgraded during autorenewal and
@@ -23,14 +43,17 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker {
    *   The membership type id that the membership
    *   will be upgraded to.
    */
-  public function check($membershipId) {
+  public function calculateMembershipTypeToUpgradeTo($membershipId) {
     $membership = civicrm_api3('Membership', 'getsingle', [
       'id' => $membershipId,
     ]);
 
-    $membershipUpgradeRules = $this->getRelevantMembershipUpgradeRulesSortedByWeightAsc($membership['membership_type_id']);
-    while ($membershipUpgradeRules->fetch()) {
-      switch ($membershipUpgradeRules->upgrade_trigger_date_type) {
+    foreach ($this->membershipUpgradeRules as $membershipUpgradeRule) {
+      if ($membershipUpgradeRule['from_membership_type_id'] != $membership['membership_type_id']) {
+        continue;
+      }
+
+      switch ($membershipUpgradeRule['upgrade_trigger_date_type']) {
         case TriggerDateType::MEMBER_SINCE:
           $calculationStartDate = $membership['join_date'];
           break;
@@ -45,7 +68,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker {
       $calculationEndDate->add(new DateInterval('P1D'));
       $difference = $calculationStartDate->diff($calculationEndDate);
 
-      switch ($membershipUpgradeRules->period_length_unit) {
+      switch ($membershipUpgradeRule['period_length_unit']) {
         case PeriodUnit::YEARS:
           $membershipLengthInRelativeToRulePeriodUnit = $difference->format('%y');
           break;
@@ -59,40 +82,21 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker {
           break;
       }
 
-      if ($membershipLengthInRelativeToRulePeriodUnit < $membershipUpgradeRules->period_length) {
+      if ($membershipLengthInRelativeToRulePeriodUnit < $membershipUpgradeRule['period_length']) {
         continue;
       }
 
-      if (!empty($membershipUpgradeRules->filter_group)) {
-        $isInFilterGroup = $this->checkIfMemberInFilterGroup($membership['contact_id'], $membershipUpgradeRules->filter_group);
+      if (!empty($membershipUpgradeRule['filter_group'])) {
+        $isInFilterGroup = $this->checkIfMemberInFilterGroup($membership['contact_id'], $membershipUpgradeRule['filter_group']);
         if (!$isInFilterGroup) {
           continue;
         }
       }
 
-      return $membershipUpgradeRules->to_membership_type_id;
+      return $membershipUpgradeRule['to_membership_type_id'];
     }
 
     return NULL;
-  }
-
-  /**
-   * Relevant membership upgrade rules
-   * are the ones where the membership in question type
-   * matches the rule "from membership type" field, since
-   * if they do not match it won't be necessary to check
-   * against that rule.
-   *
-   * @param int $fromMembershipTypeId
-   */
-  private function getRelevantMembershipUpgradeRulesSortedByWeightAsc($fromMembershipTypeId) {
-    $membershipUpgradeRules = new CRM_MembershipExtras_BAO_AutoMembershipUpgradeRule();
-    $membershipUpgradeRules->from_membership_type_id = $fromMembershipTypeId;
-    $membershipUpgradeRules->is_active = TRUE;
-    $membershipUpgradeRules->orderBy('weight ASC');
-    $membershipUpgradeRules->find();
-
-    return $membershipUpgradeRules;
   }
 
   /**

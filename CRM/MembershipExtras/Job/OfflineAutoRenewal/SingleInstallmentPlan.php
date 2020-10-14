@@ -173,15 +173,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
       $lineItemParams = $line['api.LineItem.getsingle'];
       $upgradableMembershipTypeId = NULL;
       if ($this->isMembershipLineItem($lineItemParams)) {
-        $autoUpgradableMembershipChecker = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
-        $upgradableMembershipTypeId = $autoUpgradableMembershipChecker->check($lineItemParams['entity_id']);
+        $upgradableMembershipTypeId = $this->autoUpgradableMembershipCheckService->calculateMembershipTypeToUpgradeTo($lineItemParams['entity_id']);
       }
 
       if (!empty($upgradableMembershipTypeId)) {
         $this->createUpgradableSubscriptionMembershipLine($upgradableMembershipTypeId, $this->currentRecurContributionID, $newStartDate->format('Y-m-d'));
       }
       else {
-        $this->duplicateSubscriptionLine($line, $newStartDate);
+        $this->duplicateSubscriptionLine($lineItemParams, $newStartDate->format('Y-m-d'), $this->currentRecurContributionID);
       }
     }
   }
@@ -196,29 +195,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
       'id' => $lineID,
       'end_date' => $endDate->format('Y-m-d'),
-    ]);
-  }
-
-  /**
-   * Duplicates given subscription line with the given start date.
-   *
-   * @param array $line
-   * @param \DateTime $startDate
-   */
-  private function duplicateSubscriptionLine($line, DateTime $startDate) {
-    $lineItemParams = $line['api.LineItem.getsingle'];
-    $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams);
-    $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
-    $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
-    unset($lineItemParams['id']);
-
-    $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
-
-    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
-      'contribution_recur_id' => $line['contribution_recur_id'],
-      'line_item_id' => $newLineItem['id'],
-      'start_date' => $startDate->format('Y-m-d'),
-      'auto_renew' => 1,
     ]);
   }
 

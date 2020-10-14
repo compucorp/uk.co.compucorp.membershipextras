@@ -86,7 +86,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
   }
 
@@ -108,7 +108,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertEquals($this->testMonthlyToMembershipType['id'], $upgradeMembershipTypeId);
   }
 
@@ -137,7 +137,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
   }
 
@@ -162,7 +162,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -184,7 +184,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -207,7 +207,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -230,7 +230,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -253,7 +253,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -276,7 +276,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -307,7 +307,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
     ]);
 
     $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->check($testMembership['id']);
+    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
   }
 

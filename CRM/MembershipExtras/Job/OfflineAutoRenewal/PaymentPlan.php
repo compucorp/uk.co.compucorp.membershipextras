@@ -116,9 +116,16 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $manualPaymentProcessorIDs;
 
   /**
+   * @var CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker
+   */
+  protected $autoUpgradableMembershipCheckService;
+
+  /**
    * CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan constructor.
    */
   public function __construct() {
+    $this->autoUpgradableMembershipCheckService = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
+
     $this->setUseMembershipLatestPrice();
     $this->setContributionPendingStatusValue();
     $this->setContributionStatusesNameMap();
@@ -950,6 +957,29 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     ]);
 
     return $this->calculateSingleInstallmentAmount($membershipMinimumFee);
+  }
+
+  /**
+   * Duplicates given subscription line with the given start date.
+   *
+   * @param array $lineItemParams
+   * @param string $startDate
+   * @param int $newRecurContributionId
+   */
+  protected function duplicateSubscriptionLine($lineItemParams, $startDate, $newRecurContributionId) {
+    $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams);
+    $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
+    $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
+    unset($lineItemParams['id']);
+
+    $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
+
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+      'contribution_recur_id' => $newRecurContributionId,
+      'line_item_id' => $newLineItem['id'],
+      'start_date' => $startDate,
+      'auto_renew' => 1,
+    ]);
   }
 
 }
