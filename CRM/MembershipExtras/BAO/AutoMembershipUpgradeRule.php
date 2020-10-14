@@ -51,4 +51,10 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRule extends CRM_MembershipE
     return $upgradeRule;
   }
 
+  public static function deleteById($id) {
+    $obj = new self();
+    $obj->id = $id;
+    $obj->delete();
+  }
+
 }
