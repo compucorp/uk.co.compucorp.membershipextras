@@ -10,9 +10,9 @@ class CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit im
 
   public static function getAll() {
     return [
-      self::YEARS => 'Years',
-      self::MONTHS => 'Months',
-      self::DAYS => 'Days',
+      self::YEARS => 'Year(s)',
+      self::MONTHS => 'Month(s)',
+      self::DAYS => 'Day(s)',
     ];
   }
 
