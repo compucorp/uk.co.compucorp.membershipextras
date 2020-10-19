@@ -16,9 +16,15 @@ class CRM_MembershipExtras_Form_AutomatedUpgradeRule extends CRM_Core_Form {
    * @inheritdoc
    */
   public function preProcess() {
-    CRM_Utils_System::setTitle(ts('New Automated Membership Upgrade Rule'));
-
     $this->id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
+
+    $mode = 'New';
+    if ($this->id) {
+      $mode = 'Edit';
+    }
+
+    $title = $mode . ' Automated Membership Upgrade Rule';
+    CRM_Utils_System::setTitle(ts($title));
   }
 
   /**
@@ -167,6 +173,10 @@ class CRM_MembershipExtras_Form_AutomatedUpgradeRule extends CRM_Core_Form {
     $params['is_active'] = CRM_Utils_Array::value('is_active', $submittedValues, FALSE);
 
     CRM_MembershipExtras_BAO_AutoMembershipUpgradeRule::create($params);
+
+    CRM_Core_Session::setStatus(ts('The membership automated upgrade rule has been saved.'), ts('Saved'), 'success');
+    $returnURL = CRM_Utils_System::url('civicrm/admin/member/automated-upgrade-rules', 'reset=1');
+    CRM_Utils_System::redirect($returnURL);
   }
 
 }

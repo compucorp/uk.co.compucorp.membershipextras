@@ -7,9 +7,21 @@
     <access_arguments>administer CiviCRM</access_arguments>
   </item>
   <item>
+    <path>civicrm/admin/member/automated-upgrade-rules</path>
+    <page_callback>CRM_MembershipExtras_Page_AutomatedMembershipUpgradeRule</page_callback>
+    <title>Membership Automated Upgrade Rules</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+  <item>
     <path>civicrm/admin/member/automated-upgrade-rules/add</path>
     <page_callback>CRM_MembershipExtras_Form_AutomatedUpgradeRule</page_callback>
     <title>New Automated Membership Upgrade Rule</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/admin/member/automated-upgrade-rules/delete</path>
+    <page_callback>CRM_MembershipExtras_Form_AutomatedUpgradeRuleDelete</page_callback>
+    <title>Delete Automated Membership Upgrade Rule</title>
     <access_arguments>administer CiviCRM</access_arguments>
   </item>
   <item>
