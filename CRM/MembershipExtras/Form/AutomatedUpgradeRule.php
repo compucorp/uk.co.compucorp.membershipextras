@@ -47,7 +47,7 @@ class CRM_MembershipExtras_Form_AutomatedUpgradeRule extends CRM_Core_Form {
       TRUE
     );
 
-    $this->add('text', 'period_length', '', ['size' => 5], TRUE);
+    $this->add('text', 'period_length', 'Period Length', ['size' => 5], TRUE);
 
     $this->add(
       'select',

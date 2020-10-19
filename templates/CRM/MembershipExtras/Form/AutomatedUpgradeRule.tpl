@@ -21,7 +21,7 @@
     </tr>
 
     <tr>
-      <td class="label"><label>{ts}Period to have held "from" membership for{/ts}</label></td>
+      <td class="label"><label>{ts}Period to have held "from membership" for{/ts}</label></td>
       <td>{$form.upgrade_trigger_date_type.html}&nbsp;{$form.period_length.html}&nbsp;{$form.period_length_unit.html}</td>
     </tr>
 
