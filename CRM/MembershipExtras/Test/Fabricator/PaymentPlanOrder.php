@@ -4,40 +4,126 @@ use CRM_MembershipExtras_Test_Fabricator_RecurringLineItem as RecurringLineItemF
 use CRM_MembershipExtras_Test_Fabricator_LineItem as LineItemFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Contribution as ContributionFabricator;
+use CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder as PaymentPlanMembershipOrderEntity;
 
 /**
  * Class CRM_MembershipExtras_Test_Fabricator_PaymentPlan
  */
 class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
 
+  private static $paymentPlanMembershipOrder;
+
   /**
-   * Fabricates a payment plan with the provided information.
+   * Fabricates payment plan order.
    *
-   * @param array $recurringContributionParams
-   * @param array $lineItemParams
-   * @param array $contributionParams
+   * @param CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder $paymentPlanMembershipOrder
    *
    * @return array
-   * @throws \Exception
    */
-  public static function fabricate($recurringContributionParams, $lineItemParams, $contributionParams) {
-    $recurringContribution = self::createRecurringContribution($recurringContributionParams);
-    $lineItems = self::createRecurringLineItems($recurringContribution, $lineItemParams);
-    self::updateRecurringContributionAmount($recurringContribution['id']);
-    self::createInstallments($recurringContribution, $contributionParams, $lineItems);
+  public static function fabricate(PaymentPlanMembershipOrderEntity $paymentPlanMembershipOrder) {
+    self::$paymentPlanMembershipOrder = $paymentPlanMembershipOrder;
+    self::updatePaymentPlanMissingParams();
+
+    $recurringContribution = self::createRecurringContribution();
+    $lineItems = self::createRecurringLineItems($recurringContribution);
+    self::updateRecurringContributionAmount($recurringContribution);
+    self::createInstallments($recurringContribution, $lineItems);
 
     return $recurringContribution;
   }
 
   /**
-   * Creates the recurring contribution.
+   * Sets the missing payment plan
+   * order parameters to sensible default
+   * values if they are not set.
    *
-   * @param array $recurringContributionParams
+   * @return mixed
+   * @throws CiviCRM_API3_Exception
+   */
+  private static function updatePaymentPlanMissingParams() {
+    if (empty(self::$paymentPlanMembershipOrder->contactId)) {
+      self::$paymentPlanMembershipOrder->contactId = CRM_MembershipExtras_Test_Fabricator_Contact::fabricate()['id'];
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->paymentPlanFrequency)) {
+      self::$paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->paymentPlanStatus)) {
+      self::$paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->paymentProcessor)) {
+      self::$paymentPlanMembershipOrder->paymentProcessor = 'Offline Recurring Contribution';
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->financialType)) {
+      self::$paymentPlanMembershipOrder->financialType = 'Member Dues';
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->paymentMethod)) {
+      self::$paymentPlanMembershipOrder->paymentMethod = 'EFT';
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->membershipStartDate)) {
+      self::$paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d');
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->membershipJoinDate)) {
+      self::$paymentPlanMembershipOrder->membershipJoinDate = self::$paymentPlanMembershipOrder->membershipStartDate;
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->paymentPlanStartDate)) {
+      self::$paymentPlanMembershipOrder->paymentPlanStartDate = self::$paymentPlanMembershipOrder->membershipStartDate;
+    }
+
+    return self::$paymentPlanMembershipOrder;
+  }
+
+  /**
+   * Creates the recurring contribution.
    *
    * @return array
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createRecurringContribution($recurringContributionParams) {
+  private static function createRecurringContribution() {
+    switch (self::$paymentPlanMembershipOrder->paymentPlanFrequency) {
+      case 'Yearly':
+        $frequencyUnit = 'year';
+        $frequencyInterval = 1;
+        $installments = 1;
+        break;
+
+      case 'Monthly':
+        $frequencyUnit = 'month';
+        $frequencyInterval = 1;
+        $installments = 12;
+        break;
+
+      case 'Quarterly':
+        $frequencyUnit = 'month';
+        $frequencyInterval = 3;
+        $installments = 4;
+        break;
+    }
+
+    $recurringContributionParams = [
+      'sequential' => 1,
+      'contact_id' => self::$paymentPlanMembershipOrder->contactId,
+      'amount' => 0,
+      'frequency_unit' => $frequencyUnit,
+      'frequency_interval' => $frequencyInterval,
+      'installments' => $installments,
+      'contribution_status_id' => self::$paymentPlanMembershipOrder->paymentPlanStatus,
+      'is_test' => 0,
+      'auto_renew' => 1,
+      'cycle_day' => 1,
+      'payment_processor_id' => self::$paymentPlanMembershipOrder->paymentProcessor,
+      'financial_type_id' => self::$paymentPlanMembershipOrder->financialType,
+      'payment_instrument_id' => self::$paymentPlanMembershipOrder->paymentMethod,
+      'start_date' => self::$paymentPlanMembershipOrder->paymentPlanStartDate,
+    ];
+
     return RecurringContributionFabricator::fabricate($recurringContributionParams);
   }
 
@@ -48,28 +134,26 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * contribution.
    *
    * @param array $recurringContribution
-   * @param array $lineItems
    *
    * @return array
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createRecurringLineItems($recurringContribution, $lineItems) {
+  private static function createRecurringLineItems($recurringContribution) {
     $createdLines = [];
 
-    foreach ($lineItems as $line) {
-      $priceFieldValue = self::getPriceFieldValue($line['price_field_value_id']);
-      if (self::isMembershipLineItem($line, $priceFieldValue)) {
-        $membershipID = self::createMembership($recurringContribution, $line, $priceFieldValue);
-        $line['entity_id'] = $membershipID;
-        $line['entity_table'] = 'civicrm_membership';
+    foreach (self::$paymentPlanMembershipOrder->lineItems as $lineItem) {
+      if (self::isMembershipLineItem($lineItem)) {
+        $membershipID = self::createMembership($lineItem, $recurringContribution);
+        $lineItem['entity_id'] = $membershipID;
+        $lineItem['entity_table'] = 'civicrm_membership';
       }
 
-      $newLineItem = LineItemFabricator::fabricate($line);
+      $newLineItem = LineItemFabricator::fabricate($lineItem);
       $recurringLineItem = RecurringLineItemFabricator::fabricate([
         'contribution_recur_id' => $recurringContribution['id'],
         'line_item_id' => $newLineItem['id'],
-        'start_date' => $recurringContribution['start_date'],
-        'auto_renew' => $recurringContribution['auto_renew'],
+        'start_date' => self::$paymentPlanMembershipOrder->membershipStartDate,
+        'auto_renew' => 1,
       ]);
 
       $createdLines[] = ['line_item' => $newLineItem, 'recurring_line' => $recurringLineItem];
@@ -84,16 +168,18 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * Updates total amount by evaluating the total of each related line item
    * associated to the recurring contribution.
    *
-   * @param $recurringContributionID
+   * @param $recurringContribution
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private static function updateRecurringContributionAmount($recurringContributionID) {
-    $totalAmount = self::calculateRecurringContributionTotalAmount($recurringContributionID);
+  private static function updateRecurringContributionAmount(&$recurringContribution) {
+    $totalAmount = self::calculateRecurringContributionTotalAmount($recurringContribution['id']);
     civicrm_api3('ContributionRecur', 'create', [
-      'id' => $recurringContributionID,
+      'id' => $recurringContribution['id'],
       'amount' => $totalAmount,
     ]);
+
+    $recurringContribution['amount'] = $totalAmount;
   }
 
   /**
@@ -137,38 +223,40 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * Creates the payment plan's installments.
    *
    * @param array $recurringContribution
-   * @param array $contribution
    * @param array $lineItems
    *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createInstallments($recurringContribution, $contribution, $lineItems) {
-    self::createFirstInstallment($recurringContribution, $contribution, $lineItems);
-    self::createRemainingInstallments($recurringContribution);
+  private static function createInstallments($recurringContribution, $lineItems) {
+    self::createFirstInstallment($recurringContribution, $lineItems);
+    self::createRemainingInstallments($recurringContribution['id']);
   }
 
   /**
    * Creates the first contribution for the payment plan.
    *
    * @param array $recurringContribution
-   * @param array $contributionParams
    * @param array $lineItems
    *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createFirstInstallment($recurringContribution, $contributionParams, &$lineItems) {
-    $params = array_merge(
-      [
-        'is_pay_later' => TRUE,
-        'skipLineItem' => 1,
-        'skipCleanMoney' => TRUE,
-        'receive_date' => $recurringContribution['start_date'],
-        'contribution_recur_id' => $recurringContribution['id'],
-      ],
-      $contributionParams
-    );
+  private static function createFirstInstallment($recurringContribution, &$lineItems) {
+    $params = [
+      'is_pay_later' => TRUE,
+      'skipLineItem' => 1,
+      'skipCleanMoney' => TRUE,
+      'receive_date' => self::$paymentPlanMembershipOrder->paymentPlanStartDate,
+      'contribution_recur_id' => $recurringContribution['id'],
+      'contact_id' => $recurringContribution['contact_id'],
+      'fee_amount' => 0,
+      'net_amount' => $recurringContribution['amount'],
+      'total_amount' => $recurringContribution['amount'],
+      'payment_instrument_id' => self::$paymentPlanMembershipOrder->paymentMethod,
+      'financial_type_id' => self::$paymentPlanMembershipOrder->financialType,
+      'contribution_status_id' => self::$paymentPlanMembershipOrder->paymentPlanStatus,
+    ];
     $contribution = ContributionFabricator::fabricate($params);
 
     foreach ($lineItems as &$line) {
@@ -179,20 +267,19 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
         $line['line_item']['entity_id'] = $contribution['id'];
       }
 
-      self::createLineItemForContribution($contribution['id'], $line);
+      self::createLineItemForContribution($line);
     }
   }
 
   /**
    * Creates the line item for the contribution identified by the given ID.
    *
-   * @param int $contributionID
    * @param array $line
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createLineItemForContribution($contributionID, $line) {
-    $contribution = CRM_Contribute_BAO_Contribution::findById($contributionID);
+  private static function createLineItemForContribution($line) {
+    $contribution = CRM_Contribute_BAO_Contribution::findById($line['line_item']['contribution_id']);
     $newLineItem = CRM_Price_BAO_LineItem::create($line['line_item']);
     CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
 
@@ -200,9 +287,9 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
     }
 
-    if (self::isMembershipLineItem($line)) {
+    if (self::isMembershipLineItem($line['line_item'])) {
       CRM_Member_BAO_MembershipPayment::create([
-        'membership_id' => $line['entity_id'],
+        'membership_id' => $line['line_item']['entity_id'],
         'contribution_id' => $contribution->id,
       ]);
     }
@@ -211,10 +298,10 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
   /**
    * Creates remaining installments for the payment plan.
    *
-   * @param array $recurringContribution
+   * @param int $recurringContributionId
    */
-  private static function createRemainingInstallments($recurringContribution) {
-    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurringContribution['id']);
+  private static function createRemainingInstallments($recurringContributionId) {
+    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurringContributionId);
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
 
@@ -222,16 +309,11 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * Checks if the given line item is a membership.
    *
    * @param array $lineItem
-   * @param array $priceFieldValue
    *
    * @return bool
    */
-  private static function isMembershipLineItem($lineItem, $priceFieldValue = NULL) {
-    if (isset($lineItem) && isset($lineItem['entity_table']) && $lineItem['entity_table'] == 'civicrm_membership') {
-      return TRUE;
-    }
-
-    if (isset($priceFieldValue) && !empty($priceFieldValue['membership_type_id'])) {
+  private static function isMembershipLineItem($lineItem) {
+    if ($lineItem['entity_table'] == 'civicrm_membership') {
       return TRUE;
     }
 
@@ -255,22 +337,23 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
   /**
    * Creates the membership.
    *
+   * @param array $lineItem
    * @param array $recurringContribution
-   * @param array $line
-   * @param array $priceFieldValue
    *
    * @return int
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createMembership($recurringContribution, $line, $priceFieldValue) {
+  private static function createMembership($lineItem, $recurringContribution) {
+    $priceFieldValue = self::getPriceFieldValue($lineItem['price_field_value_id']);
+
     $membershipCreateResult = MembershipFabricator::fabricate([
       'contact_id' => $recurringContribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
-      'join_date' => CRM_Utils_Array::value('join_date', $line, date('YmdHis')),
-      'start_date' => CRM_Utils_Array::value('start_date', $line, $recurringContribution['start_date']),
-      'end_date' => CRM_Utils_Array::value('start_date', $line, 'null'),
+      'join_date' => self::$paymentPlanMembershipOrder->membershipJoinDate,
+      'start_date' => self::$paymentPlanMembershipOrder->membershipStartDate,
+      'end_date' => self::$paymentPlanMembershipOrder->membershipEndDate,
       'contribution_recur_id' => $recurringContribution['id'],
-      'financial_type_id' => $recurringContribution['financial_type_id'],
+      'financial_type_id' => $lineItem['financial_type_id'],
     ]);
 
     return $membershipCreateResult['id'];

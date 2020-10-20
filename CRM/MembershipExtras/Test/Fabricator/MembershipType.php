@@ -9,6 +9,13 @@ use CRM_Member_BAO_MembershipType as MembershipType;
 class CRM_MembershipExtras_Test_Fabricator_MembershipType extends BaseFabricator {
 
   /**
+   * Entity's name.
+   *
+   * @var string
+   */
+  protected static $entityName = 'MembershipType';
+
+  /**
    * Default parameters that will be used to fabricate a membership type.
    *
    * @var array
@@ -21,19 +28,26 @@ class CRM_MembershipExtras_Test_Fabricator_MembershipType extends BaseFabricator
     'fixed_period_rollover_day' => 1231,
     'domain_id' => 1,
     'member_of_contact_id' => 1,
-    'financial_type_id' => 1,
+    'financial_type_id' => 'Member Dues',
   ];
 
   /**
-   * Fabricates a membership type.
+   * Fabricates and returns the membership
+   * type entity using the BAO class
+   * instead of using API.
    *
    * @param array $params
    * @param bool $saveObject
    *
    * @return \CRM_Member_BAO_MembershipType
    */
-  public static function fabricate($params = [], $saveObject = FALSE) {
+  public static function fabricateWithBAO($params = [], $saveObject = FALSE) {
     $params = array_merge(static::$defaultParams, $params);
+
+    if (empty($params['name'])) {
+      $params['name'] = md5(mt_rand());
+    }
+
     $membershipType = new MembershipType();
 
     foreach ($params as $property => $value) {
