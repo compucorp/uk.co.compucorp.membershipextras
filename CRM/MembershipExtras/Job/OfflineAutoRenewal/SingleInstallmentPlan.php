@@ -201,9 +201,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    */
   private function duplicateSubscriptionLine($line, DateTime $startDate) {
     $lineItemParams = $line['api.LineItem.getsingle'];
-    $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams);
-    $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
-    $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
+    $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams) ?: 0;
+    $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']) ?: 0;
+    $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']) ?: 0;
     unset($lineItemParams['id']);
 
     $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
