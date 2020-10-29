@@ -16,6 +16,10 @@ class CRM_MembershipExtras_Form_AutomatedUpgradeRuleDelete extends CRM_Core_Form
     CRM_Utils_System::setTitle(ts('Delete Automated Membership Upgrade Rule'));
 
     $this->id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
+
+    $url = CRM_Utils_System::url('civicrm/admin/member/automated-upgrade-rules', 'reset=1');
+    $session = CRM_Core_Session::singleton();
+    $session->replaceUserContext($url);
   }
 
   /**
