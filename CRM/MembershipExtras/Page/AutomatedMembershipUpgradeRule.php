@@ -55,7 +55,7 @@ class CRM_MembershipExtras_Page_AutomatedMembershipUpgradeRule extends CRM_Core_
     $rowValues['to_membership_label'] = $membershipIdsToLabelsMap[$rowValues['to_membership_type_id']];
 
     $periodLengthValues = PeriodUnitSelectValues::getAll();
-    $rowValues['held_for'] = $rowValues['period_length'] . ' ' . $periodLengthValues[$rowValues['period_length']];
+    $rowValues['held_for'] = $rowValues['period_length'] . ' ' . $periodLengthValues[$rowValues['period_length_unit']];
 
     $triggerDateTypeValues = TriggerDateTypeSelectValues::getAll();
     $rowValues['basis'] = $triggerDateTypeValues[$rowValues['upgrade_trigger_date_type']];
