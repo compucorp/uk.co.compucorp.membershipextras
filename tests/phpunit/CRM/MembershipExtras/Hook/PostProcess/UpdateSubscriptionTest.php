@@ -2,7 +2,6 @@
 
 use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
-use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringContributionPaymentProcessor;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PriceField as PriceFieldFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabricator;
@@ -12,17 +11,7 @@ use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabri
  *
  * @group headless
  */
-class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseHeadlessTest {
-
-  private $contact;
-  private $membershipType;
-  private $recurringContributionParams = [];
-  private $lineItemsParams = [];
-  private $contributionParams = [];
-  private $memberDuesFinancialType = [];
-  private $eftPaymentInstrumentID = 0;
-  private $contributionPendingStatusValue = 0;
-  private $defaultMembershipsPriceSet = [];
+class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BasePaymentPlanTest {
 
   /**
    * The form used to update recurring contributions.
@@ -32,56 +21,11 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
   private $updateSubscriptionForm;
 
   public function setUp() {
-    $this->setTestParameterValues();
+    parent::setUp();
+
     $this->createRequiredTestEntities();
     $this->setUpDefaultPaymentPlanParameters();
     $this->setUpUpdateSubscriptionForm();
-  }
-
-  /**
-   * Loads parameters required for the tests.
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function setTestParameterValues() {
-    $this->contributionPendingStatusValue = $this->getPendingContributionStatusValue();
-    $this->memberDuesFinancialType = $this->getMembershipDuesFinancialType();
-    $this->eftPaymentInstrumentID = $this->getEFTPaymentInstrumentID();
-    $this->defaultMembershipsPriceSet = $this->getDefaultPriceSet();
-  }
-
-  /**
-   * Obtains value for the 'Pending' contribution status option value.
-   *
-   * @return array
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getPendingContributionStatusValue() {
-    return civicrm_api3('OptionValue', 'getvalue', [
-      'return' => 'value',
-      'option_group_id' => 'contribution_status',
-      'name' => 'Pending',
-    ]);
-  }
-
-  /**
-   * Obtains default price set for memberships.
-   *
-   * @return array
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getDefaultPriceSet() {
-    $result = civicrm_api3('PriceSet', 'get', [
-      'sequential' => 1,
-      'name' => 'default_membership_type_amount',
-      'options' => ['limit' => 1],
-    ]);
-
-    if ($result['count'] > 0) {
-      return array_shift($result['values']);
-    }
-
-    return [];
   }
 
   /**
@@ -167,82 +111,6 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
     $controller = new CRM_Core_Controller();
     $this->updateSubscriptionForm = new CRM_Contribute_Form_UpdateSubscription();
     $this->updateSubscriptionForm->controller = $controller;
-  }
-
-  /**
-   * Obtains default payment processor used for offline recurring contributions.
-   *
-   * @return array
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getPayLaterProcessorID() {
-    $result = civicrm_api3('PaymentProcessor', 'get', [
-      'sequential' => 1,
-      'name' => OfflineRecurringContributionPaymentProcessor::NAME,
-      'is_test' => '0',
-      'options' => ['limit' => 1],
-    ]);
-
-    if ($result['count'] > 0) {
-      return array_shift($result['values']);
-    }
-
-    return [];
-  }
-
-  /**
-   * Obtains 'Membership Dues' financial type.
-   *
-   * @return array
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getMembershipDuesFinancialType() {
-    $result = civicrm_api3('FinancialType', 'get', [
-      'sequential' => 1,
-      'name' => 'Member Dues',
-      'options' => ['limit' => 1],
-    ]);
-
-    if ($result['count'] > 0) {
-      return array_shift($result['values']);
-    }
-
-    return [];
-  }
-
-  /**
-   * Obtains value for EFT payment instrument option value.
-   *
-   * @return array
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getEFTPaymentInstrumentID() {
-    return civicrm_api3('OptionValue', 'getvalue', [
-      'return' => 'value',
-      'option_group_id' => 'payment_instrument',
-      'label' => 'EFT',
-    ]);
-  }
-
-  /**
-   * Gets the default price field value for the given membership ID.
-   *
-   * @param int $membershipTypeID
-   *
-   * @return array
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getDefaultPriceFieldValueID($membershipTypeID) {
-    $result = civicrm_api3('PriceFieldValue', 'get', [
-      'sequential' => 1,
-      'price_field_id.price_set_id.name' => 'default_membership_type_amount',
-    ]);
-
-    if ($result['count'] > 0) {
-      return array_shift($result['values']);
-    }
-
-    return [];
   }
 
   public function testUpdatingCycleDayUpdatesReceiveDatesOfContributionsInFuture() {

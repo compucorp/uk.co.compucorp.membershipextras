@@ -57,11 +57,19 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
     $createdLines = [];
 
     foreach ($lineItems as $line) {
-      $priceFieldValue = self::getPriceFieldValue($line['price_field_value_id']);
+      $priceFieldValue = NULL;
+      if (isset($line['price_field_value_id'])) {
+        $priceFieldValue = self::getPriceFieldValue($line['price_field_value_id']);
+      }
+
       if (self::isMembershipLineItem($line, $priceFieldValue)) {
         $membershipID = self::createMembership($recurringContribution, $line, $priceFieldValue);
         $line['entity_id'] = $membershipID;
         $line['entity_table'] = 'civicrm_membership';
+      }
+      else {
+        $line['entity_id'] = $recurringContribution['id'];
+        $line['entity_table'] = 'civicrm_contribution_recur';
       }
 
       $newLineItem = LineItemFabricator::fabricate($line);
@@ -268,7 +276,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'membership_type_id' => $priceFieldValue['membership_type_id'],
       'join_date' => CRM_Utils_Array::value('join_date', $line, date('YmdHis')),
       'start_date' => CRM_Utils_Array::value('start_date', $line, $recurringContribution['start_date']),
-      'end_date' => CRM_Utils_Array::value('start_date', $line, 'null'),
+      'end_date' => CRM_Utils_Array::value('end_date', $line, 'null'),
       'contribution_recur_id' => $recurringContribution['id'],
       'financial_type_id' => $recurringContribution['financial_type_id'],
     ]);
