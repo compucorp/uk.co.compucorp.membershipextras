@@ -25,6 +25,10 @@ class CRM_MembershipExtras_Form_AutomatedUpgradeRule extends CRM_Core_Form {
 
     $title = $mode . ' Automated Membership Upgrade Rule';
     CRM_Utils_System::setTitle(ts($title));
+
+    $url = CRM_Utils_System::url('civicrm/admin/member/automated-upgrade-rules', 'reset=1');
+    $session = CRM_Core_Session::singleton();
+    $session->replaceUserContext($url);
   }
 
   /**
