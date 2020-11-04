@@ -347,7 +347,25 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       $conditions['end_date'] = ['IS NULL' => 1];
     }
 
-    return $this->getLineItems($conditions);
+    $nextLineItems = $this->getLineItems($conditions);
+
+    foreach ($nextLineItems as &$nextLineItem) {
+      if (!empty($nextLineItem['related_membership']['id'])) {
+        $relatedMembershipId = $nextLineItem['related_membership']['id'];
+
+        $autoUpgradableMembershipChecker = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
+        $upgradedMembershipTypeId = $autoUpgradableMembershipChecker->calculateMembershipTypeToUpgradeTo($relatedMembershipId);
+
+        if (!empty($upgradedMembershipTypeId)) {
+          $nextLineItem['label'] = civicrm_api3('MembershipType', 'getvalue', [
+            'return' => 'name',
+            'id' => $upgradedMembershipTypeId,
+          ]);
+        }
+      }
+    }
+
+    return $nextLineItems;
   }
 
   /**
