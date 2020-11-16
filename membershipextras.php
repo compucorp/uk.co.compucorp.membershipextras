@@ -139,7 +139,7 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
     'separator' => NULL,
   ];
 
-  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/', $paymentPlanSettingsMenuItem);
+  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviContribute', $paymentPlanSettingsMenuItem);
 }
 
 /**
