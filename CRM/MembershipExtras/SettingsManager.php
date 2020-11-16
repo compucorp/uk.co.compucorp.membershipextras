@@ -110,10 +110,16 @@ class CRM_MembershipExtras_SettingsManager {
   }
 
   private static function getSettingValue($settingName) {
-    return civicrm_api3('Setting', 'get', [
+    $result = civicrm_api3('Setting', 'get', [
       'sequential' => 1,
       'return' => [$settingName],
-    ])['values'][0][$settingName];
+    ]);
+
+    if (isset($result['values'][0][$settingName])) {
+      return $result['values'][0][$settingName];
+    }
+
+    return NULL;
   }
 
 }
