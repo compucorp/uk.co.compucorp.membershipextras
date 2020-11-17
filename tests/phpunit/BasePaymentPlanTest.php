@@ -156,7 +156,10 @@ abstract class BasePaymentPlanTest extends BaseHeadlessTest {
     $contributions = $contributions = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
       'contribution_recur_id' => $recurringContributionID,
-      'options' => ['limit' => 0],
+      'options' => [
+        'limit' => 0,
+        'sort' => 'id',
+      ],
     ]);
 
     if ($contributions['count'] > 0) {

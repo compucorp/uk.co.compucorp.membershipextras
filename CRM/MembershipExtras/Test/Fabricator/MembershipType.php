@@ -14,6 +14,7 @@ class CRM_MembershipExtras_Test_Fabricator_MembershipType extends BaseFabricator
    * @var array
    */
   protected static $defaultParams = [
+    'name' => 'Test Membership Type',
     'duration_unit' => 'year',
     'period_type' => 'fixed',
     'duration_interval' => 1,

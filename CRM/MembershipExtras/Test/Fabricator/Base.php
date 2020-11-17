@@ -33,10 +33,29 @@ abstract class CRM_MembershipExtras_Test_Fabricator_Base {
       throw new \Exception('Entity name cannot be empty!');
     }
 
-    $params = array_merge(static::$defaultParams, $params);
-    $result = civicrm_api3(static::$entityName, 'create', $params);
+    $defaultParams = static::getDefaultParameters();
+    $params = array_merge($defaultParams, $params);
+
+    try {
+      $result = civicrm_api3(static::$entityName, 'create', $params);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      throw new Exception('Found exception fabricating ' . static::$entityName . ': ' . $e->getMessage() . "\n\n" . print_r($e->getExtraParams(), TRUE));
+    }
+    catch (Exception $e) {
+      throw new Exception('Found exception fabricating ' . static::$entityName . ': ' . $e->getMessage());
+    }
 
     return array_shift($result['values']);
+  }
+
+  /**
+   * Returns default list of parameters to create an instance of the entity.
+   *
+   * @return array
+   */
+  public static function getDefaultParameters() {
+    return static::$defaultParams;
   }
 
 }
