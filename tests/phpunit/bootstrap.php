@@ -20,7 +20,6 @@ $loader->add('api\\', __DIR__);
 $loader->register();
 
 require_once 'BaseHeadlessTest.php';
-require_once 'BasePaymentPlanTest.php';
 
 /**
  * Call the "cv" command.

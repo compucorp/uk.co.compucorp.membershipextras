@@ -724,6 +724,45 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     $this->assertTrue($correctSubscriptionLineItems);
   }
 
+  public function testRenewalWithMembershipFeeEqualZeroWillRenew() {
+    $zeroFeeMembershipType = MembershipTypeFabricator::fabricate(
+      [
+        'name' => 'Test Rolling Membership',
+        'period_type' => 'rolling',
+        'minimum_fee' => 0,
+        'duration_interval' => 1,
+        'duration_unit' => 'year',
+      ]);
+
+    $zeroFeeMembershipTypePriceFieldValue = civicrm_api3('PriceFieldValue', 'get', [
+      'sequential' => 1,
+      'membership_type_id' => $zeroFeeMembershipType['id'],
+      'options' => ['limit' => 1],
+    ])['values'][0];
+
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $zeroFeeMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $zeroFeeMembershipTypePriceFieldValue['id'],
+      'label' => $zeroFeeMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $zeroFeeMembershipTypePriceFieldValue['amount'],
+      'line_total' => $zeroFeeMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+
+    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
+    $singleInstallmentRenewal->run();
+
+    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
+  }
+
   /**
    * Checks if the membership is renewed
    * by checking the contibutions count
