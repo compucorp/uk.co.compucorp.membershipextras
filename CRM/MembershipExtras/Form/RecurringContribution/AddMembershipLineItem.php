@@ -4,8 +4,7 @@ use CRM_MembershipExtras_ExtensionUtil as E;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
- * Form controller class to confirm addition of a new membership as a line item
- * in a recurring contribution.
+ * Form controller class to add a new membership as a line item in a payment plan.
  */
 class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem extends CRM_MembershipExtras_Form_RecurringContribution_AddLineItem {
 
@@ -34,7 +33,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
    */
   private function getMembershipType($membershipID) {
     return civicrm_api3('MembershipType', 'getsingle', [
-      'id' => $membershipID
+      'id' => $membershipID,
     ]);
   }
 
@@ -133,7 +132,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
     ];
 
     $existingLineItem = $this->getExistingLineItemForMembershipType($membership['membership_type_id']);
-    if (CRM_Utils_Array::value('id', $existingLineItem, false)) {
+    if (CRM_Utils_Array::value('id', $existingLineItem, FALSE)) {
       $lineItemParams['id'] = $existingLineItem['line_item_id'];
     }
     $lineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
@@ -145,7 +144,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'auto_renew' => $this->lineItemParams['auto_renew'],
     ];
 
-    if (CRM_Utils_Array::value('id', $existingLineItem, false)) {
+    if (CRM_Utils_Array::value('id', $existingLineItem, FALSE)) {
       $recurringSubscriptionLineParams['id'] = $existingLineItem['id'];
     }
     CRM_MembershipExtras_BAO_ContributionRecurLineItem::create($recurringSubscriptionLineParams);
@@ -230,7 +229,8 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
   private function saveMembership() {
     if (!$this->membershipExists()) {
       $membership = $this->createMembership();
-    } else {
+    }
+    else {
       $membership = $this->updateMembership();
     }
 
@@ -269,11 +269,24 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'sequential' => 1,
       'id' => $membership['id'],
       'start_date' => $this->lineItemParams['start_date'],
-      'end_date' => $this->lineItemParams['end_date'],
+      'end_date' => $this->calculateEndDateForMembership(),
       'contribution_recur_id' => $this->recurringContribution['auto_renew'] ? $this->recurringContribution['id'] : '',
     ]);
 
     return array_shift($result['values']);
+  }
+
+  /**
+   * Calculates end date that shuld be used for the membership.
+   *
+   * @return string|null
+   */
+  private function calculateEndDateForMembership() {
+    if ($this->membershipType['duration_unit'] == 'lifetime') {
+      return NULL;
+    }
+
+    return $this->lineItemParams['end_date'];
   }
 
   /**
@@ -285,7 +298,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
    *
    * @return array|int
    */
-  private function getMembershipForContact($contactID, $membershipTypeID, $getCount = false) {
+  private function getMembershipForContact($contactID, $membershipTypeID, $getCount = FALSE) {
     $action = $getCount ? 'getcount' : 'get';
 
     $membershipResult = civicrm_api3('Membership', $action, [
@@ -297,7 +310,8 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
 
     if ($getCount) {
       return $membershipResult;
-    } else {
+    }
+    else {
       return array_shift($membershipResult['values']);
     }
   }
@@ -317,7 +331,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       'membership_type_id' => $this->membershipType['id'],
       'join_date' => $this->lineItemParams['start_date'],
       'start_date' => $this->lineItemParams['start_date'],
-      'end_date' => $this->lineItemParams['end_date'],
+      'end_date' => $this->calculateEndDateForMembership(),
       'contribution_recur_id' => $autoRenew ? $this->recurringContribution['id'] : '',
     ]);
 

@@ -63,6 +63,13 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   private $membershipsCache = [];
 
   /**
+   * Maps membership types to memberships that have been loaded.
+   *
+   * @var array
+   */
+  private $membershipTypesCache = [];
+
+  /**
    * @inheritdoc
    */
   public function __construct($title = NULL, $mode = NULL) {
@@ -165,19 +172,23 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return array
    */
   private function getMembershipTypeFromMembershipID($membershipID) {
-    try {
-      $result = civicrm_api3('Membership', 'getsingle', [
-        'id' => $membershipID,
-        'api.MembershipType.getsingle' => [
-          'id' => '$value.membership_type_id',
-        ],
-      ]);
+    if (!isset($this->membershipTypesCache[$membershipID])) {
+      try {
+        $result = civicrm_api3('Membership', 'getsingle', [
+          'id' => $membershipID,
+          'api.MembershipType.getsingle' => [
+            'id' => '$value.membership_type_id',
+          ],
+        ]);
 
-      return $result['api.MembershipType.getsingle'];
+        $this->membershipTypesCache[$membershipID] = $result['api.MembershipType.getsingle'];
+      }
+      catch (Exception $e) {
+        return [];
+      }
     }
-    catch (Exception $e) {
-      return [];
-    }
+
+    return $this->membershipTypesCache[$membershipID];
   }
 
   private function getMembershipTypeFromPriceFieldValue($priceFieldValueId) {
@@ -435,6 +446,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
         'sequential' => 1,
         'id' => $membershipID,
       ]);
+      $membership['related_membership_type'] = $this->getMembershipTypeFromMembershipID($membershipID);
       $this->membershipsCache[$membershipID] = $membership;
     }
 
