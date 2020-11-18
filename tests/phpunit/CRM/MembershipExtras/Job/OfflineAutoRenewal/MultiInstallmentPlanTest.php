@@ -4,14 +4,14 @@ use CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder as PaymentPlanMe
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFabricator;
 use CRM_MembershipExtras_Test_Fabricator_AutoMembershipUpgradeRule as AutoMembershipUpgradeRuleFabricator;
-use CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan as SingleInstallmentRenewalJob;
+use CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan as MultipleInstallmentRenewalJob;
 
 /**
- * Class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest
+ * Class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest
  *
  * @group headless
  */
-class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest extends BaseHeadlessTest {
 
   /**
    * A rolling membership type that we
@@ -64,7 +64,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testRenewalWithMembershipEndDateLessThanTodayDateWillRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -79,8 +79,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
   }
@@ -88,7 +88,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testRenewalWithMembershipEndDateEqualTodayDateWillRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -103,8 +103,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year'));
   }
@@ -112,7 +112,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testRenewalWithMembershipEndDateLargerThanTodayDateWillNotRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +2 day'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -127,8 +127,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +1 day'));
   }
@@ -143,7 +143,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->paymentProcessor = 'Dummy Processor';
     $paymentPlanMembershipOrder->lineItems[] = [
@@ -159,8 +159,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
   }
@@ -168,7 +168,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testRenewalWithNonCompletedInstallmentWillRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -183,8 +183,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
   }
@@ -192,7 +192,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testRenewalWithCancelledPaymentPlanWillNotRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Cancelled';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -207,8 +207,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
   }
@@ -220,7 +220,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +2 day'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -235,8 +235,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +1 day'));
   }
@@ -248,7 +248,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +15 day'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -263,8 +263,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +14 day'));
   }
@@ -276,7 +276,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -291,8 +291,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $membership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
@@ -308,7 +308,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -323,8 +323,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $membership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
@@ -337,7 +337,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testNewCopyOfLineItemsWillBeCreatedAfterRenewalInsteadOfReusingTheExistingOnes() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -352,8 +352,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
       'return' => 'id',
@@ -374,7 +374,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testRenewingMembershipWithEndDateLessThanTodayDateWillCreateCorrectSubscriptionLineItems() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -389,85 +389,31 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
-    $subscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
+    $currentPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $nextPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($nextPeriodId);
 
-    $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
-      'return' => 'id',
-      'contribution_recur_id' => $paymentPlan['id'],
-    ]);
-    $expectedFirstLineItemValues = [
-      'start_date' => $paymentPlanMembershipOrder->membershipStartDate . ' 00:00:00',
-      'end_date' => date('Y-m-d 00:00:00', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' + 1 year  -1 day')),
-      'entity_table' => 'civicrm_membership',
-      'entity_id' => $membershipId,
-      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
-      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
-      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
-    ];
-    $expectedSecondLineItemValues = [
-      'start_date' => date('Y-m-d 00:00:00', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' + 1 year')),
-      'end_date' => '',
-      'entity_table' => 'civicrm_membership',
-      'entity_id' => $membershipId,
-      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
-      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
-      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
-    ];
-
-    $correctSubscriptionLineItems = FALSE;
-    if (count($subscriptionLineItems) == 2) {
-      $isCorrectFirstLineItem = $expectedFirstLineItemValues == $subscriptionLineItems[0];
-      $isCorrectSecondLineItem = $expectedSecondLineItemValues == $subscriptionLineItems[1];
-      if ($isCorrectFirstLineItem && $isCorrectSecondLineItem) {
-        $correctSubscriptionLineItems = TRUE;
-      }
+    // only two subscription line item is created for multi-installment payment plans same
+    // as in single-installment (one for current period and one for next period.
+    $isCorrectLineItemsCount = FALSE;
+    if (count($currentPeriodSubscriptionLineItems) == 1 && count($nextPeriodSubscriptionLineItems) == 1) {
+      $isCorrectLineItemsCount = TRUE;
     }
 
-    $this->assertTrue($correctSubscriptionLineItems);
-  }
-
-  public function testRenewingMembershipWithEndDateLargerThanDateToRenewInAdvanceWillCreateCorrectSubscriptionLineItems() {
-    civicrm_api3('Setting', 'create', [
-      'membershipextras_paymentplan_days_to_renew_in_advance' => 10,
-    ]);
-
-    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +2 day'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
-    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
-    $paymentPlanMembershipOrder->lineItems[] = [
-      'entity_table' => 'civicrm_membership',
-      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
-      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
-      'label' => $this->testRollingMembershipType['name'],
-      'qty' => 1,
-      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
-      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
-      'financial_type_id' => 'Member Dues',
-      'non_deductible_amount' => 0,
-    ];
-    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
-
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
-
-    $subscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
-
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
       'return' => 'id',
       'contribution_recur_id' => $paymentPlan['id'],
     ]);
     $expectedFirstLineItemValues = [
       'start_date' => $paymentPlanMembershipOrder->membershipStartDate . ' 00:00:00',
-      'end_date' => date('Y-m-d 00:00:00', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' + 1 year  -1 day')),
+      'end_date' => '',
       'entity_table' => 'civicrm_membership',
       'entity_id' => $membershipId,
       'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
       'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
-      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
     ];
     $expectedSecondLineItemValues = [
       'start_date' => date('Y-m-d 00:00:00', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' + 1 year')),
@@ -476,13 +422,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
       'entity_id' => $membershipId,
       'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
       'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
-      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
     ];
 
     $correctSubscriptionLineItems = FALSE;
-    if (count($subscriptionLineItems) == 2) {
-      $isCorrectFirstLineItem = $expectedFirstLineItemValues == $subscriptionLineItems[0];
-      $isCorrectSecondLineItem = $expectedSecondLineItemValues == $subscriptionLineItems[1];
+    if ($isCorrectLineItemsCount) {
+      $isCorrectFirstLineItem = $expectedFirstLineItemValues == $currentPeriodSubscriptionLineItems[0];
+      $isCorrectSecondLineItem = $expectedSecondLineItemValues == $nextPeriodSubscriptionLineItems[0];
       if ($isCorrectFirstLineItem && $isCorrectSecondLineItem) {
         $correctSubscriptionLineItems = TRUE;
       }
@@ -494,7 +439,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testRenewingMembershipWillCreateCorrectMembershipPaymentRecords() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -509,8 +454,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
       'return' => 'id',
@@ -518,15 +463,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ]);
     $membershipPaymentRecordsCount = civicrm_api3('MembershipPayment', 'getcount', [
       'membership_id' => $membershipId,
+      'options' => ['limit' => 0],
     ]);
 
-    $this->assertEquals(2, $membershipPaymentRecordsCount);
+    $this->assertEquals(24, $membershipPaymentRecordsCount);
   }
 
   public function testRenewingUpgradableMembershipWithWillCreateUpgradedMembershipAndEndCurrentOne() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -558,15 +504,20 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
-    $createdMemberships = civicrm_api3('Membership', 'get', [
+    $currentMembership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
       'contribution_recur_id' => $paymentPlan['id'],
-    ])['values'];
+    ])['values'][0];
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $upgradedMembership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $nextPeriodId,
+    ])['values'][0];
 
-    $isFirstMembershipEnded = $createdMemberships[0]['end_date'] == date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +1 year -1 day'));
+    $isFirstMembershipEnded = $currentMembership['end_date'] == date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +1 year -1 day'));
 
     $expectedUpgradedMembershipValues = [
       'start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +1 year')),
@@ -576,7 +527,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
 
     $isCorrectUpgradedMembershipValues = TRUE;
     foreach ($expectedUpgradedMembershipValues as $testParam => $expectedValue) {
-      if ($createdMemberships[1][$testParam] != $expectedValue) {
+      if ($upgradedMembership[$testParam] != $expectedValue) {
         $isCorrectUpgradedMembershipValues = FALSE;
       }
     }
@@ -588,7 +539,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   public function testRenewingUpgradableMembershipWillCreateCorrectMembershipPaymentRecords() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -620,12 +571,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
+
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
 
     $createdMemberships = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
+      'contribution_recur_id' => ['IN' => [$paymentPlan['id'], $nextPeriodId]],
     ])['values'];
 
     $isAllMembershipPaymentRecordsCreated = TRUE;
@@ -635,18 +588,42 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
         'membership_id' => $membership['id'],
       ]);
 
-      if ($membershipPaymentsCount != 1) {
+      if ($membershipPaymentsCount != 12) {
         $isAllMembershipPaymentRecordsCreated = FALSE;
       }
     }
 
+    $isAllMembershipPaymentRecordsCreated = $isAllMembershipPaymentRecordsCreated && count($createdMemberships) == 2;
+
     $this->assertTrue($isAllMembershipPaymentRecordsCreated);
+  }
+
+  private function isPaymentPlanMembershipRenewed($paymentPlanId, $expectedNewEndDateOffset) {
+    $membership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlanId,
+    ])['values'][0];
+
+    $contributionCount = 0;
+
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlanId);
+    if (!empty($nextPeriodId)) {
+      $contributionCount = civicrm_api3('Contribution', 'getcount', [
+        'contribution_recur_id' => $nextPeriodId,
+      ]);
+    }
+
+    if ((date('Y-m-d', strtotime($expectedNewEndDateOffset)) == $membership['end_date']) && ($contributionCount == 12)) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   public function testRenewingUpgradableMembershipWithWillCreateCorrectSubscriptionLineItems() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -661,13 +638,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $testUpgradeMembershipType = MembershipTypeFabricator::fabricate([
-      'name' => 'Test Rolling Membership',
-      'period_type' => 'rolling',
-      'minimum_fee' => 120,
-      'duration_interval' => 1,
-      'duration_unit' => 'year',
-    ]);
+    $testUpgradeMembershipType = MembershipTypeFabricator::fabricate(
+      [
+        'name' => 'Test Upgrade Membership',
+        'period_type' => 'rolling',
+        'minimum_fee' => 100,
+        'duration_interval' => 1,
+        'duration_unit' => 'year',
+      ]);
     AutoMembershipUpgradeRuleFabricator::fabricate([
       'label' => 'test',
       'from_membership_type_id' => $this->testRollingMembershipType['id'],
@@ -677,10 +655,17 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
 
-    $subscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
+    $currentPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $nextPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($nextPeriodId);
+
+    $isCorrectLineItemsCount = FALSE;
+    if (count($currentPeriodSubscriptionLineItems) == 1 && count($nextPeriodSubscriptionLineItems) == 1) {
+      $isCorrectLineItemsCount = TRUE;
+    }
 
     $testUpgradeMembershipTypePriceFieldValue = civicrm_api3('PriceFieldValue', 'get', [
       'sequential' => 1,
@@ -690,17 +675,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
 
     $memberships = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
+      'contribution_recur_id' => ['IN' => [$paymentPlan['id'], $nextPeriodId]],
     ])['values'];
 
     $expectedFirstLineItemValues = [
       'start_date' => $paymentPlanMembershipOrder->membershipStartDate . ' 00:00:00',
-      'end_date' => date('Y-m-d 00:00:00', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' + 1 year  -1 day')),
+      'end_date' => '',
       'entity_table' => 'civicrm_membership',
       'entity_id' => $memberships[0]['id'],
       'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
       'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
-      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
     ];
     $expectedSecondLineItemValues = [
       'start_date' => date('Y-m-d 00:00:00', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' + 1 year')),
@@ -709,86 +693,18 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
       'entity_id' => $memberships[1]['id'],
       'price_field_id' => $testUpgradeMembershipTypePriceFieldValue['price_field_id'],
       'price_field_value_id' => $testUpgradeMembershipTypePriceFieldValue['id'],
-      'unit_price' => $testUpgradeMembershipTypePriceFieldValue['amount'],
     ];
 
     $correctSubscriptionLineItems = FALSE;
-    if (count($subscriptionLineItems) == 2) {
-      $isCorrectFirstLineItem = $expectedFirstLineItemValues == $subscriptionLineItems[0];
-      $isCorrectSecondLineItem = $expectedSecondLineItemValues == $subscriptionLineItems[1];
+    if ($isCorrectLineItemsCount) {
+      $isCorrectFirstLineItem = $expectedFirstLineItemValues == $currentPeriodSubscriptionLineItems[0];
+      $isCorrectSecondLineItem = $expectedSecondLineItemValues == $nextPeriodSubscriptionLineItems[0];
       if ($isCorrectFirstLineItem && $isCorrectSecondLineItem) {
         $correctSubscriptionLineItems = TRUE;
       }
     }
 
     $this->assertTrue($correctSubscriptionLineItems);
-  }
-
-  public function testRenewalWithMembershipFeeEqualZeroWillRenew() {
-    $zeroFeeMembershipType = MembershipTypeFabricator::fabricate(
-      [
-        'name' => 'Test Rolling Membership',
-        'period_type' => 'rolling',
-        'minimum_fee' => 0,
-        'duration_interval' => 1,
-        'duration_unit' => 'year',
-      ]);
-
-    $zeroFeeMembershipTypePriceFieldValue = civicrm_api3('PriceFieldValue', 'get', [
-      'sequential' => 1,
-      'membership_type_id' => $zeroFeeMembershipType['id'],
-      'options' => ['limit' => 1],
-    ])['values'][0];
-
-    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
-    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
-    $paymentPlanMembershipOrder->lineItems[] = [
-      'entity_table' => 'civicrm_membership',
-      'price_field_id' => $zeroFeeMembershipTypePriceFieldValue['price_field_id'],
-      'price_field_value_id' => $zeroFeeMembershipTypePriceFieldValue['id'],
-      'label' => $zeroFeeMembershipType['name'],
-      'qty' => 1,
-      'unit_price' => $zeroFeeMembershipTypePriceFieldValue['amount'],
-      'line_total' => $zeroFeeMembershipTypePriceFieldValue['amount'],
-      'financial_type_id' => 'Member Dues',
-      'non_deductible_amount' => 0,
-    ];
-    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
-
-    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
-    $singleInstallmentRenewal->run();
-
-    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
-  }
-
-  /**
-   * Checks if the membership is renewed
-   * by checking the contibutions count
-   * assoisated with it as well as the expected
-   * end date after renewal.
-   *
-   * @param int $paymentPlanId
-   * @param String $expectedNewEndDateOffset
-   *
-   * @return bool
-   */
-  private function isPaymentPlanMembershipRenewed($paymentPlanId, $expectedNewEndDateOffset) {
-    $membership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlanId,
-    ])['values'][0];
-
-    $contributionCount = civicrm_api3('Contribution', 'getcount', [
-      'contribution_recur_id' => $paymentPlanId,
-    ]);
-
-    if ((date('Y-m-d', strtotime($expectedNewEndDateOffset)) == $membership['end_date']) && ($contributionCount == 2)) {
-      return TRUE;
-    }
-
-    return FALSE;
   }
 
   /**
@@ -803,8 +719,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
   private function getSubscriptionLineItems($recurringContributionID) {
     $q = '
       SELECT msl.start_date, msl.end_date, li.entity_table,
-        li.entity_id, li.price_field_id, li.price_field_value_id,
-        li.unit_price 
+        li.entity_id, li.price_field_id, li.price_field_value_id 
       FROM membershipextras_subscription_line msl 
       INNER JOIN civicrm_line_item li ON msl.line_item_id = li.id 
         WHERE msl.contribution_recur_id = %1 
@@ -821,6 +736,29 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     }
 
     return $lineItems;
+  }
+
+  private function getTheNewRecurContributionIdFromCurrentOne($currentRecurContributionId) {
+    $nextPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'next_period');
+
+    $nextCustomPeriodDetails = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'return' => 'custom_' . $nextPeriodCustomFieldId,
+      'id' => $currentRecurContributionId,
+    ]);
+    if (!empty($nextCustomPeriodDetails['values'][0]['custom_' . $nextPeriodCustomFieldId])) {
+      return $nextCustomPeriodDetails['values'][0]['custom_' . $nextPeriodCustomFieldId];
+    }
+
+    return NULL;
+  }
+
+  private function getCustomFieldId($customGroupName, $customFieldName) {
+    return civicrm_api3('CustomField', 'getvalue', [
+      'return' => 'id',
+      'custom_group_id' => $customGroupName,
+      'name' => $customFieldName,
+    ]);
   }
 
 }

@@ -11,11 +11,19 @@ use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipType
  */
 class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends BaseHeadlessTest {
 
+  private $defaultMembershipTypeParams = [
+    'duration_unit' => 'year',
+    'period_type' => 'fixed',
+    'duration_interval' => 1,
+    'fixed_period_start_day' => 101,
+    'fixed_period_rollover_day' => 1231,
+    'domain_id' => 1,
+    'member_of_contact_id' => 1,
+    'financial_type_id' => 1,
+  ];
+
   public function testCalculateDaysBasedOnDatesWhenStartAndEndDateIsNotNull() {
-    $membershipType = MembershipTypeFabricator::fabricate([
-      'duration_unit' => 'year',
-      'duration_interval' => 1,
-    ], TRUE);
+    $membershipType = MembershipTypeFabricator::fabricateWithBAO($this->defaultMembershipTypeParams, TRUE);
 
     $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, $membershipTypeDatesCalculator);
@@ -26,10 +34,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
   }
 
   public function testCalculateDaysBasedOnDatesWhenStartDateIsNull() {
-    $membershipType = MembershipTypeFabricator::fabricate([
-      'duration_unit' => 'year',
-      'duration_interval' => 1
-    ], TRUE);
+    $membershipType = MembershipTypeFabricator::fabricateWithBAO($this->defaultMembershipTypeParams, TRUE);
 
     $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, $membershipTypeDatesCalculator);
@@ -43,10 +48,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
   }
 
   public function testCalculateDaysBasedOnDatesUsesJoinDateAsStartDateWhenStartDateIsNullAndJoinDateIsNot() {
-    $membershipType = MembershipTypeFabricator::fabricate([
-      'duration_unit' => 'year',
-      'duration_interval' => 1
-    ], TRUE);
+    $membershipType = MembershipTypeFabricator::fabricateWithBAO($this->defaultMembershipTypeParams, TRUE);
 
     $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, $membershipTypeDatesCalculator);
@@ -59,10 +61,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
   }
 
   public function testCalculateDaysBasedOnDatesWhenEndDateIsNull() {
-    $membershipType = MembershipTypeFabricator::fabricate([
-      'duration_unit' => 'year',
-      'duration_interval' => 1
-    ], TRUE);
+    $membershipType = MembershipTypeFabricator::fabricateWithBAO($this->defaultMembershipTypeParams, TRUE);
 
     $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, $membershipTypeDatesCalculator);
@@ -74,4 +73,5 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
     $expectedInterval = $expectedEndDate->diff($startDate)->format("%a") + 1;
     $this->assertEquals($expectedInterval, $numberOfDays);
   }
+
 }

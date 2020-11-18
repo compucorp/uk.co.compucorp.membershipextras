@@ -13,13 +13,6 @@ use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as Installment
 class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
-   * List of line items to be renewed.
-   *
-   * @var array
-   */
-  private $linesToBeRenewed = [];
-
-  /**
    * Obtains list of payment plans with a single installment that are ready to
    * be renewed. This means:
    *
@@ -128,11 +121,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $this->endCurrentLineItemsAndCreateNewOnesForNextPeriod($this->currentRecurContributionID);
     $this->updateRecurringContributionAmount($this->currentRecurContributionID);
     $this->setNewRecurringContribution();
+    $this->renewPaymentPlanMemberships($this->currentRecurContributionID);
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
-
     $this->recordPaymentPlanFirstContribution();
-    $this->renewPaymentPlanMemberships($this->currentRecurContributionID);
   }
 
   /**
@@ -174,8 +166,21 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     foreach ($lineItems['values'] as $line) {
       $this->endLineItem($line['id'], $newEndDate);
 
-      if ($line['auto_renew']) {
-        $this->duplicateSubscriptionLine($line, $newStartDate);
+      if (!$line['auto_renew']) {
+        continue;
+      }
+
+      $lineItemParams = $line['api.LineItem.getsingle'];
+      $upgradableMembershipTypeId = NULL;
+      if ($this->isMembershipLineItem($lineItemParams)) {
+        $upgradableMembershipTypeId = $this->autoUpgradableMembershipCheckService->calculateMembershipTypeToUpgradeTo($lineItemParams['entity_id']);
+      }
+
+      if (!empty($upgradableMembershipTypeId)) {
+        $this->createUpgradableSubscriptionMembershipLine($upgradableMembershipTypeId, $this->currentRecurContributionID, $newStartDate->format('Y-m-d'));
+      }
+      else {
+        $this->duplicateSubscriptionLine($lineItemParams, $newStartDate->format('Y-m-d'), $this->currentRecurContributionID);
       }
     }
   }
@@ -190,29 +195,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
       'id' => $lineID,
       'end_date' => $endDate->format('Y-m-d'),
-    ]);
-  }
-
-  /**
-   * Duplicates given subscription line with the given start date.
-   *
-   * @param array $line
-   * @param \DateTime $startDate
-   */
-  private function duplicateSubscriptionLine($line, DateTime $startDate) {
-    $lineItemParams = $line['api.LineItem.getsingle'];
-    $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams) ?: 0;
-    $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']) ?: 0;
-    $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']) ?: 0;
-    unset($lineItemParams['id']);
-
-    $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
-
-    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
-      'contribution_recur_id' => $line['contribution_recur_id'],
-      'line_item_id' => $newLineItem['id'],
-      'start_date' => $startDate->format('Y-m-d'),
-      'auto_renew' => 1,
     ]);
   }
 
@@ -236,8 +218,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    * @inheritdoc
    */
   protected function getRecurringContributionLineItemsToBeRenewed($recurringContributionID) {
-    if (!isset($this->linesToBeRenewed[$recurringContributionID])) {
-      $q = '
+    $q = '
       SELECT msl.*, li.*, m.end_date AS memberhsip_end_date
       FROM membershipextras_subscription_line msl, civicrm_line_item li
       LEFT JOIN civicrm_membership m ON li.entity_id = m.id
@@ -247,17 +228,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
       AND msl.is_removed = 0
       AND msl.end_date IS NULL
       ';
-      $dbResultSet = CRM_Core_DAO::executeQuery($q, [
-        1 => [$recurringContributionID, 'Integer'],
-      ]);
+    $dbResultSet = CRM_Core_DAO::executeQuery($q, [
+      1 => [$recurringContributionID, 'Integer'],
+    ]);
 
-      $this->linesToBeRenewed[$recurringContributionID] = [];
-      while ($dbResultSet->fetch()) {
-        $this->linesToBeRenewed[$recurringContributionID][] = $dbResultSet->toArray();
-      }
+    $linesToBeRenewed = [];
+    while ($dbResultSet->fetch()) {
+      $linesToBeRenewed[] = $dbResultSet->toArray();
     }
 
-    return $this->linesToBeRenewed[$recurringContributionID];
+    return $linesToBeRenewed;
   }
 
   /**

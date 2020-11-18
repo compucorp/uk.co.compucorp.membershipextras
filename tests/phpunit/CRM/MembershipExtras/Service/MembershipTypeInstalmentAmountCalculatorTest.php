@@ -13,13 +13,20 @@ use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount as Inva
  */
 class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest extends BaseHeadlessTest {
 
+  private $defaultMembershipTypeParams = [
+    'duration_unit' => 'year',
+    'period_type' => 'fixed',
+    'duration_interval' => 1,
+    'fixed_period_start_day' => 101,
+    'fixed_period_rollover_day' => 1231,
+    'domain_id' => 1,
+    'member_of_contact_id' => 1,
+    'financial_type_id' => 1,
+  ];
+
   public function testExceptionIsThrownIfMembershipTypeIsNotFixed() {
-    $membershipType1 = MembershipTypeFabricator::fabricate([
-      'period_type' => 'rolling'
-    ]);
-    $membershipType2 = MembershipTypeFabricator::fabricate([
-      'period' => 'fixed'
-    ]);
+    $membershipType1 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['period_type' => 'rolling']));
+    $membershipType2 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['period_type' => 'fixed']));
 
     $membershipTypes = [$membershipType1, $membershipType2];
     $membershipTaxAmount = $this->getMembershipTypeTaxAmount($membershipTypes, 6);
@@ -31,12 +38,8 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest 
   }
 
   public function testExceptionIsThrownIfMembershipTypeDoesNotHaveSamePeriodStartDay() {
-    $membershipType1 = MembershipTypeFabricator::fabricate([
-      'fixed_period_start_day' => '101'
-    ]);
-    $membershipType2 = MembershipTypeFabricator::fabricate([
-      'fixed_period_start_day' => '201'
-    ]);
+    $membershipType1 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['fixed_period_start_day' => '101']));
+    $membershipType2 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['fixed_period_start_day' => '201']));
 
     $membershipTypes = [$membershipType1, $membershipType2];
     $membershipTaxAmount = $this->getMembershipTypeTaxAmount($membershipTypes, 6);
@@ -48,12 +51,8 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest 
   }
 
   public function testExceptionIsThrownIfMembershipTypeDurationUnitIsNotYearly() {
-    $membershipType1 = MembershipTypeFabricator::fabricate([
-      'duration_unit' => 'month'
-    ]);
-    $membershipType2 = MembershipTypeFabricator::fabricate([
-      'duration_unit' => 'year'
-    ]);
+    $membershipType1 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['duration_unit' => 'month']));
+    $membershipType2 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['duration_unit' => 'year']));
 
     $membershipTypes = [$membershipType1, $membershipType2];
     $membershipTaxAmount = $this->getMembershipTypeTaxAmount($membershipTypes, 6);
@@ -65,14 +64,8 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest 
   }
 
   public function testExceptionIsThrownIfMembershipTypeDurationUnitIsNotOneYear() {
-    $membershipType1 = MembershipTypeFabricator::fabricate([
-      'duration_unit' => 'year',
-      'duration_interval' => 2,
-    ]);
-    $membershipType2 = MembershipTypeFabricator::fabricate([
-      'duration_unit' => 'year',
-      'duration_interval' => 1
-    ]);
+    $membershipType1 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['duration_unit' => 'year', 'duration_interval' => 2]));
+    $membershipType2 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['duration_unit' => 'year', 'duration_interval' => 1]));
 
     $membershipTypes = [$membershipType1, $membershipType2];
     $membershipTaxAmount = $this->getMembershipTypeTaxAmount($membershipTypes, 6);
@@ -84,14 +77,9 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest 
   }
 
   public function testCalculateFollowingInstalmentAmount() {
-    $membershipType1 = MembershipTypeFabricator::fabricate([
-      'minimum_fee' => 120,
-      'fixed_period_start_day' => '101'
-    ]);
-    $membershipType2 = MembershipTypeFabricator::fabricate([
-      'minimum_fee' => 240,
-      'fixed_period_start_day' => '101'
-    ]);
+    $membershipType1 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['minimum_fee' => 120, 'fixed_period_start_day' => '101']));
+    $membershipType2 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['minimum_fee' => 240, 'fixed_period_start_day' => '101']));
+
     $membershipTypes = [$membershipType1, $membershipType2];
     $membershipTaxAmount = $this->getMembershipTypeTaxAmount($membershipTypes, 6);
     $membershipInstalment = $this->getMembershipTypeInstalmentAmount(
@@ -104,14 +92,9 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest 
   }
 
   public function testCalculateFirstInstalmentAmount() {
-    $membershipType1 = MembershipTypeFabricator::fabricate([
-      'minimum_fee' => 120,
-      'fixed_period_start_day' => '101'
-    ]);
-    $membershipType2 = MembershipTypeFabricator::fabricate([
-      'minimum_fee' => 240,
-      'fixed_period_start_day' => '101'
-    ]);
+    $membershipType1 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['minimum_fee' => 120, 'fixed_period_start_day' => '101']));
+    $membershipType2 = MembershipTypeFabricator::fabricateWithBAO(array_merge($this->defaultMembershipTypeParams, ['minimum_fee' => 240, 'fixed_period_start_day' => '101']));
+
     $membershipTypes = [$membershipType1, $membershipType2];
     $membershipTaxAmount = $this->getMembershipTypeTaxAmount($membershipTypes, 6);
     $membershipInstalment = $this->getMembershipTypeInstalmentAmount(
@@ -138,4 +121,5 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentAmountCalculatorTest 
     $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
     return new MembershipTypeInstalmentAmount($membershipTypes, $membershipTypeTaxAmount, $membershipTypeDatesCalculator);
   }
+
 }
