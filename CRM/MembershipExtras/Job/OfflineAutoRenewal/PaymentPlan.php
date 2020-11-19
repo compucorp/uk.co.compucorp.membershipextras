@@ -267,14 +267,28 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
-   * Obtains the list of recurring line items to be renewed for the payment plan
-   * being renewed.
+   * Obtains the list of recurring line items to be renewed for the plan.
+   *
+   * Returns an array with all lthe line items of the payment plan that are not
+   * removed and are set to auto-renew.
    *
    * @param int $recurringContributionID
    *
    * @return array
    */
   abstract protected function getRecurringContributionLineItemsToBeRenewed($recurringContributionID);
+
+  /**
+   * Obtains list of all active line items of the given recurring contribution.
+   *
+   * Returns an array with all the line items that ar not removed from the
+   * payment plan, irrespective if they are renewable or not.
+   *
+   * @param int $recurringContributionID
+   *
+   * @return array
+   */
+  abstract protected function getAllRecurringContributionActiveLineItems($recurringContributionID);
 
   /**
    * Obtains list of recurring line items that are active for the new recurring
@@ -611,7 +625,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $membershipCreateResult = civicrm_api3('Membership', 'create', [
       'contact_id' => $this->currentRecurringContribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
-      'join_date' => date('YmdHis'),
+      'join_date' => $this->membershipsStartDate,
       'start_date' => $this->membershipsStartDate,
       'end_date' => $lineItem['end_date'],
       'contribution_recur_id' => $this->newRecurringContributionID,
@@ -867,8 +881,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @throws \Exception
    */
   protected function calculateRenewedMembershipsStartDate() {
-    $latestDate = NULL;
-    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+    $latestEndDates = [
+      'auto_renewable' => NULL,
+      'not_auto_renewable' => NULL,
+    ];
+    $currentPeriodLines = $this->getAllRecurringContributionActiveLineItems($this->currentRecurContributionID);
 
     foreach ($currentPeriodLines as $lineItem) {
       if ($lineItem['entity_table'] != 'civicrm_membership') {
@@ -880,17 +897,24 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       }
 
       $membershipEndDate = new DateTime($lineItem['memberhsip_end_date']);
-      if (!isset($latestDate)) {
-        $latestDate = $membershipEndDate;
-      }
-      elseif ($latestDate < $membershipEndDate) {
-        $latestDate = $membershipEndDate;
-      }
+      $isLineAutoRenewable = $lineItem['auto_renew'] == '1' ? 'auto_renewable' : 'not_auto_renewable';
 
+      if (!isset($latestEndDates[$isLineAutoRenewable])) {
+        $latestEndDates[$isLineAutoRenewable] = $membershipEndDate;
+      }
+      elseif ($latestEndDates[$isLineAutoRenewable] < $membershipEndDate) {
+        $latestEndDates[$isLineAutoRenewable] = $membershipEndDate;
+      }
     }
+
+    // If there are no auto-renewable lines, we use the latest end date of
+    // non-renewable lines. This happens when a membership is set not to
+    // auto-renew for a period and a new membership is added to the next period.
+    $latestDate = $latestEndDates['auto_renewable'] ?: $latestEndDates['not_auto_renewable'];
 
     if ($latestDate) {
       $latestDate->add(new DateInterval('P1D'));
+
       return $latestDate->format('Y-m-d');
     }
 

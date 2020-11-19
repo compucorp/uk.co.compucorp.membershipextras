@@ -231,7 +231,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
     }
 
     foreach ($recurringLineItems['values'] as $lineItem) {
-
       $lineItemParams = $lineItem['api.LineItem.getsingle'];
       $upgradableMembershipTypeId = NULL;
       if ($this->isMembershipLineItem($lineItemParams)) {
@@ -266,6 +265,34 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
       WHERE msl.line_item_id = li.id
       AND msl.contribution_recur_id = %1
       AND msl.auto_renew = 1
+      AND msl.is_removed = 0
+      ';
+    $dbResultSet = CRM_Core_DAO::executeQuery($q, [
+      1 => [$recurringContributionID, 'Integer'],
+    ]);
+
+    $linesToBeRenewed = [];
+    while ($dbResultSet->fetch()) {
+      $linesToBeRenewed[] = $dbResultSet->toArray();
+    }
+
+    return $linesToBeRenewed;
+  }
+
+  /**
+   * Obtains list of all active recurring line items.
+   *
+   * @param $recurringContributionID
+   *
+   * @return array
+   */
+  protected function getAllRecurringContributionActiveLineItems($recurringContributionID) {
+    $q = '
+      SELECT msl.*, li.*, m.end_date AS memberhsip_end_date
+      FROM membershipextras_subscription_line msl, civicrm_line_item li
+      LEFT JOIN civicrm_membership m ON li.entity_id = m.id
+      WHERE msl.line_item_id = li.id
+      AND msl.contribution_recur_id = %1
       AND msl.is_removed = 0
       ';
     $dbResultSet = CRM_Core_DAO::executeQuery($q, [
