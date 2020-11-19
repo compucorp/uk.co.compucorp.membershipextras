@@ -138,7 +138,8 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
     'operator' => NULL,
     'separator' => NULL,
   ];
-  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/', $paymentPlanSettingsMenuItem);
+
+  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviContribute', $paymentPlanSettingsMenuItem);
 
   $automatedMembershipUpgradeRulesMenuItem = [
     'name' => 'automated_membership_upgrade_rules',
@@ -336,7 +337,7 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
 }
 
 /**
- * Implements hrcore_civicrm_pageRun().
+ * Implements hook_civicrm_pageRun().
  *
  * @link https://docs.civicrm.org/dev/en/master/hooks/hook_civicrm_pageRun/
  */
