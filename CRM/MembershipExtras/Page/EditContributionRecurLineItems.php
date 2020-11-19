@@ -63,6 +63,13 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   private $membershipsCache = [];
 
   /**
+   * Maps membership types to memberships that have been loaded.
+   *
+   * @var array
+   */
+  private $membershipTypesCache = [];
+
+  /**
    * @inheritdoc
    */
   public function __construct($title = NULL, $mode = NULL) {
@@ -165,19 +172,23 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return array
    */
   private function getMembershipTypeFromMembershipID($membershipID) {
-    try {
-      $result = civicrm_api3('Membership', 'getsingle', [
-        'id' => $membershipID,
-        'api.MembershipType.getsingle' => [
-          'id' => '$value.membership_type_id',
-        ],
-      ]);
+    if (!isset($this->membershipTypesCache[$membershipID])) {
+      try {
+        $result = civicrm_api3('Membership', 'getsingle', [
+          'id' => $membershipID,
+          'api.MembershipType.getsingle' => [
+            'id' => '$value.membership_type_id',
+          ],
+        ]);
 
-      return $result['api.MembershipType.getsingle'];
+        $this->membershipTypesCache[$membershipID] = $result['api.MembershipType.getsingle'];
+      }
+      catch (Exception $e) {
+        return [];
+      }
     }
-    catch (Exception $e) {
-      return [];
-    }
+
+    return $this->membershipTypesCache[$membershipID];
   }
 
   private function getMembershipTypeFromPriceFieldValue($priceFieldValueId) {
@@ -347,7 +358,37 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       $conditions['end_date'] = ['IS NULL' => 1];
     }
 
-    return $this->getLineItems($conditions);
+    $nextLineItems = $this->getLineItems($conditions);
+
+    foreach ($nextLineItems as &$nextLineItem) {
+      if (!empty($nextLineItem['related_membership']['id'])) {
+        $relatedMembershipId = $nextLineItem['related_membership']['id'];
+
+        $autoUpgradableMembershipChecker = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
+        $upgradedMembershipTypeId = $autoUpgradableMembershipChecker->calculateMembershipTypeToUpgradeTo($relatedMembershipId);
+
+        if (!empty($upgradedMembershipTypeId)) {
+          $membershipType = civicrm_api3('MembershipType', 'get', [
+            'sequential' => 1,
+            'return' => ['name', 'minimum_fee', 'financial_type_id'],
+            'id' => $upgradedMembershipTypeId,
+          ]);
+
+          if (!empty($membershipType['values'][0])) {
+            $membershipType = $membershipType['values'][0];
+            $nextLineItem['label'] = $membershipType['name'];
+            $nextLineItem['line_total'] = MoneyUtilities::roundToCurrencyPrecision($membershipType['minimum_fee'] / $installments);
+            $nextLineItem['financial_type'] = $this->getFinancialTypeName($membershipType['financial_type_id']);
+            $nextLineItem['tax_rate'] = $this->getTaxRateForFinancialType($membershipType['financial_type_id']);
+            $nextLineItem['tax_amount'] = MoneyUtilities::roundToCurrencyPrecision(
+              $nextLineItem['line_total'] * $nextLineItem['tax_rate'] / 100
+            );
+          }
+        }
+      }
+    }
+
+    return $nextLineItems;
   }
 
   /**
@@ -405,6 +446,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
         'sequential' => 1,
         'id' => $membershipID,
       ]);
+      $membership['related_membership_type'] = $this->getMembershipTypeFromMembershipID($membershipID);
       $this->membershipsCache[$membershipID] = $membership;
     }
 

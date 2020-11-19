@@ -131,7 +131,7 @@ function membershipextras_civicrm_alterSettingsFolders(&$metaDataFolders = NULL)
  */
 function membershipextras_civicrm_navigationMenu(&$menu) {
   $paymentPlanSettingsMenuItem = [
-    'name' => ts('payment_plan_settings'),
+    'name' => 'payment_plan_settings',
     'label' => ts('Payment Plan Settings'),
     'url' => 'civicrm/admin/payment_plan_settings',
     'permission' => 'administer CiviCRM',
@@ -140,6 +140,16 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
   ];
 
   _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviContribute', $paymentPlanSettingsMenuItem);
+
+  $automatedMembershipUpgradeRulesMenuItem = [
+    'name' => 'automated_membership_upgrade_rules',
+    'label' => ts('Membership Automated Upgrade Rules'),
+    'url' => 'civicrm/admin/member/automated-upgrade-rules?reset=1',
+    'permission' => 'administer CiviCRM',
+    'operator' => NULL,
+    'separator' => 2,
+  ];
+  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviMember', $automatedMembershipUpgradeRulesMenuItem);
 }
 
 /**
