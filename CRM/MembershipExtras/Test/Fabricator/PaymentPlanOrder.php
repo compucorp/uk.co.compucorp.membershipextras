@@ -153,7 +153,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
         'contribution_recur_id' => $recurringContribution['id'],
         'line_item_id' => $newLineItem['id'],
         'start_date' => self::$paymentPlanMembershipOrder->membershipStartDate,
-        'auto_renew' => 1,
+        'auto_renew' => isset($lineItem['auto_renew']) ? $lineItem['auto_renew'] : 1,
       ]);
 
       $createdLines[] = ['line_item' => $newLineItem, 'recurring_line' => $recurringLineItem];
@@ -354,6 +354,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'end_date' => self::$paymentPlanMembershipOrder->membershipEndDate,
       'contribution_recur_id' => $recurringContribution['id'],
       'financial_type_id' => $lineItem['financial_type_id'],
+      'skipLineItem' => 1,
     ]);
 
     return $membershipCreateResult['id'];
