@@ -89,10 +89,10 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentsScheduleTest extends
   public function testExceptionIsThrownIfMembershipTypeDurationUnitIsNotYearly() {
     $membershipType1 = MembershipTypeFabricator::fabricate([
       'duration_unit' => 'month',
-    ]);
+    ], TRUE);
     $membershipType2 = MembershipTypeFabricator::fabricate([
       'duration_unit' => 'year',
-    ]);
+    ], TRUE);
 
     $membershipTypes = [$membershipType1, $membershipType2];
     $this->expectException(InvalidMembershipTypeInstalmentCalculator::class);
@@ -108,11 +108,11 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentsScheduleTest extends
     $membershipType1 = MembershipTypeFabricator::fabricate([
       'duration_unit' => 'year',
       'duration_interval' => 2,
-    ]);
+    ], TRUE);
     $membershipType2 = MembershipTypeFabricator::fabricate([
       'duration_unit' => 'year',
       'duration_interval' => 1,
-    ]);
+    ], TRUE);
 
     $membershipTypes = [$membershipType1, $membershipType2];
     $this->expectException(InvalidMembershipTypeInstalmentCalculator::class);
@@ -157,12 +157,12 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentsScheduleTest extends
       'name' => 'Rolling Membership Type 1',
       'minimum_fee' => 120,
       'period_type' => 'rolling',
-    ]);
+    ], TRUE);
     $membershipType2 = MembershipTypeFabricator::fabricate([
       'name' => 'Rolling Membership Type 2',
       'minimum_fee' => 240,
       'period_type' => 'rolling',
-    ]);
+    ], TRUE);
     return [$membershipType1, $membershipType2];
 
   }
