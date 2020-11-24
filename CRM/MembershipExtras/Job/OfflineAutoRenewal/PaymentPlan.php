@@ -269,7 +269,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Obtains the list of recurring line items to be renewed for the plan.
    *
-   * Returns an array with all lthe line items of the payment plan that are not
+   * Returns an array with all the line items of the payment plan that are not
    * removed and are set to auto-renew.
    *
    * @param int $recurringContributionID

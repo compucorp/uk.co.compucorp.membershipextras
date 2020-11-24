@@ -349,9 +349,9 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
     $membershipCreateResult = MembershipFabricator::fabricate([
       'contact_id' => $recurringContribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
-      'join_date' => self::$paymentPlanMembershipOrder->membershipJoinDate,
-      'start_date' => self::$paymentPlanMembershipOrder->membershipStartDate,
-      'end_date' => self::$paymentPlanMembershipOrder->membershipEndDate,
+      'join_date' => CRM_Utils_Array::value('join_date', $lineItem, self::$paymentPlanMembershipOrder->membershipJoinDate),
+      'start_date' => CRM_Utils_Array::value('start_date', $lineItem, self::$paymentPlanMembershipOrder->membershipStartDate),
+      'end_date' => CRM_Utils_Array::value('end_date', $lineItem, self::$paymentPlanMembershipOrder->membershipEndDate),
       'contribution_recur_id' => $recurringContribution['id'],
       'financial_type_id' => $lineItem['financial_type_id'],
       'skipLineItem' => 1,

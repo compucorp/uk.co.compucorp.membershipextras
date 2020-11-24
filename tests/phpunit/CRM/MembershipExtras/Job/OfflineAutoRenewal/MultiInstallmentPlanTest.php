@@ -416,6 +416,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'entity_id' => $membershipId,
       'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
       'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'line_total' => '120.00',
+      'label' => 'Test Rolling Membership',
     ];
     $expectedSecondLineItemValues = [
       'start_date' => date('Y-m-d 00:00:00', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' + 1 year')),
@@ -424,6 +426,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'entity_id' => $membershipId,
       'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
       'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'line_total' => '120.00',
+      'label' => 'Test Rolling Membership',
     ];
 
     $correctSubscriptionLineItems = FALSE;
@@ -687,6 +691,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'entity_id' => $memberships[0]['id'],
       'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
       'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'line_total' => '120.00',
+      'label' => 'Test Rolling Membership',
     ];
     $expectedSecondLineItemValues = [
       'start_date' => date('Y-m-d 00:00:00', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' + 1 year')),
@@ -695,6 +701,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'entity_id' => $memberships[1]['id'],
       'price_field_id' => $testUpgradeMembershipTypePriceFieldValue['price_field_id'],
       'price_field_value_id' => $testUpgradeMembershipTypePriceFieldValue['id'],
+      'line_total' => '8.33',
+      'label' => 'Test Upgrade Membership',
     ];
 
     $correctSubscriptionLineItems = FALSE;
@@ -721,7 +729,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
   private function getSubscriptionLineItems($recurringContributionID) {
     $q = '
       SELECT msl.start_date, msl.end_date, li.entity_table,
-        li.entity_id, li.price_field_id, li.price_field_value_id
+        li.entity_id, li.price_field_id, li.price_field_value_id,
+        li.line_total, li.label
       FROM membershipextras_subscription_line msl
       INNER JOIN civicrm_line_item li ON msl.line_item_id = li.id
         WHERE msl.contribution_recur_id = %1
@@ -765,7 +774,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
 
   public function testRenewalWithNonRenewableLineOnCurrentPeriodAndNewMembershipForNextPeriod() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 years'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
@@ -791,36 +800,18 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
 
     $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
     $multipleInstallmentRenewal->run();
-    $this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day');
 
     $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
-    $newRecurringContribution = civicrm_api3('ContributionRecur', 'get', [
-      'sequential' => 1,
-      'id' => $nextPeriodID,
-    ])['values'][0];
-    $this->assertEquals(1200, $newRecurringContribution['amount']);
-    $this->assertEquals(
-      date('Y-m-d', strtotime('-1 month')),
-      date('Y-m-d', strtotime($newRecurringContribution['start_date']))
-    );
-
-    $lineItems = $this->getSubscriptionLineItems($nextPeriodID);
-    $this->assertEquals(1, count($lineItems));
-
-    $line = array_shift($lineItems);
-    $this->assertEquals(
-      date('Y-m-d', strtotime('-1 month')),
-      date('Y-m-d', strtotime($line['start_date']))
-    );
-
-    $membership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'id' => $line['entity_id'],
-    ])['values'][0];
-    $this->assertEquals(
-      date('Y-m-d', strtotime('-1 month')),
-      date('Y-m-d', strtotime($membership['start_date']))
-    );
+    $this->assertPaymentPlanStructureIsOk($nextPeriodID, [
+      'total_amount' => 1200,
+      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'line_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'line_item_count' => 1,
+      'membership_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'membership_end_date_offset' => ' +1 year -1 day',
+      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'installments' => 12,
+    ]);
   }
 
   /**
@@ -832,21 +823,19 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
    * @throws \CiviCRM_API3_Exception
    */
   private function addRenewableNewMembershipToNextPeriodOnly($paymentPlan, $membershipParams) {
-    $upgradeMembershipType = MembershipTypeFabricator::fabricate($membershipParams);
-    $upgradeMembershipTypePriceFieldValue = civicrm_api3('PriceFieldValue', 'get', [
-      'sequential' => 1,
-      'membership_type_id' => $upgradeMembershipType['id'],
-      'options' => ['limit' => 1],
-    ])['values'][0];
+    $membershipTypeObject = $this->createMembershipType($membershipParams);
+    $membershipType = $membershipTypeObject->membershipType;
+    $membershipTypePriceFieldValue = $membershipTypeObject->priceFieldValue;
+
     $newLineItem = LineItemFabricator::fabricate([
       'entity_table' => 'civicrm_contribution_recur',
       'entity_id' => $paymentPlan['id'],
-      'price_field_id' => $upgradeMembershipTypePriceFieldValue['price_field_id'],
-      'price_field_value_id' => $upgradeMembershipTypePriceFieldValue['id'],
-      'label' => $upgradeMembershipType['name'],
+      'price_field_id' => $membershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $membershipTypePriceFieldValue['id'],
+      'label' => $membershipType['name'],
       'qty' => 1,
-      'unit_price' => $upgradeMembershipTypePriceFieldValue['amount'],
-      'line_total' => $upgradeMembershipTypePriceFieldValue['amount'],
+      'unit_price' => $membershipTypePriceFieldValue['amount'] / $paymentPlan['installments'],
+      'line_total' => $membershipTypePriceFieldValue['amount'] / $paymentPlan['installments'],
       'financial_type_id' => 'Member Dues',
       'non_deductible_amount' => 0,
     ]);
@@ -855,6 +844,271 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'line_item_id' => $newLineItem['id'],
       'auto_renew' => 1,
     ]);
+  }
+
+  public function testRenewalWithMultipleLinesNotRenewingOnCurrentPeriodAndNewMembershipForNextPeriod() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 6,
+      'duration_unit' => 'month',
+    ]);
+    $addOnMembershipType = $this->createMembershipType([
+      'name' => 'Add-on Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 120,
+      'duration_interval' => 18,
+      'duration_unit' => 'month',
+    ]);
+
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 years'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems = [
+      [
+        'entity_table' => 'civicrm_membership',
+        'price_field_id' => $mainMembershipType->priceFieldValue['price_field_id'],
+        'price_field_value_id' => $mainMembershipType->priceFieldValue['id'],
+        'label' => $mainMembershipType->membershipType['name'],
+        'qty' => 1,
+        'unit_price' => $mainMembershipType->priceFieldValue['amount'] / 12,
+        'line_total' => $mainMembershipType->priceFieldValue['amount'] / 12,
+        'financial_type_id' => 'Member Dues',
+        'non_deductible_amount' => 0,
+        'auto_renew' => 0,
+        'end_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +6 months -1 day')),
+      ],
+      [
+        'entity_table' => 'civicrm_membership',
+        'price_field_id' => $addOnMembershipType->priceFieldValue['price_field_id'],
+        'price_field_value_id' => $addOnMembershipType->priceFieldValue['id'],
+        'label' => $addOnMembershipType->membershipType['name'],
+        'qty' => 1,
+        'unit_price' => $addOnMembershipType->priceFieldValue['amount'] / 12,
+        'line_total' => $addOnMembershipType->priceFieldValue['amount'] / 12,
+        'financial_type_id' => 'Member Dues',
+        'non_deductible_amount' => 0,
+        'auto_renew' => 0,
+        'end_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months -1 day')),
+      ],
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+    $this->addRenewableNewMembershipToNextPeriodOnly($paymentPlan, [
+      'name' => 'New Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 240,
+      'duration_interval' => 1,
+      'duration_unit' => 'year',
+    ]);
+
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+
+    $this->assertPaymentPlanStructureIsOk($nextPeriodID, [
+      'total_amount' => 240,
+      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months')),
+      'line_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months')),
+      'line_item_count' => 1,
+      'membership_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months')),
+      'membership_end_date_offset' => ' +1 year -1 day',
+      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months')),
+      'installments' => 12,
+    ]);
+  }
+
+  public function testRenewalWithMultipleLinesSomeRenewingOnCurrentPeriodAndNewMembershipForNextPeriod() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 18,
+      'duration_unit' => 'month',
+    ]);
+    $addOnMembershipType = $this->createMembershipType([
+      'name' => 'Add-on Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 120,
+      'duration_interval' => 12,
+      'duration_unit' => 'month',
+    ]);
+    $secondAddOnMembershipType = $this->createMembershipType([
+      'name' => 'Second Add-on Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 180,
+      'duration_interval' => 6,
+      'duration_unit' => 'month',
+    ]);
+
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 years'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems = [
+      [
+        'entity_table' => 'civicrm_membership',
+        'price_field_id' => $mainMembershipType->priceFieldValue['price_field_id'],
+        'price_field_value_id' => $mainMembershipType->priceFieldValue['id'],
+        'label' => $mainMembershipType->membershipType['name'],
+        'qty' => 1,
+        'unit_price' => $mainMembershipType->priceFieldValue['amount'] / 12,
+        'line_total' => $mainMembershipType->priceFieldValue['amount'] / 12,
+        'financial_type_id' => 'Member Dues',
+        'non_deductible_amount' => 0,
+        'auto_renew' => 0,
+        'end_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months -1 day')),
+      ],
+      [
+        'entity_table' => 'civicrm_membership',
+        'price_field_id' => $addOnMembershipType->priceFieldValue['price_field_id'],
+        'price_field_value_id' => $addOnMembershipType->priceFieldValue['id'],
+        'label' => $addOnMembershipType->membershipType['name'],
+        'qty' => 1,
+        'unit_price' => $addOnMembershipType->priceFieldValue['amount'] / 12,
+        'line_total' => $addOnMembershipType->priceFieldValue['amount'] / 12,
+        'financial_type_id' => 'Member Dues',
+        'non_deductible_amount' => 0,
+        'auto_renew' => 1,
+        'end_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months -1 day')),
+      ],
+      [
+        'entity_table' => 'civicrm_membership',
+        'price_field_id' => $secondAddOnMembershipType->priceFieldValue['price_field_id'],
+        'price_field_value_id' => $secondAddOnMembershipType->priceFieldValue['id'],
+        'label' => $secondAddOnMembershipType->membershipType['name'],
+        'qty' => 1,
+        'unit_price' => $secondAddOnMembershipType->priceFieldValue['amount'] / 12,
+        'line_total' => $secondAddOnMembershipType->priceFieldValue['amount'] / 12,
+        'financial_type_id' => 'Member Dues',
+        'non_deductible_amount' => 0,
+        'auto_renew' => 0,
+        'end_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +6 months -1 day')),
+      ],
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+    $this->addRenewableNewMembershipToNextPeriodOnly($paymentPlan, [
+      'name' => 'New Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 240,
+      'duration_interval' => 1,
+      'duration_unit' => 'year',
+    ]);
+
+    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
+    $multipleInstallmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+
+    $this->assertPaymentPlanStructureIsOk($nextPeriodID, [
+      'total_amount' => 360,
+      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'line_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'line_item_count' => 2,
+      'membership_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'membership_end_date_offset' => ' +1 year -1 day',
+      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'installments' => 12,
+    ]);
+  }
+
+  /**
+   * Checks the structure of the payment plan follows the given expected values.
+   *
+   * @param int $nextPeriodID
+   * @param array $expectedValues
+   *   Must have the following structure:
+   *   [
+   *     'total_amount' => 240,
+   *     'plan_start_date' => '2020-11-23',
+   *     'line_start_date' => '2020-11-23',
+   *     'line_item_count' => 1,
+   *     'membership_start_date' => '2020-11-23',
+   *     'membership_end_date_offset' => ' +1 year -1 day',
+   *     'first_receive_date' => '2020-11-23',
+   *     'installments' => 12,
+   *   ]
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function assertPaymentPlanStructureIsOk($nextPeriodID, $expectedValues) {
+    $newRecurringContribution = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'id' => $nextPeriodID,
+    ])['values'][0];
+    $this->assertEquals(
+      $expectedValues['total_amount'] / $expectedValues['installments'],
+      $newRecurringContribution['amount']
+    );
+    $this->assertEquals(
+      $expectedValues['plan_start_date'],
+      date('Y-m-d', strtotime($newRecurringContribution['start_date']))
+    );
+
+    $lineItems = $this->getSubscriptionLineItems($nextPeriodID);
+    $this->assertEquals($expectedValues['line_item_count'], count($lineItems));
+
+    $line = array_pop($lineItems);
+    $this->assertEquals(
+      $expectedValues['line_start_date'],
+      date('Y-m-d', strtotime($line['start_date']))
+    );
+
+    $membership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'id' => $line['entity_id'],
+    ])['values'][0];
+    $this->assertEquals(
+      $expectedValues['membership_start_date'],
+      date('Y-m-d', strtotime($membership['start_date']))
+    );
+    $this->assertEquals(
+      date('Y-m-d', strtotime($line['start_date'] . ' ' . $expectedValues['membership_end_date_offset'])),
+      date('Y-m-d', strtotime($membership['end_date']))
+    );
+
+    $contributions = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $nextPeriodID,
+      'options' => ['limit' => 0],
+    ]);
+    $this->assertEquals($expectedValues['installments'], $contributions['count']);
+    $this->assertEquals(
+      $expectedValues['first_receive_date'],
+      date('Y-m-d', strtotime($contributions['values'][0]['receive_date']))
+    );
+
+    foreach ($contributions['values'] as $payment) {
+      $this->assertEquals(
+        $expectedValues['total_amount'] / $expectedValues['installments'],
+        $payment['total_amount']
+      );
+    }
+  }
+
+  /**
+   * Helper function to create memberships and its default price field value.
+   *
+   * @param array $params
+   *
+   * @return \stdClass
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function createMembershipType($params) {
+    $membershipType = MembershipTypeFabricator::fabricate($params);
+    $priceFieldValue = civicrm_api3('PriceFieldValue', 'get', [
+      'sequential' => 1,
+      'membership_type_id' => $membershipType['id'],
+      'options' => ['limit' => 1],
+    ])['values'][0];
+
+    $result = new stdClass();
+    $result->membershipType = $membershipType;
+    $result->priceFieldValue = $priceFieldValue;
+
+    return $result;
   }
 
 }

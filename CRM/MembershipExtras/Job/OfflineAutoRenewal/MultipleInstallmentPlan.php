@@ -280,11 +280,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
   }
 
   /**
-   * Obtains list of all active recurring line items.
-   *
-   * @param $recurringContributionID
-   *
-   * @return array
+   * @inheritDoc
    */
   protected function getAllRecurringContributionActiveLineItems($recurringContributionID) {
     $q = '
@@ -299,12 +295,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extend
       1 => [$recurringContributionID, 'Integer'],
     ]);
 
-    $linesToBeRenewed = [];
+    $activeLineItems = [];
     while ($dbResultSet->fetch()) {
-      $linesToBeRenewed[] = $dbResultSet->toArray();
+      $activeLineItems[] = $dbResultSet->toArray();
     }
 
-    return $linesToBeRenewed;
+    return $activeLineItems;
   }
 
   /**
