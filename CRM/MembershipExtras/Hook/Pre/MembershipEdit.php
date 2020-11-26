@@ -216,8 +216,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       'id' => $membershipID,
       'options' => ['limit' => 0],
     ]);
-    if (isset($membership['contribution_recur_id']) && !empty($membership['contribution_recur_id'])) {
-      return $membership['contribution_recur_id'];
+    $recurringContributionID = CRM_Utils_Array::value('contribution_recur_id', $membership, NULL);
+    if (!empty($recurringContributionID)) {
+      return $recurringContributionID;
     }
 
     $result = civicrm_api3('LineItem', 'get', [
