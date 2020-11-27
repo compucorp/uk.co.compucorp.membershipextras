@@ -13,11 +13,11 @@ use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 class CRM_MembershipExtras_Service_MembershipTypeInstalmentsScheduleTest extends BaseHeadlessTest {
 
   /**
-   * Tests Generate Rolling Monthly Instalments
+   * Tests Rolling Monthly Instalment Schedule Amounts
    *
    * @throws Exception
    */
-  public function testGenerateRollingMonthlyInstalments() {
+  public function testRollingMonthlyInstalmentAmounts() {
     $membershipTypes = $this->getRollingMembershipTypes();
     $instalments = $this->getRollingMembershipInstalments(
       $membershipTypes,
@@ -36,49 +36,29 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentsScheduleTest extends
   }
 
   /**
-   * Test Generate Rolling Quarterly Instalment
+   * Tests Rolling Monthly Instalment Schedule Dates
    *
    * @throws Exception
    */
-  public function testGenerateRollingQuarterlyInstalments() {
+  public function testRollingMonthlyInstalmentDates() {
     $membershipTypes = $this->getRollingMembershipTypes();
     $instalments = $this->getRollingMembershipInstalments(
       $membershipTypes,
-      MembershipInstalmentsSchedule::QUARTERLY
+      MembershipInstalmentsSchedule::MONTHLY
     );
 
-    $this->assertCount(MembershipInstalmentsSchedule::QUARTERLY_INSTALMENT_COUNT, $instalments);
+    $mockedDate = $this->mockMembershipDates();
+    $expectedDate = $mockedDate['start_date'];
+    foreach ($instalments as $index => $instalment) {
+      if ($index != 0) {
+        $expectedDate->add(new DateInterval('P1M'));
+      }
+      $this->assertEquals(
+        $expectedDate->format('Y-m-d'),
+        $instalment->getInstalmentDate()->format('Y-m-d')
+      );
+    }
 
-    $expectedAmount = MoneyUtilities::roundToPrecision(
-      ($membershipTypes[0]->minimum_fee + $membershipTypes[1]->minimum_fee) / MembershipInstalmentsSchedule::QUARTERLY_INSTALMENT_COUNT,
-      2
-    );
-
-    $instalment = $instalments[0];
-    $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
-  }
-
-  /**
-   * Test Generate Rolling Annually Instalment
-   *
-   * @throws Exception
-   */
-  public function testCalculateRollingAnnuallyInstalments() {
-    $membershipTypes = $this->getRollingMembershipTypes();
-    $instalments = $this->getRollingMembershipInstalments(
-      $membershipTypes,
-      MembershipInstalmentsSchedule::ANNUALLY
-    );
-
-    $this->assertCount(MembershipInstalmentsSchedule::ANNUALLY_INSTALMENT_COUNT, $instalments);
-
-    $expectedAmount = MoneyUtilities::roundToPrecision(
-      ($membershipTypes[0]->minimum_fee + $membershipTypes[1]->minimum_fee) / MembershipInstalmentsSchedule::ANNUALLY_INSTALMENT_COUNT,
-      2
-    );
-
-    $instalment = $instalments[0];
-    $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
   }
 
   /**
@@ -128,17 +108,14 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentsScheduleTest extends
   private function getRollingMembershipInstalments($membershipTypes, $schedule) {
     $membershipTypeInstalmentCalculator = $this->getMembershipTypeInstalmentAmount($membershipTypes, $schedule);
 
-    $startDate = new DateTime();
-    $joinDate = $startDate;
-    $endDate = new DateTime();
-    $endDate->add(new DateInterval('P1Y'));
+    $mockedDate = $this->mockMembershipDates();
 
     $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
     $membershipTypeDates = $membershipTypeDatesCalculator->getDatesForMembershipType(
       $membershipTypes[0]->id,
-      $startDate,
-      $endDate,
-      $joinDate
+      $mockedDate['start_date'],
+      $mockedDate['end_date'],
+      $mockedDate['join_date']
     );
 
     return $membershipTypeInstalmentCalculator->generate(
@@ -152,7 +129,20 @@ class CRM_MembershipExtras_Service_MembershipTypeInstalmentsScheduleTest extends
   /**
    * @return array
    */
-  public function getRollingMembershipTypes() {
+  private function mockMembershipDates() {
+    $startDate = new DateTime();
+    $joinDate = $startDate;
+    $endDate = new DateTime();
+    $endDate->add(new DateInterval('P1Y'));
+    $endDate->modify("-1 day");
+
+    return ['start_date' => $startDate, 'join_date' => $joinDate, 'end_date' => $endDate];
+  }
+
+  /**
+   * @return array
+   */
+  private function getRollingMembershipTypes() {
     $membershipType1 = MembershipTypeFabricator::fabricate([
       'name' => 'Rolling Membership Type 1',
       'minimum_fee' => 120,
