@@ -8,6 +8,20 @@ use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabrica
 class PaymentScheduleTest extends BaseHeadlessTest {
 
   /**
+   * Test ExceptionIsThrownIfScheduleIsNotValid
+   * @throws CiviCRM_API3_Exception
+   */
+  public function testExceptionIsThrownIfScheduleIsNotValid() {
+    $this->expectException(CiviCRM_API3_Exception::class);
+    civicrm_api3('PaymentSchedule', 'get', [
+      'sequential' => 1,
+      'membership_type_id' => 1,
+      'schedule' => 'xyz',
+    ])['values'];
+  }
+
+  /**
+   * Test GetMonthlyRollingMembershipTypeSchedule
    * @throws CiviCRM_API3_Exception
    */
   public function testGetMonthlyRollingMembershipTypeSchedule() {
