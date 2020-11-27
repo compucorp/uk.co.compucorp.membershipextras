@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/MembershipExtras</base>
+  <class>AutoMembershipUpgradeRule</class>
+  <name>membershipextras_auto_membership_upgrade_rule</name>
+
+  <field>
+    <name>id</name>
+    <title>Id</title>
+    <type>int unsigned</type>
+    <required>true</required>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>name</name>
+    <type>varchar</type>
+    <length>255</length>
+    <required>1</required>
+  </field>
+
+  <field>
+    <name>label</name>
+    <type>varchar</type>
+    <length>255</length>
+    <required>1</required>
+  </field>
+
+  <field>
+    <name>from_membership_type_id</name>
+    <type>int unsigned</type>
+    <required>1</required>
+    <comment>FK to civicrm_membership_type table</comment>
+  </field>
+  <foreignKey>
+    <name>from_membership_type_id</name>
+    <table>civicrm_membership_type</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>to_membership_type_id</name>
+    <type>int unsigned</type>
+    <required>1</required>
+    <comment>FK to civicrm_membership_type table</comment>
+  </field>
+  <foreignKey>
+    <name>to_membership_type_id</name>
+    <table>civicrm_membership_type</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>upgrade_trigger_date_type</name>
+    <type>int unsigned</type>
+    <required>1</required>
+    <default>1</default>
+    <pseudoconstant>
+      <callback>CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_TriggerDateType::getAll</callback>
+    </pseudoconstant>
+  </field>
+
+  <field>
+    <name>period_length</name>
+    <type>int unsigned</type>
+    <required>1</required>
+    <default>1</default>
+  </field>
+
+  <field>
+    <name>period_length_unit</name>
+    <type>int unsigned</type>
+    <required>1</required>
+    <default>1</default>
+    <pseudoconstant>
+      <callback>CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::getAll</callback>
+    </pseudoconstant>
+  </field>
+
+  <field>
+    <name>filter_group</name>
+    <type>int unsigned</type>
+    <comment>FK to civicrm_group table</comment>
+  </field>
+  <foreignKey>
+    <name>filter_group</name>
+    <table>civicrm_group</table>
+    <key>id</key>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>weight</name>
+    <type>int unsigned</type>
+    <required>1</required>
+  </field>
+
+  <field>
+    <name>is_active</name>
+    <type>boolean</type>
+    <default>1</default>
+  </field>
+</table>

@@ -16,6 +16,18 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends Base
 
   private $endDate;
 
+  private $defaultMembershipTypeParams = [
+    'duration_unit' => 'year',
+    'period_type' => 'fixed',
+    'duration_interval' => 1,
+    'fixed_period_start_day' => 101,
+    'fixed_period_rollover_day' => 1231,
+    'domain_id' => 1,
+    'member_of_contact_id' => 1,
+    'financial_type_id' => 1,
+    'minimum_fee' => 120,
+  ];
+
   public function setUp() {
     $this->startDate = new DateTime();
     $this->endDate = new DateTime();
@@ -24,7 +36,7 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends Base
   public function testCalculateProRata() {
     $originalDurationDays = 360;
     $calculatedDays = 60;
-    $membershipType = MembershipTypeFabricator::fabricate(['minimum_fee' => 120]);
+    $membershipType = MembershipTypeFabricator::fabricateWithBAO($this->defaultMembershipTypeParams);
 
     // Expected prorata: 60/360 * 120 = 20
     $expectedProrata = 20;
@@ -41,7 +53,7 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProraterTest extends Base
   public function testCalculateProRataWithTax() {
     $originalDurationDays = 360;
     $calculatedDays = 60;
-    $membershipType = MembershipTypeFabricator::fabricate(['minimum_fee' => 120], TRUE);
+    $membershipType = MembershipTypeFabricator::fabricateWithBAO($this->defaultMembershipTypeParams, TRUE);
 
     // Expected Prorata: 60/360 * 120
     $expectedProrata = 20;

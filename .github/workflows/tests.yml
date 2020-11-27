@@ -29,14 +29,14 @@ jobs:
         run : amp config:set --mysql_dsn=mysql://root:root@mysql:3306
 
       - name: Build Drupal site
-        run: civibuild create drupal-clean --civi-ver 5.24.6 --web-root $GITHUB_WORKSPACE/site
+        run: civibuild create drupal-clean --civi-ver 5.28.3 --cms-ver 7.75 --web-root $GITHUB_WORKSPACE/site
 
       - uses: compucorp/apply-patch@1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           repo: compucorp/civicrm-core
-          version: 5.24.6
+          version: 5.28.3
           path: site/web/sites/all/modules/civicrm
 
       - uses: actions/checkout@v2

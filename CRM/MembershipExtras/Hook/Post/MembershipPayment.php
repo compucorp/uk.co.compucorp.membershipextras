@@ -51,10 +51,18 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
   }
 
   private function setRelatedRecurContributionId() {
-    $this->relatedRecurContributionId = civicrm_api3('Contribution', 'getvalue', [
+    $this->relatedRecurContributionId = NULL;
+
+    $result = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
       'id' => $this->membershipPayment->contribution_id,
       'return' => 'contribution_recur_id',
+      'options' => ['limit' => 0],
     ]);
+    if ($result['count'] > 0) {
+      $contribution = array_shift($result['values']);
+      $this->relatedRecurContributionId = $contribution['contribution_recur_id'];
+    }
   }
 
   private function setMembership() {
@@ -146,7 +154,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
 
     if ($entityID && $entityTable == 'civicrm_membership' && $entityID != $this->membershipPayment->membership_id) {
       $sql = "
-        UPDATE civicrm_line_item 
+        UPDATE civicrm_line_item
         SET entity_table = 'civicrm_membership', entity_id = %1
         WHERE id = %2
       ";
