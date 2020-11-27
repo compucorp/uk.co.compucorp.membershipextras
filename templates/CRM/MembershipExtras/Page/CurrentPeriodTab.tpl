@@ -50,13 +50,15 @@
             {$currentItem.start_date|date_format:"%Y-%m-%d"|crmDate}
         </td>
         <td>
-            {if $currentItem.end_date}
-              {$currentItem.end_date|date_format:"%Y-%m-%d"|crmDate}
-            {elseif $currentItem.related_membership.end_date}
-                {$currentItem.related_membership.end_date|date_format:"%Y-%m-%d"|crmDate}
-            {else}
-                {$periodEndDate|date_format:"%Y-%m-%d"|crmDate}
-            {/if}
+          {if $currentItem.related_membership.related_membership_type.duration_unit == 'lifetime'}
+            -
+          {elseif $currentItem.end_date}
+            {$currentItem.end_date|date_format:"%Y-%m-%d"|crmDate}
+          {elseif $currentItem.related_membership.end_date}
+              {$currentItem.related_membership.end_date|date_format:"%Y-%m-%d"|crmDate}
+          {else}
+              {$periodEndDate|date_format:"%Y-%m-%d"|crmDate}
+          {/if}
         </td>
         {if $recurringContribution.auto_renew}
           <td>

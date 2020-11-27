@@ -116,9 +116,16 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $manualPaymentProcessorIDs;
 
   /**
+   * @var CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker
+   */
+  protected $autoUpgradableMembershipCheckService;
+
+  /**
    * CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan constructor.
    */
   public function __construct() {
+    $this->autoUpgradableMembershipCheckService = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
+
     $this->setUseMembershipLatestPrice();
     $this->setContributionPendingStatusValue();
     $this->setContributionStatusesNameMap();
@@ -260,14 +267,28 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
-   * Obtains the list of recurring line items to be renewed for the payment plan
-   * being renewed.
+   * Obtains the list of recurring line items to be renewed for the plan.
+   *
+   * Returns an array with all the line items of the payment plan that are not
+   * removed and are set to auto-renew.
    *
    * @param int $recurringContributionID
    *
    * @return array
    */
   abstract protected function getRecurringContributionLineItemsToBeRenewed($recurringContributionID);
+
+  /**
+   * Obtains list of all active line items of the given recurring contribution.
+   *
+   * Returns an array with all the line items that ar not removed from the
+   * payment plan, irrespective if they are renewable or not.
+   *
+   * @param int $recurringContributionID
+   *
+   * @return array
+   */
+  abstract protected function getAllRecurringContributionActiveLineItems($recurringContributionID);
 
   /**
    * Obtains list of recurring line items that are active for the new recurring
@@ -452,7 +473,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @return mixed
    */
-  private function calculateSingleInstallmentAmount($amount) {
+  protected function calculateSingleInstallmentAmount($amount) {
     $resultAmount = $amount;
 
     if ($this->currentRecurringContribution['installments'] > 1) {
@@ -531,17 +552,29 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $existingMembershipID = $this->getExistingMembershipForLineItem($lineItem, $priceFieldValue);
 
       if ($existingMembershipID) {
+        $currentMembershipTypeId = civicrm_api3('Membership', 'getvalue', [
+          'return' => 'membership_type_id',
+          'id' => $existingMembershipID,
+        ]);
+      }
+
+      if ($existingMembershipID && ($currentMembershipTypeId == $priceFieldValue['membership_type_id'])) {
         $this->extendExistingMembership($existingMembershipID);
       }
       else {
         $existingMembershipID = $this->createMembership($lineItem, $priceFieldValue);
       }
 
-      civicrm_api3('LineItem', 'create', [
+      // Civicrm does not allow updating entity_table and
+      // entity_id fields using API, so we use DAO class instead.
+      $updateLineItemParams = [
         'id' => $lineItem['id'],
         'entity_table' => 'civicrm_membership',
         'entity_id' => $existingMembershipID,
-      ]);
+      ];
+      $lineItemDAO = new CRM_Price_DAO_LineItem();
+      $lineItemDAO->copyValues($updateLineItemParams);
+      $lineItemDAO->save();
     }
   }
 
@@ -592,10 +625,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $membershipCreateResult = civicrm_api3('Membership', 'create', [
       'contact_id' => $this->currentRecurringContribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
-      'join_date' => date('YmdHis'),
+      'join_date' => $this->membershipsStartDate,
       'start_date' => $this->membershipsStartDate,
       'end_date' => $lineItem['end_date'],
       'contribution_recur_id' => $this->newRecurringContributionID,
+      'skipLineItem' => TRUE,
     ]);
 
     return $membershipCreateResult['id'];
@@ -775,6 +809,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
         $lineItem['entity_id'] = $contribution->id;
       }
 
+      if ($lineItem['entity_table'] === 'civicrm_contribution_recur') {
+        $lineItem['entity_id'] = $contribution->id;
+        $lineItem['entity_table'] = 'civicrm_contribution';
+      }
+
       if ($this->isDuplicateLineItem($lineItem)) {
         continue;
       }
@@ -842,8 +881,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @throws \Exception
    */
   protected function calculateRenewedMembershipsStartDate() {
-    $latestDate = NULL;
-    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+    $latestEndDates = [
+      'auto_renewable' => NULL,
+      'not_auto_renewable' => NULL,
+    ];
+    $currentPeriodLines = $this->getAllRecurringContributionActiveLineItems($this->currentRecurContributionID);
 
     foreach ($currentPeriodLines as $lineItem) {
       if ($lineItem['entity_table'] != 'civicrm_membership') {
@@ -855,17 +897,24 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       }
 
       $membershipEndDate = new DateTime($lineItem['memberhsip_end_date']);
-      if (!isset($latestDate)) {
-        $latestDate = $membershipEndDate;
-      }
-      elseif ($latestDate < $membershipEndDate) {
-        $latestDate = $membershipEndDate;
-      }
+      $isLineAutoRenewable = $lineItem['auto_renew'] == '1' ? 'auto_renewable' : 'not_auto_renewable';
 
+      if (!isset($latestEndDates[$isLineAutoRenewable])) {
+        $latestEndDates[$isLineAutoRenewable] = $membershipEndDate;
+      }
+      elseif ($latestEndDates[$isLineAutoRenewable] < $membershipEndDate) {
+        $latestEndDates[$isLineAutoRenewable] = $membershipEndDate;
+      }
     }
+
+    // If there are no auto-renewable lines, we use the latest end date of
+    // non-renewable lines. This happens when a membership is set not to
+    // auto-renew for a period and a new membership is added to the next period.
+    $latestDate = $latestEndDates['auto_renewable'] ?: $latestEndDates['not_auto_renewable'];
 
     if ($latestDate) {
       $latestDate->add(new DateInterval('P1D'));
+
       return $latestDate->format('Y-m-d');
     }
 
@@ -886,16 +935,75 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
-   * Get existing membership start date by membership id
+   * Creates a subscription line item for the membership
+   * we are going to current membership to in case
+   * it is upgradable.
    *
-   * @param $id
-   * @return mixed
+   * @param int $newMembershipTypeId
+   * @param int $recurContributionID
+   * @param string $lineItemStartDate
    */
-  public static function getExistingMembershipStartDate($id) {
-    return civicrm_api3('Membership', 'getsingle', [
-      'return' => ["start_date"],
-      'id' => $id,
-    ])['start_date'];
+  protected function createUpgradableSubscriptionMembershipLine($newMembershipTypeId, $recurContributionID, $lineItemStartDate) {
+    $newPriceFieldValue = civicrm_api3('PriceFieldValue', 'get', [
+      'sequential' => 1,
+      'membership_type_id' => $newMembershipTypeId,
+      'options' => ['sort' => 'id ASC', 'limit' => 1],
+    ])['values'][0];
+
+    $newLineItemParams = [
+      'entity_id' => $recurContributionID,
+      'entity_table' => 'civicrm_contribution_recur',
+      'qty' => 1,
+      'price_field_id' => $newPriceFieldValue['price_field_id'],
+      'price_field_value_id' => $newPriceFieldValue['id'],
+      'label' => $newPriceFieldValue['label'],
+      'financial_type_id' => $newPriceFieldValue['financial_type_id'],
+    ];
+
+    $newLineItemParams['unit_price'] = $this->calculateUpgradedMembershipPrice($newMembershipTypeId);
+    $newLineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($newLineItemParams['unit_price'] * $newLineItemParams['qty']);
+    $newLineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($newLineItemParams['line_total'], $newPriceFieldValue['financial_type_id']);
+
+    $newLineItem = civicrm_api3('LineItem', 'create', $newLineItemParams);
+
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+      'contribution_recur_id' => $recurContributionID,
+      'line_item_id' => $newLineItem['id'],
+      'start_date' => $lineItemStartDate,
+      'auto_renew' => 1,
+    ]);
+  }
+
+  private function calculateUpgradedMembershipPrice($membershipTypeId) {
+    $membershipMinimumFee = civicrm_api3('MembershipType', 'getvalue', [
+      'return' => 'minimum_fee',
+      'id' => $membershipTypeId,
+    ]);
+
+    return $this->calculateSingleInstallmentAmount($membershipMinimumFee);
+  }
+
+  /**
+   * Duplicates given subscription line with the given start date.
+   *
+   * @param array $lineItemParams
+   * @param string $startDate
+   * @param int $newRecurContributionId
+   */
+  protected function duplicateSubscriptionLine($lineItemParams, $startDate, $newRecurContributionId) {
+    $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams) ?: 0;
+    $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']) ?: 0;
+    $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']) ?: 0;
+    unset($lineItemParams['id']);
+
+    $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
+
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+      'contribution_recur_id' => $newRecurContributionId,
+      'line_item_id' => $newLineItem['id'],
+      'start_date' => $startDate,
+      'auto_renew' => 1,
+    ]);
   }
 
 }
