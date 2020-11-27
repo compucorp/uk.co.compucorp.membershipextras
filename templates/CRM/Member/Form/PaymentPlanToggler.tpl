@@ -33,6 +33,7 @@
       $('#contributionTypeToggle').insertBefore($('#is_different_contribution_contact').parent().parent());
       $('#recordContribution legend:first').html('Contribution and Payment Plan');
       $('#payment_plan_schedule_row').insertAfter($('#financial_type_id').parent().parent());
+      $('#payment_plan_schedule_instalment_row').insertAfter($('#payment_plan_schedule_row'));
       $('span.crm-error').css('display', 'none');
       $('label span.crm-error').css('display', 'inline');
       $('#payment_plan_fields_tabs').insertBefore($('#payment_plan_schedule_row').closest('table'));
@@ -58,36 +59,72 @@
      */
     function setScheduleEvents () {
       $('#total_amount, #membership_type_id_1').change(() => {
+        const memType = parseInt($('#membership_type_id_1').val());
         const isPriceSet = $('#price_set_id').length > 0 && $('#price_set_id').val();
         if (isPriceSet) {
           return;
         }
-        const memType = parseInt($('#membership_type_id_1').val());
         CRM.api3('MembershipType', 'get', {
           "sequential": 1,
           "id": memType
         }).then(function (result) {
           if (result.is_error == 0) {
             setPaymentPlanScheduleOption(result.values);
+            generateInstalmentSchedule(memType);
           } else {
             CRM.alert(result.error_message, 'Error', 'error');
           }
         });
       });
+      $('#payment_plan_schedule, #payment_instrument_id').change(() => {
+        generateInstalmentSchedule();
+      });
+
     }
 
     /**
-     * Sets PaymentPlan Schedule Options based on the values
+     * Generates Instalment schedule list based on selected schedule
+     */
+    function generateInstalmentSchedule() {
+      const memType = parseInt($('#membership_type_id_1').val());
+      const schedule = $('#payment_plan_schedule').val();
+      CRM.api3('PaymentSchedule', 'get', {
+        "sequential": 1,
+        "membership_type_id": memType,
+        "schedule": schedule,
+      }).then(function(data) {
+        console.log(data);
+        drawTable(data)
+      }, function(error) {
+        console.log(error);
+      });
+    }
+
+    function drawTable(data) {
+      $('#instalment_row_table tbody td').remove();
+      let rows = data.values;
+      rows.forEach(drawRow);
+    }
+
+    function drawRow(rowData) {
+      let tbody = $('#instalment_row_table tbody');
+      tbody.append('<tr>');
+      tbody.append('<td><a class="nowrap bold crm-expand-row" href="#">&nbsp;</a></td>');
+      tbody.append('<td>' + rowData.instalment_no + ' </td>');
+      tbody.append('<td>' + rowData.instalment_date + ' </td>');
+      tbody.append('<td>' + rowData.instalment_tax_amount + '</td>');
+      tbody.append('<td>' + rowData.instalment_amount + '</td>');
+      tbody.append('<td>' + rowData.instalment_status + '</td>');
+      tbody.append('</tr');
+    }
+
+    /**
+     * Sets PaymentPlan Schedule Options based on the membership period type
      */
     function setPaymentPlanScheduleOption (values) {
-      let durationUnit = values[0].duration_unit;
       let periodType = values[0].period_type;
-      if (durationUnit == 'month') {
-        setScheduleOptions(['monthly']);
-        return;
-      }
-      if (periodType == 'fixed') {
-        setScheduleOptions(['monthly', 'annual']);
+      if (periodType === 'fixed') {
+        setScheduleOptions(['monthly', 'annually']);
         return;
       }
       setScheduleOptions();
@@ -99,8 +136,8 @@
     function setScheduleOptions (optionsToDisplay = []) {
       let defaultOptions = {
         monthly: '{/literal}{ts}Monthly{/ts}{literal}',
-        quarterly: '{/literal}{ts}}Quarterly{/ts}{literal}',
-        annual: '{/literal}{ts}Annual{/ts}{literal}'
+        quarterly: '{/literal}{ts}Quarterly{/ts}{literal}',
+        annually: '{/literal}{ts}Annually{/ts}{literal}'
       };
       if (optionsToDisplay.length > 0) {
         Object.keys(defaultOptions).forEach(key => {
@@ -152,6 +189,7 @@
     function updateContributionPaymentPlanView (tabOptionId) {
       if (tabOptionId === 'contribution') {
         $('#payment_plan_schedule_row').hide();
+        $('#payment_plan_schedule_instalment_row').hide();
         $('.crm-membership-form-block-trxn_id').show();
         $('.crm-membership-form-block-receive_date').show();
         $('.crm-membership-form-block-total_amount').show();
@@ -159,8 +197,10 @@
         $('.crm-membership-form-block-contribution_status_id').show();
         $('.crm-membership-form-block-payment_instrument_id')
                 .insertBefore('.crm-membership-form-block-contribution_status_id');
+        $('.crm-membership-form-block-billing').insertAfter('.crm-membership-form-block-contribution_status_id');
       } else if (tabOptionId === 'payment_plan') {
         $('#payment_plan_schedule_row').show();
+        $('#payment_plan_schedule_instalment_row').show();
         $('.crm-membership-form-block-trxn_id').hide();
         $('.crm-membership-form-block-receive_date').hide();
         $('.crm-membership-form-block-total_amount').hide();
@@ -168,6 +208,7 @@
         $('.crm-membership-form-block-contribution_status_id').hide();
         $('.crm-membership-form-block-payment_instrument_id')
                 .insertBefore('.crm-membership-form-block-contribution-contact');
+        $('.crm-membership-form-block-billing').insertAfter('.crm-membership-form-block-payment_instrument_id');
         if ($('#membership_type_id_1').val()) {
           $('#membership_type_id_1').change();
         }
@@ -201,5 +242,54 @@
       {$form.payment_plan_schedule.html}
     </td>
   </tr>
+  <tr id="payment_plan_schedule_instalment_row">
+    <td class="label" nowrap><label>{ts}Instalment Schedule{/ts}</label></td>
+    <td>
+        <table id="instalment_row_table" class="selector row-highlight" style="position: relative;">
+          <thead class="sticky">
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">{ts}Instalment no{/ts}</th>
+            <th scope="col">{ts}Date{/ts}</th>
+            <th scope="col">{ts}Tax Amount{/ts}</th>
+            <th scope="col">{ts}Total{/ts}</th>
+            <th scope="col">{ts}Status{/ts}</th>
+          </tr>
+          </thead>
+          <tbody>
+
+          </tbody>
+        </table>
+    </td>
+  </tr>
+  <tr class="crm-child-row" style="display: none;">
+    <td colspan="10">
+      <div class="crm-ajax-container" style="min-height: 3em; position: static; zoom: 1;">
+        <table class="selector row-highlight">
+          <tbody>
+          <tr>
+            <th>{ts}Item{/ts}</th>
+            <th>{ts}Financial type{/ts}</th>
+            <th>{ts}Quantity{/ts}</th>
+            <th>{ts}Unit Price{/ts}</th>
+            <th>{ts}Sub Total{/ts}</th>
+            <th>{ts}Tax Rate{/ts}</th>
+            <th>{ts}Tax Amount{/ts}</th>
+            <th>{ts}Total Amount{/ts}</th>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </td>
   </tr>
 </table>
