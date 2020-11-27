@@ -5,6 +5,11 @@ use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabrica
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Contribution as ContributionFabricator;
 
+/**
+ * Class CRM_MembershipExtras_Hook_Post_MembershipPaymentTest
+ *
+ * @group headless
+ */
 class CRM_MembershipExtras_Hook_Post_MembershipPaymentTest extends BaseHeadlessTest {
 
   /**
@@ -25,10 +30,10 @@ class CRM_MembershipExtras_Hook_Post_MembershipPaymentTest extends BaseHeadlessT
       'name' => 'Test Membership',
       'period_type' => 'rolling',
       'minimum_fee' => 120,
-    ], TRUE);
+    ]);
     $membership = MembershipFabricator::fabricate([
       'contact_id' => $contact['id'],
-      'membership_type_id' => $membershipType->id,
+      'membership_type_id' => $membershipType['id'],
       'join_date' => date('YmdHis'),
       'start_date' => date('YmdHis'),
     ]);

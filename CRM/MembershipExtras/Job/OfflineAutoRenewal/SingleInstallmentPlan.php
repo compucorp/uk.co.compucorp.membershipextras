@@ -241,6 +241,31 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
   }
 
   /**
+   * @inheritDoc
+   */
+  protected function getAllRecurringContributionActiveLineItems($recurringContributionID) {
+    $q = '
+      SELECT msl.*, li.*, m.end_date AS memberhsip_end_date
+      FROM membershipextras_subscription_line msl, civicrm_line_item li
+      LEFT JOIN civicrm_membership m ON li.entity_id = m.id
+      WHERE msl.line_item_id = li.id
+      AND msl.contribution_recur_id = %1
+      AND msl.is_removed = 0
+      AND msl.end_date IS NULL
+      ';
+    $dbResultSet = CRM_Core_DAO::executeQuery($q, [
+      1 => [$recurringContributionID, 'Integer'],
+    ]);
+
+    $linesToBeRenewed = [];
+    while ($dbResultSet->fetch()) {
+      $linesToBeRenewed[] = $dbResultSet->toArray();
+    }
+
+    return $linesToBeRenewed;
+  }
+
+  /**
    * @inheritdoc
    */
   protected function getNewPaymentPlanActiveLineItems() {
