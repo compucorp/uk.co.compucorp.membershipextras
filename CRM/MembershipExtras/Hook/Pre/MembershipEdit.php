@@ -104,11 +104,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * @throws \CRM_Core_Exception
    */
   private function isBulkStatusUpdate() {
-    $q = CRM_Utils_Request::retrieve('q', 'String');
     $statusNext = CRM_Utils_Request::retrieve('_qf_Status_next', 'String');
     $contributionStatusID = CRM_Utils_Request::retrieve('contribution_status_id', 'String');
+    $currentPath = CRM_Utils_System::currentPath();
 
-    if ($q === 'civicrm/contribute/search' && $statusNext === 'Update Pending Status' && !empty($contributionStatusID)) {
+    if (stripos($currentPath, 'civicrm/contribute/search') !== FALSE && $statusNext === 'Update Pending Status' && !empty($contributionStatusID)) {
       return TRUE;
     }
 
