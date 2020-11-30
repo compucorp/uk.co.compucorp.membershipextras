@@ -50,10 +50,6 @@ class CRM_MembershipExtras_Test_Fabricator_MembershipType extends BaseFabricator
 
     $membershipType = new MembershipType();
 
-    if (empty($params['name'])) {
-      $params['name'] = md5(mt_rand());
-    }
-
     foreach ($params as $property => $value) {
       $membershipType->$property = $value;
     }
