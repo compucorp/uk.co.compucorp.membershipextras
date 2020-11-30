@@ -296,10 +296,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
     $singleInstallmentRenewal->run();
 
-    $membership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
-    ])['values'][0];
+    $membership = $this->getPaymentPlanAutorenewableMemberships($paymentPlan['id'])[0];
     $this->assertEquals($paymentPlanMembershipOrder->membershipStartDate, $membership['start_date']);
   }
 
@@ -328,10 +325,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
     $singleInstallmentRenewal->run();
 
-    $membership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
-    ])['values'][0];
+    $membership = $this->getPaymentPlanAutorenewableMemberships($paymentPlan['id'])[0];
     $expectedNewMembershipStartDate = date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +1 year'));
     $this->assertEquals($expectedNewMembershipStartDate, $membership['start_date']);
   }
@@ -563,11 +557,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
     $singleInstallmentRenewal->run();
 
-    $createdMemberships = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
-    ])['values'];
-
+    $createdMemberships = $this->getPaymentPlanAutorenewableMemberships($paymentPlan['id']);
     $isFirstMembershipEnded = $createdMemberships[0]['end_date'] == date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +1 year -1 day'));
 
     $expectedUpgradedMembershipValues = [
@@ -625,12 +615,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
     $singleInstallmentRenewal->run();
 
-    $createdMemberships = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
-    ])['values'];
-
     $isAllMembershipPaymentRecordsCreated = TRUE;
+    $createdMemberships = $this->getPaymentPlanAutorenewableMemberships($paymentPlan['id']);
     foreach ($createdMemberships as $membership) {
       $membershipPaymentsCount = civicrm_api3('MembershipPayment', 'getcount', [
         'sequential' => 1,
@@ -690,10 +676,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
       'options' => ['limit' => 1],
     ])['values'][0];
 
-    $memberships = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
-    ])['values'];
+    $memberships = $this->getPaymentPlanAutorenewableMemberships($paymentPlan['id']);
 
     $expectedFirstLineItemValues = [
       'start_date' => $paymentPlanMembershipOrder->membershipStartDate . ' 00:00:00',
@@ -777,11 +760,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
    * @return bool
    */
   private function isPaymentPlanMembershipRenewed($paymentPlanId, $expectedNewEndDateOffset) {
-    $membership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlanId,
-    ])['values'][0];
-
+    $membership = $this->getPaymentPlanAutorenewableMemberships($paymentPlanId)[0];
     $contributionCount = civicrm_api3('Contribution', 'getcount', [
       'contribution_recur_id' => $paymentPlanId,
     ]);
@@ -1151,6 +1130,100 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
       $expectedValues['total_amount'],
       $contributions['values'][0]['total_amount']
     );
+  }
+
+  public function testDatesOfRenewalOfFixedMemberships() {
+    $startDate = '2019-07-01';
+    $endDate = '2019-11-30';
+    $receiveDateAfterRenewal = '2019-12-01';
+    $endDateAfterRenewal = '2020-11-30';
+
+    $fixedMembershipType = $this->createMembershipType([
+      'name' => 'Test Rolling Membership',
+      'period_type' => 'fixed',
+      'minimum_fee' => 0,
+      'duration_unit' => 'year',
+      'duration_interval' => 1,
+      'fixed_period_start_day' => '1201',
+      'fixed_period_rollover_day' => '1130',
+    ]);
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = $startDate;
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems = [
+      [
+        'entity_table' => 'civicrm_membership',
+        'price_field_id' => $fixedMembershipType->priceFieldValue['price_field_id'],
+        'price_field_value_id' => $fixedMembershipType->priceFieldValue['id'],
+        'label' => $fixedMembershipType->membershipType['name'],
+        'qty' => 1,
+        'unit_price' => $fixedMembershipType->priceFieldValue['amount'],
+        'line_total' => $fixedMembershipType->priceFieldValue['amount'],
+        'financial_type_id' => 'Member Dues',
+        'non_deductible_amount' => 0,
+        'auto_renew' => 1,
+      ],
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $this->assertEquals(1, count($contributions));
+    $this->assertEquals($startDate . ' 00:00:00', $contributions[0]['receive_date']);
+
+    $memberships = $this->getPaymentPlanAutorenewableMemberships($paymentPlan['id']);
+    foreach ($memberships as $membership) {
+      $this->assertEquals($startDate, $membership['join_date']);
+      $this->assertEquals($startDate, $membership['start_date']);
+      $this->assertEquals($endDate, $membership['end_date']);
+    }
+
+    $renewer = new CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan();
+    $renewer->run();
+
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $this->assertEquals(2, count($contributions));
+    $this->assertEquals($receiveDateAfterRenewal . ' 00:00:00', $contributions[1]['receive_date']);
+
+    $memberships = $this->getPaymentPlanAutorenewableMemberships($paymentPlan['id']);
+    foreach ($memberships as $membership) {
+      $this->assertEquals($startDate, $membership['join_date']);
+      $this->assertEquals($startDate, $membership['start_date']);
+      $this->assertEquals($endDateAfterRenewal, $membership['end_date']);
+    }
+  }
+
+  /**
+   * Obtains list of memberships set to auto-rnew with the payment plan.
+   *
+   * @param int $paymentPlanID
+   *
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getPaymentPlanAutorenewableMemberships($paymentPlanID) {
+    return civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlanID,
+    ])['values'];
+  }
+
+  /**
+   * Returns list of contributions associated to the given payment plan ID.
+   * @param int $paymentPlanID
+   *
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getPaymentPlanContributions($paymentPlanID) {
+    return civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlanID,
+      'options' => [
+        'limit' => 0,
+        'sort' => 'id',
+      ],
+    ])['values'];
   }
 
 }

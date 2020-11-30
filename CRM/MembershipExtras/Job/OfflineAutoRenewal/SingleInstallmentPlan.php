@@ -116,7 +116,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    */
   public function renew() {
     $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
-    $this->paymentPlanStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
+    $this->paymentPlanStartDate = $this->membershipsStartDate;
+
+    if (!$this->areAnyMembershipsFixed()) {
+      $this->paymentPlanStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
+    }
 
     $this->endCurrentLineItemsAndCreateNewOnesForNextPeriod($this->currentRecurContributionID);
     $this->updateRecurringContributionAmount($this->currentRecurContributionID);
@@ -125,6 +129,28 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
+  }
+
+  /**
+   * Checks if any of the memberships in the plan are fixed.
+   *
+   * @return bool
+   */
+  private function areAnyMembershipsFixed() {
+    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+
+    foreach ($currentPeriodLines as $lineItem) {
+      if ($lineItem['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      if ($lineItem['period_type'] === 'fixed') {
+        return TRUE;
+      }
+
+    }
+
+    return FALSE;
   }
 
   /**
@@ -219,9 +245,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    */
   protected function getRecurringContributionLineItemsToBeRenewed($recurringContributionID) {
     $q = '
-      SELECT msl.*, li.*, m.end_date AS memberhsip_end_date
+      SELECT msl.*, li.*, m.end_date AS memberhsip_end_date, cmt.period_type
       FROM membershipextras_subscription_line msl, civicrm_line_item li
       LEFT JOIN civicrm_membership m ON li.entity_id = m.id
+      LEFT JOIN civicrm_membership_type cmt on m.membership_type_id = cmt.id
       WHERE msl.line_item_id = li.id
       AND msl.contribution_recur_id = %1
       AND msl.auto_renew = 1
