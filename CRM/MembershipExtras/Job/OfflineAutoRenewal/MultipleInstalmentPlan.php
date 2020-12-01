@@ -6,7 +6,7 @@ use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 /**
  * Renews a payment plan with multiple installments.
  */
-class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
+class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Returns a list of payment plans with multiple installments that have at

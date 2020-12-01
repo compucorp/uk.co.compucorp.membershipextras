@@ -4,16 +4,16 @@ use CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder as PaymentPlanMe
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFabricator;
 use CRM_MembershipExtras_Test_Fabricator_AutoMembershipUpgradeRule as AutoMembershipUpgradeRuleFabricator;
-use CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstallmentPlan as MultipleInstallmentRenewalJob;
+use CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan as MultipleInstalmentRenewalJob;
 use CRM_MembershipExtras_Test_Fabricator_LineItem as LineItemFabricator;
 use CRM_MembershipExtras_Test_Fabricator_RecurringLineItem as RecurringLineItemFabricator;
 
 /**
- * Class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest
+ * Class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest
  *
  * @group headless
  */
-class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extends BaseHeadlessTest {
 
   /**
    * A rolling membership type that we
@@ -81,8 +81,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
   }
@@ -105,8 +105,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year'));
   }
@@ -129,8 +129,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +1 day'));
   }
@@ -161,13 +161,13 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
   }
 
-  public function testRenewalWithNonCompletedInstallmentWillRenew() {
+  public function testRenewalWithNonCompletedInstalmentWillRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
@@ -185,8 +185,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
   }
@@ -209,8 +209,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
   }
@@ -237,8 +237,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +1 day'));
   }
@@ -265,8 +265,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +14 day'));
   }
@@ -293,8 +293,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $membership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
@@ -325,8 +325,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $membership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
@@ -354,8 +354,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
       'return' => 'id',
@@ -391,15 +391,15 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $currentPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
     $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
     $nextPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($nextPeriodId);
 
-    // only two subscription line item is created for multi-installment payment plans same
-    // as in single-installment (one for current period and one for next period.
+    // only two subscription line item is created for multi-instalment payment plans same
+    // as in single-instalment (one for current period and one for next period.
     $isCorrectLineItemsCount = FALSE;
     if (count($currentPeriodSubscriptionLineItems) == 1 && count($nextPeriodSubscriptionLineItems) == 1) {
       $isCorrectLineItemsCount = TRUE;
@@ -460,8 +460,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
       'return' => 'id',
@@ -510,8 +510,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $currentMembership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
@@ -577,8 +577,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
 
@@ -661,8 +661,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $currentPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
     $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
@@ -798,8 +798,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'duration_unit' => 'year',
     ]);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
     $this->assertPaymentPlanStructureIsOk($nextPeriodID, [
@@ -903,8 +903,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'duration_unit' => 'year',
     ]);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
 
@@ -997,8 +997,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstallmentPlanTest exten
       'duration_unit' => 'year',
     ]);
 
-    $multipleInstallmentRenewal = new MultipleInstallmentRenewalJob();
-    $multipleInstallmentRenewal->run();
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
 
     $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
 

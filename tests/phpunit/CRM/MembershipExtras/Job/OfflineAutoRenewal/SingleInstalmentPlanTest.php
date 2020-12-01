@@ -4,16 +4,16 @@ use CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder as PaymentPlanMe
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFabricator;
 use CRM_MembershipExtras_Test_Fabricator_AutoMembershipUpgradeRule as AutoMembershipUpgradeRuleFabricator;
-use CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan as SingleInstalmentRenewalJob;
+use CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan as SingleInstalmentRenewalJob;
 use CRM_MembershipExtras_Test_Fabricator_LineItem as LineItemFabricator;
 use CRM_MembershipExtras_Test_Fabricator_RecurringLineItem as RecurringLineItemFabricator;
 
 /**
- * Class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest
+ * Class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest
  *
  * @group headless
  */
-class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest extends BaseHeadlessTest {
 
   /**
    * A rolling membership type that we

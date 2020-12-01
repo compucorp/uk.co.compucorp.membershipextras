@@ -6,11 +6,11 @@ use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as Installment
  * Renews the payment plan and the related memberships if it paid by once and
  * not using installments.
  *
- * Paid by once (no installments) payment plan get renewed by creating single
+ * Paid by once (no instalments) payment plan get renewed by creating single
  * pending contribution that links to the already existing recurring
  * contribution.
  */
-class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
+class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Obtains list of payment plans with a single installment that are ready to
