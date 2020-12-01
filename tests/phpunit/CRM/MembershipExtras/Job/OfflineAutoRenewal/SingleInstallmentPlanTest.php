@@ -1132,7 +1132,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     );
   }
 
-  public function testDatesOfRenewalOfFixedMemberships() {
+  public function testRenewalOfFixedMembershipWillResultInCorrectDates() {
     $startDate = '2019-07-01';
     $endDate = '2019-11-30';
     $receiveDateAfterRenewal = '2019-12-01';
@@ -1167,19 +1167,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlanTest exte
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
-    $this->assertEquals(1, count($contributions));
-    $this->assertEquals($startDate . ' 00:00:00', $contributions[0]['receive_date']);
-
-    $memberships = $this->getPaymentPlanAutorenewableMemberships($paymentPlan['id']);
-    foreach ($memberships as $membership) {
-      $this->assertEquals($startDate, $membership['join_date']);
-      $this->assertEquals($startDate, $membership['start_date']);
-      $this->assertEquals($endDate, $membership['end_date']);
-    }
-
-    $renewer = new CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan();
-    $renewer->run();
+    $singleInstallmentRenewal = new SingleInstallmentRenewalJob();
+    $singleInstallmentRenewal->run();
 
     $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
     $this->assertEquals(2, count($contributions));
