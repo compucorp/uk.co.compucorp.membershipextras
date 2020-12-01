@@ -39,4 +39,6 @@ class CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder {
 
   public $paymentProcessor;
 
+  public $autoRenew;
+
 }
