@@ -1,15 +1,15 @@
 <?php
-use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstallmentsHandler;
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstalmentsHandler;
+use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
- * Renews a payment plan with multiple installments.
+ * Renews a payment plan with multiple instalments.
  */
 class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
-   * Returns a list of payment plans with multiple installments that have at
+   * Returns a list of payment plans with multiple instalments that have at
    * least one line item ready to be renewed (ie. has an end date, is not
    * removed and is set to auto renew), mmeting these conditions:
    *
@@ -77,10 +77,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
 
-    $installmentsHandler = new MembershipInstallmentsHandler(
+    $instalmentsHandler = new MembershipInstalmentsHandler(
       $this->newRecurringContributionID
     );
-    $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+    $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
 
   /**
@@ -139,9 +139,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    * @throws \Exception
    */
   private function calculateNewPeriodStartDate() {
-    $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($this->currentRecurringContribution);
-    $installmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
-    return $installmentReceiveDateCalculator->calculate();
+    $instalmentReceiveDateCalculator = new InstalmentReceiveDateCalculator($this->currentRecurringContribution);
+    $instalmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
+    return $instalmentReceiveDateCalculator->calculate();
   }
 
   /**

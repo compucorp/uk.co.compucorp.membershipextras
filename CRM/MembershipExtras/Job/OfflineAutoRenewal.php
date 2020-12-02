@@ -14,16 +14,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $exceptions = [];
 
     try {
-      $multipleInstallmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan();
-      $multipleInstallmentRenewal->run();
+      $multipleInstalmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan();
+      $multipleInstalmentRenewal->run();
     }
     catch (CRM_Core_Exception $e) {
       $exceptions[] = $e->getMessage();
     }
 
     try {
-      $singleInstallmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan();
-      $singleInstallmentRenewal->run();
+      $singleInstalmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan();
+      $singleInstalmentRenewal->run();
     }
     catch (CRM_Core_Exception $e) {
       $exceptions[] = $e->getMessage();
