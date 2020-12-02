@@ -33,7 +33,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor 
    * Processes the membership offline auto-renewal.
    */
   public function postProcess() {
-    if (!$this->isPaymentPlanWithAtLeastOneInstallment() ||  $this->isMembershipAlreadySetToAutoRenew()) {
+    if (!$this->isUsingPaymentPlanOption() ||  $this->isMembershipAlreadySetToAutoRenew()) {
       return;
     }
 
@@ -72,11 +72,11 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor 
    *
    * @return bool
    */
-  private function isPaymentPlanWithAtLeastOneInstallment() {
-    $installmentsCount = $this->formSubmittedValues['installments'];
+  private function isUsingPaymentPlanOption() {
+    $paymentPlanSchdule = $this->formSubmittedValues['payment_plan_schedule'];
     $isSavingContribution = $this->formSubmittedValues['record_contribution'];
 
-    if ($isSavingContribution && $installmentsCount > 0) {
+    if ($isSavingContribution && !empty($paymentPlanSchdule)) {
       return TRUE;
     }
 

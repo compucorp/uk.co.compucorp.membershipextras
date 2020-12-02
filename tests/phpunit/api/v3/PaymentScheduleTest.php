@@ -4,6 +4,8 @@ use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabrica
 
 /**
  * Class PaymentScheduleTest
+ *
+ * @group headless
  */
 class PaymentScheduleTest extends BaseHeadlessTest {
 
@@ -31,11 +33,11 @@ class PaymentScheduleTest extends BaseHeadlessTest {
       'duration_unit' => 'year',
       'minimum_fee' => 120,
       'duration_interval' => 1,
-    ], TRUE);
+    ]);
 
     $scheduleInstalment = civicrm_api3('PaymentSchedule', 'get', [
       'sequential' => 1,
-      'membership_type_id' => $membershipType->id,
+      'membership_type_id' => $membershipType['id'],
       'schedule' => 'monthly',
     ])['values'];
 
@@ -46,7 +48,7 @@ class PaymentScheduleTest extends BaseHeadlessTest {
     $expectedTaxAmount = $currencySymbol . 0;
 
     $startDate = CRM_Member_BAO_MembershipType::getDatesForMembershipType(
-      $membershipType->id,
+      $membershipType['id'],
       NULL,
       NULL,
       NULL

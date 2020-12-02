@@ -116,7 +116,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'installments' => $installments,
       'contribution_status_id' => self::$paymentPlanMembershipOrder->paymentPlanStatus,
       'is_test' => 0,
-      'auto_renew' => 1,
+      'auto_renew' => isset(self::$paymentPlanMembershipOrder->autoRenew) ? self::$paymentPlanMembershipOrder->autoRenew : 1,
       'cycle_day' => 1,
       'payment_processor_id' => self::$paymentPlanMembershipOrder->paymentProcessor,
       'financial_type_id' => self::$paymentPlanMembershipOrder->financialType,
