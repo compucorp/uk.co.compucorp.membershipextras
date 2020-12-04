@@ -64,8 +64,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    * Creates the recurring contribution.
    */
   private function createRecurringContribution() {
-    $amountPerInstallment = $this->calculateSingleInstallmentAmount($this->params['total_amount']);
+    $this->dispatchReceiveDateCalculationHook();
 
+    $amountPerInstallment = $this->calculateSingleInstallmentAmount($this->params['total_amount']);
     $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'name',
       'option_group_id' => 'payment_instrument',
@@ -93,12 +94,33 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'is_test' => $this->params['is_test'],
       'cycle_day' => $cycleDay,
       'payment_processor_id' => $payLaterPaymentProcessorId,
-      'financial_type_id' =>  $financialType,
+      'financial_type_id' => $financialType,
       'payment_instrument_id' => $paymentInstrument,
       'campaign_id' => $this->params['campaign_id'],
     ];
 
     $this->recurringContribution = civicrm_api3('ContributionRecur', 'create', $contributionRecurParams)['values'][0];
+  }
+
+  /**
+   * Dispatches the membershipextras_calculateContributionReceiveDate.
+   *
+   * This allows other extensions to change the payment plan's first instalment
+   * receive date.
+   */
+  private function dispatchReceiveDateCalculationHook() {
+    $nullObject = CRM_Utils_Hook::$_nullObject;
+    $receiveDate = $this->params['receive_date'];
+    CRM_Utils_Hook::singleton()->invoke(
+      ['receiveDate', 'contributionCreationParams'],
+      $receiveDate,
+      $this->params,
+      $nullObject,
+      $nullObject, $nullObject, $nullObject,
+      'membershipextras_calculateContributionReceiveDate'
+    );
+
+    $this->params['receive_date'] = $receiveDate;
   }
 
   /**
@@ -111,9 +133,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    * recurring contribution.
    */
   private function alterFirstContributionParameters() {
-    $this->params['contribution_recur_id'] =  $this->recurringContribution['id'];
-    $this->params['total_amount'] =  $this->recurringContribution['amount'];
-    $this->params['net_amount'] =  $this->recurringContribution['amount'];
+    $this->params['contribution_recur_id'] = $this->recurringContribution['id'];
+    $this->params['total_amount'] = $this->recurringContribution['amount'];
+    $this->params['net_amount'] = $this->recurringContribution['amount'];
 
     if ($this->isUsingPriceSet() && !empty($this->params['tax_amount'])) {
       $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
