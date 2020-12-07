@@ -1,19 +1,19 @@
 <?php
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
 /**
  * Renews the payment plan and the related memberships if it paid by once and
- * not using installments.
+ * not using instalments.
  *
- * Paid by once (no installments) payment plan get renewed by creating single
+ * Paid by once (no instalments) payment plan get renewed by creating single
  * pending contribution that links to the already existing recurring
  * contribution.
  */
-class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
+class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
-   * Obtains list of payment plans with a single installment that are ready to
+   * Obtains list of payment plans with a single instalment that are ready to
    * be renewed. This means:
    *
    * 1- Recurring contribution is a manual payment plan
@@ -116,7 +116,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    */
   public function renew() {
     $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
-    $this->paymentPlanStartDate = $this->calculateNoInstallmentsPaymentPlanStartDate();
+    $this->paymentPlanStartDate = $this->membershipsStartDate;
+
+    if (!$this->areAnyMembershipsFixed()) {
+      $this->paymentPlanStartDate = $this->calculateNoInstalmentsPaymentPlanStartDate();
+    }
 
     $this->endCurrentLineItemsAndCreateNewOnesForNextPeriod($this->currentRecurContributionID);
     $this->updateRecurringContributionAmount($this->currentRecurContributionID);
@@ -125,6 +129,28 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
+  }
+
+  /**
+   * Checks if any of the memberships in the plan are fixed.
+   *
+   * @return bool
+   */
+  private function areAnyMembershipsFixed() {
+    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
+
+    foreach ($currentPeriodLines as $lineItem) {
+      if ($lineItem['entity_table'] != 'civicrm_membership') {
+        continue;
+      }
+
+      if ($lineItem['period_type'] === 'fixed') {
+        return TRUE;
+      }
+
+    }
+
+    return FALSE;
   }
 
   /**
@@ -200,18 +226,18 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
 
   /**
    * Calculates the new start date for the payment plan
-   * if its paid with no installments.
+   * if its paid with no instalments.
    * @return string
    */
-  private function calculateNoInstallmentsPaymentPlanStartDate() {
+  private function calculateNoInstalmentsPaymentPlanStartDate() {
     $currentRecurContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $this->currentRecurContributionID,
     ])['values'][0];
-    $installmentReceiveDateCalculator = new InstallmentReceiveDateCalculator($currentRecurContribution);
-    $installmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
+    $instalmentReceiveDateCalculator = new InstalmentReceiveDateCalculator($currentRecurContribution);
+    $instalmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
 
-    return $installmentReceiveDateCalculator->calculate();
+    return $instalmentReceiveDateCalculator->calculate();
   }
 
   /**
@@ -219,9 +245,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
    */
   protected function getRecurringContributionLineItemsToBeRenewed($recurringContributionID) {
     $q = '
-      SELECT msl.*, li.*, m.end_date AS memberhsip_end_date
+      SELECT msl.*, li.*, m.end_date AS memberhsip_end_date, cmt.period_type
       FROM membershipextras_subscription_line msl, civicrm_line_item li
       LEFT JOIN civicrm_membership m ON li.entity_id = m.id
+      LEFT JOIN civicrm_membership_type cmt on m.membership_type_id = cmt.id
       WHERE msl.line_item_id = li.id
       AND msl.contribution_recur_id = %1
       AND msl.auto_renew = 1
