@@ -48,6 +48,15 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   }
 
   /**
+   * Returns the created recurring contribution.
+   *
+   * @return array
+   */
+  public function getRecurringContribution() {
+    return $this->recurringContribution;
+  }
+
+  /**
    * Creates the payment plan for the membership
    * if its paid using payment plan option.
    *
