@@ -18,9 +18,16 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
    */
   private $startDate;
 
-  public function __construct($recurContribution) {
-    $this->recurContribution = $recurContribution;
-    $this->startDate = $this->recurContribution['start_date'];
+  /**
+   * CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator constructor.
+   *
+   * @param array $recurContribution
+   */
+  public function __construct($recurContribution = []) {
+    if (!empty($recurContribution)) {
+      $this->recurContribution = $recurContribution;
+      $this->startDate = $this->recurContribution['start_date'];
+    }
   }
 
   /**
@@ -40,7 +47,7 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
    * The linked recurring contribution details is the base
    * for this calculation.
    *
-   * @param int
+   * @param int $contributionNumber
    *   The number of the installment contribution.
    *
    * @return string
@@ -100,7 +107,7 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
    *
    * @return DateTime
    */
-  private function getSameDayNextMonth(DateTime $startDate, $numberOfMonthsToAdd = 1) {
+  public function getSameDayNextMonth(DateTime $startDate, $numberOfMonthsToAdd = 1) {
     $startDateDay = (int) $startDate->format('j');
     $startDateMonth = (int) $startDate->format('n');
     $startDateYear = (int) $startDate->format('Y');
@@ -154,6 +161,7 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
         $interval = "P{$daysToAddOrSubtract}D";
         $receiveDate->{$op}(new DateInterval($interval));
         break;
+
       case 'month':
         $receiveDate = $this->changeDayOfMonthInDate($receiveDate, $currentCycleDay);
         break;

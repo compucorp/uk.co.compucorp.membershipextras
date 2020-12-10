@@ -120,11 +120,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   private function dispatchReceiveDateCalculationHook() {
     $nullObject = CRM_Utils_Hook::$_nullObject;
     $receiveDate = $this->params['receive_date'];
+    $instalment = 1;
+
     CRM_Utils_Hook::singleton()->invoke(
-      ['receiveDate', 'contributionCreationParams'],
+      ['contributionNumber', 'receiveDate', 'contributionCreationParams'],
+      $instalment,
       $receiveDate,
       $this->params,
-      $nullObject,
       $nullObject, $nullObject, $nullObject,
       'membershipextras_calculateContributionReceiveDate'
     );

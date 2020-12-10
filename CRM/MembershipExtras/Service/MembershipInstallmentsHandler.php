@@ -33,10 +33,9 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   private $contributionPendingStatusValue;
 
   /**
-   * @var InstallmentReceiveDateCalculator
+   * @var \CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator
    */
   private $receiveDateCalculator;
-
 
   public function __construct($currentRecurContributionId) {
     $this->setCurrentRecurContribution($currentRecurContributionId);
@@ -53,7 +52,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * @param int $currentRecurContributionId
    */
   private function setCurrentRecurContribution($currentRecurContributionId) {
-    $this->currentRecurContribution =  civicrm_api3('ContributionRecur', 'get', [
+    $this->currentRecurContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $currentRecurContributionId,
     ])['values'][0];
@@ -65,9 +64,11 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   private function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'return' => ['currency', 'contribution_source', 'net_amount',
-        'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
-        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
+      'return' => [
+        'currency', 'contribution_source', 'net_amount', 'contact_id',
+        'fee_amount', 'total_amount', 'payment_instrument_id', 'is_test',
+        'tax_amount', 'contribution_recur_id', 'financial_type_id',
+      ],
       'contribution_recur_id' => $this->currentRecurContribution['id'],
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];
@@ -92,7 +93,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * Sets $currentRecurContribution
    */
   private function setContributionPendingStatusValue() {
-    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+    $this->contributionPendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
@@ -105,7 +106,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    */
   public function createRemainingInstalmentContributionsUpfront() {
     $installmentsCount = (int) $this->currentRecurContribution['installments'];
-    for($contributionNumber = 2; $contributionNumber <= $installmentsCount; $contributionNumber++) {
+    for ($contributionNumber = 2; $contributionNumber <= $installmentsCount; $contributionNumber++) {
       $this->createContribution($contributionNumber);
     }
   }
@@ -125,7 +126,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
     $this->createLineItems($contribution);
   }
 
-
   /**
    * Records the membership contribution and its
    * related entities using the specified parameters
@@ -136,6 +136,8 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    */
   private function recordMembershipContribution($contributionNumber) {
     $params = $this->buildContributionParams($contributionNumber);
+    $this->dispatchReceiveDateCalculationHook($contributionNumber, $params);
+
     $contribution = CRM_Contribute_BAO_Contribution::create($params);
 
     $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
@@ -175,7 +177,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * @return array
    */
   private function buildContributionParams($contributionNumber) {
-    $params =  [
+    $params = [
       'currency' => $this->lastContribution['currency'],
       'source' => $this->lastContribution['contribution_source'],
       'contact_id' => $this->lastContribution['contact_id'],
@@ -205,6 +207,28 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   }
 
   /**
+   * Dispatches hook so other extensions may change each contribution's receive
+   * date.
+   *
+   * @param int $contributionNumber
+   * @param array $params
+   */
+  private function dispatchReceiveDateCalculationHook($contributionNumber, &$params) {
+    $nullObject = CRM_Utils_Hook::$_nullObject;
+    $receiveDate = $params['receive_date'];
+    CRM_Utils_Hook::singleton()->invoke(
+      ['contributionNumber', 'receiveDate', 'contributionCreationParams'],
+      $contributionNumber,
+      $receiveDate,
+      $params,
+      $nullObject, $nullObject, $nullObject,
+      'membershipextras_calculateContributionReceiveDate'
+    );
+
+    $params['receive_date'] = $receiveDate;
+  }
+
+  /**
    * Copies the contribution custom field values from
    * the first contribution to the specified upfront contribution
    *
@@ -227,7 +251,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
     civicrm_api3('Contribution', 'create', $customParams);
   }
 
-
   /**
    * Creates the contribution line items.
    *
@@ -240,12 +263,12 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'contribution_id' => $this->lastContribution['id'],
     ])['values'];
 
-    foreach($lineItems as $lineItem) {
+    foreach ($lineItems as $lineItem) {
       $entityID = $lineItem['entity_id'];
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
         $entityID = $contribution->id;
       }
-      
+
       $lineItemParms = [
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,

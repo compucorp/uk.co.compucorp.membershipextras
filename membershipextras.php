@@ -466,7 +466,7 @@ function membershipextras_civicrm_alterMailParams(&$params, $context) {
 /**
  * Implements hook to calculate receive date for first instalment.
  */
-function membershipextras_membershipextras_calculateContributionReceiveDate(&$receiveDate, &$contributionCreationParams) {
+function membershipextras_membershipextras_calculateContributionReceiveDate($instalment, &$receiveDate, &$contributionCreationParams) {
   if (isset($contributionCreationParams['test_receive_date_calculation_hook'])) {
     $receiveDate = $contributionCreationParams['test_receive_date_calculation_hook'];
   }
