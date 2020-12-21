@@ -462,3 +462,12 @@ function membershipextras_civicrm_alterMailParams(&$params, $context) {
   $alterMailParamsHook = new CRM_MembershipExtras_Hook_Alter_MailParamsHandler($params);
   $alterMailParamsHook->handle();
 }
+
+/**
+ * Implements hook to calculate receive date for first instalment.
+ */
+function membershipextras_membershipextras_calculateContributionReceiveDate(&$receiveDate, &$contributionCreationParams) {
+  if (isset($contributionCreationParams['test_receive_date_calculation_hook'])) {
+    $receiveDate = $contributionCreationParams['test_receive_date_calculation_hook'];
+  }
+}
