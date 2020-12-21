@@ -18,7 +18,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
       'skipCleanMoney' => TRUE,
-      'receive_date' => '2020-06-27',
+      'receive_date' => date('Y-m-27'),
       'contact_id' => $contact['id'],
       'fee_amount' => 0,
       'net_amount' => "1200",
@@ -82,11 +82,12 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
     $_REQUEST['installments_frequency_unit'] = 'month';
 
     $contact = ContactFabricator::fabricate();
+    $newReceiveDate = date('Y-m-27');
     $params = [
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
       'skipCleanMoney' => TRUE,
-      'receive_date' => '2020-01-01',
+      'receive_date' => date('Y-01-01'),
       'contact_id' => $contact['id'],
       'fee_amount' => 0,
       'net_amount' => "1200",
@@ -97,7 +98,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'currency' => NULL,
       'is_test' => FALSE,
       'campaign_id' => NULL,
-      'test_receive_date_calculation_hook' => '2020-06-27',
+      'test_receive_date_calculation_hook' => $newReceiveDate,
     ];
     $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanCreator->createPaymentPlan();
@@ -108,7 +109,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'options' => ['limit' => 0],
     ])['values'][0];
 
-    $this->assertEquals('2020-06-27 00:00:00', $recurringContribution['start_date']);
+    $this->assertEquals($newReceiveDate . ' 00:00:00', $recurringContribution['start_date']);
     $this->assertEquals('27', $recurringContribution['cycle_day']);
   }
 
