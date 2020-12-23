@@ -1,15 +1,14 @@
 <?php
 
+
 use CRM_MembershipExtras_ExtensionUtil as E;
 
-function _civicrm_api3_payment_schedule_getbymembershiptype_spec(&$spec) {
-  $spec['membership_type_id'] = [
-    'name' => 'membership_type_id',
-    'title' => 'Membership Type ID',
-    'description' => 'Membership Type ID',
-    'type' => CRM_Utils_Type::T_INT,
-    'FKClassName' => 'CRM_Member_DAO_MembershipType',
-    'FKApiName' => 'MembershipType',
+function _civicrm_api3_payment_schedule_getbypriceset_spec(&$spec) {
+  $spec['price_field_values'] = [
+    'name' => 'price_field_value',
+    'title' => 'Price Field Values',
+    'description' => 'Price Field Values for generating instalment',
+    'type' => CRM_Utils_Type::T_STRING,
     'api.required' => 1,
   ];
 
@@ -43,7 +42,7 @@ function _civicrm_api3_payment_schedule_getbymembershiptype_spec(&$spec) {
 }
 
 /**
- * PaymentSchedule.getByMembershipType API
+ * PaymentSchedule.getByPriceFieldValues API
  *
  * @param array $params
  *
@@ -52,11 +51,15 @@ function _civicrm_api3_payment_schedule_getbymembershiptype_spec(&$spec) {
  * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount|CiviCRM_API3_Exception
  * @throws Exception
  */
-function civicrm_api3_payment_schedule_getbymembershiptype($params) {
+function civicrm_api3_payment_schedule_getbypricefieldvalues($params) {
 
-  $membershipTypeSchedule = new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
-  $instalments = $membershipTypeSchedule->getPaymentSchedule();
-  $formattedInstalments = $membershipTypeSchedule->formatInstalments($instalments);
+  if (!array_key_exists('IN', $params['price_field_values'])) {
+    throw new API_Exception('The price_field_values parameter only supports the IN operator');
+  }
+
+  $priceValuesPaymentSchedule = new CRM_MembershipExtras_API_PaymentSchedule_PriceValues($params);
+  $instalments = $priceValuesPaymentSchedule->getPaymentSchedule();
+  $formattedInstalments = $priceValuesPaymentSchedule->formatInstalments($instalments);
 
   return civicrm_api3_create_success($formattedInstalments, $params);
 }
