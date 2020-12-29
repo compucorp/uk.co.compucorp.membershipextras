@@ -1,12 +1,13 @@
 <?php
 use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
+use Civi\Test\HookInterface;
 
 /**
  * Class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest
  *
  * @group headless
  */
-class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends BaseHeadlessTest {
+class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends BaseHeadlessTest implements HookInterface {
 
   public function testMonthlyCycleDayIsCalculatedFromReceiveDate() {
     $_REQUEST['installments'] = 12;
@@ -111,6 +112,19 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
 
     $this->assertEquals($newReceiveDate . ' 00:00:00', $recurringContribution['start_date']);
     $this->assertEquals('27', $recurringContribution['cycle_day']);
+  }
+
+  /**
+   * Implements calculateContributionReceiveDate hook for testing.
+   *
+   * @param $instalment
+   * @param $receiveDate
+   * @param $contributionCreationParams
+   */
+  public function hook_membershipextras_calculateContributionReceiveDate($instalment, &$receiveDate, &$contributionCreationParams) {
+    if (isset($contributionCreationParams['test_receive_date_calculation_hook'])) {
+      $receiveDate = $contributionCreationParams['test_receive_date_calculation_hook'];
+    }
   }
 
   /**

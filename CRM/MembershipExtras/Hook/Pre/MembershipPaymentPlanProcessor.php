@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
 
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
 
@@ -118,16 +119,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    * receive date.
    */
   private function dispatchReceiveDateCalculationHook() {
-    $nullObject = CRM_Utils_Hook::$_nullObject;
     $receiveDate = $this->params['receive_date'];
-    CRM_Utils_Hook::singleton()->invoke(
-      ['receiveDate', 'contributionCreationParams'],
-      $receiveDate,
-      $this->params,
-      $nullObject,
-      $nullObject, $nullObject, $nullObject,
-      'membershipextras_calculateContributionReceiveDate'
-    );
+
+    $dispatcher = new CalculateContributionReceiveDateDispatcher(1, $receiveDate, $this->params);
+    $dispatcher->dispatch();
 
     $this->params['receive_date'] = $receiveDate;
   }
