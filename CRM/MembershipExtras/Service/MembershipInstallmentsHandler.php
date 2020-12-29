@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
 
 class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
 
@@ -214,16 +215,10 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * @param array $params
    */
   private function dispatchReceiveDateCalculationHook($contributionNumber, &$params) {
-    $nullObject = CRM_Utils_Hook::$_nullObject;
     $receiveDate = $params['receive_date'];
-    CRM_Utils_Hook::singleton()->invoke(
-      ['contributionNumber', 'receiveDate', 'contributionCreationParams'],
-      $contributionNumber,
-      $receiveDate,
-      $params,
-      $nullObject, $nullObject, $nullObject,
-      'membershipextras_calculateContributionReceiveDate'
-    );
+
+    $dispatcher = new CalculateContributionReceiveDateDispatcher($contributionNumber, $receiveDate, $params);
+    $dispatcher->dispatch();
 
     $params['receive_date'] = $receiveDate;
   }

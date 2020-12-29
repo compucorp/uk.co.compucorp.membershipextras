@@ -1,6 +1,6 @@
 <?php
 use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
-use \Civi\Test\HookInterface;
+use Civi\Test\HookInterface;
 
 /**
  * Class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest
