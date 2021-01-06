@@ -264,7 +264,6 @@ function membershipextras_civicrm_post($op, $objectName, $objectId, &$objectRef)
 
 /**
  * Implements hook_civicrm_postProcess().
- * @throws CiviCRM_API3_Exception
  */
 function membershipextras_civicrm_postProcess($formName, &$form) {
   $isAddAction = $form->getAction() & CRM_Core_Action::ADD;
@@ -334,6 +333,14 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName === 'CRM_Member_Form_MembershipType') {
     $membershipTypeColourHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipType_Colour($form);
     $membershipTypeColourHook->buildForm();
+
+    $membershipSettingsHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting($form);
+    $membershipSettingsHook->buildForm();
+  }
+
+  if ($formName === 'CRM_Contribute_Form_Contribution') {
+    $contributionEditHook = new CRM_MembershipExtras_Hook_BuildForm_ContributionEdit();
+    $contributionEditHook->buildForm();
   }
 }
 

@@ -11,6 +11,14 @@ use CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator as Memb
 class CRM_MembershipExtras_Service_MembershipTypeAmountProrater {
 
   /**
+   * Constants for Annal ProRata Calucation
+   * These constants will be used across application for calculation pro rata
+   *
+   */
+  const BY_DAYS = 1;
+  const BY_MONTHS = 2;
+
+  /**
    * @var \CRM_MembershipExtras_Service_MembershipTypeDurationCalculator
    */
   private $membershipTypeDurationCalculator;
@@ -26,10 +34,7 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProrater {
    * @param \CRM_MembershipExtras_Service_MembershipTypeDurationCalculator $membershipTypeDurationCalculator
    * @param CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator $membershipInstalmentTaxAmountCalculator
    */
-  public function __construct(
-    MembershipTypeDurationCalculator $membershipTypeDurationCalculator,
-    MembershipInstalmentTaxAmountCalculator $membershipInstalmentTaxAmountCalculator
-  ) {
+  public function __construct(MembershipTypeDurationCalculator $membershipTypeDurationCalculator, MembershipInstalmentTaxAmountCalculator $membershipInstalmentTaxAmountCalculator) {
     $this->membershipTypeDurationCalculator = $membershipTypeDurationCalculator;
     $this->membershipInstalmentTaxAmountCalculator = $membershipInstalmentTaxAmountCalculator;
   }
@@ -45,13 +50,7 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProrater {
    *
    * @return float
    */
-  public function calculateProRata
-  (
-    MembershipType $membershipType,
-    DateTime $startDate = NULL,
-    DateTime $endDate = NULL,
-    DateTime $joinDate = NULL
-  ) {
+  public function calculateProRata(MembershipType $membershipType, DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
     $membershipTypeDurationInDays = $this->membershipTypeDurationCalculator->calculateOriginalInDays();
     $calculatedDurationInDays = $this->membershipTypeDurationCalculator->calculateDaysBasedOnDates($startDate, $endDate, $joinDate);
     $membershipAmount = $membershipType->minimum_fee;
