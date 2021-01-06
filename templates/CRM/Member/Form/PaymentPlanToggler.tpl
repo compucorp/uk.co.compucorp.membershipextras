@@ -1,6 +1,5 @@
 <script type="text/javascript">
   {literal}
-  let selectedPriceValueIds = [];
 
   (function ($) {
     {/literal}
@@ -40,7 +39,7 @@
     }
 
     /**
-     * Selects Payment Plan tab and syncs the selection with radiobuttons
+     * Selects Payment Plan tab
      *
      * @param {String} tabOptionId
      */
@@ -55,79 +54,177 @@
     }
 
     /**
-     * Gets Membership type details based on the selected Membership Type and price set.
+     * Gets Membership type details based on the selected Membership Type,
+     * Price set, or Payment Plan Schedule
      */
     function setScheduleEvents () {
       $('#total_amount, #membership_type_id_1').change(() => {
-        const memType = parseInt($('#membership_type_id_1').val());
-        const isPriceSet = $('#price_set_id').length > 0 && $('#price_set_id').val();
-        if (isPriceSet) {
+        if ($('#payment_plan_schedule_row').is(":hidden")) {
           return;
         }
-        CRM.api3('MembershipType', 'get', {
-          "sequential": 1,
-          "id": memType
-        }).then(function (result) {
-          if (result.is_error == 0) {
-            setPaymentPlanScheduleOption(result.values);
-            generateInstalmentSchedule(memType);
-          } else {
-            CRM.alert(result.error_message, 'Error', 'error');
-          }
-        });
-      });
-      $('#payment_plan_schedule, #payment_instrument_id').change(() => {
-        generateInstalmentSchedule();
+        let isPriceSet = isPriceSetSelected();
+        if (isPriceSet) {
+          setPaymentPlanScheduleOption();
+          generateInstalmentSchedule(isPriceSet);
+        } else {
+          let memType = parseInt($('#membership_type_id_1').val());
+          CRM.api3('MembershipType', 'get', {
+            "sequential": 1,
+            "id": memType
+          }).then(function (result) {
+            if (result.is_error === 0) {
+              setPaymentPlanScheduleOption(result.values);
+              generateInstalmentSchedule(isPriceSet);
+            } else {
+              CRM.alert(result.error_message, 'Error', 'error');
+            }
+          });
+        }
       });
 
+      $('#payment_plan_schedule, #payment_instrument_id').change(() => {
+        if ($('#payment_plan_schedule_row').is(":hidden")) {
+          return;
+        }
+        generateInstalmentSchedule(isPriceSetSelected());
+      });
     }
 
     /**
-     * Generates Instalment schedule list based on selected schedule
+     * Checks if price set is selected instead of Membership type
+     *
+     * @return {boolean} isPriceSet
      */
-    function generateInstalmentSchedule() {
-      const memType = parseInt($('#membership_type_id_1').val());
-      const schedule = $('#payment_plan_schedule').val();
-      CRM.api3('PaymentSchedule', 'get', {
+    function isPriceSetSelected() {
+      const priceSetIdSelector = $('#price_set_id');
+      return priceSetIdSelector.length > 0 && priceSetIdSelector.val();
+    }
+
+    /**
+     * Generates Instalments schedule based on selected schedule
+     * and selected price set or membership type
+     *
+     * @param {boolean} isPriceSet
+     */
+    function generateInstalmentSchedule(isPriceSet) {
+      let schedule = $('#payment_plan_schedule').val();
+      let params = {
         "sequential": 1,
-        "membership_type_id": memType,
         "schedule": schedule,
-      }).then(function(data) {
-        console.log(data);
-        drawTable(data)
-      }, function(error) {
-        console.log(error);
+        "start_date" : $('#start_date').val(),
+        "end_date" : $('#end_date').val(),
+        "join_date" : $('#join_date').val(),
+      };
+      let apiAction;
+      if (isPriceSet) {
+        let selectedPriceFieldValues = getSelectedPriceFieldValues();
+        params.price_field_values = {'IN' : selectedPriceFieldValues};
+        apiAction = 'getByPriceFieldValues';
+      } else {
+        let memType = parseInt($('#membership_type_id_1').val());
+        params.membership_type_id = memType;
+        apiAction = 'getByMembershipType';
+      }
+      CRM.api3('PaymentSchedule', apiAction, params).then(function(data) {
+        if (data.is_error === 0) {
+          drawTable(data);
+        } else {
+          CRM.alert(data.error_message, 'Error', 'error');
+        }
       });
     }
 
+    /**
+     * Returns selected price field values based the selected inputs
+     *
+     * @return object selectedPriceFieldValues
+     */
+    function getSelectedPriceFieldValues() {
+      let selectedPriceFieldValues = {};
+      $("#priceset [price]").each(function () {
+        let elementType =  $(this).prop('type');
+        switch(elementType) {
+          case 'checkbox':
+            addOrRemoveSelectedPriceFieldValues(selectedPriceFieldValues, JSON.parse($(this).attr('price'))[0], $(this).is(':checked'));
+            break;
+          case 'text':
+            let isInputHasValue = !isNaN(parseInt($(this).val()));
+            addOrRemoveSelectedPriceFieldValues(selectedPriceFieldValues,JSON.parse($(this).attr('price'))[0], isInputHasValue, $(this).val());
+            break;
+          case 'radio':
+            addOrRemoveSelectedPriceFieldValues(selectedPriceFieldValues, $(this).val(), $(this).is(':checked'));
+            break;
+          case 'select-one':
+            let priceFieldId = $(this).val();
+            if (!priceFieldId) {
+              break;
+            }
+            let options = $(this).prop('options');
+            for (let option of options) {
+              addOrRemoveSelectedPriceFieldValues(selectedPriceFieldValues, priceFieldId, true);
+            }
+            break;
+        }
+      });
+
+      return selectedPriceFieldValues;
+    }
+
+    /**
+     * Adds or removes selected price field from selectedPriceFieldValue object
+     *
+     * @param selectedPriceFieldValues
+     * @param priceFieldId
+     * @param isSelected
+     * @param qty
+     */
+    function addOrRemoveSelectedPriceFieldValues(selectedPriceFieldValues, priceFieldId, isSelected, qty = 1) {
+      if (isSelected) {
+        selectedPriceFieldValues[priceFieldId] = qty;
+      }else {
+        delete selectedPriceFieldValues[priceFieldId];
+      }
+    }
+
+    /**
+     * Draws instalment table based on given data return from PaymentSchedule API
+     *
+     * @param data
+     */
     function drawTable(data) {
       $('#instalment_row_table tbody td').remove();
       let rows = data.values;
       rows.forEach(drawRow);
     }
 
+    /**
+     * Draws instalment row based given row data
+     *
+     * @param rowData
+     */
     function drawRow(rowData) {
       let tbody = $('#instalment_row_table tbody');
       tbody.append('<tr>');
-      tbody.append('<td><a class="nowrap bold crm-expand-row" href="#">&nbsp;</a></td>');
       tbody.append('<td>' + rowData.instalment_no + ' </td>');
-      tbody.append('<td>' + rowData.instalment_date + ' </td>');
+      tbody.append('<td>' + rowData.instalment_date + '</td>');
       tbody.append('<td>' + rowData.instalment_tax_amount + '</td>');
       tbody.append('<td>' + rowData.instalment_amount + '</td>');
       tbody.append('<td>' + rowData.instalment_status + '</td>');
-      tbody.append('</tr');
+      tbody.append('</tr>');
     }
 
     /**
      * Sets PaymentPlan Schedule Options based on the membership period type
      */
-    function setPaymentPlanScheduleOption (values) {
-      let periodType = values[0].period_type;
-      if (periodType === 'fixed') {
-        setScheduleOptions(['monthly', 'annually']);
+    function setPaymentPlanScheduleOption (values = []) {
+      if (values.length === 0) {
+        setScheduleOptions();
         return;
       }
-      setScheduleOptions();
+      let periodType = values[0].period_type;
+      if (periodType === 'fixed') {
+        setScheduleOptions(['monthly', 'annual']);
+      }
     }
 
     /**
@@ -137,7 +234,7 @@
       let defaultOptions = {
         monthly: '{/literal}{ts}Monthly{/ts}{literal}',
         quarterly: '{/literal}{ts}Quarterly{/ts}{literal}',
-        annually: '{/literal}{ts}Annually{/ts}{literal}'
+        annual: '{/literal}{ts}Annual{/ts}{literal}'
       };
       if (optionsToDisplay.length > 0) {
         Object.keys(defaultOptions).forEach(key => {
@@ -248,7 +345,6 @@
         <table id="instalment_row_table" class="selector row-highlight" style="position: relative;">
           <thead class="sticky">
           <tr>
-            <th scope="col"></th>
             <th scope="col">{ts}Instalment no{/ts}</th>
             <th scope="col">{ts}Date{/ts}</th>
             <th scope="col">{ts}Tax Amount{/ts}</th>
@@ -256,40 +352,8 @@
             <th scope="col">{ts}Status{/ts}</th>
           </tr>
           </thead>
-          <tbody>
-
-          </tbody>
+          <tbody></tbody>
         </table>
-    </td>
-  </tr>
-  <tr class="crm-child-row" style="display: none;">
-    <td colspan="10">
-      <div class="crm-ajax-container" style="min-height: 3em; position: static; zoom: 1;">
-        <table class="selector row-highlight">
-          <tbody>
-          <tr>
-            <th>{ts}Item{/ts}</th>
-            <th>{ts}Financial type{/ts}</th>
-            <th>{ts}Quantity{/ts}</th>
-            <th>{ts}Unit Price{/ts}</th>
-            <th>{ts}Sub Total{/ts}</th>
-            <th>{ts}Tax Rate{/ts}</th>
-            <th>{ts}Tax Amount{/ts}</th>
-            <th>{ts}Total Amount{/ts}</th>
-          </tr>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
     </td>
   </tr>
 </table>

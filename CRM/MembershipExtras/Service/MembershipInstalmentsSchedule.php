@@ -11,11 +11,11 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
 
   const MONTHLY = 'monthly';
   const QUARTERLY = 'quarterly';
-  const ANNUALLY = 'annually';
+  const ANNUAL = 'annual';
 
   const MONTHLY_INSTALMENT_COUNT = 12;
   const QUARTERLY_INSTALMENT_COUNT = 4;
-  const ANNUALLY_INSTALMENT_COUNT = 1;
+  const ANNUAL_INSTALMENT_COUNT = 1;
 
   /**
    * @var \CRM_MembershipExtras_Service_MembershipTypeDatesCalculator
@@ -28,27 +28,29 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   private $membershipTypes;
 
   /**
-   * @var \CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator
+   * @var \CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator
    */
-  private $membershipTypeTaxAmountCalculator;
+  private $membershipInstalmentTaxAmountCalculator;
 
   /**
    * @var string
    */
   private $schedule;
+  /**
+   * @var array
+   */
+  private $nonMembershipPriceFieldValues;
 
   /**
    * CRM_MembershipExtras_Service_MembershipTypeInstalment constructor.
    *
    * @param array $membershipTypes
    * @param string $schedule
+   *
    * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
    */
-  public function __construct(
-    array $membershipTypes,
-    string $schedule
-  ) {
-    $this->membershipTypeTaxAmountCalculator = new CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator();
+  public function __construct(array $membershipTypes, string $schedule) {
+    $this->membershipInstalmentTaxAmountCalculator = new CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator();
     $this->membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
     $this->membershipTypes = $membershipTypes;
     $this->schedule = $schedule;
@@ -62,6 +64,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @param DateTime|null $startDate
    * @param DateTime|null $endDate
    * @param DateTime|null $joinDate
+   *
    * @return mixed
    * @throws Exception
    */
@@ -72,21 +75,15 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
 
     $instalmentAmount = $this->calculateInstalmentAmount();
     $firstInstalment = $this->calculateFirstInstalment($instalmentAmount, $startDate, $endDate);
-    $instalments[] = $firstInstalment;
 
-    switch ($this->schedule) {
-      case self::MONTHLY:
-        $noOfInstalment = self::MONTHLY_INSTALMENT_COUNT;
-        break;
-
-      case self::QUARTERLY:
-        $noOfInstalment = self::QUARTERLY_INSTALMENT_COUNT;
-        break;
-
-      default:
-        $noOfInstalment = self::ANNUALLY_INSTALMENT_COUNT;
+    if (!empty($this->nonMembershipPriceFieldValues)) {
+      $this->applyNonMembershipPriceFieldValueAmount($instalmentAmount);
+      $this->applyNonMembershipPriceFieldValueAmount($firstInstalment->getInstalmentAmount());
     }
 
+    $instalments[] = $firstInstalment;
+
+    $noOfInstalment = $this->getNumberOfInstalment();
     if ($noOfInstalment > 1) {
       $nextInstalmentDate = $startDate->format('Y-m-d');
       for ($i = 1; $i < $noOfInstalment; $i++) {
@@ -113,6 +110,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @param DateTime|NULL $startDate
    * @param DateTime|NULL $endDate
    * @param DateTime|NULL $joinDate
+   *
    * @return mixed
    */
   private function getMembershipStartDate(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
@@ -138,20 +136,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     $totalMembershipTypeTaxAmount = 0;
     foreach ($this->membershipTypes as $membershipType) {
       $totalMembershipTypeAmount += $membershipType->minimum_fee;
-      $totalMembershipTypeTaxAmount = +$this->membershipTypeTaxAmountCalculator->calculateTax($membershipType);
+      $totalMembershipTypeTaxAmount += $this->membershipInstalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipType->minimum_fee);
     }
-    switch ($this->schedule) {
-      case self::MONTHLY:
-        $divisor = self::MONTHLY_INSTALMENT_COUNT;
-        break;
-
-      case self::QUARTERLY:
-        $divisor = self::QUARTERLY_INSTALMENT_COUNT;
-        break;
-
-      default:
-        $divisor = self::ANNUALLY_INSTALMENT_COUNT;
-    }
+    $divisor = $this->getNumberofInstalment();
     $instalmentAmount = MoneyUtilities::roundToPrecision($totalMembershipTypeAmount / $divisor, 2);
     $instalmentTaxAmount = MoneyUtilities::roundToPrecision($totalMembershipTypeTaxAmount / $divisor, 2);
 
@@ -172,7 +159,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @return CRM_MembershipExtras_DTO_ScheduleInstalment
    */
   private function calculateFirstInstalment(
-    ScheduleInstalmentAmount $instalmentAmount,
+    CRM_MembershipExtras_DTO_ScheduleInstalmentAmount $instalmentAmount,
     DateTime $startDate = NULL,
     DateTime $endDate = NULL
   ) {
@@ -196,6 +183,52 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   }
 
   /**
+   * Applies amount, tax amount from Non Membership Price Field Value
+   * to instalment amount
+   *
+   * @param CRM_MembershipExtras_DTO_ScheduleInstalmentAmount $instalmentAmount
+   */
+  private function applyNonMembershipPriceFieldValueAmount(CRM_MembershipExtras_DTO_ScheduleInstalmentAmount $instalmentAmount) {
+    $totalNonMembershipPriceFieldValueAmount = 0;
+    $totalNonMembershipPriceFieldValueTaxAmount = 0;
+    foreach ($this->nonMembershipPriceFieldValues as $priceFieldValue) {
+      $quantity = $priceFieldValue['quantity'];
+      $amount = $priceFieldValue['values']['amount'];
+      $totalNonMembershipPriceFieldValueAmount += (float) $amount * (float) $quantity;
+      $salesTax = $this->membershipInstalmentTaxAmountCalculator->calculateByPriceFieldValue($priceFieldValue['values']);
+      $totalNonMembershipPriceFieldValueTaxAmount += (float) $salesTax * (float) $quantity;
+    }
+
+    $divisor = $this->getNumberofInstalment();
+    $newInstalmentAmount = MoneyUtilities::roundToPrecision(
+      ($totalNonMembershipPriceFieldValueAmount / $divisor) + $instalmentAmount->getAmount(), 2
+    );
+    $newInstalmentTaxAmount = MoneyUtilities::roundToPrecision(
+      ($totalNonMembershipPriceFieldValueTaxAmount / $divisor) + $instalmentAmount->getTaxAmount(), 2
+    );
+
+    $instalmentAmount->setAmount($newInstalmentAmount);
+    $instalmentAmount->setTaxAmount($newInstalmentTaxAmount);
+  }
+
+  private function getNumberOfInstalment() {
+    switch ($this->schedule) {
+      case self::MONTHLY:
+        $noOfInstalment = self::MONTHLY_INSTALMENT_COUNT;
+        break;
+
+      case self::QUARTERLY:
+        $noOfInstalment = self::QUARTERLY_INSTALMENT_COUNT;
+        break;
+
+      default:
+        $noOfInstalment = self::ANNUAL_INSTALMENT_COUNT;
+    }
+
+    return $noOfInstalment;
+  }
+
+  /**
    * Validates the membership types passed in to ensure they meets the criteria for calculating
    *
    * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
@@ -215,6 +248,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
       throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY);
     }
+  }
+
+  public function setNonMembershipPriceFieldValues(array $nonMembershipPriceFieldValues) {
+    $this->nonMembershipPriceFieldValues = $nonMembershipPriceFieldValues;
   }
 
   /**

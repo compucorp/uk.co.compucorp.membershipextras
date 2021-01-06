@@ -3,7 +3,7 @@
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_Member_BAO_MembershipType as MembershipType;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator as MembershipTypeTaxAmountCalculator;
+use CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator as MembershipInstalmentTaxAmountCalculator;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipTypeAmountProrater
@@ -11,24 +11,27 @@ use CRM_MembershipExtras_Service_MembershipTypeTaxAmountCalculator as Membership
 class CRM_MembershipExtras_Service_MembershipTypeAmountProrater {
 
   /**
-   * @var MembershipTypeDurationCalculator
+   * @var \CRM_MembershipExtras_Service_MembershipTypeDurationCalculator
    */
   private $membershipTypeDurationCalculator;
 
   /**
-   * @var MembershipTypeTaxAmountCalculator
+   * @var \CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator
    */
-  private $membershipTypeTaxAmountCalculator;
+  private $membershipInstalmentTaxAmountCalculator;
 
   /**
    * CRM_MembershipExtras_Service_MembershipTypeAmount constructor.
    *
-   * @param MembershipTypeDurationCalculator $membershipTypeDurationCalculator
-   * @param MembershipTypeTaxAmountCalculator $membershipTypeTaxAmountCalculator
+   * @param \CRM_MembershipExtras_Service_MembershipTypeDurationCalculator $membershipTypeDurationCalculator
+   * @param CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator $membershipInstalmentTaxAmountCalculator
    */
-  public function __construct(MembershipTypeDurationCalculator $membershipTypeDurationCalculator, MembershipTypeTaxAmountCalculator $membershipTypeTaxAmountCalculator) {
+  public function __construct(
+    MembershipTypeDurationCalculator $membershipTypeDurationCalculator,
+    MembershipInstalmentTaxAmountCalculator $membershipInstalmentTaxAmountCalculator
+  ) {
     $this->membershipTypeDurationCalculator = $membershipTypeDurationCalculator;
-    $this->membershipTypeTaxAmountCalculator = $membershipTypeTaxAmountCalculator;
+    $this->membershipInstalmentTaxAmountCalculator = $membershipInstalmentTaxAmountCalculator;
   }
 
   /**
@@ -53,8 +56,8 @@ class CRM_MembershipExtras_Service_MembershipTypeAmountProrater {
     $calculatedDurationInDays = $this->membershipTypeDurationCalculator->calculateDaysBasedOnDates($startDate, $endDate, $joinDate);
     $membershipAmount = $membershipType->minimum_fee;
 
-    $proRata = ($membershipAmount/$membershipTypeDurationInDays) * $calculatedDurationInDays;
-    $tax = $this->membershipTypeTaxAmountCalculator->calculateTax($membershipType, $proRata);
+    $proRata = ($membershipAmount / $membershipTypeDurationInDays) * $calculatedDurationInDays;
+    $tax = $this->membershipInstalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $proRata);
 
     return MoneyUtilities::roundToPrecision(($proRata + $tax), 2);
   }
