@@ -114,7 +114,7 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
         continue;
       }
 
-      $previousEndDate = MembershipEndDateCalculator::calculatePreviousEndDate($line['api.Membership.get']['values'][0]['id']);
+      $previousEndDate = MembershipEndDateCalculator::calculatePreviousEndDate($line['entity_id']);
       $endDate = new DateTime($previousEndDate);
 
       if (!isset($latestEndDate)) {

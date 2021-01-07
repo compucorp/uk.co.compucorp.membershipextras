@@ -79,8 +79,8 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
       }
 
       if ($line['entity_table'] === 'civicrm_membership') {
-        $membershipID = $this->createMembership($line, $contribution);
-        $line['entity_id'] = $membershipID;
+        $membership = $this->createMembership($line, $contribution);
+        $line['entity_id'] = $membership['id'];
       }
 
       LineItemFabricator::fabricate($line);
@@ -99,7 +99,7 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
   private function createMembership($lineItem, $contribution) {
     $priceFieldValue = $this->getPriceFieldValue($lineItem['price_field_value_id']);
 
-    return $membershipCreateResult = MembershipFabricator::fabricate([
+    return MembershipFabricator::fabricate([
       'contact_id' => $contribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
       'join_date' => CRM_Utils_Array::value('join_date', $lineItem, date('Y-m-d')),
@@ -126,28 +126,6 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
   }
 
   public function testLineItemCreation() {
-    $mainMembershipType = $this->createMembershipType([
-      'name' => 'Main Rolling Membership',
-      'period_type' => 'rolling',
-      'minimum_fee' => 60,
-      'duration_interval' => 18,
-      'duration_unit' => 'month',
-    ]);
-    $addOnMembershipType = $this->createMembershipType([
-      'name' => 'Add-on Rolling Membership',
-      'period_type' => 'rolling',
-      'minimum_fee' => 120,
-      'duration_interval' => 12,
-      'duration_unit' => 'month',
-    ]);
-    $secondAddOnMembershipType = $this->createMembershipType([
-      'name' => 'Second Add-on Rolling Membership',
-      'period_type' => 'rolling',
-      'minimum_fee' => 180,
-      'duration_interval' => 6,
-      'duration_unit' => 'month',
-    ]);
-
     $contact = $this->createContact();
     $startDate = date('Y-m-d');
     $recurringContribution = $this->createRecurringContribution([
@@ -181,6 +159,29 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
       'financial_type_id' => 'Member Dues',
       'contribution_status_id' => 'Pending',
     ];
+
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 18,
+      'duration_unit' => 'month',
+    ]);
+    $addOnMembershipType = $this->createMembershipType([
+      'name' => 'Add-on Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 120,
+      'duration_interval' => 12,
+      'duration_unit' => 'month',
+    ]);
+    $secondAddOnMembershipType = $this->createMembershipType([
+      'name' => 'Second Add-on Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 180,
+      'duration_interval' => 6,
+      'duration_unit' => 'month',
+    ]);
+
     $lineItems = [
       [
         'entity_table' => 'civicrm_membership',
