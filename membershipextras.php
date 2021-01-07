@@ -269,11 +269,7 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
   $isAddAction = $form->getAction() & CRM_Core_Action::ADD;
   $isRenewAction = $form->getAction() & CRM_Core_Action::RENEW;
 
-  if (
-    ($formName === 'CRM_Member_Form_Membership' && $isAddAction)
-    ||
-    ($formName === 'CRM_Member_Form_MembershipRenewal' && $isRenewAction)
-  ) {
+  if (($formName === 'CRM_Member_Form_Membership' && $isAddAction) || ($formName === 'CRM_Member_Form_MembershipRenewal' && $isRenewAction)) {
 
     $contributionIsPaymentPlan =
       CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
@@ -286,8 +282,7 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
     $paymentPlanProcessor->postProcess();
 
     if ($formName == 'CRM_Member_Form_Membership') {
-      $offlineAutoRenewProcessor =
-        new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
+      $offlineAutoRenewProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
       $offlineAutoRenewProcessor->postProcess();
     }
 
@@ -301,6 +296,9 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
   if ($formName === 'CRM_Member_Form_MembershipType') {
     $membershipTypeHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour($form);
     $membershipTypeHook->process();
+
+    $membershipTypeProRataCalculationHook = new CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSetting($form);
+    $membershipTypeProRataCalculationHook->process();
   }
 }
 
@@ -333,13 +331,16 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   }
 
   if ($formName === 'CRM_Member_Form_MembershipType') {
-    $membershipTypeHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipTypeColour($form);
-    $membershipTypeHook->buildForm();
+    $membershipTypeColourHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipType_Colour($form);
+    $membershipTypeColourHook->buildForm();
+
+    $membershipSettingsHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting($form);
+    $membershipSettingsHook->buildForm();
   }
 
   if ($formName === 'CRM_Contribute_Form_Contribution') {
-    $membershipTypeHook = new CRM_MembershipExtras_Hook_BuildForm_ContributionEdit();
-    $membershipTypeHook->buildForm();
+    $contributionEditHook = new CRM_MembershipExtras_Hook_BuildForm_ContributionEdit();
+    $contributionEditHook->buildForm();
   }
 }
 
