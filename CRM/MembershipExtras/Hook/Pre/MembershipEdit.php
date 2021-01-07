@@ -51,7 +51,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    if ($this->paymentContributionID || $this->isRecordingPayment()) {
+    if ($this->paymentContributionID || $this->isRecordingPayment() || $this->isBulkStatusUpdate()) {
       $this->preventExtendingPaymentPlanMembership();
     }
 
@@ -97,13 +97,31 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     return FALSE;
   }
 
+  /**
+   * Checks the request to see if a bulk status update is being done.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  private function isBulkStatusUpdate() {
+    $statusNext = CRM_Utils_Request::retrieve('_qf_Status_next', 'String');
+    $contributionStatusID = CRM_Utils_Request::retrieve('contribution_status_id', 'String');
+    $currentPath = CRM_Utils_System::currentPath();
+
+    if (stripos($currentPath, 'civicrm/contribute/search') !== FALSE && $statusNext === 'Update Pending Status' && !empty($contributionStatusID)) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
   private function parsePaymentRecordingInformation() {
     $recordPaymentEntryURL = CRM_Utils_Request::retrieve('entryURL', 'String');
     $recordPaymentEntryURL = html_entity_decode($recordPaymentEntryURL);
 
     $urlParts = parse_url($recordPaymentEntryURL);
 
-    if(!empty($urlParts['query'])) {
+    if (!empty($urlParts['query'])) {
       parse_str($urlParts['query'], $urlParams);
       return $urlParams;
     }
@@ -137,7 +155,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * @return bool
    */
   private function isOfflinePaymentPlanMembership() {
-    $recContributionID = $this->getPaymentRecurringContributionID();
+    $recContributionID = $this->getMembershipRecurringContributionID();
 
     if ($recContributionID === NULL) {
       return FALSE;
@@ -176,10 +194,71 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    *   The recurring contribution ID or NULL
    *   if no recurring contribution exist.
    */
-  private function getPaymentRecurringContributionID() {
+  private function getMembershipRecurringContributionID() {
+    if (!empty($this->paymentContributionID)) {
+      return $this->getRecurringContributionIDFromContributionID($this->paymentContributionID);
+    }
+
+    return $this->getRecurringContributionFromMembership($this->id);
+  }
+
+  /**
+   * Obtains recurring contribution from the membership.
+   *
+   * @param $membershipID
+   *
+   * @return mixed|null
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getRecurringContributionFromMembership($membershipID) {
+    $membership = civicrm_api3('Membership', 'getsingle', [
+      'sequential' => 1,
+      'id' => $membershipID,
+      'options' => ['limit' => 0],
+    ]);
+    $recurringContributionID = CRM_Utils_Array::value('contribution_recur_id', $membership, NULL);
+    if (!empty($recurringContributionID)) {
+      return $recurringContributionID;
+    }
+
+    $result = civicrm_api3('LineItem', 'get', [
+      'sequential' => 1,
+      'entity_id' => $membershipID,
+      'contribution_id' => ['IS NULL' => 1],
+      'options' => ['limit' => 0],
+      'api.ContributionRecurLineItem.get' => [
+        'sequential' => 1,
+        'line_item_id' => '$value.id',
+        'options' => ['limit' => 0],
+      ],
+    ]);
+
+    if ($result['count'] < 1) {
+      return NULL;
+    }
+
+    $line = $result['values'][0];
+    if ($line['api.ContributionRecurLineItem.get']['count'] < 1) {
+      return NULL;
+    }
+
+    $recurringLine = $line['api.ContributionRecurLineItem.get']['values'][0];
+
+    return $recurringLine['contribution_recur_id'];
+  }
+
+  /**
+   * Obtains recurring contribution ID from the contribution.
+   *
+   * @param int $contributionID
+   *
+   * @return int|null
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getRecurringContributionIDFromContributionID($contributionID) {
     $paymentContribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'id' => $this->paymentContributionID,
+      'id' => $contributionID,
       'return' => ['id', 'contribution_recur_id'],
     ]);
 
@@ -220,7 +299,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * complete the first payment.
    */
   public function extendPendingPaymentPlanMembershipOnRenewal() {
-    $pendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+    $pendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
@@ -258,23 +337,24 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private function startDateSetInForm() {
     try {
-      $startDateFromForm =  CRM_Utils_Request::retrieve('start_date', 'Date');
-    } catch (CRM_Core_Exception $e) {
-      return false;
+      $startDateFromForm = CRM_Utils_Request::retrieve('start_date', 'Date');
+    }
+    catch (CRM_Core_Exception $e) {
+      return FALSE;
     }
 
     if (empty($startDateFromForm)) {
-      return false;
+      return FALSE;
     }
 
     $formDate = new Date($startDateFromForm);
     $paramsDate = new Date($this->params['start_date']);
 
     if ($formDate === $paramsDate) {
-      return true;
+      return TRUE;
     }
 
-    return false;
+    return FALSE;
   }
 
   /**
@@ -288,7 +368,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
         'sequential' => 1,
         'id' => $this->id,
       ]);
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       return '';
     }
 
