@@ -4,27 +4,117 @@
 
     $(function() {
       moveFields();
+      initialFieldValues();
       eventListener();
     });
 
+    /**
+     * Re-organise fields
+     */
     function moveFields() {
       $('#membership_type_annual_pro_rata_calculation').insertAfter($('#month_fixed_rollover_day_row'));
     }
 
-    function eventListener() {
-      let annualProRataCalculationElement = $('#membership_type_annual_pro_rata_calculation');
+    /**
+     * Sets default values
+     */
+    function initialFieldValues() {
       $('#period_type option').each(function() {
         if (this.selected && this.value === 'fixed') {
-          annualProRataCalculationElement.show();
+          handleFixedPeriod();
         }
       });
+    }
+
+    /**
+     * Listens to behaviors
+     */
+    function eventListener() {
       $('#period_type').change(() => {
         if ($('#period_type').val() === 'fixed') {
-          annualProRataCalculationElement.show();
+          handleFixedPeriod();
         } else {
-          annualProRataCalculationElement.hide();
+          handleRollingPeriod();
         }
       });
+      $('#fixed_period_start_day_M').change(() => {
+       let selectedFixedPeriodStartM= $('#fixed_period_start_day_M').val();
+        setFixedPeriodRolloverDayM(selectedFixedPeriodStartM);
+        setFixedPeriodRolloverReadOnly();
+      });
+    }
+
+    /**
+     * Handles fields when Membership Type fixed period is selected
+    */
+    function handleFixedPeriod() {
+      $('#membership_type_annual_pro_rata_calculation').show();
+      let durationInterval = $('#duration_interval');
+      durationInterval.val(1);
+      durationInterval.prop( 'readonly', true );
+      $('#duration_unit option').val('year');
+      $('#duration_unit').prop( 'readonly', true );
+      $('#fixed_period_start_day_d').val(1);
+      $('#fixed_period_start_day_d option:not(:selected)').prop('disabled', true);
+    }
+
+    /**
+     * Handles fields when Membership Type rolling period is selected
+     */
+    function handleRollingPeriod() {
+      $('#membership_type_annual_pro_rata_calculation').hide();
+      $('#duration_interval').prop( 'readonly', false );
+      $(`#duration_unit`).prop( 'readonly', false );
+    }
+
+    /**
+     * Sets fixed period rollover month field
+     * Based on selected fixed period start month
+     *
+     * @param selectedFixedPeriodStartM
+     */
+    function setFixedPeriodRolloverDayM(selectedFixedPeriodStartM) {
+      let fixedPeriodRolloverDayM = 12;
+      if (selectedFixedPeriodStartM != 1) {
+        fixedPeriodRolloverDayM = selectedFixedPeriodStartM -1;
+      }
+      $('#fixed_period_rollover_day_M').val(fixedPeriodRolloverDayM);
+      setFixedPeriodRolloverDayD(fixedPeriodRolloverDayM);
+    }
+
+    /**
+     * Sets fixed period rollover day field
+     * based on selected fixed period rollover Month
+     *
+     * @param fixedPeriodRolloverDayM
+     */
+    function setFixedPeriodRolloverDayD(fixedPeriodRolloverDayM) {
+      let fixedPeriodRolloverDayD;
+      switch (fixedPeriodRolloverDayM) {
+        case 2:
+          fixedPeriodRolloverDayD = 28;
+          break;
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+        case 8:
+        case 10:
+        case 12:
+          fixedPeriodRolloverDayD = 31;
+          break;
+        default:
+          fixedPeriodRolloverDayD = 30;
+      }
+      $('#fixed_period_rollover_day_d').val(fixedPeriodRolloverDayD);
+    }
+
+    /**
+     * Makes fixed period rollover month and day readonly
+     */
+    function setFixedPeriodRolloverReadOnly() {
+      $('#fixed_period_rollover_day_M option:not(:selected)').prop('disabled', true);
+      $('#fixed_period_rollover_day_d option:not(:selected)').prop('disabled', true);
     }
 
   })(CRM.$);
