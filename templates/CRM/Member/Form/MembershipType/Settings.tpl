@@ -33,7 +33,15 @@
 
 <table>
   <tr id="membership_type_annual_pro_rata_calculation" style="display: none;">
-    <td class="label">{$form.membership_type_annual_pro_rata_calculation.label}</td>
-    <td>{$form.membership_type_annual_pro_rata_calculation.html}</td>
+    <td class="label">
+      {$form.membership_type_annual_pro_rata_calculation.label}
+    </td>
+    <td>{$form.membership_type_annual_pro_rata_calculation.html}
+      <br/>
+      <span class="description">
+        {ts}Define how the fee of the first year will be calculated for those paying annually.{/ts}
+        {help id="membership_type_annual_pro_rata_calculation" file="CRM/Member/Form/MembershipType/Settings.hlp"}
+      </span>
+    </td>
   </tr>
 </table>
