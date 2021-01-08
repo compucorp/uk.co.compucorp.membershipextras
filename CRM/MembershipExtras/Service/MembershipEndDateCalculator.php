@@ -9,15 +9,15 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculator {
    * Calculates the membership new end date
    * for renewal.
    *
-   * @param int $membershipId
+   * @param int $membershipID
    *
    * @return string
    * @throws \CiviCRM_API3_Exception
    * @throws \CiviCRM_API3_Exception|\Exception
    */
-  public static function calculate($membershipId) {
+  public static function calculate($membershipID) {
     $newEndDate = 'null';
-    $membershipDetails = self::getMembership($membershipId);
+    $membershipDetails = self::getMembership($membershipID);
     $interval = self::getMembershipPeriodInterval($membershipDetails);
     if (!empty($interval)) {
       $currentEndDate = new DateTime($membershipDetails['end_date']);
@@ -40,7 +40,6 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculator {
     $previousEndDate = 'null';
     $membershipDetails = self::getMembership($membershipID);
     $interval = self::getMembershipPeriodInterval($membershipDetails);
-
     if (!empty($interval)) {
       $currentEndDate = new DateTime($membershipDetails['end_date']);
       $currentEndDate->sub(new DateInterval($interval));
