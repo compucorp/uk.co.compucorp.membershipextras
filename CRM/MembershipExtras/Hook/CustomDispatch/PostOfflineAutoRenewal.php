@@ -46,9 +46,9 @@ class CRM_MembershipExtras_Hook_CustomDispatch_PostOfflineAutoRenewal {
     $nullObject = CRM_Utils_Hook::$_nullObject;
     CRM_Utils_Hook::singleton()->invoke(
       ['membershipId', 'recurContributionId', 'previousRecurContributionId'],
-      $nullObject,
-      $this->newRecurringContributionID,
-      $this->currentRecurContributionID,
+      $this->membershipID,
+      $this->recurringContributionID,
+      $this->previousRecurringContributionID,
       $nullObject, $nullObject, $nullObject,
       'membershipextras_postOfflineAutoRenewal'
     );
