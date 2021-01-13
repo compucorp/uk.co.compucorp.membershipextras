@@ -3,6 +3,9 @@
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator as InvalidMembershipTypeInstalmentCalculator;
 use CRM_MembershipExtras_DTO_ScheduleInstalmentAmount as ScheduleInstalmentAmount;
+use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule
@@ -74,15 +77,16 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     }
 
     $instalmentAmount = $this->calculateInstalmentAmount();
-    $firstInstalment = $this->calculateFirstInstalment($instalmentAmount, $startDate, $endDate);
 
     if (!empty($this->nonMembershipPriceFieldValues)) {
       $this->applyNonMembershipPriceFieldValueAmount($instalmentAmount);
-      $this->applyNonMembershipPriceFieldValueAmount($firstInstalment->getInstalmentAmount());
     }
 
-    $instalments[] = $firstInstalment;
+    $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
+    $instalment->setInstalmentDate($startDate);
+    $instalment->setInstalmentAmount($instalmentAmount);
 
+    $instalments[] = $instalment;
     $noOfInstalment = $this->getNumberOfInstalment();
     if ($noOfInstalment > 1) {
       $nextInstalmentDate = $startDate->format('Y-m-d');
@@ -127,57 +131,27 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   /**
    * Calculates the instalment amount for a set of membership types given that the
    * condition for calculating the following instalment amount is met.
-   * Calculation is (total amount of membership(s) cost for a full year / 12
+   * Calculation is calculated by calculator class based on membership type
    *
    * @return CRM_MembershipExtras_DTO_ScheduleInstalmentAmount
    */
   private function calculateInstalmentAmount() {
-    $totalMembershipTypeAmount = 0;
-    $totalMembershipTypeTaxAmount = 0;
-    foreach ($this->membershipTypes as $membershipType) {
-      $totalMembershipTypeAmount += $membershipType->minimum_fee;
-      $totalMembershipTypeTaxAmount += $this->membershipInstalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipType->minimum_fee);
+    if ($this->membershipTypes[0]->period_type == 'fixed') {
+      $instalmentAmount = new InstalmentAmount(new FixedPeriodCalculator($this->membershipTypes));
     }
+    else {
+      $instalmentAmount = new InstalmentAmount(new RollingPeriodCalculator($this->membershipTypes));
+    }
+    $instalmentAmount->getCalculator()->calculate();
+
     $divisor = $this->getNumberofInstalment();
-    $instalmentAmount = MoneyUtilities::roundToPrecision($totalMembershipTypeAmount / $divisor, 2);
-    $instalmentTaxAmount = MoneyUtilities::roundToPrecision($totalMembershipTypeTaxAmount / $divisor, 2);
+    $amount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getAmount() / $divisor, 2);
+    $taxAmount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getTaxAmount() / $divisor, 2);
+    $taxAmount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getTaxAmount() / $divisor, 2);
 
     $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalmentAmount();
-    $instalment->setAmount($instalmentAmount);
-    $instalment->setTaxAmount($instalmentTaxAmount);
-
-    return $instalment;
-  }
-
-  /**
-   * Calculates the first instalment amount for a set of membership types given that the conditions
-   * for calculating the first instalment amount is met.
-   *
-   * @param CRM_MembershipExtras_DTO_ScheduleInstalmentAmount $instalmentAmount
-   * @param DateTime|NULL $startDate
-   * @param DateTime|NULL $endDate
-   * @return CRM_MembershipExtras_DTO_ScheduleInstalment
-   */
-  private function calculateFirstInstalment(
-    CRM_MembershipExtras_DTO_ScheduleInstalmentAmount $instalmentAmount,
-    DateTime $startDate = NULL,
-    DateTime $endDate = NULL
-  ) {
-
-    $amount = $instalmentAmount->getAmount();
-    $taxAmount = $instalmentAmount->getTaxAmount();
-
-    if ($this->membershipTypes[0]->period_type == 'fixed') {
-      //TODO calculation for pro-rata by start date for fixed membership type
-    }
-
-    $fistInstalmentAmount = new ScheduleInstalmentAmount();
-    $fistInstalmentAmount->setAmount($amount);
-    $fistInstalmentAmount->setTaxAmount($taxAmount);
-
-    $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
-    $instalment->setInstalmentDate($startDate);
-    $instalment->setInstalmentAmount($fistInstalmentAmount);
+    $instalment->setAmount($amount);
+    $instalment->setTaxAmount($taxAmount);
 
     return $instalment;
   }
@@ -188,7 +162,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    *
    * @param CRM_MembershipExtras_DTO_ScheduleInstalmentAmount $instalmentAmount
    */
-  private function applyNonMembershipPriceFieldValueAmount(CRM_MembershipExtras_DTO_ScheduleInstalmentAmount $instalmentAmount) {
+  private function applyNonMembershipPriceFieldValueAmount(ScheduleInstalmentAmount $instalmentAmount) {
     $totalNonMembershipPriceFieldValueAmount = 0;
     $totalNonMembershipPriceFieldValueTaxAmount = 0;
     foreach ($this->nonMembershipPriceFieldValues as $priceFieldValue) {
@@ -235,7 +209,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    */
   private function validateMembershipTypeForInstalment() {
     $fixedPeriodStartDays = [];
+    $periodTypes = [];
     foreach ($this->membershipTypes as $membershipType) {
+      $periodTypes[] = $membershipType->period_type;
       if ($membershipType->period_type == 'fixed') {
         $fixedPeriodStartDays[] = $membershipType->fixed_period_start_day;
       }
@@ -248,35 +224,14 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
       throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY);
     }
+
+    if (in_array('fixed', $periodTypes) && in_array('rolling', $periodTypes)) {
+      throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::PERIOD_TYPE);
+    }
   }
 
   public function setNonMembershipPriceFieldValues(array $nonMembershipPriceFieldValues) {
     $this->nonMembershipPriceFieldValues = $nonMembershipPriceFieldValues;
-  }
-
-  /**
-   * Calculates the remaining days from start date to the end of month date.
-   *
-   * @param DateTime $startDate
-   *
-   * @return int
-   */
-  private function calculateRemainingDaysInStartDateMonth(DateTime $startDate) {
-    $endOfMonthDate = new DateTime($startDate->format('Y-m-t'));
-    $interval = $endOfMonthDate->diff($startDate);
-
-    return (int) $interval->format("%a");
-  }
-
-  /**
-   * Calculates the number of days in the month the start date falls in.
-   *
-   * @param DateTime $startDate
-   *
-   * @return int
-   */
-  private function getNumberOfDaysInStartDateMonth(DateTime $startDate) {
-    return (int) $startDate->format('t');
   }
 
 }

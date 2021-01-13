@@ -32,7 +32,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator {
     $taxRate = CRM_Utils_Array::value($membershipType->financial_type_id, $this->taxRates, 0);
 
     return $this->calculateTaxAmount($membershipTypeAmount, $taxRate);
-
   }
 
   /**
