@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Hook_BuildForm_MembershipType_Base as Base;
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
-use CRM_MembershipExtras_Service_MembershipTypeAmountProrater as MembershipTypeAmountProRata;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodCalculator;
 
 /**
  * Class CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting
@@ -39,8 +39,8 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting extends Base {
    */
   protected function addFields() {
     $options = [
-      MembershipTypeAmountProRata::BY_DAYS => ts('By days'),
-      MembershipTypeAmountProRata::BY_MONTHS => ts('By months'),
+      FixedPeriodCalculator::BY_DAYS => ts('By days'),
+      FixedPeriodCalculator::BY_MONTHS => ts('By months'),
     ];
 
     $this->form->add('select', self::ANNUAL_PRORATA_CALCULATION_ELEMENT, ts('Annual Pro-rata Calculation'),

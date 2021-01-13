@@ -51,20 +51,54 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculator {
    * @return int
    */
   public function calculateDaysBasedOnDates (DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
-    $startDate = empty($startDate) ? $joinDate : $startDate;
-    $membershipDates = $this->membershipTypeDatesCalculator->getDatesForMembershipType(
+    $membershipDates = $this->getMembershipDates($startDate, $endDate, $joinDate);
+    $interval = $this->diffDates($membershipDates['start_date'], $membershipDates['end_date']);
+
+    return (int) $interval->format("%a") + 1;
+  }
+
+  /**
+   * Calculates the membership type duration in months based on start and end dates passed in.
+   * One more month is added to interval because the start and end date are inclusive of the
+   * number of months
+   *
+   * @param \DateTime|NULL $startDate
+   * @param \DateTime|NULL $endDate
+   * @param \DateTime|NULL $joinDate
+   *
+   * @return int
+   */
+  public function calculateMonthForAnnualDurationBasedOnDates(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+    $membershipDates = $this->getMembershipDates($startDate, $endDate, $joinDate);
+    $interval = $this->diffDates($membershipDates['start_date'], $membershipDates['end_date']);
+
+    return (int) $interval->format('%m') + 1;
+  }
+
+  /**
+   * Gets Membership Dates
+   *
+   * @return array
+   */
+  private function getMembershipDates($startDate, $endDate, $joinDate) {
+    return $this->membershipTypeDatesCalculator->getDatesForMembershipType(
       $this->membershipType->id,
       $startDate,
       $endDate,
       $joinDate
     );
+  }
 
-    $membershipStartDate = new DateTime($membershipDates['start_date']);
-    $membershipEndDate = new DateTime($membershipDates['end_date']);
+  /**
+   * Gets different interval between two dates.
+   *
+   * @return DateInterval
+   */
+  private function diffDates($startDate, $endDate) {
+    $membershipStartDate = new DateTime($startDate);
+    $membershipEndDate = new DateTime($endDate);
 
-    $interval = $membershipEndDate->diff($membershipStartDate);
-
-    return (int) $interval->format("%a") + 1;
+    return $membershipEndDate->diff($membershipStartDate);
   }
 
   /**

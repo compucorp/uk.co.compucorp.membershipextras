@@ -99,6 +99,21 @@ class CRM_MembershipExtras_SettingsManager {
     return $updateStartDateRenewal;
   }
 
+  public static function getMembershipTypeSettings(int $membershipTypeId) {
+    $settings = [];
+    $membershipTypeSettings = Civi::settings()->get(self::MEMBERSHIP_TYPE_SETTINGS_KEY);
+    if (!isset($membershipTypeSettings)) {
+      return $settings;
+    }
+    foreach ($membershipTypeSettings as $id => $settingFields) {
+      if ($id == $membershipTypeId) {
+        $settings = $settingFields;
+      }
+    }
+
+    return $settings;
+  }
+
   /**
    * Calculate colour for RGB values.
    *
