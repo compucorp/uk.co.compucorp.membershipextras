@@ -225,7 +225,13 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
       throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY));
     }
 
-    if (in_array('fixed', $periodTypes) && in_array('rolling', $periodTypes)) {
+    $hasFixedMembershipType = in_array('fixed', $periodTypes);
+
+    if ($hasFixedMembershipType && $this->schedule == self::QUARTERLY) {
+      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::QUARTERLY_NOT_SUPPORT));
+    }
+
+    if ($hasFixedMembershipType && in_array('rolling', $periodTypes)) {
       throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::PERIOD_TYPE));
     }
   }
