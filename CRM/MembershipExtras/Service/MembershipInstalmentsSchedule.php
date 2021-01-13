@@ -216,17 +216,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
         $fixedPeriodStartDays[] = $membershipType->fixed_period_start_day;
       }
       if ($membershipType->duration_unit != 'year' || $membershipType->duration_interval != 1) {
-        throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::ONE_YEAR_DURATION);
+        throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::ONE_YEAR_DURATION));
       }
     }
 
     $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
     if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
-      throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY);
+      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY));
     }
 
     if (in_array('fixed', $periodTypes) && in_array('rolling', $periodTypes)) {
-      throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::PERIOD_TYPE);
+      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::PERIOD_TYPE));
     }
   }
 
