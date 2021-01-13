@@ -313,36 +313,25 @@ function showNextPeriodLineItemRemovalConfirmation(lineItemData) {
             'id': lineItemData.entity_id,
             'contribution_recur_id': '',
           }).done(function (membershipUnlinkRes) {
-
             if (membershipUnlinkRes.is_error) {
               CRM.alert(ts('Cannot unlink the associated membership'), null, 'alert', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
               return;
             }
-
-            createActivity('Update Payment Plan Next Period', 'update_payment_plan_next_period', function(res) {
-              CRM.alert(
-                ts(lineItemData.label + ' should no longer be continued in the next period.'),
-                null,
-                'success',
-                {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
-              );
-              CRM.refreshParent('#periodsContainer');
-  
-              return;
-            });
           });
-        } else {
-          CRM.refreshParent('#periodsContainer');
+        }
+
+        createActivity('Update Payment Plan Next Period', 'update_payment_plan_next_period', function(res) {
           CRM.alert(
             ts(lineItemData.label + ' should no longer be continued in the next period.'),
             null,
             'success',
             {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
           );
+          CRM.refreshParent('#periodsContainer');
 
           return;
-        }
+        });
       });
   }).on('crmConfirm:no', function() {
     CRM.refreshParent('#periodsContainer');
