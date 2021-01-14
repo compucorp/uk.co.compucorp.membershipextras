@@ -10,7 +10,7 @@ use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabri
  *
  * @group headless
  */
-class PaymentScheduleTest extends BaseHeadlessTest {
+class api_v3_PaymentScheduleTest extends BaseHeadlessTest {
 
   /**
    * Test ExceptionIsThrownIfScheduleIsNotValid
@@ -26,44 +26,72 @@ class PaymentScheduleTest extends BaseHeadlessTest {
   }
 
   /**
-   * Test GetMonthlyRollingMembershipTypeSchedule
+   * Test Get Monthly Rolling MembershipType Schedule
    * @throws CiviCRM_API3_Exception
    */
-  public function testGetByMembershipType() {
-    $membershipType = MembershipTypeFabricator::fabricate([
-      'name' => 'Rolling Membership Type',
-      'period_type' => 'rolling',
-      'duration_unit' => 'year',
-      'minimum_fee' => 120,
-      'duration_interval' => 1,
-    ]);
-
-    $scheduleInstalment = civicrm_api3('PaymentSchedule', 'getByMembershipType', [
-      'sequential' => 1,
-      'membership_type_id' => $membershipType['id'],
-      'schedule' => 'monthly',
-    ])['values'];
-
+  public function testGetByMonthlyRollingMembershipType() {
+    $schedule = 'monthly';
+    $membershipType = $this->mockRollingMembershipType();
+    $scheduleInstalment = $this->getRollingMembershipTypeSchedule($membershipType['id'], $schedule);
     $this->assertCount(12, $scheduleInstalment);
 
     $currencySymbol = CRM_Core_BAO_Country::defaultCurrencySymbol();
     $expectedAmount = $currencySymbol . 10;
     $expectedTaxAmount = $currencySymbol . 0;
 
-    $startDate = CRM_Member_BAO_MembershipType::getDatesForMembershipType(
-      $membershipType['id'],
-      NULL,
-      NULL,
-      NULL
-    )['start_date'];
-
-    $instalmentDate = new DateTime($startDate);
-
+    $instalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id']));
     foreach ($scheduleInstalment as $instalment) {
       $this->assertEquals($expectedAmount, $instalment['instalment_amount']);
       $this->assertEquals($expectedTaxAmount, $instalment['instalment_tax_amount']);
       $this->assertEquals($instalmentDate->format('Y-m-d'), $instalment['instalment_date']);
       $instalmentDate->add(new DateInterval('P1M'));
+    }
+  }
+
+  /**
+   * Test Get Quarterly Rolling MembershipType Schedule
+   * @throws CiviCRM_API3_Exception
+   */
+  public function testGetByQuarterlyRollingMembershipType() {
+    $schedule = 'quarterly';
+    $membershipType = $this->mockRollingMembershipType();
+    $scheduleInstalment = $this->getRollingMembershipTypeSchedule($membershipType['id'], $schedule);
+    $this->assertCount(4, $scheduleInstalment);
+
+    $currencySymbol = CRM_Core_BAO_Country::defaultCurrencySymbol();
+    $expectedAmount = $currencySymbol . 30;
+    $expectedTaxAmount = $currencySymbol . 0;
+
+    $instalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id']));
+
+    foreach ($scheduleInstalment as $instalment) {
+      $this->assertEquals($expectedAmount, $instalment['instalment_amount']);
+      $this->assertEquals($expectedTaxAmount, $instalment['instalment_tax_amount']);
+      $this->assertEquals($instalmentDate->format('Y-m-d'), $instalment['instalment_date']);
+      $instalmentDate->add(new DateInterval('P3M'));
+    }
+  }
+
+  /**
+   * Test Get Annual Rolling MembershipType Schedule
+   * @throws CiviCRM_API3_Exception
+   */
+  public function testGetByAnnualRollingMembershipType() {
+    $schedule = 'annual';
+    $membershipType = $this->mockRollingMembershipType();
+    $scheduleInstalment = $this->getRollingMembershipTypeSchedule($membershipType['id'], $schedule);
+    $this->assertCount(1, $scheduleInstalment);
+
+    $currencySymbol = CRM_Core_BAO_Country::defaultCurrencySymbol();
+    $expectedAmount = $currencySymbol . 120;
+    $expectedTaxAmount = $currencySymbol . 0;
+
+    $instalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id']));
+
+    foreach ($scheduleInstalment as $instalment) {
+      $this->assertEquals($expectedAmount, $instalment['instalment_amount']);
+      $this->assertEquals($expectedTaxAmount, $instalment['instalment_tax_amount']);
+      $this->assertEquals($instalmentDate->format('Y-m-d'), $instalment['instalment_date']);
     }
   }
 
@@ -164,6 +192,33 @@ class PaymentScheduleTest extends BaseHeadlessTest {
     ]);
 
     return $priceFieldValues;
+  }
+
+  private function getRollingMembershipTypeSchedule($membershipID, $schedule) {
+    return civicrm_api3('PaymentSchedule', 'getByMembershipType', [
+      'sequential' => 1,
+      'membership_type_id' => $membershipID,
+      'schedule' => $schedule,
+    ])['values'];
+  }
+
+  private function getMembershipStartDate($membershipID) {
+    return CRM_Member_BAO_MembershipType::getDatesForMembershipType(
+      $membershipID,
+      NULL,
+      NULL,
+      NULL
+    )['start_date'];
+  }
+
+  private function mockRollingMembershipType() {
+    return MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling Membership Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 120,
+      'duration_interval' => 1,
+    ]);
   }
 
 }

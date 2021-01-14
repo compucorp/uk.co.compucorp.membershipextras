@@ -93,7 +93,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
       for ($i = 1; $i < $noOfInstalment; $i++) {
         $intervalSpec = 'P1M';
         if ($this->schedule == self::QUARTERLY) {
-          $intervalSpec = 'P4M';
+          $intervalSpec = 'P3M';
         }
         $instalmentDate = new DateTime($nextInstalmentDate);
         $instalmentDate->add(new DateInterval($intervalSpec));
@@ -216,17 +216,23 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
         $fixedPeriodStartDays[] = $membershipType->fixed_period_start_day;
       }
       if ($membershipType->duration_unit != 'year' || $membershipType->duration_interval != 1) {
-        throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::ONE_YEAR_DURATION);
+        throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::ONE_YEAR_DURATION));
       }
     }
 
     $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
     if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
-      throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY);
+      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY));
     }
 
-    if (in_array('fixed', $periodTypes) && in_array('rolling', $periodTypes)) {
-      throw new InvalidMembershipTypeInstalmentCalculator(InvalidMembershipTypeInstalmentCalculator::PERIOD_TYPE);
+    $hasFixedMembershipType = in_array('fixed', $periodTypes);
+
+    if ($hasFixedMembershipType && $this->schedule == self::QUARTERLY) {
+      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::QUARTERLY_NOT_SUPPORT));
+    }
+
+    if ($hasFixedMembershipType && in_array('rolling', $periodTypes)) {
+      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::PERIOD_TYPE));
     }
   }
 

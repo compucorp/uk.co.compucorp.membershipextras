@@ -58,7 +58,30 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
-   * Tests fixed monthly instalment amounts
+   * Tests Rolling Quarterly Instalment Amounts
+   *
+   * @throws Exception
+   */
+  public function testRollingQuarterlyInstalmentAmounts() {
+    $this->mockSalesTaxFinancialAccount();
+
+    $membershipTypes = $this->mockRollingMembershipTypes();
+    $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::QUARTERLY);
+
+    $this->assertCount(MembershipInstalmentsSchedule::QUARTERLY_INSTALMENT_COUNT, $instalments);
+
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, MembershipInstalmentsSchedule::QUARTERLY_INSTALMENT_COUNT);
+    $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
+
+    foreach ($instalments as $instalment) {
+      $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
+      $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
+    }
+
+  }
+
+  /**
+   * Tests Fixed Monthly Instalment Amounts
    *
    * @throws Exception
    */
@@ -134,10 +157,29 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       if ($index != 0) {
         $expectedDate->add(new DateInterval('P1M'));
       }
-      $this->assertEquals(
-        $expectedDate->format('Y-m-d'),
-        $instalment->getInstalmentDate()->format('Y-m-d')
-      );
+      $this->assertEquals($expectedDate->format('Y-m-d'), $instalment->getInstalmentDate()->format('Y-m-d'));
+    }
+  }
+
+  /**
+   * Tests Rolling Quarterly Instalment Schedule Dates
+   *
+   * @throws Exception
+   */
+  public function testRollingQuarterlyInstalmentDates() {
+    $membershipTypes = $this->mockRollingMembershipTypes();
+    $instalments = $this->getMembershipInstalments(
+      $membershipTypes,
+      MembershipInstalmentsSchedule::QUARTERLY
+    );
+
+    $mockedDate = $this->mockMembershipDates();
+    $expectedDate = $mockedDate['start_date'];
+    foreach ($instalments as $index => $instalment) {
+      if ($index != 0) {
+        $expectedDate->add(new DateInterval('P3M'));
+      }
+      $this->assertEquals($expectedDate->format('Y-m-d'), $instalment->getInstalmentDate()->format('Y-m-d'));
     }
   }
 
@@ -319,6 +361,26 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $this->expectException(InvalidMembershipTypeInstalmentCalculator::class);
     $this->getMembershipInstalmentsSchedule(
       [$membershipType1, $membershipType2], MembershipInstalmentsSchedule::ANNUAL
+    );
+  }
+
+  /**
+   * Tests exception when membership type ts a fixed period
+   * and schedule is quarterly
+   *
+   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws CiviCRM_API3_Exception
+   */
+  public function testExceptionIsThrownIfMembershipTypeIsFixedPeriodAndScheduleIsQuarterly() {
+    $fixedType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+      ['duration_unit' => 'year', 'duration_interval' => 1, 'name' => 'abc', 'period_type' => 'fixed']
+    ));
+
+    $membershipType = CRM_Member_BAO_MembershipType::findById($fixedType['id']);
+
+    $this->expectException(InvalidMembershipTypeInstalmentCalculator::class);
+    $this->getMembershipInstalmentsSchedule(
+      [$membershipType], MembershipInstalmentsSchedule::QUARTERLY
     );
   }
 
@@ -505,8 +567,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     foreach ($membershipTypes as $membershipType) {
       $amount += $membershipType->minimum_fee;
     }
-    return $amount / $divisor;
 
+    return $amount / $divisor;
   }
 
   private function calculateExpectedTaxAmount($amount) {
