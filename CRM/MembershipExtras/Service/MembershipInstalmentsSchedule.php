@@ -93,7 +93,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
       for ($i = 1; $i < $noOfInstalment; $i++) {
         $intervalSpec = 'P1M';
         if ($this->schedule == self::QUARTERLY) {
-          $intervalSpec = 'P4M';
+          $intervalSpec = 'P3M';
         }
         $instalmentDate = new DateTime($nextInstalmentDate);
         $instalmentDate->add(new DateInterval($intervalSpec));
