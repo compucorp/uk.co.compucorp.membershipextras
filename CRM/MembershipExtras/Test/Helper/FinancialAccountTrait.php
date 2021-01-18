@@ -3,6 +3,15 @@
 
 trait CRM_MembershipExtras_Test_Helper_FinancialAccountTrait {
 
+  /**
+   * This function helps to mock Sale Tax financial account
+   * for simulating the financial tax for given financial type
+   *
+   * @param int $taxRate
+   * @param string $financialTypeName
+   *
+   * @throws CiviCRM_API3_Exception
+   */
   protected function mockSalesTaxFinancialAccount($taxRate = 20, $financialTypeName = 'Member Dues') {
     $existingRecordResponse = civicrm_api3('FinancialAccount', 'get', [
       'sequential' => 1,
@@ -34,6 +43,14 @@ trait CRM_MembershipExtras_Test_Helper_FinancialAccountTrait {
 
   }
 
+  /**
+   * Gets financial type ID from given financial type name.
+   *
+   * @param $financialTypeName
+   *
+   * @return mixed
+   * @throws CiviCRM_API3_Exception
+   */
   protected function getFinancialTypeID($financialTypeName) {
     $financialType = civicrm_api3('FinancialType', 'get', [
       'name' => $financialTypeName,

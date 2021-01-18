@@ -5,7 +5,9 @@ use CRM_MembershipExtras_Test_Fabricator_PriceSet as PriceSetFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PriceField as PriceFieldFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabricator;
 use CRM_MembershipExtras_Service_MembershipInstalmentsSchedule as MembershipInstalmentsSchedule;
-use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator as InvalidMembershipTypeInstalmentCalculator;
+use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMembershipTypeInstalment;
+use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
+use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest
@@ -35,6 +37,35 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   ];
 
   /**
+   * Tests getting instalment for one month duration unit for rolling membership type
+   */
+  public function testOneMonthUnitRollingMembershipType() {
+    $rollingOneMonthType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'month',
+      'duration_interval' => 1,
+      'name' => 'xyz',
+      'period_type' => 'rolling',
+    ]));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingOneMonthType['id']);
+    $instalments = $this->getMembershipInstalments([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
+    //Expected instalment equals 1 for 1 month duration
+    $this->assertCount(1, $instalments);
+  }
+
+  /**
+   * Tests getting instalment for life time duration unit for rolling membership type.
+   */
+  public function testOneLifeTimeUnitRollingMembershipType() {
+    $rollingLifetimeType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+      ['duration_unit' => 'lifetime', 'duration_interval' => 1, 'name' => 'xyz', 'period_type' => 'rolling']
+    ));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingLifetimeType['id']);
+    $instalments = $this->getMembershipInstalments([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
+    //Expected instalment equals 1 for life time duration
+    $this->assertCount(1, $instalments);
+  }
+
+  /**
    * Tests Rolling Monthly Instalment Schedule Amounts
    *
    * @throws Exception
@@ -42,7 +73,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   public function testRollingMonthlyInstalmentAmounts() {
     $this->mockSalesTaxFinancialAccount();
 
-    $monthlyInstalmentCount = MembershipInstalmentsSchedule::MONTHLY_INSTALMENT_COUNT;
+    $monthlyInstalmentCount = MembershipInstalmentsSchedule::MONTHLY_INTERVAL;
     $membershipTypes = $this->mockRollingMembershipTypes();
     $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
 
@@ -68,9 +99,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $membershipTypes = $this->mockRollingMembershipTypes();
     $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::QUARTERLY);
 
-    $this->assertCount(MembershipInstalmentsSchedule::QUARTERLY_INSTALMENT_COUNT, $instalments);
+    $this->assertCount(MembershipInstalmentsSchedule::QUARTERLY_INTERVAL, $instalments);
 
-    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, MembershipInstalmentsSchedule::QUARTERLY_INSTALMENT_COUNT);
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, MembershipInstalmentsSchedule::QUARTERLY_INTERVAL);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
     foreach ($instalments as $instalment) {
@@ -87,15 +118,19 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    */
   public function testFixedMonthlyInstalmentAmounts() {
     $this->mockSalesTaxFinancialAccount();
-    $monthlyInstalmentCount = MembershipInstalmentsSchedule::MONTHLY_INSTALMENT_COUNT;
+    //Mock period start day 01 Oct
+    //Mock period rollover day 30 Sep
     $membershipTypes = $this->mockFixedMembershipTypes();
     $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
 
-    $this->assertCount($monthlyInstalmentCount, $instalments);
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipTypes[0], new MembershipTypeDatesCalculator());
 
-    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, $monthlyInstalmentCount);
+    $startDate = new DateTime('today');
+    $diffInMonth = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
+    $this->assertCount($diffInMonth, $instalments);
+
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, MembershipInstalmentsSchedule::MONTHLY_INTERVAL);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
-
     foreach ($instalments as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
@@ -112,9 +147,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $membershipTypes = $this->mockRollingMembershipTypes();
     $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::ANNUAL);
 
-    $this->assertCount(MembershipInstalmentsSchedule::ANNUAL_INSTALMENT_COUNT, $instalments);
+    $this->assertCount(MembershipInstalmentsSchedule::ANNUAL_INTERVAL, $instalments);
 
-    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, MembershipInstalmentsSchedule::ANNUAL_INSTALMENT_COUNT);
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, MembershipInstalmentsSchedule::ANNUAL_INTERVAL);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
     $this->assertEquals($expectedAmount, $instalments[0]->getInstalmentAmount()->getAmount());
@@ -130,9 +165,12 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $this->mockSalesTaxFinancialAccount();
     $membershipTypes = $this->mockFixedMembershipTypes();
     $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::ANNUAL);
-    $this->assertCount(MembershipInstalmentsSchedule::ANNUAL_INSTALMENT_COUNT, $instalments);
+    $this->assertCount(MembershipInstalmentsSchedule::ANNUAL_INTERVAL, $instalments);
 
-    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, MembershipInstalmentsSchedule::ANNUAL_INSTALMENT_COUNT);
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipTypes[0], new MembershipTypeDatesCalculator());
+    $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime('today'));
+
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12, $diffInMonths);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
     $this->assertEquals($expectedAmount, $instalments[0]->getInstalmentAmount()->getAmount());
@@ -201,7 +239,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
 
   /**
    * @throws CiviCRM_API3_Exception
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws InvalidMembershipTypeInstalment
    */
   public function testRollingMembershipTypePriceFieldValuesWithoutTax() {
     $priceFieldValues = $this->mockPriceFieldValues();
@@ -215,7 +253,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       $membershipTypes,
       MembershipInstalmentsSchedule::MONTHLY
     );
-    $expectedAmount = $totalAmount / MembershipInstalmentsSchedule::MONTHLY_INSTALMENT_COUNT;
+    $expectedAmount = $totalAmount / MembershipInstalmentsSchedule::MONTHLY_INTERVAL;
     foreach ($instalments as $index => $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals(0, $instalment->getInstalmentAmount()->getTaxAmount());
@@ -223,6 +261,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
+   * Tests price field values with tax instalments
+   *
    * @throws CiviCRM_API3_Exception
    */
   public function testPriceFieldValuesWithTax() {
@@ -238,14 +278,16 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       $membershipTypes,
       MembershipInstalmentsSchedule::MONTHLY
     );
-    $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100) / MembershipInstalmentsSchedule::MONTHLY_INSTALMENT_COUNT;
+    $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100) / MembershipInstalmentsSchedule::MONTHLY_INTERVAL;
     foreach ($instalments as $index => $instalment) {
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
     }
   }
 
   /**
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * Tests price field values with non membership type and tax
+   *
+   * @throws InvalidMembershipTypeInstalment
    */
   public function testPriceFieldValueWithNonMembershipTypeAndTax() {
     $this->mockSalesTaxFinancialAccount();
@@ -286,8 +328,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $totalNonMembershipPriceFieldValueAmount *= $mockedQuantity;
     $totalNonMembershipPriceFieldValueTaxAmount *= $mockedQuantity;
 
-    $expectedAmount = ($totalAmount + $totalNonMembershipPriceFieldValueAmount) / MembershipInstalmentsSchedule::MONTHLY_INSTALMENT_COUNT;
-    $expectedTaxAmount = ($taxAmount + $totalNonMembershipPriceFieldValueTaxAmount) / MembershipInstalmentsSchedule::MONTHLY_INSTALMENT_COUNT;
+    $expectedAmount = ($totalAmount + $totalNonMembershipPriceFieldValueAmount) / MembershipInstalmentsSchedule::MONTHLY_INTERVAL;
+    $expectedTaxAmount = ($taxAmount + $totalNonMembershipPriceFieldValueTaxAmount) / MembershipInstalmentsSchedule::MONTHLY_INTERVAL;
 
     foreach ($instalments as $index => $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
@@ -295,48 +337,47 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     }
   }
 
-  /**
-   * Tests Exception when providing incorrect duration unit
-   *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
-   * @throws CiviCRM_API3_Exception
-   */
-  public function testExceptionIsThrownIfMembershipTypeDurationUnitIsNotYearly() {
-    $memType1 = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
-      ['duration_unit' => 'month', 'name' => 'xyz']
-    ));
-
-    $memType2 = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
-      ['duration_unit' => 'year', 'name' => 'xyz']
-    ));
-
+  public function testExceptionIsThrownIfFixedPeriodStartDaysAreNotTheSame() {
+    $memType1 = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'year',
+      'duration_interval' => 1,
+      'name' => 'xyz',
+      'period_type' => 'fixed',
+      'fixed_period_start_day' => 1001,
+      'fixed_period_rollover_day' => 930,
+    ]));
+    $memType2 = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'year',
+      'duration_interval' => 1,
+      'name' => 'xyz',
+      'period_type' => 'fixed',
+      'fixed_period_start_day' => 200,
+      'fixed_period_rollover_day' => 500,
+    ]));
     $membershipType1 = CRM_Member_BAO_MembershipType::findById($memType1['id']);
     $membershipType2 = CRM_Member_BAO_MembershipType::findById($memType2['id']);
 
-    $this->expectException(InvalidMembershipTypeInstalmentCalculator::class);
-    $this->getMembershipInstalmentsSchedule(
-      [$membershipType1, $membershipType2], MembershipInstalmentsSchedule::ANNUAL
-    );
+    $this->expectException(InvalidMembershipTypeInstalment::class);
+    $this->getMembershipInstalmentsSchedule([$membershipType1, $membershipType2], MembershipInstalmentsSchedule::ANNUAL);
   }
 
   /**
-   * Tests exception when providing incorrect duration interval
+   * Tests exception when duration is not one year for fixed membership type
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
    * @throws CiviCRM_API3_Exception
    */
-  public function testExceptionIsThrownIfMembershipTypeDurationUnitIsNotOneYear() {
+  public function testExceptionIsThrownIfFixedPeriodMembershipTypeDurationUnitIsNotOneYear() {
     $memType1 = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
-      ['duration_unit' => 'year', 'duration_interval' => 2, 'name' => 'xyz']
+      ['duration_unit' => 'year', 'duration_interval' => 2, 'name' => 'xyz', 'period_type' => 'fixed']
     ));
     $memType2 = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
-      ['duration_unit' => 'year', 'duration_interval' => 1, 'name' => 'xyz']
+      ['duration_unit' => 'year', 'duration_interval' => 1, 'name' => 'abc', 'period_type' => 'fixed']
     ));
 
     $membershipType1 = CRM_Member_BAO_MembershipType::findById($memType1['id']);
     $membershipType2 = CRM_Member_BAO_MembershipType::findById($memType2['id']);
 
-    $this->expectException(InvalidMembershipTypeInstalmentCalculator::class);
+    $this->expectException(InvalidMembershipTypeInstalment::class);
     $this->getMembershipInstalmentsSchedule(
       [$membershipType1, $membershipType2], MembershipInstalmentsSchedule::ANNUAL
     );
@@ -345,7 +386,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   /**
    * Tests exception when membership period types are mixed
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
    * @throws CiviCRM_API3_Exception
    */
   public function testExceptionIsThrownIfMembershipPeriodTypesAreMixed() {
@@ -358,7 +398,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $membershipType1 = CRM_Member_BAO_MembershipType::findById($fixedType['id']);
     $membershipType2 = CRM_Member_BAO_MembershipType::findById($rollingType['id']);
 
-    $this->expectException(InvalidMembershipTypeInstalmentCalculator::class);
+    $this->expectException(InvalidMembershipTypeInstalment::class);
     $this->getMembershipInstalmentsSchedule(
       [$membershipType1, $membershipType2], MembershipInstalmentsSchedule::ANNUAL
     );
@@ -368,7 +408,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    * Tests exception when membership type ts a fixed period
    * and schedule is quarterly
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
    * @throws CiviCRM_API3_Exception
    */
   public function testExceptionIsThrownIfMembershipTypeIsFixedPeriodAndScheduleIsQuarterly() {
@@ -378,10 +417,34 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
 
     $membershipType = CRM_Member_BAO_MembershipType::findById($fixedType['id']);
 
-    $this->expectException(InvalidMembershipTypeInstalmentCalculator::class);
+    $this->expectException(InvalidMembershipTypeInstalment::class);
     $this->getMembershipInstalmentsSchedule(
       [$membershipType], MembershipInstalmentsSchedule::QUARTERLY
     );
+  }
+
+  /**
+   * Tests exception is thorwn when membership type duration is day
+   */
+  public function testExceptionIsThrownIfMembershipTypeDurationUnitIsDay() {
+    $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+      ['duration_unit' => 'day', 'duration_interval' => 1, 'name' => 'xyz', 'period_type' => 'rolling']
+    ));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($invalidMembershipType['id']);
+    $this->expectException(InvalidMembershipTypeInstalment::class);
+    $this->getMembershipInstalmentsSchedule([$membershipType], MembershipInstalmentsSchedule::ANNUAL);
+  }
+
+  /**
+   * Tests exception is thrown when membership type duration is not one (1)
+   */
+  public function testExceptionIsThrownIfMembershipTypeDurationIntervalIsNotOne() {
+    $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+      ['duration_unit' => 'year', 'duration_interval' => 2, 'name' => 'xyz', 'period_type' => 'rolling']
+    ));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($invalidMembershipType['id']);
+    $this->expectException(InvalidMembershipTypeInstalment::class);
+    $this->getMembershipInstalmentsSchedule([$membershipType], MembershipInstalmentsSchedule::ANNUAL);
   }
 
   /**
@@ -490,7 +553,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
         'financial_type_id' => $this->getFinancialTypeID('Member Dues'),
       ]
     ));
-    $this->mockSettings($memType['id'], CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator::BY_DAYS);
+    $this->mockSettings($memType['id'], CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator::BY_MONTHS);
     $membershipType = CRM_Member_BAO_MembershipType::findById($memType['id']);
 
     return [$membershipType];
@@ -542,33 +605,29 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     ]);
 
     if ($includeNonMembershipTypePriceField) {
-
       $priceField2 = PriceFieldFabricator::fabricate([
         'price_set_id' => $priceSet['id'],
         'label' => "Price Field 1",
         'name' => "price_field_2",
         'html_type' => "Text",
       ]);
-
       $priceFieldValues[] = PriceFieldValueFabricator::fabricate([
         'price_field_id' => $priceField2['id'],
         'label' => "Price Field Value without Membership Type 1",
         'amount' => 120,
         'financial_type_id' => "Member Dues",
       ]);
-
     }
 
     return $priceFieldValues;
   }
 
-  private function calculateExpectedAmount($membershipTypes, $divisor) {
+  private function calculateExpectedAmount($membershipTypes, $divisor, $diff = 1) {
     $amount = 0;
     foreach ($membershipTypes as $membershipType) {
       $amount += $membershipType->minimum_fee;
     }
-
-    return $amount / $divisor;
+    return ($amount / $divisor) * $diff;
   }
 
   private function calculateExpectedTaxAmount($amount) {

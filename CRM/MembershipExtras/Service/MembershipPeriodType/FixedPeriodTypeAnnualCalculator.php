@@ -1,12 +1,13 @@
 <?php
 
 use CRM_MembershipExtras_Service_MembershipPeriodType_PeriodTypeCalculatorInterface as Calculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_AbstractFixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 use CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator as MembershipInstalmentTaxAmountCalculator;
 use CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting as SettingField;
 
-class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator implements Calculator {
+class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator extends FixedPeriodTypeCalculator implements Calculator {
 
   /**
    * Constants for Annal ProRata Calculation
@@ -16,22 +17,10 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
   const BY_DAYS = 1;
   const BY_MONTHS = 2;
 
-  const TWELVE_MONTHS = 12;
-
   /**
    * @var \CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator
    */
   private $instalmentTaxAmountCalculator;
-
-  /**
-   * @var float
-   */
-  private $proRatedTaxAmount = 0;
-
-  /**
-   * @var float
-   */
-  private $proRatedAmount = 0;
 
   /**
    * @var array
@@ -44,14 +33,9 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
   }
 
   /**
-   *
-   * @param \DateTime|NULL $startDate
-   * @param \DateTime|NULL $endDate
-   * @param \DateTime|NULL $joinDate
-   *
    * @throws Exception
    */
-  public function calculate(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+  public function calculate() {
     foreach ($this->membershipTypes as $membershipType) {
       $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
       $settings = CRM_MembershipExtras_SettingsManager::getMembershipTypeSettings($membershipType->id);
@@ -59,39 +43,16 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
       $membershipAmount = $membershipType->minimum_fee;
       $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipAmount);
       if ($annualProRataCalculation == self::BY_DAYS) {
-        $durationInDays = $membershipTypeDurationCalculator->calculateOriginalInDays();
-        $diffInDays = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($startDate, $endDate, $joinDate);
-        $this->proRatedAmount += ($membershipAmount / $durationInDays) * $diffInDays;
-        $this->proRatedTaxAmount += ($taxAmount / $durationInDays) * $diffInDays;
+        $duration  = $membershipTypeDurationCalculator->calculateOriginalInDays();
+        $diff = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate);
       }
       else {
-        $diffInMonth = $membershipTypeDurationCalculator->calculateMonthForAnnualDurationBasedOnDates($startDate, $endDate, $joinDate);
-        $amount = ($membershipAmount / self::TWELVE_MONTHS) * $diffInMonth;
-        $this->proRatedAmount += $amount;
-        $this->proRatedTaxAmount += ($taxAmount / self::TWELVE_MONTHS) * $diffInMonth;
+        $diff = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate);
+        $duration = self::TWELVE_MONTHS;
       }
+      $this->amount += $this->calculateProRatedAmount($membershipAmount, $duration, $diff);
+      $this->taxAmount += $this->calculateProRatedAmount($taxAmount, $duration, $diff);
     }
-  }
-
-  /**
-   * @return float
-   */
-  public function getTaxAmount() {
-    return $this->proRatedTaxAmount;
-  }
-
-  /**
-   * @return float
-   */
-  public function getAmount() {
-    return $this->proRatedAmount;
-  }
-
-  /**
-   * @return float
-   */
-  public function getTotalAmount() {
-    return $this->proRatedAmount + $this->proRatedTaxAmount;
   }
 
 }

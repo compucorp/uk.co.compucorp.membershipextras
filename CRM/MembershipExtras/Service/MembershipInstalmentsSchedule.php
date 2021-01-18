@@ -1,11 +1,14 @@
 <?php
 
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator as InvalidMembershipTypeInstalmentCalculator;
+use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMembershipTypeInstalment;
 use CRM_MembershipExtras_DTO_ScheduleInstalmentAmount as ScheduleInstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodTypeAnnualCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeMonthlyCalculator as FixedPeriodTypeMonthlyCalculator;
+use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as DurationCalculator;
+use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as DateCalculator;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule
@@ -16,9 +19,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   const QUARTERLY = 'quarterly';
   const ANNUAL = 'annual';
 
-  const MONTHLY_INSTALMENT_COUNT = 12;
-  const QUARTERLY_INSTALMENT_COUNT = 4;
-  const ANNUAL_INSTALMENT_COUNT = 1;
+  const MONTHLY_INTERVAL = 12;
+  const QUARTERLY_INTERVAL = 4;
+  const ANNUAL_INTERVAL = 1;
 
   /**
    * @var \CRM_MembershipExtras_Service_MembershipTypeDatesCalculator
@@ -43,6 +46,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @var array
    */
   private $nonMembershipPriceFieldValues;
+  /**
+   * @var DateTime|null
+   */
+  private $startDate;
 
   /**
    * CRM_MembershipExtras_Service_MembershipTypeInstalment constructor.
@@ -75,6 +82,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     if (empty($startDate)) {
       $startDate = new DateTime($this->getMembershipStartDate($startDate, $endDate, $joinDate));
     }
+    $this->startDate = $startDate;
 
     $instalmentAmount = $this->calculateInstalmentAmount();
 
@@ -136,24 +144,43 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @return CRM_MembershipExtras_DTO_ScheduleInstalmentAmount
    */
   private function calculateInstalmentAmount() {
-    if ($this->membershipTypes[0]->period_type == 'fixed') {
-      $instalmentAmount = new InstalmentAmount(new FixedPeriodCalculator($this->membershipTypes));
-    }
-    else {
-      $instalmentAmount = new InstalmentAmount(new RollingPeriodCalculator($this->membershipTypes));
-    }
+    $instalmentAmount = $this->getInstalmentAmountCalculator();
     $instalmentAmount->getCalculator()->calculate();
 
     $divisor = $this->getNumberofInstalment();
     $amount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getAmount() / $divisor, 2);
     $taxAmount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getTaxAmount() / $divisor, 2);
-    $taxAmount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getTaxAmount() / $divisor, 2);
-
     $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalmentAmount();
     $instalment->setAmount($amount);
     $instalment->setTaxAmount($taxAmount);
 
     return $instalment;
+  }
+
+  /**
+   * Provides instalment calculator object based on membership type
+   *
+   * @return \CRM_MembershipExtras_Service_MembershipInstalmentAmount
+   */
+  private function getInstalmentAmountCalculator() {
+    $instalmentAmountObject = NULL;
+    if ($this->membershipTypes[0]->period_type == 'fixed') {
+      if ($this->schedule == self::MONTHLY) {
+        $fixedPeriodTypeMonthlyCalculator = new FixedPeriodTypeMonthlyCalculator($this->membershipTypes);
+        $fixedPeriodTypeMonthlyCalculator->setStartDate($this->startDate);
+        $instalmentAmountObject = new InstalmentAmount($fixedPeriodTypeMonthlyCalculator);
+      }
+      else {
+        $fixedPeriodTypeAnnualCalculator = new FixedPeriodTypeAnnualCalculator($this->membershipTypes);
+        $fixedPeriodTypeAnnualCalculator->setStartDate($this->startDate);
+        $instalmentAmountObject = new InstalmentAmount($fixedPeriodTypeAnnualCalculator);
+      }
+    }
+    else {
+      $instalmentAmountObject = new InstalmentAmount(new RollingPeriodCalculator($this->membershipTypes));
+    }
+
+    return $instalmentAmountObject;
   }
 
   /**
@@ -185,18 +212,35 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     $instalmentAmount->setTaxAmount($newInstalmentTaxAmount);
   }
 
+  /**
+   * Gets number of instalments based on membership period type, duration unit and/or schedule
+   *
+   * @return int
+   */
   private function getNumberOfInstalment() {
+    $membershipType = $this->membershipTypes[0];
+    if ($membershipType->period_type == 'fixed' && $this->schedule == self::MONTHLY) {
+      $durationCalculator = new DurationCalculator($membershipType, new DateCalculator());
+
+      return $durationCalculator->calculateMonthsBasedOnDates($this->startDate);
+    }
+
+    $durationUnit = $membershipType->duration_unit;
+    if ($membershipType->period_type == 'rolling' && ($durationUnit == 'month' || $durationUnit == 'lifetime')) {
+      return 1;
+    }
+
     switch ($this->schedule) {
       case self::MONTHLY:
-        $noOfInstalment = self::MONTHLY_INSTALMENT_COUNT;
+        $noOfInstalment = self::MONTHLY_INTERVAL;
         break;
 
       case self::QUARTERLY:
-        $noOfInstalment = self::QUARTERLY_INSTALMENT_COUNT;
+        $noOfInstalment = self::QUARTERLY_INTERVAL;
         break;
 
       default:
-        $noOfInstalment = self::ANNUAL_INSTALMENT_COUNT;
+        $noOfInstalment = self::ANNUAL_INTERVAL;
     }
 
     return $noOfInstalment;
@@ -205,37 +249,50 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   /**
    * Validates the membership types passed in to ensure they meets the criteria for calculating
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws InvalidMembershipTypeInstalment
    */
   private function validateMembershipTypeForInstalment() {
     $fixedPeriodStartDays = [];
     $periodTypes = [];
     foreach ($this->membershipTypes as $membershipType) {
-      $periodTypes[] = $membershipType->period_type;
+      if ($membershipType->duration_interval != 1) {
+        throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::DURATION_INTERVAL));
+      }
       if ($membershipType->period_type == 'fixed') {
+        if ($membershipType->duration_unit != 'year') {
+          throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::ONE_YEAR_DURATION));
+        }
         $fixedPeriodStartDays[] = $membershipType->fixed_period_start_day;
       }
-      if ($membershipType->duration_unit != 'year' || $membershipType->duration_interval != 1) {
-        throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::ONE_YEAR_DURATION));
+      else {
+        if ($membershipType->duration_unit == 'day') {
+          throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::DAY_DURATION));
+        }
       }
-    }
-
-    $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
-    if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
-      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY));
+      $periodTypes[] = $membershipType->period_type;
     }
 
     $hasFixedMembershipType = in_array('fixed', $periodTypes);
 
     if ($hasFixedMembershipType && $this->schedule == self::QUARTERLY) {
-      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::QUARTERLY_NOT_SUPPORT));
+      throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::QUARTERLY_NOT_SUPPORT));
     }
 
     if ($hasFixedMembershipType && in_array('rolling', $periodTypes)) {
-      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::PERIOD_TYPE));
+      throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::PERIOD_TYPE));
+    }
+
+    if ($hasFixedMembershipType) {
+      $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
+      if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
+        throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY));
+      }
     }
   }
 
+  /**
+   * Sets Non Membership Price Field Values
+   */
   public function setNonMembershipPriceFieldValues(array $nonMembershipPriceFieldValues) {
     $this->nonMembershipPriceFieldValues = $nonMembershipPriceFieldValues;
   }
