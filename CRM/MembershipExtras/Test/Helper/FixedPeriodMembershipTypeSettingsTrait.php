@@ -3,6 +3,12 @@
 
 trait CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait {
 
+  /**
+   * Mocks Extras Membership Type Settings
+   *
+   * @param $membershipTypeId
+   * @param $setting
+   */
   protected function mockSettings($membershipTypeId, $setting) {
     $settings[$membershipTypeId]  = [
       'membership_type_annual_pro_rata_calculation' => $setting,
