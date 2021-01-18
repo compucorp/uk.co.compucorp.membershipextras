@@ -56,9 +56,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     }
 
     if (!in_array($this->id, self::$extendedMemberships)) {
-      $isMultipleInstallmentsPaymentPlan = $this->isPaymentPlanWithMoreThanOneInstallment();
+      $isPaymentPlan = $this->isPaymentPlanBeingRecordedOnForm();
       $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
-      if ($isMembershipRenewal && $isMultipleInstallmentsPaymentPlan) {
+      if ($isMembershipRenewal && $isPaymentPlan) {
         self::$extendedMemberships[] = $this->id;
         $this->extendPendingPaymentPlanMembershipOnRenewal();
       }
@@ -270,17 +270,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
-   * Determines if the membership is paid using payment plan option using more
-   * than one installment or not.
+   * Determines if the membership is paid using payment plan option.
    *
    * @return bool
+   * @throws \CRM_Core_Exception
    */
-  private function isPaymentPlanWithMoreThanOneInstallment() {
-    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
+  private function isPaymentPlanBeingRecordedOnForm() {
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-    if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 1) {
+    if ($isSavingContribution && $contributionIsPaymentPlan) {
       return TRUE;
     }
 

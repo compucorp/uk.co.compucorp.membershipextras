@@ -43,13 +43,14 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
    * Creates a payment plan with the given mebership type.
    *
    * @param $membershipType
+   * @param string $frequency
    *
    * @return array
    */
-  private function createPaymentPlan($membershipType) {
+  private function createPaymentPlan($membershipType, $frequency = 'Monthly') {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = $frequency;
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -172,8 +173,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
       'name' => 'Main Rolling Membership',
       'period_type' => 'rolling',
       'minimum_fee' => 60,
-      'duration_interval' => 12,
-      'duration_unit' => 'month',
+      'duration_interval' => 1,
+      'duration_unit' => 'year',
     ]);
     $contact = ContactFabricator::fabricate();
     $membership = MembershipFabricator::fabricate([
@@ -229,6 +230,42 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     ]);
 
     $paymentPlan = $this->createPaymentPlan($mainMembershipType);
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
+    $membershipParams = array_shift($memberships);
+    $membershipEndDate = $membershipParams['end_date'];
+
+    $_REQUEST['action'] = CRM_Core_Action::RENEW;
+    $_REQUEST['contribution_status_id'] = civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => 'contribution_status',
+      'name' => 'Pending',
+    ]);
+    $_REQUEST['installments'] = $paymentPlan['installments'];
+    $_REQUEST['record_contribution'] = 1;
+    $_REQUEST['contribution_type_toggle'] = 'payment_plan';
+
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id']);
+    $hook->preProcess();
+
+    $this->assertEquals(
+      date('Y-m-d', strtotime($membershipEndDate . ' +12 months')),
+      date('Y-m-d', strtotime($membershipParams['end_date']))
+    );
+  }
+
+  public function testExtendPendingPlanWithFixedMembershipAndOneInstalment() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Test Fixed Membership',
+      'period_type' => 'fixed',
+      'minimum_fee' => 0,
+      'duration_unit' => 'year',
+      'duration_interval' => 1,
+      'fixed_period_start_day' => '1201',
+      'fixed_period_rollover_day' => '1130',
+    ]);
+
+    $paymentPlan = $this->createPaymentPlan($mainMembershipType, 'Yearly');
     $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
     $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
     $membershipParams = array_shift($memberships);
