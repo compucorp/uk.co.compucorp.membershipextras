@@ -44,7 +44,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
 
     //start date will be first day in the year by default.
     $expectedStartDate = new DateTime(date('Y-01-01'));
-    $expectedInterval = $endDate->diff($expectedStartDate)->format("%a") + 1;
+    $expectedInterval = (int) $endDate->diff($expectedStartDate)->format("%a") + 1;
     $this->assertEquals($expectedInterval, $numberOfDays);
   }
 
@@ -71,7 +71,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
 
     //start date will be the last day in the year by default.calculateMonthBasedOnDates
     $expectedEndDate = new DateTime(date('Y-12-31'));
-    $expectedInterval = $expectedEndDate->diff($startDate)->format("%a") + 1;
+    $expectedInterval = (int) $expectedEndDate->diff($startDate)->format("%a") + 1;
     $this->assertEquals($expectedInterval, $numberOfDays);
   }
 
@@ -95,7 +95,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
     $expectedEndDate = new DateTime(date('Y-09-30'));
     $expectedDiff = $expectedEndDate->diff($startDate);
     $expectedMonthInterval = $expectedDiff->format('%m') + 1;
-    $noOfMonth = $membershipTypeDurationCalculator->calculateMonthForAnnualDurationBasedOnDates($startDate);
+    $noOfMonth = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
 
     $this->assertEquals($expectedMonthInterval, $noOfMonth);
   }

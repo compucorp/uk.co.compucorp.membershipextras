@@ -68,7 +68,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculator {
    *
    * @return int
    */
-  public function calculateMonthForAnnualDurationBasedOnDates(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+  public function calculateMonthsBasedOnDates(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
     $membershipDates = $this->getMembershipDates($startDate, $endDate, $joinDate);
     $interval = $this->diffDates($membershipDates['start_date'], $membershipDates['end_date']);
 
@@ -93,6 +93,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculator {
    * Gets different interval between two dates.
    *
    * @return DateInterval
+   * @throws Exception
    */
   private function diffDates($startDate, $endDate) {
     $membershipStartDate = new DateTime($startDate);
@@ -105,6 +106,7 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculator {
    * Returns the number of days for a membership type period duration.
    *
    * @return float|int
+   * @throws Exception
    */
   private function getDurationInDays() {
     $membershipDates = $this->membershipTypeDatesCalculator->getDatesForMembershipType($this->membershipType->id);
