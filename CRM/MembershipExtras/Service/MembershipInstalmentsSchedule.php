@@ -1,7 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator as InvalidMembershipTypeInstalmentCalculator;
+use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMembershipTypeInstalment;
 use CRM_MembershipExtras_DTO_ScheduleInstalmentAmount as ScheduleInstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodTypeAnnualCalculator;
@@ -238,34 +238,44 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   /**
    * Validates the membership types passed in to ensure they meets the criteria for calculating
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws InvalidMembershipTypeInstalment
    */
   private function validateMembershipTypeForInstalment() {
     $fixedPeriodStartDays = [];
     $periodTypes = [];
     foreach ($this->membershipTypes as $membershipType) {
-      $periodTypes[] = $membershipType->period_type;
+      if ($membershipType->duration_interval != 1) {
+        throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::DURATION_INTERVAL));
+      }
       if ($membershipType->period_type == 'fixed') {
+        if ($membershipType->duration_unit != 'year') {
+          throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::ONE_YEAR_DURATION));
+        }
         $fixedPeriodStartDays[] = $membershipType->fixed_period_start_day;
       }
-      if ($membershipType->duration_unit != 'year' || $membershipType->duration_interval != 1) {
-        throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::ONE_YEAR_DURATION));
+      else {
+        if ($membershipType->duration_unit == 'day') {
+          throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::DAY_DURATION));
+        }
       }
-    }
-
-    $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
-    if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
-      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::SAME_PERIOD_START_DAY));
+      $periodTypes[] = $membershipType->period_type;
     }
 
     $hasFixedMembershipType = in_array('fixed', $periodTypes);
 
     if ($hasFixedMembershipType && $this->schedule == self::QUARTERLY) {
-      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::QUARTERLY_NOT_SUPPORT));
+      throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::QUARTERLY_NOT_SUPPORT));
     }
 
     if ($hasFixedMembershipType && in_array('rolling', $periodTypes)) {
-      throw new InvalidMembershipTypeInstalmentCalculator(ts(InvalidMembershipTypeInstalmentCalculator::PERIOD_TYPE));
+      throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::PERIOD_TYPE));
+    }
+
+    if ($hasFixedMembershipType) {
+      $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
+      if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
+        throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY));
+      }
     }
   }
 
