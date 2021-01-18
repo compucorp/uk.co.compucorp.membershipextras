@@ -212,11 +212,22 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     $instalmentAmount->setTaxAmount($newInstalmentTaxAmount);
   }
 
+  /**
+   * Gets number of instalments based on membership period type, duration unit and/or schedule
+   *
+   * @return int
+   */
   private function getNumberOfInstalment() {
-    if ($this->membershipTypes[0]->period_type == 'fixed' && $this->schedule == self::MONTHLY) {
-      $durationCalculator = new DurationCalculator($this->membershipTypes[0], new DateCalculator());
+    $membershipType = $this->membershipTypes[0];
+    if ($membershipType->period_type == 'fixed' && $this->schedule == self::MONTHLY) {
+      $durationCalculator = new DurationCalculator($membershipType, new DateCalculator());
 
       return $durationCalculator->calculateMonthsBasedOnDates($this->startDate);
+    }
+
+    $durationUnit = $membershipType->duration_unit;
+    if ($membershipType->period_type == 'rolling' && ($durationUnit == 'month' || $durationUnit == 'lifetime')) {
+      return 1;
     }
 
     switch ($this->schedule) {
