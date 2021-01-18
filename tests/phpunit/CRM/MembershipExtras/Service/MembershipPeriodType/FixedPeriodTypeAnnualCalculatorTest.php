@@ -1,43 +1,54 @@
 <?php
 
-use CRM_MembershipExtras_Service_MembershipPeriodType_AbstractBaseTest as BaseTest;
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodCalculator;
+use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
+use CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator as MembershipInstalmentTaxAmountCalculator;
 
 /**
- * Class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodCalculatorTest
+ * Class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculatorTest
  *
  * @group headless
  */
-class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodCalculatorTest extends BaseTest {
+class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculatorTest extends BaseHeadlessTest {
 
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
+  use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
 
   public function setUp() {
     $this->mockSalesTaxFinancialAccount();
   }
 
+  /**
+   * Test calculate pro-rata by month
+   *
+   * @throws Exception
+   */
   public function testCalculateProRataByMonth() {
     $startDate = new DateTime('today');
     $membershipType = $this->fabricateMembeshipType(['name' => 'xyz']);
     $this->mockSettings($membershipType->id, FixedPeriodCalculator::BY_MONTHS);
 
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
-    $diffInMonths = $membershipTypeDurationCalculator->calculateMonthForAnnualDurationBasedOnDates($startDate);
+    $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
 
     $expectedAmount = ($membershipType->minimum_fee / 12) * $diffInMonths;
     $expectedTaxAmount = $this->getTaxAmount($membershipType, $expectedAmount);
     $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
-
     $calculator = new FixedPeriodCalculator([$membershipType]);
-    $calculator->calculate($startDate);
+    $calculator->setStartDate($startDate);
+    $calculator->calculate();
     $this->assertEquals($expectedAmount, $calculator->getAmount());
     $this->assertEquals($expectedTaxAmount, $calculator->getTaxAmount());
     $this->assertEquals($expectedTotalAmount, $calculator->getTotalAmount());
-
   }
 
+  /**
+   * Tests calculate pro-rata by days
+   *
+   * @throws Exception
+   */
   public function testCalculateProRataByDays() {
     $startDate = new DateTime('today');
     $membershipType = $this->fabricateMembeshipType(['name' => 'xyz']);
@@ -49,13 +60,37 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodCalculatorTes
     $expectedAmount = ($membershipType->minimum_fee / $membershipTypeDurationInDays) * $diffInDays;
     $expectedTaxAmount = $this->getTaxAmount($membershipType, $expectedAmount);
     $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
-
     $calculator = new FixedPeriodCalculator([$membershipType]);
-    $calculator->calculate($startDate);
+    $calculator->setStartDate($startDate);
+    $calculator->calculate();
     $this->assertEquals($expectedAmount, $calculator->getAmount());
     $this->assertEquals($expectedTaxAmount, $calculator->getTaxAmount());
     $this->assertEquals($expectedTotalAmount, $calculator->getTotalAmount());
+  }
 
+  protected function fabricateMembeshipType($params = []) {
+    $defaultMembershipTypeParams = [
+      'duration_unit' => 'year',
+      'period_type' => 'fixed',
+      'duration_interval' => 1,
+      //01 Oct
+      'fixed_period_start_day' => 1001,
+      // 30 Sep
+      'fixed_period_rollover_day' => 930,
+      'domain_id' => 1,
+      'member_of_contact_id' => 1,
+      'financial_type_id' => $this->getFinancialTypeID('Member Dues'),
+      'minimum_fee' => 120,
+    ];
+    $params = array_merge($defaultMembershipTypeParams, $params);
+    $membershipType = MembershipTypeFabricator::fabricate($params);
+    return CRM_Member_BAO_MembershipType::findById($membershipType['id']);
+  }
+
+  protected function getTaxAmount($membershipType, $amount = NULL) {
+    $taxCalculator = new MembershipInstalmentTaxAmountCalculator();
+
+    return $taxCalculator->calculateByMembershipType($membershipType, $amount);
   }
 
 }
