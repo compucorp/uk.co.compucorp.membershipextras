@@ -35,7 +35,6 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
     $joinDate = !empty($this->params['join_date']) ? new DateTime($this->params['join_date']) : NULL;
     $startDate = !empty($this->params['start_date']) ? new DateTime($this->params['start_date']) : NULL;
     $endDate = !empty($this->params['end_date']) ? new DateTime($this->params['end_date']) : NULL;
-
     $membershipInstalmentsSchedule = new CRM_MembershipExtras_Service_MembershipInstalmentsSchedule(
       $membershipTypes,
       $this->params['schedule']
@@ -47,7 +46,8 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
 
     $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
     $membershipTypeDates = $membershipTypeDatesCalculator->getDatesForMembershipType(
-      $membershipTypes[0]->id, $startDate, $endDate, $joinDate);
+      $membershipTypes[0]->id, $startDate, $endDate, $joinDate
+    );
 
     $membershipTypeDates = array_map(function ($date) {
       return new DateTime($date);
@@ -81,8 +81,9 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
     foreach ($instalments as $key => $instalment) {
       $instalmentAmount = $currencySymbol . $instalment->getInstalmentAmount()->getTaxAmount();;
       $instalmentTaxAmount = $currencySymbol . $instalment->getInstalmentAmount()->getAmount();;
+      $instalmentDate = CRM_Utils_Date::customFormat($instalment->getInstalmentDate()->format('Y-m-d'), $this->getDateformatFull());
       $formattedInstalment['instalment_no'] = $key + 1;
-      $formattedInstalment['instalment_date'] = $instalment->getInstalmentDate()->format('Y-m-d');
+      $formattedInstalment['instalment_date'] = $instalmentDate;
       $formattedInstalment['instalment_tax_amount'] = $instalmentAmount;
       $formattedInstalment['instalment_amount'] = $instalmentTaxAmount;
       $formattedInstalment['instalment_status'] = $pendingStatusLabel;
@@ -90,6 +91,16 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
     }
 
     return $formattedInstalments;
+  }
+
+  /**
+   * Gets CiviCRM's Date Format: Complete Date
+   */
+  private function getDateformatFull() {
+    return civicrm_api3('Setting', 'get', [
+      'sequential' => 1,
+      'return' => ["dateformatFull"],
+    ])['values'][0]['dateformatFull'];
   }
 
 }
