@@ -27,7 +27,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * @throws CiviCRM_API3_Exception
    */
   public function postProcess() {
-    if (!$this->isPaymentPlanPayment()) {
+    if (!CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanWithSchedule()) {
       return;
     }
 
@@ -41,23 +41,6 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
       $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
       $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
     }
-  }
-
-  /**
-   * Detects if the membership is paid for
-   * using payment plan option.
-   *
-   * @return bool
-   */
-  private function isPaymentPlanPayment() {
-    $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
-    $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
-
-    if ($isSavingContribution && $contributionIsPaymentPlan) {
-      return TRUE;
-    }
-
-    return FALSE;
   }
 
   /**
