@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
 
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
 
@@ -20,8 +21,10 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * or renewing them from Civicrm admin form in
    * case they were paid using the payment plan option.
    *
-   * For now, it basically create the remaining installments
+   * For now, it basically create the remaining instalments
    * contributions upfront for the payment plan.
+   *
+   * @throws CiviCRM_API3_Exception
    */
   public function postProcess() {
     if (!$this->isPaymentPlanPayment()) {
@@ -31,10 +34,12 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $recurContributionID = $this->getMembershipLastRecurContributionID();
     $this->createRecurringSubscriptionLineItems($recurContributionID);
 
-    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
-    if ($installmentsCount > 1) {
-      $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
-      $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+    $paymentPlanSchedule = CRM_Utils_Request::retrieve('payment_plan_schedule', 'String');
+    $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($paymentPlanSchedule,  $this->form->_id);
+    $instalmentsCount = $instalmentDetails['instalments_count'];
+    if ($instalmentsCount > 1) {
+      $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
+      $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
     }
   }
 
