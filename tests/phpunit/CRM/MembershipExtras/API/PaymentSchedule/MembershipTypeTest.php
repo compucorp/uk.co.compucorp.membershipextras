@@ -19,9 +19,19 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
    * @throws API_Exception
    */
   public function testInvalidScheduleWillThrowAnException() {
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling Membership Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 120,
+      'duration_interval' => 1,
+
+    ]);
     $this->expectException(API_Exception::class);
     $params['schedule'] = 'xyz';
-    new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
+    $params['membership_type_id'] = $membershipType['id'];
+    $schedule = new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
+    $schedule->getPaymentSchedule();
   }
 
   /**

@@ -1,11 +1,15 @@
 <?php
 
+use CRM_MembershipExtras_ExtensionUtil as E;
+use CRM_MembershipExtras_Service_MembershipInstalmentsSchedule as InstalmentSchedule;
 
 abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
 
   protected $params;
 
   abstract public function getPaymentSchedule();
+
+  abstract public function getPaymentScheduleOptions();
 
   /**
    * Validates the schedule param
@@ -29,7 +33,7 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
    * @param array $nonMembershipPriceFieldValues
    *
    * @return array
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
    */
   protected function getInstalments(array $membershipTypes, array $nonMembershipPriceFieldValues = []) {
     $joinDate = !empty($this->params['join_date']) ? new DateTime($this->params['join_date']) : NULL;
@@ -91,6 +95,27 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
     }
 
     return $formattedInstalments;
+  }
+
+  protected function getMembershipTypeScheduleOptions($membershipType) {
+    $periodType = $membershipType->period_type;
+    $options = [
+      InstalmentSchedule::MONTHLY => E::ts('Monthly'),
+      InstalmentSchedule::QUARTERLY => E::ts('Quarterly'),
+      InstalmentSchedule::ANNUAL => E::ts('Annual'),
+    ];
+    if ($periodType == 'fixed') {
+      unset($options[InstalmentSchedule::QUARTERLY]);
+    }
+    else {
+      $durationUnit = $membershipType->duration_unit;
+      if ($durationUnit == 'lifetime' || $durationUnit == 'month') {
+        unset($options[InstalmentSchedule::QUARTERLY]);
+        unset($options[InstalmentSchedule::ANNUAL]);
+      }
+    }
+
+    return $options;
   }
 
   /**
