@@ -20,9 +20,9 @@ class CRM_MembershipExtras_Utils_InstalmentSchedule {
       'sequential' => 1,
       'id' => $membershipID,
       'api.MembershipType.get' => [],
-    ])['values'][0]['api.MembershipType.get']['values'];
+    ])['values'][0]['api.MembershipType.get']['values'][0];
 
-    $durationUnit = $membershipType['duration_unit'];;
+    $durationUnit = $membershipType['duration_unit'];
     if ($membershipType['period_type'] == 'rolling' && ($durationUnit == 'lifetime' || $durationUnit == 'month')) {
       $instalmentDetails['instalments_count'] = 1;
     }
@@ -57,6 +57,23 @@ class CRM_MembershipExtras_Utils_InstalmentSchedule {
     }
 
     return $instalmentInterval;
+  }
+
+  /**
+   * Checks if Payment Plan
+   *
+   * @return bool
+   */
+  public static function isPaymentPlanWithSchedule() {
+    $paymentPlanSchedule = CRM_Utils_Request::retrieve('payment_plan_schedule', 'String');
+    $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
+    $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
+
+    if ($isSavingContribution && $contributionIsPaymentPlan && $paymentPlanSchedule) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
 }
