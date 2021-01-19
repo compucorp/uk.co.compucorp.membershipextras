@@ -19,9 +19,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   const QUARTERLY = 'quarterly';
   const ANNUAL = 'annual';
 
-  const MONTHLY_INTERVAL = 12;
-  const QUARTERLY_INTERVAL = 4;
-  const ANNUAL_INTERVAL = 1;
+  const MONTHLY_INSTALMENT_COUNT = 12;
+  const QUARTERLY_INSTALMENT_COUNT= 4;
+  const ANNUAL_INTERVAL_COUNT = 1;
 
   /**
    * @var \CRM_MembershipExtras_Service_MembershipTypeDatesCalculator
@@ -57,7 +57,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @param array $membershipTypes
    * @param string $schedule
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
    */
   public function __construct(array $membershipTypes, string $schedule) {
     $this->membershipInstalmentTaxAmountCalculator = new CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator();
@@ -230,20 +230,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
       return 1;
     }
 
-    switch ($this->schedule) {
-      case self::MONTHLY:
-        $noOfInstalment = self::MONTHLY_INTERVAL;
-        break;
-
-      case self::QUARTERLY:
-        $noOfInstalment = self::QUARTERLY_INTERVAL;
-        break;
-
-      default:
-        $noOfInstalment = self::ANNUAL_INTERVAL;
-    }
-
-    return $noOfInstalment;
+    return CRM_MembershipExtras_Utils_InstalmentSchedule::getInstalmentCountBySchedule($this->schedule);
   }
 
   /**
