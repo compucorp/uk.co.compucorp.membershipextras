@@ -33,10 +33,14 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
   private $contributionPendingStatusValue;
 
   /**
-   * @var InstalmentReceiveDateCalculator
+   * @var \CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator
    */
   private $receiveDateCalculator;
 
+  /**
+   * @var int
+   */
+  private $instalmentsCount = 0;
 
   public function __construct($currentRecurContributionId) {
     $this->setCurrentRecurContribution($currentRecurContributionId);
@@ -53,7 +57,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    * @param int $currentRecurContributionId
    */
   private function setCurrentRecurContribution($currentRecurContributionId) {
-    $this->currentRecurContribution =  civicrm_api3('ContributionRecur', 'get', [
+    $this->currentRecurContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $currentRecurContributionId,
     ])['values'][0];
@@ -67,7 +71,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
       'sequential' => 1,
       'return' => ['currency', 'contribution_source', 'net_amount',
         'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
-        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
+        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id',
+      ],
       'contribution_recur_id' => $this->currentRecurContribution['id'],
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];
@@ -92,7 +97,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    * Sets $currentRecurContribution
    */
   private function setContributionPendingStatusValue() {
-    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+    $this->contributionPendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
@@ -104,8 +109,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    * the membership new recurring contribution.
    */
   public function createRemainingInstalmentContributionsUpfront() {
-    $instalmentsCount = (int) $this->currentRecurContribution['installments'];
-    for($contributionNumber = 2; $contributionNumber <= $instalmentsCount; $contributionNumber++) {
+    if ($this->instalmentsCount == 0) {
+      $this->instalmentsCount = (int) $this->currentRecurContribution['installments'];
+    }
+    for ($contributionNumber = 2; $contributionNumber <= $this->instalmentsCount; $contributionNumber++) {
       $this->createContribution($contributionNumber);
     }
   }
@@ -124,7 +131,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
 
     $this->createLineItems($contribution);
   }
-
 
   /**
    * Records the membership contribution and its
@@ -175,7 +181,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    * @return array
    */
   private function buildContributionParams($contributionNumber) {
-    $params =  [
+    $params = [
       'currency' => $this->lastContribution['currency'],
       'source' => $this->lastContribution['contribution_source'],
       'contact_id' => $this->lastContribution['contact_id'],
@@ -204,6 +210,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
     return $params;
   }
 
+  public function setInstalmentsCount(int $instalmentsCount) {
+    $this->instalmentsCount = $instalmentsCount;
+  }
+
   /**
    * Copies the contribution custom field values from
    * the first contribution to the specified upfront contribution
@@ -227,7 +237,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
     civicrm_api3('Contribution', 'create', $customParams);
   }
 
-
   /**
    * Creates the contribution line items.
    *
@@ -240,7 +249,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
       'contribution_id' => $this->lastContribution['id'],
     ])['values'];
 
-    foreach($lineItems as $lineItem) {
+    foreach ($lineItems as $lineItem) {
       $entityID = $lineItem['entity_id'];
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
         $entityID = $contribution->id;
