@@ -1,10 +1,10 @@
 <?php
 
-class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
+class CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator {
 
   /**
    * The recurring contribution of
-   * the installment that we want
+   * the instalment that we want
    * to calculate its receive date.
    *
    * @var array
@@ -33,15 +33,15 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
   }
 
   /**
-   * Calculates the receive date for the installment
-   * contribution to be created based on the installment
+   * Calculates the receive date for the instalment
+   * contribution to be created based on the instalment
    * contribution number.
    *
    * The linked recurring contribution details is the base
    * for this calculation.
    *
    * @param int
-   *   The number of the installment contribution.
+   *   The number of the instalment contribution.
    *
    * @return string
    */

@@ -3,7 +3,7 @@
 use CRM_MembershipExtras_ExtensionUtil as E;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
 /**
  * Abstract class defining methods used to add a new line item to a recurring
@@ -250,7 +250,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    * @return int|null
    */
   protected function getDaysRemainingUntilNextCycleDate() {
-    $receiveDateCalculator = new InstallmentReceiveDateCalculator($this->recurringContribution);
+    $receiveDateCalculator = new InstalmentReceiveDateCalculator($this->recurringContribution);
     $installmentsCount = (int) $this->recurringContribution['installments'];
     $todaysDate = new DateTime('today');
 

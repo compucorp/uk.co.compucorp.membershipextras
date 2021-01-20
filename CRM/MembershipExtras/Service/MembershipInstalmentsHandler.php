@@ -1,8 +1,8 @@
 <?php
 
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
-class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
+class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
 
   /**
    * The data of the current recurring
@@ -33,7 +33,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   private $contributionPendingStatusValue;
 
   /**
-   * @var InstallmentReceiveDateCalculator
+   * @var InstalmentReceiveDateCalculator
    */
   private $receiveDateCalculator;
 
@@ -42,7 +42,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
     $this->setCurrentRecurContribution($currentRecurContributionId);
     $this->setLastContribution();
 
-    $this->receiveDateCalculator = new InstallmentReceiveDateCalculator($this->currentRecurContribution);
+    $this->receiveDateCalculator = new InstalmentReceiveDateCalculator($this->currentRecurContribution);
 
     $this->setContributionPendingStatusValue();
   }
@@ -100,22 +100,22 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   }
 
   /**
-   * Creates the Remaining installments contributions for
+   * Creates the Remaining instalments contributions for
    * the membership new recurring contribution.
    */
   public function createRemainingInstalmentContributionsUpfront() {
-    $installmentsCount = (int) $this->currentRecurContribution['installments'];
-    for($contributionNumber = 2; $contributionNumber <= $installmentsCount; $contributionNumber++) {
+    $instalmentsCount = (int) $this->currentRecurContribution['installments'];
+    for($contributionNumber = 2; $contributionNumber <= $instalmentsCount; $contributionNumber++) {
       $this->createContribution($contributionNumber);
     }
   }
 
   /**
-   * Creates the installment contribution.
+   * Creates the instalment contribution.
    *
    * @param int $contributionNumber
-   *   The installment number (index), if for example
-   *   the recurring contribution has 3 installments, then
+   *   The instalment number (index), if for example
+   *   the recurring contribution has 3 instalments, then
    *   the first contribution number will be 1, the 2nd will be 2
    *   .. etc.
    */
@@ -168,7 +168,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   }
 
   /**
-   * Builds the installment contribution to be created parameters.
+   * Builds the instalment contribution to be created parameters.
    *
    * @param int $contributionNumber
    *
@@ -245,7 +245,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
         $entityID = $contribution->id;
       }
-      
+
       $lineItemParms = [
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,

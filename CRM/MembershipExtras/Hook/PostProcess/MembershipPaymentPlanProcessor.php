@@ -38,7 +38,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($paymentPlanSchedule,  $this->form->_id);
     $instalmentsCount = $instalmentDetails['instalments_count'];
     if ($instalmentsCount > 1) {
-      $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
+      $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($recurContributionID);
       $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
     }
   }

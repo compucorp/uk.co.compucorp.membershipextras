@@ -13,7 +13,7 @@ class CRM_MembershipExtras_WebformAPI_UpfrontContributionsCreator {
    * @param $contributionRecurId
    */
   public static function create($contributionRecurId) {
-    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($contributionRecurId);
+    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($contributionRecurId);
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
 }

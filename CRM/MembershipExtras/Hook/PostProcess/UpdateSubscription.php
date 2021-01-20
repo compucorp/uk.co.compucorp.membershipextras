@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
 /**
  * Post-processes Recurring Conribution Update form.
@@ -24,7 +24,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
   /**
    * Object that calcuates installment receive date.
    *
-   * @var CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator
+   * @var CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator
    */
   private $receiveDateCalculator;
 
@@ -203,7 +203,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     );
 
     $installmentCount = 0;
-    $this->receiveDateCalculator = new InstallmentReceiveDateCalculator($this->recurringContribution);
+    $this->receiveDateCalculator = new InstalmentReceiveDateCalculator($this->recurringContribution);
     $this->receiveDateCalculator->setStartDate($newFirstInstallmentReceiveDate);
 
     foreach ($contributions as $payment) {

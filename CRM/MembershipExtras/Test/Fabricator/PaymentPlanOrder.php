@@ -27,7 +27,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
     $recurringContribution = self::createRecurringContribution();
     $lineItems = self::createRecurringLineItems($recurringContribution);
     self::updateRecurringContributionAmount($recurringContribution);
-    self::createInstallments($recurringContribution, $lineItems);
+    self::createInstalments($recurringContribution, $lineItems);
 
     return $recurringContribution;
   }
@@ -91,19 +91,19 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       case 'Yearly':
         $frequencyUnit = 'year';
         $frequencyInterval = 1;
-        $installments = 1;
+        $instalments = 1;
         break;
 
       case 'Monthly':
         $frequencyUnit = 'month';
         $frequencyInterval = 1;
-        $installments = 12;
+        $instalments = 12;
         break;
 
       case 'Quarterly':
         $frequencyUnit = 'month';
         $frequencyInterval = 3;
-        $installments = 4;
+        $instalments = 4;
         break;
     }
 
@@ -113,7 +113,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'amount' => 0,
       'frequency_unit' => $frequencyUnit,
       'frequency_interval' => $frequencyInterval,
-      'installments' => $installments,
+      'installments' => $instalments,
       'contribution_status_id' => self::$paymentPlanMembershipOrder->paymentPlanStatus,
       'is_test' => 0,
       'auto_renew' => isset(self::$paymentPlanMembershipOrder->autoRenew) ? self::$paymentPlanMembershipOrder->autoRenew : 1,
@@ -220,7 +220,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
   }
 
   /**
-   * Creates the payment plan's installments.
+   * Creates the payment plan's instalments.
    *
    * @param array $recurringContribution
    * @param array $lineItems
@@ -228,9 +228,9 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createInstallments($recurringContribution, $lineItems) {
-    self::createFirstInstallment($recurringContribution, $lineItems);
-    self::createRemainingInstallments($recurringContribution['id']);
+  private static function createInstalments($recurringContribution, $lineItems) {
+    self::createFirstInstalment($recurringContribution, $lineItems);
+    self::createRemainingInstalments($recurringContribution['id']);
   }
 
   /**
@@ -242,7 +242,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createFirstInstallment($recurringContribution, &$lineItems) {
+  private static function createFirstInstalment($recurringContribution, &$lineItems) {
     $params = [
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
@@ -296,13 +296,13 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
   }
 
   /**
-   * Creates remaining installments for the payment plan.
+   * Creates remaining instalments for the payment plan.
    *
    * @param int $recurringContributionId
    */
-  private static function createRemainingInstallments($recurringContributionId) {
-    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurringContributionId);
-    $installmentsHandler->createRemainingInstalmentContributionsUpfront();
+  private static function createRemainingInstalments($recurringContributionId) {
+    $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($recurringContributionId);
+    $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
 
   /**
