@@ -187,6 +187,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanProcessor->createPaymentPlan();
+    $paymentPlanProcessor->setContributionToPayLater();
     $isFirstPaymentPlanContribution = FALSE;
   }
 

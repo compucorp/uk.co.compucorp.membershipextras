@@ -189,4 +189,20 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     return MoneyUtilities::roundToCurrencyPrecision($amount / $this->instalmentsCount);
   }
 
+  /**
+   * Sets Contribution status to pending and set it to pay later
+   */
+  public function setContributionToPayLater() {
+    $statusId = civicrm_api3('OptionValue', 'get', [
+      'sequential' => 1,
+      'return' => ["value"],
+      'option_group_id' => "contribution_status",
+      'label' => "Pending",
+    ])['values'][0]['value'];
+    if (!empty($statusId)) {
+      $this->params['contribution_status_id'] = $statusId;
+      $this->params['is_pay_later'] = TRUE;
+    }
+  }
+
 }
