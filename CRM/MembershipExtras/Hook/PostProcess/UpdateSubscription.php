@@ -127,7 +127,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       'api.ContributionRecurLineItem.create' => [
         'id' => '$value.id',
         'auto_renew' => $autoRenew,
-      ]
+      ],
     ]);
   }
 
@@ -255,7 +255,8 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
 
     if ($difference > 0) {
       $date->add(new DateInterval($interval));
-    } elseif ($difference < 0) {
+    }
+    elseif ($difference < 0) {
       $date->sub(new DateInterval($interval));
     }
 

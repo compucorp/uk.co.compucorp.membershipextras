@@ -17,4 +17,5 @@ class CRM_MembershipExtras_WebformAPI_RecurringContributionLineItemCreator {
     $lineItemCreator->forceAutorenewalFlagCalculation();
     $lineItemCreator->create();
   }
+
 }

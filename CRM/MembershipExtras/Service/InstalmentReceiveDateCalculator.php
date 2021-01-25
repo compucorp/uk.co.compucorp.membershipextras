@@ -40,7 +40,7 @@ class CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator {
    * The linked recurring contribution details is the base
    * for this calculation.
    *
-   * @param int
+   * @param $contributionNumber int
    *   The number of the instalment contribution.
    *
    * @return string
@@ -154,6 +154,7 @@ class CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator {
         $interval = "P{$daysToAddOrSubtract}D";
         $receiveDate->{$op}(new DateInterval($interval));
         break;
+
       case 'month':
         $receiveDate = $this->changeDayOfMonthInDate($receiveDate, $currentCycleDay);
         break;

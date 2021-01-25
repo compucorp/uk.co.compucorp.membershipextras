@@ -278,7 +278,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       $membershipTypes,
       MembershipInstalmentsSchedule::MONTHLY
     );
-    $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100) /12;
+    $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100) / 12;
     foreach ($instalments as $index => $instalment) {
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
     }

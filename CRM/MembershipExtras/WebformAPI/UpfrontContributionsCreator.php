@@ -16,4 +16,5 @@ class CRM_MembershipExtras_WebformAPI_UpfrontContributionsCreator {
     $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($contributionRecurId);
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
+
 }
