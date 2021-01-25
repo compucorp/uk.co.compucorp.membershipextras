@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+use CRM_MembershipExtras_Service_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
 use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
 
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
