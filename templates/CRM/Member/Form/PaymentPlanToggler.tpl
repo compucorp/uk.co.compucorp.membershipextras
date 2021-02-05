@@ -65,6 +65,9 @@
         let isPriceSet = isPriceSetSelected();
         if (isPriceSet) {
           let selectedPriceFieldValues = getSelectedPriceFieldValues();
+          if (jQuery.isEmptyObject(selectedPriceFieldValues)) {
+            return;
+          }
           let params = {};
           params.price_field_values = {'IN' : selectedPriceFieldValues};
           CRM.api3('PaymentSchedule', 'getscheduleoptionsbypricefieldvalues', params).then(function (result) {
@@ -89,7 +92,7 @@
         }
       });
 
-      $('#payment_plan_schedule, #payment_instrument_id').change(() => {
+      $('#payment_plan_schedule, #payment_instrument_id, #start_date, #end_date').change(() => {
         if ($('#payment_plan_schedule_row').is(":hidden")) {
           return;
         }
@@ -124,6 +127,9 @@
       let apiAction;
       if (isPriceSet) {
         let selectedPriceFieldValues = getSelectedPriceFieldValues();
+        if (jQuery.isEmptyObject(selectedPriceFieldValues)) {
+          return;
+        }
         params.price_field_values = {'IN' : selectedPriceFieldValues};
         apiAction = 'getByPriceFieldValues';
       } else {
