@@ -4,6 +4,7 @@
   (function ($) {
     {/literal}
     const togglerValue = '{$contribution_type_toggle}';
+    const currencySymbol = '{$currency_symbol}';
     {literal}
 
     /**
@@ -139,7 +140,7 @@
       CRM.api3('PaymentSchedule', apiAction, params).then(function(data) {
         if (data.is_error === 0) {
           drawTable(data);
-          updateTotalAmount(data);
+          updateTotalAmount(data.values.total_amount, isPriceSet);
         } else {
           CRM.alert(data.error_message, 'Error', 'error');
         }
@@ -199,11 +200,13 @@
     }
 
     /**
-     * Update total amount
+     * Updates total amount based and also updated price value if is price set amount
      */
-    function updateTotalAmount(data) {
-      $totalAmount = data.values.total_amount;
-      $('#total_amount').val($totalAmount);
+    function updateTotalAmount(totalAmount, isPriceSet) {
+      $('#total_amount').val(CRM.formatMoney(totalAmount, true));
+      if (isPriceSet) {
+        $('#pricevalue').html(currencySymbol + ' ' + CRM.formatMoney(totalAmount, true));
+      }
     }
 
     /**
