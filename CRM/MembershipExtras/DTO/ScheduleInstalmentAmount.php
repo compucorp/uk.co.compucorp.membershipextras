@@ -5,6 +5,7 @@ class CRM_MembershipExtras_DTO_ScheduleInstalmentAmount {
 
   private $amount;
   private $taxAmount;
+  private $totalAmount;
 
   /**
    * @return float
@@ -32,6 +33,20 @@ class CRM_MembershipExtras_DTO_ScheduleInstalmentAmount {
    */
   public function setTaxAmount(float $taxAmount) {
     $this->taxAmount = $taxAmount;
+  }
+
+  /**
+   * @return float
+   */
+  public function getTotalAmount() {
+    return $this->totalAmount;
+  }
+
+  /**
+   * @param float $totalAmount
+   */
+  public function setTotalAmount(float $totalAmount) {
+    $this->totalAmount = $totalAmount;
   }
 
 }

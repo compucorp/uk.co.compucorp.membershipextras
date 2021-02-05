@@ -53,10 +53,9 @@ function _civicrm_api3_payment_schedule_getbymembershiptype_spec(&$spec) {
  * @throws Exception
  */
 function civicrm_api3_payment_schedule_getbymembershiptype($params) {
-
   $membershipTypeSchedule = new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
-  $instalments = $membershipTypeSchedule->getPaymentSchedule();
-  $formattedInstalments = $membershipTypeSchedule->formatInstalments($instalments);
+  $schedule = $membershipTypeSchedule->getPaymentSchedule();
+  $membershipTypeSchedule->formatInstalments($schedule['instalments']);
 
-  return civicrm_api3_create_success($formattedInstalments, $params);
+  return civicrm_api3_create_success($schedule, $params);
 }

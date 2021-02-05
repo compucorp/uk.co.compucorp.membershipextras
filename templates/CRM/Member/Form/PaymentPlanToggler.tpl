@@ -4,6 +4,7 @@
   (function ($) {
     {/literal}
     const togglerValue = '{$contribution_type_toggle}';
+    const currencySymbol = '{$currency_symbol}';
     {literal}
 
     /**
@@ -65,6 +66,9 @@
         let isPriceSet = isPriceSetSelected();
         if (isPriceSet) {
           let selectedPriceFieldValues = getSelectedPriceFieldValues();
+          if (jQuery.isEmptyObject(selectedPriceFieldValues)) {
+            return;
+          }
           let params = {};
           params.price_field_values = {'IN' : selectedPriceFieldValues};
           CRM.api3('PaymentSchedule', 'getscheduleoptionsbypricefieldvalues', params).then(function (result) {
@@ -89,7 +93,7 @@
         }
       });
 
-      $('#payment_plan_schedule, #payment_instrument_id').change(() => {
+      $('#payment_plan_schedule, #payment_instrument_id, #start_date, #end_date').change(() => {
         if ($('#payment_plan_schedule_row').is(":hidden")) {
           return;
         }
@@ -116,7 +120,6 @@
     function generateInstalmentSchedule(isPriceSet) {
       let schedule = $('#payment_plan_schedule').val();
       let params = {
-        "sequential": 1,
         "schedule": schedule,
         "start_date" : $('#start_date').val(),
         "end_date" : $('#end_date').val(),
@@ -125,6 +128,9 @@
       let apiAction;
       if (isPriceSet) {
         let selectedPriceFieldValues = getSelectedPriceFieldValues();
+        if (jQuery.isEmptyObject(selectedPriceFieldValues)) {
+          return;
+        }
         params.price_field_values = {'IN' : selectedPriceFieldValues};
         apiAction = 'getByPriceFieldValues';
       } else {
@@ -134,6 +140,7 @@
       CRM.api3('PaymentSchedule', apiAction, params).then(function(data) {
         if (data.is_error === 0) {
           drawTable(data);
+          updateTotalAmount(data.values.total_amount, isPriceSet);
         } else {
           CRM.alert(data.error_message, 'Error', 'error');
         }
@@ -193,13 +200,23 @@
     }
 
     /**
+     * Updates total amount based and also updated price value if is price set amount
+     */
+    function updateTotalAmount(totalAmount, isPriceSet) {
+      $('#total_amount').val(CRM.formatMoney(totalAmount, true));
+      if (isPriceSet) {
+        $('#pricevalue').html(currencySymbol + ' ' + CRM.formatMoney(totalAmount, true));
+      }
+    }
+
+    /**
      * Draws instalment table based on given data return from PaymentSchedule API
      *
      * @param data
      */
     function drawTable(data) {
       $('#instalment_row_table tbody td').remove();
-      let rows = data.values;
+      let rows = data.values.instalments;
       rows.forEach(drawRow);
     }
 

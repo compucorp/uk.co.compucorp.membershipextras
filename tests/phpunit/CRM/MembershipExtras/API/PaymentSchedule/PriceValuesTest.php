@@ -41,11 +41,11 @@ class CRM_MembershipExtras_API_PaymentSchedule_PriceValuesTest extends BaseHeadl
 
     $paymentSchedule = new CRM_MembershipExtras_API_PaymentSchedule_PriceValues($params);
 
-    $instalments = $paymentSchedule->getPaymentSchedule();
+    $schedule = $paymentSchedule->getPaymentSchedule();
 
-    $this->assertNotEmpty($instalments);
+    $this->assertNotEmpty($schedule);
     $totalAmount = 0;
-    foreach ($instalments as $instalment) {
+    foreach ($schedule['instalments'] as $instalment) {
       $totalAmount += $instalment->getInstalmentAmount()->getAmount();
     }
 

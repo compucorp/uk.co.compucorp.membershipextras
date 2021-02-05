@@ -52,14 +52,12 @@ function _civicrm_api3_payment_schedule_getbypriceset_spec(&$spec) {
  * @throws Exception
  */
 function civicrm_api3_payment_schedule_getbypricefieldvalues($params) {
-
   if (!array_key_exists('IN', $params['price_field_values'])) {
     throw new API_Exception('The price_field_values parameter only supports the IN operator');
   }
-
   $priceValuesPaymentSchedule = new CRM_MembershipExtras_API_PaymentSchedule_PriceValues($params);
-  $instalments = $priceValuesPaymentSchedule->getPaymentSchedule();
-  $formattedInstalments = $priceValuesPaymentSchedule->formatInstalments($instalments);
+  $schedule = $priceValuesPaymentSchedule->getPaymentSchedule();
+  $priceValuesPaymentSchedule->formatInstalments($schedule['instalments']);
 
-  return civicrm_api3_create_success($formattedInstalments, $params);
+  return civicrm_api3_create_success($schedule, $params);
 }
