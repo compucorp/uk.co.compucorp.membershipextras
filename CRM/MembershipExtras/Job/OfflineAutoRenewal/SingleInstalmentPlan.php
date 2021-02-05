@@ -1,6 +1,6 @@
 <?php
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
 /**
  * Renews the payment plan and the related memberships if it paid by once and

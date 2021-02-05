@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
 
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
 
@@ -12,25 +13,25 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   private $params;
 
   /**
-   * The number of installments to be created.
+   * The number of instalments to be created.
    *
    * @var int
    */
-  private $installmentsCount;
+  private $instalmentsCount;
 
   /**
-   * The frequency of the recurring contribution installments.
+   * The frequency of the recurring contribution instalments.
    *
    * @var int
    */
-  private $installmentsFrequency;
+  private $instalmentsFrequency;
 
   /**
-   * The frequency unit of the recurring contribution installments.
+   * The frequency unit of the recurring contribution instalments.
    *
    * @var string
    */
-  private $installmentsFrequencyUnit;
+  private $instalmentsFrequencyUnit;
 
   /**
    * Stores the newly created recurring contributing data
@@ -41,10 +42,19 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
 
   public function __construct(&$params) {
     $this->params = &$params;
-
-    $this->installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
-    $this->installmentsFrequency = CRM_Utils_Request::retrieve('installments_frequency', 'Int');
-    $this->installmentsFrequencyUnit = CRM_Utils_Request::retrieve('installments_frequency_unit', 'String');
+    $paymentPlanSchedule = CRM_Utils_Request::retrieve('payment_plan_schedule', 'String');
+    if (array_key_exists('membership_id', $this->params)) {
+      //Contribution object
+      $membershipId = $this->params['membership_id'];
+    }
+    else {
+      //LineItem object
+      $membershipId = $this->params['entity_id'];
+    }
+    $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($paymentPlanSchedule, $membershipId);
+    $this->instalmentsCount = $instalmentDetails['instalments_count'];
+    $this->instalmentsFrequency = $instalmentDetails['instalments_frequency'];
+    $this->instalmentsFrequencyUnit = $instalmentDetails['instalments_frequency_unit'];
   }
 
   /**
@@ -53,7 +63,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    *
    * For now, it creates the recurring contribution
    * and update the first contribution amount
-   * depending on the installments count.
+   * depending on the instalments count.
    */
   public function createPaymentPlan() {
     $this->createRecurringContribution();
@@ -64,7 +74,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    * Creates the recurring contribution.
    */
   private function createRecurringContribution() {
-    $amountPerInstallment = $this->calculateSingleInstallmentAmount($this->params['total_amount']);
+    $amountPerInstalment = $this->calculateSingleInstalmentAmount($this->params['total_amount']);
 
     $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'name',
@@ -78,22 +88,22 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
     ]);
 
     $payLaterPaymentProcessorId = CRM_MembershipExtras_SettingsManager::getDefaultProcessorID();
-    $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->installmentsFrequencyUnit);
+    $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->instalmentsFrequencyUnit);
 
     $contributionRecurParams = [
       'sequential' => 1,
       'contact_id' => $this->params['contact_id'],
-      'amount' => $amountPerInstallment,
+      'amount' => $amountPerInstalment,
       'currency' => $this->params['currency'],
-      'frequency_unit' => $this->installmentsFrequencyUnit,
-      'frequency_interval' => $this->installmentsFrequency,
-      'installments' => $this->installmentsCount,
+      'frequency_unit' => $this->instalmentsFrequencyUnit,
+      'frequency_interval' => $this->instalmentsFrequency,
+      'installments' => $this->instalmentsCount,
       'start_date' => $this->params['receive_date'],
       'contribution_status_id' => 'Pending',
       'is_test' => $this->params['is_test'],
       'cycle_day' => $cycleDay,
       'payment_processor_id' => $payLaterPaymentProcessorId,
-      'financial_type_id' =>  $financialType,
+      'financial_type_id' => $financialType,
       'payment_instrument_id' => $paymentInstrument,
       'campaign_id' => $this->params['campaign_id'],
     ];
@@ -111,15 +121,15 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    * recurring contribution.
    */
   private function alterFirstContributionParameters() {
-    $this->params['contribution_recur_id'] =  $this->recurringContribution['id'];
-    $this->params['total_amount'] =  $this->recurringContribution['amount'];
-    $this->params['net_amount'] =  $this->recurringContribution['amount'];
+    $this->params['contribution_recur_id'] = $this->recurringContribution['id'];
+    $this->params['total_amount'] = $this->recurringContribution['amount'];
+    $this->params['net_amount'] = $this->recurringContribution['amount'];
 
     if ($this->isUsingPriceSet() && !empty($this->params['tax_amount'])) {
-      $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+      $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount']);
     }
     elseif (!empty($this->params['tax_amount'])) {
-      $this->params['tax_amount'] = $this->calculateInstallmentTax($this->params['total_amount']);
+      $this->params['tax_amount'] = $this->calculateInstalmentTax($this->params['total_amount']);
     }
   }
 
@@ -143,7 +153,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    *
    * @return float
    */
-  private function calculateInstallmentTax($totalAmount) {
+  private function calculateInstalmentTax($totalAmount) {
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
 
@@ -160,11 +170,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    * of the line item to be inline with the new contribution amount.
    */
   public function alterLineItemParameters() {
-    $this->params['line_total'] = $this->calculateSingleInstallmentAmount($this->params['line_total']);
-    $this->params['unit_price'] = $this->calculateSingleInstallmentAmount($this->params['unit_price']);
+    $this->params['line_total'] = $this->calculateSingleInstalmentAmount($this->params['line_total']);
+    $this->params['unit_price'] = $this->calculateSingleInstalmentAmount($this->params['unit_price']);
 
     if (!empty($this->params['tax_amount'])) {
-      $this->params['tax_amount'] = $this->calculateSingleInstallmentAmount($this->params['tax_amount']);
+      $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount']);
     }
   }
 
@@ -175,8 +185,24 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
    *
    * @return float
    */
-  private function calculateSingleInstallmentAmount($amount) {
-    return MoneyUtilities::roundToCurrencyPrecision($amount / $this->installmentsCount);
+  private function calculateSingleInstalmentAmount($amount) {
+    return MoneyUtilities::roundToCurrencyPrecision($amount / $this->instalmentsCount);
+  }
+
+  /**
+   * Sets Contribution status to pending and set it to pay later
+   */
+  public function setContributionToPayLater() {
+    $statusId = civicrm_api3('OptionValue', 'get', [
+      'sequential' => 1,
+      'return' => ["value"],
+      'option_group_id' => "contribution_status",
+      'label' => "Pending",
+    ])['values'][0]['value'];
+    if (!empty($statusId)) {
+      $this->params['contribution_status_id'] = $statusId;
+      $this->params['is_pay_later'] = TRUE;
+    }
   }
 
 }

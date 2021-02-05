@@ -49,7 +49,7 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
     $paymentToggler =
       CRM_Utils_Request::retrieve('contribution_type_toggle', 'String', $this->form, FALSE);
     $this->form->assign('contribution_type_toggle', $paymentToggler ?: 'contribution');
-    $this->form->add('select', 'payment_plan_schedule', E::ts('Schedule'), [], TRUE);
+    $this->form->add('select', 'payment_plan_schedule', E::ts('Schedule'), [], FALSE);
     CRM_Core_Region::instance('page-body')->add([
       'template' => "{$this->templatePath}/CRM/Member/Form/PaymentPlanToggler.tpl",
     ]);

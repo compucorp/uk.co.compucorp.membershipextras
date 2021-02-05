@@ -3,7 +3,7 @@
 use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 
-class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator {
+class CRM_MembershipExtras_Service_RecurringContributionLineItemCreator {
 
   private $recurContributionID;
 

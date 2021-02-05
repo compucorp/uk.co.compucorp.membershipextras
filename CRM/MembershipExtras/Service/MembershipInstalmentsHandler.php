@@ -1,8 +1,8 @@
 <?php
 
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
-class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
+class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
 
   /**
    * The data of the current recurring
@@ -33,16 +33,20 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   private $contributionPendingStatusValue;
 
   /**
-   * @var InstallmentReceiveDateCalculator
+   * @var \CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator
    */
   private $receiveDateCalculator;
 
+  /**
+   * @var int
+   */
+  private $instalmentsCount = 0;
 
   public function __construct($currentRecurContributionId) {
     $this->setCurrentRecurContribution($currentRecurContributionId);
     $this->setLastContribution();
 
-    $this->receiveDateCalculator = new InstallmentReceiveDateCalculator($this->currentRecurContribution);
+    $this->receiveDateCalculator = new InstalmentReceiveDateCalculator($this->currentRecurContribution);
 
     $this->setContributionPendingStatusValue();
   }
@@ -53,7 +57,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * @param int $currentRecurContributionId
    */
   private function setCurrentRecurContribution($currentRecurContributionId) {
-    $this->currentRecurContribution =  civicrm_api3('ContributionRecur', 'get', [
+    $this->currentRecurContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $currentRecurContributionId,
     ])['values'][0];
@@ -67,7 +71,8 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'sequential' => 1,
       'return' => ['currency', 'contribution_source', 'net_amount',
         'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
-        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
+        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id',
+      ],
       'contribution_recur_id' => $this->currentRecurContribution['id'],
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];
@@ -92,7 +97,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * Sets $currentRecurContribution
    */
   private function setContributionPendingStatusValue() {
-    $this->contributionPendingStatusValue =  civicrm_api3('OptionValue', 'getvalue', [
+    $this->contributionPendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
@@ -100,22 +105,24 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   }
 
   /**
-   * Creates the Remaining installments contributions for
+   * Creates the Remaining instalments contributions for
    * the membership new recurring contribution.
    */
   public function createRemainingInstalmentContributionsUpfront() {
-    $installmentsCount = (int) $this->currentRecurContribution['installments'];
-    for($contributionNumber = 2; $contributionNumber <= $installmentsCount; $contributionNumber++) {
+    if ($this->instalmentsCount == 0) {
+      $this->instalmentsCount = (int) $this->currentRecurContribution['installments'];
+    }
+    for ($contributionNumber = 2; $contributionNumber <= $this->instalmentsCount; $contributionNumber++) {
       $this->createContribution($contributionNumber);
     }
   }
 
   /**
-   * Creates the installment contribution.
+   * Creates the instalment contribution.
    *
    * @param int $contributionNumber
-   *   The installment number (index), if for example
-   *   the recurring contribution has 3 installments, then
+   *   The instalment number (index), if for example
+   *   the recurring contribution has 3 instalments, then
    *   the first contribution number will be 1, the 2nd will be 2
    *   .. etc.
    */
@@ -124,7 +131,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
 
     $this->createLineItems($contribution);
   }
-
 
   /**
    * Records the membership contribution and its
@@ -168,14 +174,14 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   }
 
   /**
-   * Builds the installment contribution to be created parameters.
+   * Builds the instalment contribution to be created parameters.
    *
    * @param int $contributionNumber
    *
    * @return array
    */
   private function buildContributionParams($contributionNumber) {
-    $params =  [
+    $params = [
       'currency' => $this->lastContribution['currency'],
       'source' => $this->lastContribution['contribution_source'],
       'contact_id' => $this->lastContribution['contact_id'],
@@ -204,6 +210,10 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
     return $params;
   }
 
+  public function setInstalmentsCount(int $instalmentsCount) {
+    $this->instalmentsCount = $instalmentsCount;
+  }
+
   /**
    * Copies the contribution custom field values from
    * the first contribution to the specified upfront contribution
@@ -227,7 +237,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
     civicrm_api3('Contribution', 'create', $customParams);
   }
 
-
   /**
    * Creates the contribution line items.
    *
@@ -240,12 +249,12 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'contribution_id' => $this->lastContribution['id'],
     ])['values'];
 
-    foreach($lineItems as $lineItem) {
+    foreach ($lineItems as $lineItem) {
       $entityID = $lineItem['entity_id'];
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
         $entityID = $contribution->id;
       }
-      
+
       $lineItemParms = [
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,

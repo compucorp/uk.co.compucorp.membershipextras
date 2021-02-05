@@ -19,54 +19,64 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
    * @throws API_Exception
    */
   public function testInvalidScheduleWillThrowAnException() {
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling Membership Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 120,
+      'duration_interval' => 1,
+
+    ]);
     $this->expectException(API_Exception::class);
     $params['schedule'] = 'xyz';
-    new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
+    $params['membership_type_id'] = $membershipType['id'];
+    $schedule = new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
+    $schedule->getPaymentSchedule();
   }
 
   /**
    * Test get monthly instalments for rolling membership type
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
    * @throws CiviCRM_API3_Exception
    */
   public function testGetMonthlyInstalmentsForRollingMembershipType() {
     $paymentSchedule = $this->mockRollingMembershipTypeSchedule(Schedule::MONTHLY);
     $instalments = $paymentSchedule->getPaymentSchedule();
     $this->assertNotEmpty($instalments);
-    $this->assertCount(Schedule::MONTHLY_INTERVAL, $instalments);
+    $this->assertCount(12, $instalments);
   }
 
   /**
    * Test get quarterly instalments for rolling membership type
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
    * @throws CiviCRM_API3_Exception
    */
   public function testGetQuarterlyInstalmentsForRollingMembershipType() {
     $paymentSchedule = $this->mockRollingMembershipTypeSchedule(Schedule::QUARTERLY);
     $instalments = $paymentSchedule->getPaymentSchedule();
     $this->assertNotEmpty($instalments);
-    $this->assertCount(Schedule::QUARTERLY_INTERVAL, $instalments);
+    $this->assertCount(4, $instalments);
   }
 
   /**
    * Tests get annual instalments for rolling membership type
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
    * @throws CiviCRM_API3_Exception
    */
   public function testGetAnnualInstalmentsForRollingMembershipType() {
     $paymentSchedule = $this->mockRollingMembershipTypeSchedule(Schedule::ANNUAL);
     $instalments = $paymentSchedule->getPaymentSchedule();
     $this->assertNotEmpty($instalments);
-    $this->assertCount(Schedule::ANNUAL_INTERVAL, $instalments);
+    $this->assertCount(1, $instalments);
   }
 
   /**
    * Tests format instalments
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
    * @throws CiviCRM_API3_Exception
    */
   public function testFormatInstalments() {
@@ -86,14 +96,14 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
   /**
    * Tests get annual instalments for fixed membership type
    *
-   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentCalculator
+   * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
    * @throws CiviCRM_API3_Exception
    */
   public function testGetAnnualInstalmentsForFixedMembershipType() {
     $paymentSchedule = $this->mockFixedMembershipTypeSchedule(Schedule::ANNUAL);
     $instalments = $paymentSchedule->getPaymentSchedule();
     $this->assertNotEmpty($instalments);
-    $this->assertCount(Schedule::ANNUAL_INTERVAL, $instalments);
+    $this->assertCount(1, $instalments);
   }
 
   private function mockRollingMembershipTypeSchedule($schedule) {

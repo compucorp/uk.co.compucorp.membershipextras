@@ -1,8 +1,11 @@
 <?php
 
-use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+use CRM_MembershipExtras_Service_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
+use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
 
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
+
+  use CRM_MembershipExtras_Helper_InstalmentHelperTrait;
 
   /***
    * The form submitted data.
@@ -11,8 +14,11 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    */
   private $form;
 
+  private $formSubmittedValues;
+
   public function __construct(&$form) {
     $this->form = &$form;
+    $this->formSubmittedValues = $this->form->exportValues();
   }
 
   /**
@@ -20,39 +26,39 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * or renewing them from Civicrm admin form in
    * case they were paid using the payment plan option.
    *
-   * For now, it basically create the remaining installments
+   * For now, it basically create the remaining instalments
    * contributions upfront for the payment plan.
+   *
+   * @throws CiviCRM_API3_Exception
+   * @throws Exception
    */
   public function postProcess() {
-    if (!$this->isPaymentPlanPayment()) {
+    if (!$this->isPaymentPlanWithSchedule()) {
       return;
     }
 
     $recurContributionID = $this->getMembershipLastRecurContributionID();
     $this->createRecurringSubscriptionLineItems($recurContributionID);
 
-    $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
-    if ($installmentsCount > 1) {
-      $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
-      $installmentsHandler->createRemainingInstalmentContributionsUpfront();
-    }
-  }
-
-  /**
-   * Detects if the membership is paid for
-   * using payment plan option.
-   *
-   * @return bool
-   */
-  private function isPaymentPlanPayment() {
-    $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
-    $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
-
-    if ($isSavingContribution && $contributionIsPaymentPlan) {
-      return TRUE;
+    $paymentPlanSchedule = $this->formSubmittedValues['payment_plan_schedule'];
+    $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($paymentPlanSchedule, $this->form->_id);
+    $instalmentsCount = $instalmentDetails['instalments_count'];
+    if ($instalmentsCount == 1) {
+      return;
     }
 
-    return FALSE;
+    $membershipTypeId = $this->getMembershipTypeId();
+    $joinDate = !empty($this->formSubmittedValues['join_date']) ? new DateTime($this->formSubmittedValues['join_date']) : NULL;
+    $startDate = !empty($this->formSubmittedValues['start_date']) ? new DateTime($this->formSubmittedValues['start_date']) : $joinDate;
+    $endDate = !empty($this->formSubmittedValues['end_date']) ? new DateTime($this->formSubmittedValues['end_date']) : NULL;
+    if (empty($startDate)) {
+      $startDate = new DateTime($this->getMembershipStartDate($membershipTypeId, $startDate, $endDate, $joinDate));
+    }
+    $membershipTypeObj = CRM_Member_BAO_MembershipType::findById($membershipTypeId);
+    $actualInstalmentCount = $this->getInstalmentsNumber($membershipTypeObj, $paymentPlanSchedule, $startDate);
+    $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($recurContributionID);
+    $instalmentsHandler->setInstalmentsCount($actualInstalmentCount);
+    $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
 
   /**
@@ -79,9 +85,34 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    *
    * @param $recurContributionID
    */
-  private function createRecurringSubscriptionLineItems($recurContributionID ) {
+  private function createRecurringSubscriptionLineItems($recurContributionID) {
     $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
     $lineItemCreator->create();
+  }
+
+  /**
+   * Detects if the membership is paid for
+   * using payment plan option.
+   *
+   * @return bool
+   */
+  private function isPaymentPlanWithSchedule() {
+    $paymentPlanSchdule = $this->formSubmittedValues['payment_plan_schedule'];
+    $isSavingContribution = $this->formSubmittedValues['record_contribution'];
+
+    if ($isSavingContribution && !empty($paymentPlanSchdule)) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  private function getMembershipTypeId() {
+    return civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'id' => $this->form->_id,
+      'return' => ["membership_type_id"],
+    ])['values'][0]['membership_type_id'];
   }
 
 }

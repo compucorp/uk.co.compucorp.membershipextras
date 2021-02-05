@@ -6,14 +6,14 @@ use CRM_MembershipExtras_Test_Fabricator_RecurringContribution as RecurringContr
 use CRM_MembershipExtras_Test_Fabricator_Contribution as ContributionFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
 use CRM_MembershipExtras_Test_Fabricator_LineItem as LineItemFabricator;
-use CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator as RecurringLineItemCreator;
+use CRM_MembershipExtras_Service_RecurringContributionLineItemCreator as RecurringLineItemCreator;
 
 /**
- * Class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreatorTest.
+ * Class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest.
  *
  * @group headless
  */
-class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreatorTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest extends BaseHeadlessTest {
 
   /**
    * Creates a contact.

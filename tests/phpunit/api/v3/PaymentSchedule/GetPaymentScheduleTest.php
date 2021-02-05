@@ -10,7 +10,7 @@ use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabri
  *
  * @group headless
  */
-class api_v3_PaymentScheduleTest extends BaseHeadlessTest {
+class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
 
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
 

@@ -1,6 +1,6 @@
 <?php
-use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstalmentsHandler;
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_MembershipInstalmentsHandler as MembershipInstalmentsHandler;
+use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
@@ -11,7 +11,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
   /**
    * Returns a list of payment plans with multiple instalments that have at
    * least one line item ready to be renewed (ie. has an end date, is not
-   * removed and is set to auto renew), mmeting these conditions:
+   * removed and is set to auto renew), meeting these conditions:
    *
    * 1- is using an offline payment processor (payment manual class).
    * 2- has an end date.
@@ -77,9 +77,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
 
-    $instalmentsHandler = new MembershipInstalmentsHandler(
-      $this->newRecurringContributionID
-    );
+    $instalmentsHandler = new MembershipInstalmentsHandler($this->newRecurringContributionID);
     $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
 

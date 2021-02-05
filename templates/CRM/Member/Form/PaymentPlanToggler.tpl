@@ -64,13 +64,20 @@
         }
         let isPriceSet = isPriceSetSelected();
         if (isPriceSet) {
-          setPaymentPlanScheduleOption();
-          generateInstalmentSchedule(isPriceSet);
+          let selectedPriceFieldValues = getSelectedPriceFieldValues();
+          let params = {};
+          params.price_field_values = {'IN' : selectedPriceFieldValues};
+          CRM.api3('PaymentSchedule', 'getscheduleoptionsbypricefieldvalues', params).then(function (result) {
+            if (result.is_error === 0) {
+              setPaymentPlanScheduleOption(result.values);
+              generateInstalmentSchedule(isPriceSet);
+            } else {
+              CRM.alert(result.error_message, 'Error', 'error');
+            }
+          });
         } else {
-          let memType = parseInt($('#membership_type_id_1').val());
-          CRM.api3('MembershipType', 'get', {
-            "sequential": 1,
-            "id": memType
+          CRM.api3('PaymentSchedule', 'getscheduleoptionsbymembershiptype', {
+            'membership_type_id': parseInt($('#membership_type_id_1').val()),
           }).then(function (result) {
             if (result.is_error === 0) {
               setPaymentPlanScheduleOption(result.values);
@@ -121,8 +128,7 @@
         params.price_field_values = {'IN' : selectedPriceFieldValues};
         apiAction = 'getByPriceFieldValues';
       } else {
-        let memType = parseInt($('#membership_type_id_1').val());
-        params.membership_type_id = memType;
+        params.membership_type_id =  parseInt($('#membership_type_id_1').val());;
         apiAction = 'getByMembershipType';
       }
       CRM.api3('PaymentSchedule', apiAction, params).then(function(data) {
@@ -216,35 +222,9 @@
     /**
      * Sets PaymentPlan Schedule Options based on the membership period type
      */
-    function setPaymentPlanScheduleOption (values = []) {
-      if (values.length === 0) {
-        setScheduleOptions();
-        return;
-      }
-      let periodType = values[0].period_type;
-      if (periodType === 'fixed') {
-        setScheduleOptions(['monthly', 'annual']);
-      }
-    }
-
-    /**
-     * Displays select schedule options based on parameters.
-     */
-    function setScheduleOptions (optionsToDisplay = []) {
-      let defaultOptions = {
-        monthly: '{/literal}{ts}Monthly{/ts}{literal}',
-        quarterly: '{/literal}{ts}Quarterly{/ts}{literal}',
-        annual: '{/literal}{ts}Annual{/ts}{literal}'
-      };
-      if (optionsToDisplay.length > 0) {
-        Object.keys(defaultOptions).forEach(key => {
-          if (!optionsToDisplay.includes(key)) {
-            delete defaultOptions[key];
-          }
-        });
-      }
+    function setPaymentPlanScheduleOption (options ) {
       $('#payment_plan_schedule').empty();
-      $.each(defaultOptions, function(key, value) {
+      $.each(options, function(key, value) {
         $('#payment_plan_schedule')
                 .append($("<option></option>")
                         .attr("value",key)
