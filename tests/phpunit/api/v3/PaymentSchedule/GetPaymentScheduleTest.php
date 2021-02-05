@@ -10,7 +10,7 @@ use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabri
  *
  * @group headless
  */
-class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
+class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
 
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
 
@@ -31,7 +31,6 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
   public function testExceptionIsThrownIfScheduleIsNotValid() {
     $this->expectException(CiviCRM_API3_Exception::class);
     civicrm_api3('PaymentSchedule', 'getByMembershipType', [
-      'sequential' => 1,
       'membership_type_id' => 1,
       'schedule' => 'xyz',
     ])['values'];
@@ -46,7 +45,7 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
     $schedule = 'monthly';
     $membershipType = $this->mockRollingMembershipType();
     $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], $schedule);
-    $this->assertCount(12, $scheduleInstalment);
+    $this->assertCount(12, $scheduleInstalment['instalments']);
 
     $expectedAmount = $this->currencySymbol . 10;
     $expectedTaxAmount = $this->currencySymbol . 0;
@@ -63,7 +62,7 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
     $schedule = 'quarterly';
     $membershipType = $this->mockRollingMembershipType();
     $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], $schedule);
-    $this->assertCount(4, $scheduleInstalment);
+    $this->assertCount(4, $scheduleInstalment['instalments']);
 
     $expectedAmount = $this->currencySymbol . 30;
     $expectedTaxAmount = $this->currencySymbol . 0;
@@ -79,7 +78,7 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
     $schedule = 'annual';
     $membershipType = $this->mockRollingMembershipType();
     $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], $schedule);
-    $this->assertCount(1, $scheduleInstalment);
+    $this->assertCount(1, $scheduleInstalment['instalments']);
     $expectedAmount = $this->currencySymbol . 120;
     $expectedTaxAmount = $this->currencySymbol . 0;
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id']));
@@ -115,7 +114,7 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
     $expectedAmount = ($membershipType['minimum_fee'] / 12) * $diffInMonths;
 
     $instalments = $this->getMembershipTypeSchedule($membershipType['id'], 'annual', $formattedStartDate);
-    $this->assertCount(1, $instalments);
+    $this->assertCount(1, $instalments['instalments']);
     $expectedAmount = $this->currencySymbol . $expectedAmount;
     $expectedTaxAmount = $this->currencySymbol . 0;
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id'], $formattedStartDate));
@@ -169,7 +168,6 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
     $mockNonMembershipPriceFieldInputQuantity = 10;
     $priceFieldValues = $this->mockPriceFieldValues();
     $params = [
-      'sequential' => 1,
       'schedule' => 'monthly',
     ];
     $selectedPriceFieldValues = [];
@@ -185,7 +183,7 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
 
     $scheduleInstalments = civicrm_api3('PaymentSchedule', 'getByPriceFieldValues', $params);
 
-    $this->assertEquals(12, $scheduleInstalments['count']);
+    $this->assertCount(12, $scheduleInstalments['values']['instalments']);
   }
 
   /**
@@ -245,7 +243,6 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
 
   private function getMembershipTypeSchedule($membershipID, $schedule, $startDate = NULL) {
     $params = [
-      'sequential' => 1,
       'membership_type_id' => $membershipID,
       'schedule' => $schedule,
     ];
@@ -301,7 +298,7 @@ class api_v3_GetPaymentScheduleTest extends BaseHeadlessTest {
    * @throws Exception
    */
   private function assertInstalments(array $instalments, string $expectedAmount, string $expectedTaxAmount, DateTime $expectedDate, string $dateInterval = NULL) {
-    foreach ($instalments as $instalment) {
+    foreach ($instalments['instalments'] as $instalment) {
       $expectedInstalmentDate = CRM_Utils_Date::customFormat($expectedDate->format('Y-m-d'), $this->getExpectedDateFormat());
       $this->assertEquals($expectedAmount, $instalment['instalment_amount']);
       $this->assertEquals($expectedTaxAmount, $instalment['instalment_tax_amount']);

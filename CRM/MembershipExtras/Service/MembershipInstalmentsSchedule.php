@@ -93,7 +93,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     $instalment->setInstalmentDate($startDate);
     $instalment->setInstalmentAmount($instalmentAmount);
 
-    $instalments[] = $instalment;
+    $instalments['instalments'][] = $instalment;
     $noOfInstalment = $this->getInstalmentsNumber($this->membershipTypes[0], $this->schedule, $this->startDate);
     if ($noOfInstalment > 1) {
       $nextInstalmentDate = $startDate->format('Y-m-d');
@@ -108,9 +108,11 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
         $followingInstalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
         $followingInstalment->setInstalmentDate($instalmentDate);
         $followingInstalment->setInstalmentAmount($instalmentAmount);
-        array_push($instalments, $followingInstalment);
+        array_push($instalments['instalments'], $followingInstalment);
       }
     }
+
+    $instalments['total_amount'] = $this->getInstalmentsTotalAmount($instalments['instalments']);
 
     return $instalments;
   }
@@ -150,9 +152,11 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     $divisor = $this->getInstalmentsNumber($this->membershipTypes[0], $this->schedule, $this->startDate);
     $amount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getAmount() / $divisor, 2);
     $taxAmount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getTaxAmount() / $divisor, 2);
+    $totalAmount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getTotalAmount() / $divisor, 2);
     $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalmentAmount();
     $instalment->setAmount($amount);
     $instalment->setTaxAmount($taxAmount);
+    $instalment->setTotalAmount($totalAmount);
 
     return $instalment;
   }
@@ -255,6 +259,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
         throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY));
       }
     }
+  }
+
+  /**
+   * Gets instalment total amount
+   */
+  private function getInstalmentsTotalAmount(array $instalments) {
+    $totalAmount = 0.0;
+    foreach ($instalments as $instalment) {
+      $totalAmount += $instalment->getInstalmentAmount()->getTotalAmount();
+    }
+    return $totalAmount;
   }
 
   /**

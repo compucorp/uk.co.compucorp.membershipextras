@@ -69,10 +69,9 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
    *
    * @param array $instalments
    *
-   * @return array
    * @throws CiviCRM_API3_Exception
    */
-  public function formatInstalments(array $instalments) {
+  public function formatInstalments(array &$instalments) {
     $pendingStatusLabel = civicrm_api3('OptionValue', 'get', [
       'sequential' => 1,
       'option_group_id' => "contribution_status",
@@ -94,7 +93,7 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
       array_push($formattedInstalments, $formattedInstalment);
     }
 
-    return $formattedInstalments;
+    $instalments = $formattedInstalments;
   }
 
   protected function getMembershipTypeScheduleOptions($membershipType) {

@@ -47,9 +47,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       'period_type' => 'rolling',
     ]));
     $membershipType = CRM_Member_BAO_MembershipType::findById($rollingOneMonthType['id']);
-    $instalments = $this->getMembershipInstalments([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
+    $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
     //Expected instalment equals 1 for 1 month duration
-    $this->assertCount(1, $instalments);
+    $this->assertCount(1, $schedule['instalments']);
   }
 
   /**
@@ -60,9 +60,65 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       ['duration_unit' => 'lifetime', 'duration_interval' => 1, 'name' => 'xyz', 'period_type' => 'rolling']
     ));
     $membershipType = CRM_Member_BAO_MembershipType::findById($rollingLifetimeType['id']);
-    $instalments = $this->getMembershipInstalments([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
+    $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
     //Expected instalment equals 1 for life time duration
-    $this->assertCount(1, $instalments);
+    $this->assertCount(1, $schedule['instalments']);
+  }
+
+  /**
+   * Tests rolling membership type schedule total amount
+   */
+  public function testRollingMembershipTypeScheduleTotalAmount() {
+    $this->mockSalesTaxFinancialAccount();
+    $membershipTypes = $this->mockRollingMembershipTypes();
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
+
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 1);
+    $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $this->assertEquals($expectedTotalAmount, $schedule['total_amount']);
+  }
+
+  /**
+   * Tests fixed membership ype schedule total amount
+   */
+  public function testFixedMembershipTypeScheduleTotalAmount() {
+    $this->mockSalesTaxFinancialAccount();
+    //Mock period start day 01 Oct
+    //Mock period rollover day 30 Sep
+    $membershipTypes = $this->mockFixedMembershipTypes();
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
+
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipTypes[0], new MembershipTypeDatesCalculator());
+
+    $startDate = new DateTime('today');
+    $diffInMonth = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
+
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12) * $diffInMonth;
+    $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $this->assertEquals($expectedTotalAmount, $schedule['total_amount']);
+  }
+
+  /**
+   * Tests price field schedule total amount
+   */
+  public function testPriceFieldScheduleTotalAmount() {
+    $this->mockSalesTaxFinancialAccount();
+    $priceFieldValues = $this->mockPriceFieldValues();
+    $membershipTypes = [];
+    $totalAmount = 0;
+    foreach ($priceFieldValues as $priceFieldValue) {
+      $membershipTypes[] = $this->assignPriceFieldValueToMembershipType($priceFieldValue);
+      $totalAmount += $priceFieldValue['amount'];
+    }
+    $schedule = $this->getMembershipSchedule(
+      $membershipTypes,
+      MembershipInstalmentsSchedule::MONTHLY
+    );
+    $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100);
+    $expectedTotalAmount = $totalAmount + $expectedTaxAmount;
+    $this->assertEquals($expectedTotalAmount, $schedule['total_amount']);
   }
 
   /**
@@ -75,14 +131,14 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
 
     $monthlyInstalmentCount = 12;
     $membershipTypes = $this->mockRollingMembershipTypes();
-    $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
 
-    $this->assertCount($monthlyInstalmentCount, $instalments);
+    $this->assertCount($monthlyInstalmentCount, $schedule['instalments']);
 
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, $monthlyInstalmentCount);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
-    foreach ($instalments as $instalment) {
+    foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
     }
@@ -97,14 +153,14 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $this->mockSalesTaxFinancialAccount();
 
     $membershipTypes = $this->mockRollingMembershipTypes();
-    $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::QUARTERLY);
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::QUARTERLY);
 
-    $this->assertCount(4, $instalments);
+    $this->assertCount(4, $schedule['instalments']);
 
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 4);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
-    foreach ($instalments as $instalment) {
+    foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
     }
@@ -121,17 +177,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     //Mock period start day 01 Oct
     //Mock period rollover day 30 Sep
     $membershipTypes = $this->mockFixedMembershipTypes();
-    $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
 
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipTypes[0], new MembershipTypeDatesCalculator());
 
     $startDate = new DateTime('today');
     $diffInMonth = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
-    $this->assertCount($diffInMonth, $instalments);
+    $this->assertCount($diffInMonth, $schedule['instalments']);
 
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
-    foreach ($instalments as $instalment) {
+    foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
     }
@@ -145,15 +201,15 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   public function testRollingAnnualInstalmentAmounts() {
     $this->mockSalesTaxFinancialAccount();
     $membershipTypes = $this->mockRollingMembershipTypes();
-    $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::ANNUAL);
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::ANNUAL);
 
-    $this->assertCount(1, $instalments);
+    $this->assertCount(1, $schedule['instalments']);
 
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 1);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
-    $this->assertEquals($expectedAmount, $instalments[0]->getInstalmentAmount()->getAmount());
-    $this->assertEquals($expectedTaxAmount, $instalments[0]->getInstalmentAmount()->getTaxAmount());
+    $this->assertEquals($expectedAmount, $schedule['instalments'][0]->getInstalmentAmount()->getAmount());
+    $this->assertEquals($expectedTaxAmount, $schedule['instalments'][0]->getInstalmentAmount()->getTaxAmount());
   }
 
   /**
@@ -164,8 +220,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   public function testFixedAnnualInstalmentAmounts() {
     $this->mockSalesTaxFinancialAccount();
     $membershipTypes = $this->mockFixedMembershipTypes();
-    $instalments = $this->getMembershipInstalments($membershipTypes, MembershipInstalmentsSchedule::ANNUAL);
-    $this->assertCount(1, $instalments);
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::ANNUAL);
+    $this->assertCount(1, $schedule['instalments']);
 
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipTypes[0], new MembershipTypeDatesCalculator());
     $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime('today'));
@@ -173,8 +229,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12, $diffInMonths);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
-    $this->assertEquals($expectedAmount, $instalments[0]->getInstalmentAmount()->getAmount());
-    $this->assertEquals($expectedTaxAmount, $instalments[0]->getInstalmentAmount()->getTaxAmount());
+    $this->assertEquals($expectedAmount, $schedule['instalments'][0]->getInstalmentAmount()->getAmount());
+    $this->assertEquals($expectedTaxAmount, $schedule['instalments'][0]->getInstalmentAmount()->getTaxAmount());
   }
 
   /**
@@ -184,14 +240,14 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    */
   public function testRollingMonthlyInstalmentDates() {
     $membershipTypes = $this->mockRollingMembershipTypes();
-    $instalments = $this->getMembershipInstalments(
+    $schedule = $this->getMembershipSchedule(
       $membershipTypes,
       MembershipInstalmentsSchedule::MONTHLY
     );
 
     $mockedDate = $this->mockMembershipDates();
     $expectedDate = $mockedDate['start_date'];
-    foreach ($instalments as $index => $instalment) {
+    foreach ($schedule['instalments'] as $index => $instalment) {
       if ($index != 0) {
         $expectedDate->add(new DateInterval('P1M'));
       }
@@ -206,14 +262,14 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    */
   public function testRollingQuarterlyInstalmentDates() {
     $membershipTypes = $this->mockRollingMembershipTypes();
-    $instalments = $this->getMembershipInstalments(
+    $schedule = $this->getMembershipSchedule(
       $membershipTypes,
       MembershipInstalmentsSchedule::QUARTERLY
     );
 
     $mockedDate = $this->mockMembershipDates();
     $expectedDate = $mockedDate['start_date'];
-    foreach ($instalments as $index => $instalment) {
+    foreach ($schedule['instalments'] as $index => $instalment) {
       if ($index != 0) {
         $expectedDate->add(new DateInterval('P3M'));
       }
@@ -228,13 +284,13 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    */
   public function testRollingAnnualInstalmentDates() {
     $membershipTypes = $this->mockRollingMembershipTypes();
-    $instalments = $this->getMembershipInstalments(
+    $schedule = $this->getMembershipSchedule(
       $membershipTypes,
       MembershipInstalmentsSchedule::ANNUAL
     );
     $mockedDate = $this->mockMembershipDates();
     $expectedDate = $mockedDate['start_date'];
-    $this->assertEquals($expectedDate->format('Y-m-d'), $instalments[0]->getInstalmentDate()->format('Y-m-d'));
+    $this->assertEquals($expectedDate->format('Y-m-d'), $schedule['instalments'][0]->getInstalmentDate()->format('Y-m-d'));
   }
 
   /**
@@ -249,12 +305,12 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       $membershipTypes[] = $this->assignPriceFieldValueToMembershipType($priceFieldValue);
       $totalAmount += $priceFieldValue['amount'];
     }
-    $instalments = $this->getMembershipInstalments(
+    $schedule = $this->getMembershipSchedule(
       $membershipTypes,
       MembershipInstalmentsSchedule::MONTHLY
     );
     $expectedAmount = $totalAmount / 12;
-    foreach ($instalments as $index => $instalment) {
+    foreach ($schedule['instalments'] as $index => $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals(0, $instalment->getInstalmentAmount()->getTaxAmount());
     }
@@ -274,12 +330,12 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       $membershipTypes[] = $this->assignPriceFieldValueToMembershipType($priceFieldValue);
       $totalAmount += $priceFieldValue['amount'];
     }
-    $instalments = $this->getMembershipInstalments(
+    $schedule = $this->getMembershipSchedule(
       $membershipTypes,
       MembershipInstalmentsSchedule::MONTHLY
     );
     $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100) / 12;
-    foreach ($instalments as $index => $instalment) {
+    foreach ($schedule['instalments'] as $index => $instalment) {
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
     }
   }
@@ -314,7 +370,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     }
 
     $membershipTypeDates = $this->getMembershipDates($membershipTypes[0]->id);
-    $instalments = $membershipInstalmentsSchedule->generate(
+    $schedule = $membershipInstalmentsSchedule->generate(
       new DateTime($membershipTypeDates['start_date']),
       new DateTime($membershipTypeDates['end_date']),
       new DateTime($membershipTypeDates['join_date'])
@@ -331,7 +387,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $expectedAmount = ($totalAmount + $totalNonMembershipPriceFieldValueAmount) / 12;
     $expectedTaxAmount = ($taxAmount + $totalNonMembershipPriceFieldValueTaxAmount) / 12;
 
-    foreach ($instalments as $index => $instalment) {
+    foreach ($schedule['instalments'] as $index => $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
     }
@@ -466,7 +522,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    * @return mixed
    * @throws Exception
    */
-  private function getMembershipInstalments($membershipTypes, $schedule) {
+  private function getMembershipSchedule($membershipTypes, $schedule) {
     $membershipInstalmentsSchedule = $this->getMembershipInstalmentsSchedule($membershipTypes, $schedule);
 
     $membershipTypeDates = $this->getMembershipDates($membershipTypes[0]->id);

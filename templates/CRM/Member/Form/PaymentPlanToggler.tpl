@@ -116,7 +116,6 @@
     function generateInstalmentSchedule(isPriceSet) {
       let schedule = $('#payment_plan_schedule').val();
       let params = {
-        "sequential": 1,
         "schedule": schedule,
         "start_date" : $('#start_date').val(),
         "end_date" : $('#end_date').val(),
@@ -134,6 +133,7 @@
       CRM.api3('PaymentSchedule', apiAction, params).then(function(data) {
         if (data.is_error === 0) {
           drawTable(data);
+          updateTotalAmount(data);
         } else {
           CRM.alert(data.error_message, 'Error', 'error');
         }
@@ -193,13 +193,21 @@
     }
 
     /**
+     * Update total amount
+     */
+    function updateTotalAmount(data) {
+      $totalAmount = data.values.total_amount;
+      $('#total_amount').val($totalAmount);
+    }
+
+    /**
      * Draws instalment table based on given data return from PaymentSchedule API
      *
      * @param data
      */
     function drawTable(data) {
       $('#instalment_row_table tbody td').remove();
-      let rows = data.values;
+      let rows = data.values.instalments;
       rows.forEach(drawRow);
     }
 

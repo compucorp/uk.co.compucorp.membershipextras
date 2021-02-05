@@ -42,9 +42,9 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
    */
   public function testGetMonthlyInstalmentsForRollingMembershipType() {
     $paymentSchedule = $this->mockRollingMembershipTypeSchedule(Schedule::MONTHLY);
-    $instalments = $paymentSchedule->getPaymentSchedule();
-    $this->assertNotEmpty($instalments);
-    $this->assertCount(12, $instalments);
+    $schedule = $paymentSchedule->getPaymentSchedule();
+    $this->assertNotEmpty($schedule);
+    $this->assertCount(12, $schedule['instalments']);
   }
 
   /**
@@ -55,9 +55,9 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
    */
   public function testGetQuarterlyInstalmentsForRollingMembershipType() {
     $paymentSchedule = $this->mockRollingMembershipTypeSchedule(Schedule::QUARTERLY);
-    $instalments = $paymentSchedule->getPaymentSchedule();
-    $this->assertNotEmpty($instalments);
-    $this->assertCount(4, $instalments);
+    $schedule = $paymentSchedule->getPaymentSchedule();
+    $this->assertNotEmpty($schedule);
+    $this->assertCount(4, $schedule['instalments']);
   }
 
   /**
@@ -68,9 +68,9 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
    */
   public function testGetAnnualInstalmentsForRollingMembershipType() {
     $paymentSchedule = $this->mockRollingMembershipTypeSchedule(Schedule::ANNUAL);
-    $instalments = $paymentSchedule->getPaymentSchedule();
-    $this->assertNotEmpty($instalments);
-    $this->assertCount(1, $instalments);
+    $schedule = $paymentSchedule->getPaymentSchedule();
+    $this->assertNotEmpty($schedule);
+    $this->assertCount(1, $schedule['instalments']);
   }
 
   /**
@@ -81,14 +81,14 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
    */
   public function testFormatInstalments() {
     $paymentSchedule = $this->mockRollingMembershipTypeSchedule(Schedule::ANNUAL);
-    $instalments = $paymentSchedule->getPaymentSchedule();
+    $schedule = $paymentSchedule->getPaymentSchedule();
     $pendingStatusLabel = civicrm_api3('OptionValue', 'get', [
       'sequential' => 1,
       'option_group_id' => "contribution_status",
       'name' => "pending",
     ])['values'][0]['label'];
-    $formattedInstalments = $paymentSchedule->formatInstalments($instalments);
-    foreach ($formattedInstalments as $formattedInstalment) {
+    $paymentSchedule->formatInstalments($schedule['instalments']);
+    foreach ($schedule['instalments'] as $formattedInstalment) {
       $this->assertEquals($pendingStatusLabel, $formattedInstalment['instalment_status']);
     }
   }
@@ -101,9 +101,9 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
    */
   public function testGetAnnualInstalmentsForFixedMembershipType() {
     $paymentSchedule = $this->mockFixedMembershipTypeSchedule(Schedule::ANNUAL);
-    $instalments = $paymentSchedule->getPaymentSchedule();
-    $this->assertNotEmpty($instalments);
-    $this->assertCount(1, $instalments);
+    $schedule = $paymentSchedule->getPaymentSchedule();
+    $this->assertNotEmpty($schedule);
+    $this->assertCount(1, $schedule['instalments']);
   }
 
   private function mockRollingMembershipTypeSchedule($schedule) {
