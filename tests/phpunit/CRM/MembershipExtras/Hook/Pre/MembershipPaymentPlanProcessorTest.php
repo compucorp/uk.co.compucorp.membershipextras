@@ -1,18 +1,173 @@
 <?php
-
 use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
+use Civi\Test\HookInterface;
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor as MembershipPaymentPlanProcessor;
 
 /**
- * CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessorTest
+ * Class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest
  *
  * @group headless
  */
-class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends BaseHeadlessTest {
+class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends BaseHeadlessTest implements HookInterface {
 
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
+
+  public function testMonthlyCycleDayIsCalculatedFromReceiveDate() {
+    $_REQUEST['payment_plan_schedule'] = 'monthly';
+    $startDate = date('Y-m-27');
+    $contact = ContactFabricator::fabricate();
+    $membershipType = $this->mockMembershipType('rolling', 'month');
+    $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
+    $params = [
+      'is_pay_later' => TRUE,
+      'skipLineItem' => 1,
+      'skipCleanMoney' => TRUE,
+      'receive_date' => $startDate,
+      'contact_id' => $contact['id'],
+      'fee_amount' => 0,
+      'net_amount' => "1200",
+      'total_amount' => "1200",
+      'payment_instrument_id' => $this->getOptionValue('EFT', 'payment_instrument'),
+      'financial_type_id' => $this->getFinancialTypeID('Member Dues'),
+      'contribution_status_id' => 'Pending',
+      'currency' => NULL,
+      'is_test' => FALSE,
+      'campaign_id' => NULL,
+      'membership_id' => $membership['id'],
+    ];
+    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanCreator->createPaymentPlan();
+    $recurringContribution = $paymentPlanCreator->getRecurringContribution();
+    $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'id' => $recurringContribution['id'],
+      'options' => ['limit' => 0],
+    ])['values'][0];
+
+    $this->assertEquals('27', $recurringContribution['cycle_day']);
+  }
+
+  public function testYearlyCycleDayIsCalculatedFromReceiveDate() {
+    $_REQUEST['payment_plan_schedule'] = 'annual';
+
+    $contact = ContactFabricator::fabricate();
+    $startDate = date('2020-02-01');
+    $membershipType = $this->mockMembershipType('rolling', 'year');
+    $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
+    $params = [
+      'is_pay_later' => TRUE,
+      'skipLineItem' => 1,
+      'skipCleanMoney' => TRUE,
+      'receive_date' => '2020-02-01',
+      'contact_id' => $contact['id'],
+      'fee_amount' => 0,
+      'net_amount' => "1200",
+      'total_amount' => "1200",
+      'payment_instrument_id' => $this->getOptionValue('EFT', 'payment_instrument'),
+      'financial_type_id' => $this->getFinancialTypeID('Member Dues'),
+      'contribution_status_id' => 'Pending',
+      'currency' => NULL,
+      'is_test' => FALSE,
+      'campaign_id' => NULL,
+      'membership_id' => $membership['id'],
+    ];
+    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanCreator->createPaymentPlan();
+    $recurringContribution = $paymentPlanCreator->getRecurringContribution();
+    $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'id' => $recurringContribution['id'],
+      'options' => ['limit' => 0],
+    ])['values'][0];
+
+    $this->assertEquals('32', $recurringContribution['cycle_day']);
+  }
+
+  public function testReceiveDateCalculationHookChangesReceiveDate() {
+    $_REQUEST['payment_plan_schedule'] = 'monthly';
+
+    $contact = ContactFabricator::fabricate();
+    $startDate = date('Y-01-01');
+    $membershipType = $this->mockMembershipType('rolling', 'month');
+    $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
+    $newReceiveDate = date('Y-m-27');
+    $params = [
+      'is_pay_later' => TRUE,
+      'skipLineItem' => 1,
+      'skipCleanMoney' => TRUE,
+      'receive_date' => $startDate,
+      'contact_id' => $contact['id'],
+      'fee_amount' => 0,
+      'net_amount' => "1200",
+      'total_amount' => "1200",
+      'payment_instrument_id' => $this->getOptionValue('EFT', 'payment_instrument'),
+      'financial_type_id' => $this->getFinancialTypeID('Member Dues'),
+      'contribution_status_id' => 'Pending',
+      'currency' => NULL,
+      'is_test' => FALSE,
+      'campaign_id' => NULL,
+      'test_receive_date_calculation_hook' => $newReceiveDate,
+      'membership_id' => $membership['id'],
+    ];
+    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanCreator->createPaymentPlan();
+    $recurringContribution = $paymentPlanCreator->getRecurringContribution();
+    $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'id' => $recurringContribution['id'],
+      'options' => ['limit' => 0],
+    ])['values'][0];
+
+    $this->assertEquals($newReceiveDate . ' 00:00:00', $recurringContribution['start_date']);
+    $this->assertEquals('27', $recurringContribution['cycle_day']);
+  }
+
+  /**
+   * Implements calculateContributionReceiveDate hook for testing.
+   *
+   * @param $instalment
+   * @param $receiveDate
+   * @param $contributionCreationParams
+   */
+  public function hook_membershipextras_calculateContributionReceiveDate($instalment, &$receiveDate, &$contributionCreationParams) {
+    if (isset($contributionCreationParams['test_receive_date_calculation_hook'])) {
+      $receiveDate = $contributionCreationParams['test_receive_date_calculation_hook'];
+    }
+  }
+
+  /**
+   * Obtains value for the given name option in the option group.
+   *
+   * @param string $name
+   * @param string $group
+   *
+   * @return array|string
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getOptionValue($name, $group) {
+    return civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => $group,
+      'name' => $name,
+    ]);
+  }
+
+  /**
+   * Obtains ID for the given financial type name.
+   *
+   * @param $financialType
+   *
+   * @return int|array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getFinancialTypeID($financialType) {
+    return civicrm_api3('FinancialType', 'getvalue', [
+      'return' => 'id',
+      'name' => $financialType,
+    ]);
+  }
 
   /**
    * Tests create payment plan with month duration
@@ -124,23 +279,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends B
     $this->mockSalesTaxFinancialAccount();
     $contact = ContactFabricator::fabricate();
     $startDate = date('Y-m-d');
-    $membershipType = $membershipType = MembershipTypeFabricator::fabricate([
-      'name' => 'Mock Membership type',
-      'period_type' => $membershipPeriodType,
-      'minimum_fee' => 120,
-      'duration_interval' => 1,
-      'duration_unit' => $durationUnit,
-      //01 Oct
-      'fixed_period_start_day' => 1001,
-      // 30 Sep
-      'fixed_period_rollover_day' => 930,
-    ]);
-    $membership = MembershipFabricator::fabricate([
-      'contact_id' => $contact['id'],
-      'membership_type_id' => $membershipType['id'],
-      'join_date' => $startDate,
-      'start_date' => $startDate,
-    ]);
+    $membershipType = $this->mockMembershipType($membershipPeriodType, $durationUnit);
+    $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
     $financialTypeId = $this->getFinancialTypeID('Member Dues');
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $rate = CRM_Utils_Array::value($financialTypeId, $taxRates, 0);
@@ -173,6 +313,29 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends B
       'pan_truncation' => NULL,
       'card_type_id' => NULL,
     ];
+  }
+
+  private function mockMembershipType($membershipPeriodType, $durationUnit) {
+    return MembershipTypeFabricator::fabricate([
+      'name' => 'Mock Membership type',
+      'period_type' => $membershipPeriodType,
+      'minimum_fee' => 120,
+      'duration_interval' => 1,
+      'duration_unit' => $durationUnit,
+      //01 Oct
+      'fixed_period_start_day' => 1001,
+      // 30 Sep
+      'fixed_period_rollover_day' => 930,
+    ]);
+  }
+
+  private function mockMembership($contactID, $membershipTypeID, $startDate) {
+    return MembershipFabricator::fabricate([
+      'contact_id' => $contactID,
+      'membership_type_id' => $membershipTypeID,
+      'join_date' => $startDate,
+      'start_date' => $startDate,
+    ]);
   }
 
 }

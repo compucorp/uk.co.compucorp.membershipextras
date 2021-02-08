@@ -123,6 +123,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
   private function setAllMembershipTypes() {
     $result = civicrm_api3('MembershipType', 'get', [
       'options' => ['limit' => 0],
+      'is_active' => 1,
     ]);
 
     if ($result['count'] > 0) {

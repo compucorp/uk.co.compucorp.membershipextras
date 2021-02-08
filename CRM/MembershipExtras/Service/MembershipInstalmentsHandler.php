@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
 
 class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
 
@@ -69,9 +70,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
   private function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'return' => ['currency', 'contribution_source', 'net_amount',
-        'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
-        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id',
+      'return' => [
+        'currency', 'contribution_source', 'net_amount', 'contact_id',
+        'fee_amount', 'total_amount', 'payment_instrument_id', 'is_test',
+        'tax_amount', 'contribution_recur_id', 'financial_type_id',
       ],
       'contribution_recur_id' => $this->currentRecurContribution['id'],
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
@@ -142,6 +144,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    */
   private function recordMembershipContribution($contributionNumber) {
     $params = $this->buildContributionParams($contributionNumber);
+    $this->dispatchReceiveDateCalculationHook($contributionNumber, $params);
+
     $contribution = CRM_Contribute_BAO_Contribution::create($params);
 
     $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
@@ -212,6 +216,22 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
 
   public function setInstalmentsCount(int $instalmentsCount) {
     $this->instalmentsCount = $instalmentsCount;
+  }
+
+  /**
+   * Dispatches hook so other extensions may change each contribution's receive
+   * date.
+   *
+   * @param int $contributionNumber
+   * @param array $params
+   */
+  private function dispatchReceiveDateCalculationHook($contributionNumber, &$params) {
+    $receiveDate = $params['receive_date'];
+
+    $dispatcher = new CalculateContributionReceiveDateDispatcher($contributionNumber, $receiveDate, $params);
+    $dispatcher->dispatch();
+
+    $params['receive_date'] = $receiveDate;
   }
 
   /**

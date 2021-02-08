@@ -2,6 +2,7 @@
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
+use CRM_MembershipExtras_Hook_CustomDispatch_PostOfflineAutoRenewal as PostOfflineAutoRenewalDispatcher;
 
 /**
  * Renews a payment plan.
@@ -255,15 +256,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * Dispatches postOfflineAutoRenewal hook for the recurring contribution.
    */
   private function dispatchMembershipRenewalHook() {
-    $nullObject = CRM_Utils_Hook::$_nullObject;
-    CRM_Utils_Hook::singleton()->invoke(
-      ['membershipId', 'recurContributionId', 'previousRecurContributionId'],
-      $nullObject,
-      $this->newRecurringContributionID,
-      $this->currentRecurContributionID,
-      $nullObject, $nullObject, $nullObject,
-      'membershipextras_postOfflineAutoRenewal'
-    );
+    $dispatcher = new PostOfflineAutoRenewalDispatcher(NULL, $this->newRecurringContributionID, $this->currentRecurContributionID);
+    $dispatcher->dispatch();
   }
 
   /**
