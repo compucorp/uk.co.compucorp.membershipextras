@@ -15,16 +15,16 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
 
   public function testMonthlyCycleDayIsCalculatedFromReceiveDate() {
-    $_REQUEST['installments'] = 12;
-    $_REQUEST['installments_frequency'] = 1;
-    $_REQUEST['installments_frequency_unit'] = 'month';
-
+    $_REQUEST['payment_plan_schedule'] = 'monthly';
+    $startDate = date('Y-m-27');
     $contact = ContactFabricator::fabricate();
+    $membershipType = $this->mockMembershipType('rolling', 'month');
+    $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
     $params = [
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
       'skipCleanMoney' => TRUE,
-      'receive_date' => date('Y-m-27'),
+      'receive_date' => $startDate,
       'contact_id' => $contact['id'],
       'fee_amount' => 0,
       'net_amount' => "1200",
@@ -35,6 +35,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'currency' => NULL,
       'is_test' => FALSE,
       'campaign_id' => NULL,
+      'membership_id' => $membership['id'],
     ];
     $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanCreator->createPaymentPlan();
@@ -49,11 +50,12 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
   }
 
   public function testYearlyCycleDayIsCalculatedFromReceiveDate() {
-    $_REQUEST['installments'] = 1;
-    $_REQUEST['installments_frequency'] = 1;
-    $_REQUEST['installments_frequency_unit'] = 'year';
+    $_REQUEST['payment_plan_schedule'] = 'annual';
 
     $contact = ContactFabricator::fabricate();
+    $startDate = date('2020-02-01');
+    $membershipType = $this->mockMembershipType('rolling', 'year');
+    $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
     $params = [
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
@@ -69,6 +71,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'currency' => NULL,
       'is_test' => FALSE,
       'campaign_id' => NULL,
+      'membership_id' => $membership['id'],
     ];
     $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanCreator->createPaymentPlan();
@@ -83,17 +86,18 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
   }
 
   public function testReceiveDateCalculationHookChangesReceiveDate() {
-    $_REQUEST['installments'] = 12;
-    $_REQUEST['installments_frequency'] = 1;
-    $_REQUEST['installments_frequency_unit'] = 'month';
+    $_REQUEST['payment_plan_schedule'] = 'monthly';
 
     $contact = ContactFabricator::fabricate();
+    $startDate = date('Y-01-01');
+    $membershipType = $this->mockMembershipType('rolling', 'month');
+    $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
     $newReceiveDate = date('Y-m-27');
     $params = [
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
       'skipCleanMoney' => TRUE,
-      'receive_date' => date('Y-01-01'),
+      'receive_date' => $startDate,
       'contact_id' => $contact['id'],
       'fee_amount' => 0,
       'net_amount' => "1200",
@@ -105,6 +109,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'is_test' => FALSE,
       'campaign_id' => NULL,
       'test_receive_date_calculation_hook' => $newReceiveDate,
+      'membership_id' => $membership['id'],
     ];
     $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanCreator->createPaymentPlan();
@@ -274,23 +279,8 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
     $this->mockSalesTaxFinancialAccount();
     $contact = ContactFabricator::fabricate();
     $startDate = date('Y-m-d');
-    $membershipType = $membershipType = MembershipTypeFabricator::fabricate([
-      'name' => 'Mock Membership type',
-      'period_type' => $membershipPeriodType,
-      'minimum_fee' => 120,
-      'duration_interval' => 1,
-      'duration_unit' => $durationUnit,
-      //01 Oct
-      'fixed_period_start_day' => 1001,
-      // 30 Sep
-      'fixed_period_rollover_day' => 930,
-    ]);
-    $membership = MembershipFabricator::fabricate([
-      'contact_id' => $contact['id'],
-      'membership_type_id' => $membershipType['id'],
-      'join_date' => $startDate,
-      'start_date' => $startDate,
-    ]);
+    $membershipType = $this->mockMembershipType($membershipPeriodType, $durationUnit);
+    $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
     $financialTypeId = $this->getFinancialTypeID('Member Dues');
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     $rate = CRM_Utils_Array::value($financialTypeId, $taxRates, 0);
@@ -323,6 +313,29 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'pan_truncation' => NULL,
       'card_type_id' => NULL,
     ];
+  }
+
+  private function mockMembershipType($membershipPeriodType, $durationUnit) {
+    return MembershipTypeFabricator::fabricate([
+      'name' => 'Mock Membership type',
+      'period_type' => $membershipPeriodType,
+      'minimum_fee' => 120,
+      'duration_interval' => 1,
+      'duration_unit' => $durationUnit,
+      //01 Oct
+      'fixed_period_start_day' => 1001,
+      // 30 Sep
+      'fixed_period_rollover_day' => 930,
+    ]);
+  }
+
+  private function mockMembership($contactID, $membershipTypeID, $startDate) {
+    return MembershipFabricator::fabricate([
+      'contact_id' => $contactID,
+      'membership_type_id' => $membershipTypeID,
+      'join_date' => $startDate,
+      'start_date' => $startDate,
+    ]);
   }
 
 }

@@ -86,7 +86,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
   private function createRecurringContribution() {
     $this->dispatchReceiveDateCalculationHook();
 
-    $amountPerInstallment = $this->calculateSingleInstallmentAmount($this->params['total_amount']);
+    $amountPerInstalment = $this->calculateSingleInstalmentAmount($this->params['total_amount']);
     $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'name',
       'option_group_id' => 'payment_instrument',
