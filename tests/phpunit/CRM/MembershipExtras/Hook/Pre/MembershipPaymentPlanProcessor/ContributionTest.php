@@ -3,14 +3,14 @@ use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
 use Civi\Test\HookInterface;
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
-use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor as MembershipPaymentPlanProcessor;
+use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution as MembershipPaymentPlanProcessor;
 
 /**
- * Class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest
+ * Class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTest
  *
  * @group headless
  */
-class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends BaseHeadlessTest implements HookInterface {
+class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTest extends BaseHeadlessTest implements HookInterface {
 
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
 
@@ -37,7 +37,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'campaign_id' => NULL,
       'membership_id' => $membership['id'],
     ];
-    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanCreator->createPaymentPlan();
     $recurringContribution = $paymentPlanCreator->getRecurringContribution();
     $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
@@ -73,7 +73,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'campaign_id' => NULL,
       'membership_id' => $membership['id'],
     ];
-    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanCreator->createPaymentPlan();
     $recurringContribution = $paymentPlanCreator->getRecurringContribution();
     $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
@@ -111,7 +111,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
       'test_receive_date_calculation_hook' => $newReceiveDate,
       'membership_id' => $membership['id'],
     ];
-    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanCreator->createPaymentPlan();
     $recurringContribution = $paymentPlanCreator->getRecurringContribution();
     $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
@@ -256,7 +256,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessorTest extends Ba
   /**
    * Get payment plan from reflection object
    *
-   * @param CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor $processor
+   * @param CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution $processor
    * @return mixed
    */
   private function getCreatedPaymentPlan(MembershipPaymentPlanProcessor $processor) {

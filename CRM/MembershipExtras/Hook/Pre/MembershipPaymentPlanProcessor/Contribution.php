@@ -1,38 +1,9 @@
 <?php
 
-use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProcessor as AbstractProcessor;
 use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
-use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
 
-class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
-
-  /**
-   * The contribution or line item to-be-created parameters passed from the hook.
-   *
-   * @var array
-   */
-  private $params;
-
-  /**
-   * The number of instalments to be created.
-   *
-   * @var int
-   */
-  private $instalmentsCount;
-
-  /**
-   * The frequency of the recurring contribution instalments.
-   *
-   * @var int
-   */
-  private $instalmentsFrequency;
-
-  /**
-   * The frequency unit of the recurring contribution instalments.
-   *
-   * @var string
-   */
-  private $instalmentsFrequencyUnit;
+class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution extends AbstractProcessor {
 
   /**
    * Stores the newly created recurring contributing data
@@ -43,19 +14,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
 
   public function __construct(&$params) {
     $this->params = &$params;
-    $paymentPlanSchedule = CRM_Utils_Request::retrieve('payment_plan_schedule', 'String');
-    if (array_key_exists('membership_id', $this->params)) {
-      //Contribution object
-      $membershipId = $this->params['membership_id'];
-    }
-    else {
-      //LineItem object
-      $membershipId = $this->params['entity_id'];
-    }
-    $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($paymentPlanSchedule, $membershipId);
-    $this->instalmentsCount = $instalmentDetails['instalments_count'];
-    $this->instalmentsFrequency = $instalmentDetails['instalments_frequency'];
-    $this->instalmentsFrequencyUnit = $instalmentDetails['instalments_frequency_unit'];
+    $this->assignInstalmentDetails();
   }
 
   /**
@@ -155,64 +114,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount']);
     }
     elseif (!empty($this->params['tax_amount'])) {
-      $this->params['tax_amount'] = $this->calculateInstalmentTax($this->params['total_amount']);
+      $this->params['tax_amount'] = $this->calculateInstalmentTax($this->params['total_amount'], $this->params['financial_type_id']);
     }
-  }
-
-  /**
-   * Checks if priceset was selected on the form to create the membership.
-   */
-  private function isUsingPriceSet() {
-    $priceSetID = CRM_Utils_Request::retrieve('price_set_id', 'Int');
-
-    if (!empty($priceSetID)) {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-  /**
-   * Calculates tax amount for given amount.
-   *
-   * @param float $totalAmount
-   *
-   * @return float
-   */
-  private function calculateInstalmentTax($totalAmount) {
-    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-    $rate = CRM_Utils_Array::value($this->params['financial_type_id'], $taxRates, 0);
-
-    return MoneyUtilities::roundToCurrencyPrecision(
-      ($totalAmount * ($rate / 100)) / (1 + ($rate / 100))
-    );
-  }
-
-  /**
-   * Alters the contribution 'to be created' line item parameters
-   * before saving it.
-   *
-   * We here adjust the line total, unit price and tax amount
-   * of the line item to be inline with the new contribution amount.
-   */
-  public function alterLineItemParameters() {
-    $this->params['line_total'] = $this->calculateSingleInstalmentAmount($this->params['line_total']);
-    $this->params['unit_price'] = $this->calculateSingleInstalmentAmount($this->params['unit_price']);
-
-    if (!empty($this->params['tax_amount'])) {
-      $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount']);
-    }
-  }
-
-  /**
-   * Calculates single installment amount.
-   *
-   * @param float $amount
-   *
-   * @return float
-   */
-  private function calculateSingleInstalmentAmount($amount) {
-    return MoneyUtilities::roundToCurrencyPrecision($amount / $this->instalmentsCount);
   }
 
   /**
