@@ -42,13 +42,13 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCal
       $annualProRataCalculation = $settings[SettingField::ANNUAL_PRORATA_CALCULATION_ELEMENT];
       $membershipAmount = $membershipType->minimum_fee;
       $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipAmount);
-      if ($annualProRataCalculation == self::BY_DAYS) {
-        $duration  = $membershipTypeDurationCalculator->calculateOriginalInDays();
-        $diff = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate);
-      }
-      else {
+      if ($annualProRataCalculation == self::BY_MONTHS) {
         $diff = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate);
         $duration = self::TWELVE_MONTHS;
+      }
+      else {
+        $duration  = $membershipTypeDurationCalculator->calculateOriginalInDays();
+        $diff = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate);
       }
       $this->amount += $this->calculateProRatedAmount($membershipAmount, $duration, $diff);
       $this->taxAmount += $this->calculateProRatedAmount($taxAmount, $duration, $diff);
