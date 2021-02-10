@@ -111,11 +111,40 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
     $this->params['net_amount'] = $this->recurringContribution['amount'];
 
     if ($this->isUsingPriceSet() && !empty($this->params['tax_amount'])) {
-      $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount']);
+      $membership = civicrm_api3('Membership', 'get', [
+        'sequential' => 1,
+        'id' => $this->membershipId,
+      ])['values'][0];
+      $membershipTypes = $this->getLineItemsFixedPeriodMembershipType();
+      if (!empty($membershipTypes)) {
+        $instalmentAmount = $this->getProRatedInstalmentAmount($membershipTypes, $membership['start_date']);
+        $this->params['tax_amount'] = $instalmentAmount->getCalculator()->getTaxAmount();
+      }
+      else {
+        $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount']);
+      }
     }
     elseif (!empty($this->params['tax_amount'])) {
       $this->params['tax_amount'] = $this->calculateInstalmentTax($this->params['total_amount'], $this->params['financial_type_id']);
     }
+  }
+
+  /**
+   * Gets only fixed period membeship type that belong to each line item
+   */
+  private function getLineItemsFixedPeriodMembershipType() {
+    $membershipTypes = [];
+    foreach (CRM_Utils_Array::value('line_item', $this->params, []) as $types) {
+      foreach ($types as &$line) {
+        $membershipType = CRM_Member_BAO_MembershipType::findById($line['membership_type_id']);
+        if ($membershipType->period_type == 'fixed') {
+          $membershipType->minimum_fee = $line['line_total'];
+          array_push($membershipTypes, $membershipType);
+        }
+      }
+    }
+
+    return $membershipTypes;
   }
 
   /**

@@ -1,10 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProcessor as AbstractProcessor;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodTypeAnnualCalculator;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeMonthlyCalculator as FixedPeriodTypeMonthlyCalculator;
 use CRM_Member_BAO_MembershipType as MembershipType;
-use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
 
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem extends AbstractProcessor {
 
@@ -61,18 +58,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem exte
       'sequential' => 1,
       'id' => $membershipId,
     ])['values'][0];
-    if ($this->paymentPlanSchedule == CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::MONTHLY) {
-      $fixedPeriodTypeMonthlyCalculator = new FixedPeriodTypeMonthlyCalculator([$membershipType]);
-      $fixedPeriodTypeMonthlyCalculator->setStartDate(new DateTime($membership['start_date']));
-      $instalmentAmount = new InstalmentAmount($fixedPeriodTypeMonthlyCalculator);
-    }
-    else {
-      $fixedPeriodTypeAnnualCalculator = new FixedPeriodTypeAnnualCalculator([$membershipType]);
-      $fixedPeriodTypeAnnualCalculator->setStartDate(new DateTime($membership['start_date']));
-      $instalmentAmount = new InstalmentAmount($fixedPeriodTypeAnnualCalculator);
-    }
-
-    $instalmentAmount->getCalculator()->calculate();
+    $instalmentAmount = $this->getProRatedInstalmentAmount([$membershipType], $membership['start_date']);
     $this->params['line_total'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getAmount());
     $this->params['unit_price'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getAmount());
     $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTaxAmount());

@@ -2,6 +2,9 @@
 
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodTypeAnnualCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeMonthlyCalculator as FixedPeriodTypeMonthlyCalculator;
+use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
 
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProcessor {
 
@@ -106,6 +109,26 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
     $this->instalmentsCount = $instalmentDetails['instalments_count'];
     $this->instalmentsFrequency = $instalmentDetails['instalments_frequency'];
     $this->instalmentsFrequencyUnit = $instalmentDetails['instalments_frequency_unit'];
+  }
+
+  /**
+   * Gets pro rated instalment amount
+   */
+  protected function getProRatedInstalmentAmount(array $membershipTypes, $membershipStartDate) {
+    if ($this->paymentPlanSchedule == CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::MONTHLY) {
+      $fixedPeriodTypeMonthlyCalculator = new FixedPeriodTypeMonthlyCalculator($membershipTypes);
+      $fixedPeriodTypeMonthlyCalculator->setStartDate(new DateTime($membershipStartDate));
+      $instalmentAmount = new InstalmentAmount($fixedPeriodTypeMonthlyCalculator);
+    }
+    else {
+      $fixedPeriodTypeAnnualCalculator = new FixedPeriodTypeAnnualCalculator($membershipTypes);
+      $fixedPeriodTypeAnnualCalculator->setStartDate(new DateTime($membershipStartDate));
+      $instalmentAmount = new InstalmentAmount($fixedPeriodTypeAnnualCalculator);
+    }
+
+    $instalmentAmount->getCalculator()->calculate();
+
+    return $instalmentAmount;
   }
 
 }
