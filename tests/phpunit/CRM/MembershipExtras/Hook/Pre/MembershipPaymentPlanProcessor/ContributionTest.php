@@ -1,4 +1,5 @@
 <?php
+
 use CRM_MembershipExtras_Test_Fabricator_Contact as ContactFabricator;
 use Civi\Test\HookInterface;
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
@@ -13,6 +14,19 @@ use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution as
 class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTest extends BaseHeadlessTest implements HookInterface {
 
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
+
+  /**
+   * Implements calculateContributionReceiveDate hook for testing.
+   *
+   * @param $instalment
+   * @param $receiveDate
+   * @param $contributionCreationParams
+   */
+  public function hook_membershipextras_calculateContributionReceiveDate($instalment, &$receiveDate, &$contributionCreationParams) {
+    if (isset($contributionCreationParams['test_receive_date_calculation_hook'])) {
+      $receiveDate = $contributionCreationParams['test_receive_date_calculation_hook'];
+    }
+  }
 
   public function testMonthlyCycleDayIsCalculatedFromReceiveDate() {
     $_REQUEST['payment_plan_schedule'] = 'monthly';
@@ -125,51 +139,6 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTe
   }
 
   /**
-   * Implements calculateContributionReceiveDate hook for testing.
-   *
-   * @param $instalment
-   * @param $receiveDate
-   * @param $contributionCreationParams
-   */
-  public function hook_membershipextras_calculateContributionReceiveDate($instalment, &$receiveDate, &$contributionCreationParams) {
-    if (isset($contributionCreationParams['test_receive_date_calculation_hook'])) {
-      $receiveDate = $contributionCreationParams['test_receive_date_calculation_hook'];
-    }
-  }
-
-  /**
-   * Obtains value for the given name option in the option group.
-   *
-   * @param string $name
-   * @param string $group
-   *
-   * @return array|string
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getOptionValue($name, $group) {
-    return civicrm_api3('OptionValue', 'getvalue', [
-      'return' => 'value',
-      'option_group_id' => $group,
-      'name' => $name,
-    ]);
-  }
-
-  /**
-   * Obtains ID for the given financial type name.
-   *
-   * @param $financialType
-   *
-   * @return int|array
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getFinancialTypeID($financialType) {
-    return civicrm_api3('FinancialType', 'getvalue', [
-      'return' => 'id',
-      'name' => $financialType,
-    ]);
-  }
-
-  /**
    * Tests create payment plan with month duration
    * for rolling membership type with monthly schedule
    */
@@ -260,11 +229,7 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTe
    * @return mixed
    */
   private function getCreatedPaymentPlan(MembershipPaymentPlanProcessor $processor) {
-    $ref = new ReflectionObject($processor);
-    $recurringContributionProperty = $ref->getProperty('recurringContribution');
-    $recurringContributionProperty->setAccessible(TRUE);
-
-    return $recurringContributionProperty->getValue($processor);
+    return $processor->getRecurringContribution();
   }
 
   /**
@@ -335,6 +300,38 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTe
       'membership_type_id' => $membershipTypeID,
       'join_date' => $startDate,
       'start_date' => $startDate,
+    ]);
+  }
+
+  /**
+   * Obtains value for the given name option in the option group.
+   *
+   * @param string $name
+   * @param string $group
+   *
+   * @return array|string
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getOptionValue($name, $group) {
+    return civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => $group,
+      'name' => $name,
+    ]);
+  }
+
+  /**
+   * Obtains ID for the given financial type name.
+   *
+   * @param $financialType
+   *
+   * @return int|array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getFinancialTypeID($financialType) {
+    return civicrm_api3('FinancialType', 'getvalue', [
+      'return' => 'id',
+      'name' => $financialType,
     ]);
   }
 
