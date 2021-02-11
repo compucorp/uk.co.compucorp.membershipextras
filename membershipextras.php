@@ -185,7 +185,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanWithSchedule();
   $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
   if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
-    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanProcessor->createPaymentPlan();
     $paymentPlanProcessor->setContributionToPayLater();
     $isFirstPaymentPlanContribution = FALSE;
@@ -195,7 +195,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   $lineItemContributionCreation = $objectName === 'LineItem' && $op === 'create' && !empty($params['contribution_id']);
   $firstPaymentPlanContributionLineItemCreation = ($lineItemContributionCreation && (empty($firstPaymentPlanContributionId) || $firstPaymentPlanContributionId == $params['contribution_id']));
   if ($firstPaymentPlanContributionLineItemCreation && $isPaymentPlanPayment) {
-    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem($params);
     $paymentPlanProcessor->alterLineItemParameters();
     $firstPaymentPlanContributionId = $params['contribution_id'];
   }
