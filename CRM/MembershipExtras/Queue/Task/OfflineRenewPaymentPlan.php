@@ -1,13 +1,16 @@
 <?php
+
+use CRM_MembershipExtras_Queue_Task_Base as BaseTask;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+use CRM_MembershipExtras_Hook_CustomDispatch_PostOfflineAutoRenewal as PostOfflineAutoRenewalDispatcher;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
-use CRM_MembershipExtras_Hook_CustomDispatch_PostOfflineAutoRenewal as PostOfflineAutoRenewalDispatcher;
 
 /**
  * Renews a payment plan.
  */
-abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
+abstract class CRM_MembershipExtras_Queue_Task_OfflineRenewPaymentPlan extends BaseTask {
+
   /**
    * Array with the recurring contribution's data.
    *
@@ -96,27 +99,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $contributionPendingStatusValue;
 
   /**
-   * Maps contribution status names to their corresponding ID's.
-   *
-   * @var array
-   */
-  protected $contributionStatusesNameMap;
-
-  /**
-   * Number of days in advance a membership shuld be renewed.
-   *
-   * @var int
-   */
-  protected $daysToRenewInAdvance;
-
-  /**
-   * ID's for payment processors that are considered to be manual.
-   *
-   * @var array
-   */
-  protected $manualPaymentProcessorIDs;
-
-  /**
    * @var CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker
    */
   protected $autoUpgradableMembershipCheckService;
@@ -131,9 +113,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
     $this->setUseMembershipLatestPrice();
     $this->setContributionPendingStatusValue();
-    $this->setContributionStatusesNameMap();
-    $this->setManualPaymentProcessorIDs();
-    $this->setDaysToRenewInAdvance();
   }
 
   /**
@@ -144,7 +123,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function setCurrentRecurringContribution($recurringContributionID) {
+  protected function setCurrentRecurringContribution($recurringContributionID) {
     $this->currentRecurContributionID = $recurringContributionID;
     $this->currentRecurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $this->currentRecurContributionID,
@@ -157,7 +136,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function setUseMembershipLatestPrice() {
+  protected function setUseMembershipLatestPrice() {
     $settingFieldName = 'membershipextras_paymentplan_use_membership_latest_price';
     $useMembershipLatestPrice = civicrm_api3('Setting', 'get', [
       'sequential' => 1,
@@ -174,7 +153,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function setContributionPendingStatusValue() {
+  protected function setContributionPendingStatusValue() {
     $this->contributionPendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
@@ -183,77 +162,27 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
-   * Gets contribution Statuses Name to value Mapping
+   * Renews the given payment plan.
+   *
+   * @param $recurContributionID
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function setContributionStatusesNameMap() {
-    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
-      'sequential' => 1,
-      'return' => ['name', 'value'],
-      'option_group_id' => 'contribution_status',
-      'options' => ['limit' => 0],
-    ])['values'];
-
-    $contributionStatusesNameMap = [];
-    foreach ($contributionStatuses as $status) {
-      $contributionStatusesNameMap[$status['name']] = $status['value'];
+  protected function process($recurContributionID) {
+    $transaction = new CRM_Core_Transaction();
+    try {
+      $this->setCurrentRecurringContribution($recurContributionID);
+      $this->setLastContribution();
+      $this->renew();
+      $this->dispatchMembershipRenewalHook();
+    }
+    catch (Exception $e) {
+      $transaction->rollback();
+      throw $e;
     }
 
-    $this->contributionStatusesNameMap = $contributionStatusesNameMap;
+    $transaction->commit();
   }
-
-  /**
-   * Loads setting and assigns it to a class attribute.
-   */
-  private function setDaysToRenewInAdvance() {
-    $this->daysToRenewInAdvance = CRM_MembershipExtras_SettingsManager::getDaysToRenewInAdvance();
-  }
-
-  /**
-   * Loads list of manual payment processors into an array as a class attribute.
-   */
-  private function setManualPaymentProcessorIDs() {
-    $payLaterProcessorID = 0;
-    $this->manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
-  }
-
-  /**
-   * Renews the given payment plan.
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function run() {
-    $exceptions = [];
-    $paymentPlans = $this->getRecurringContributions();
-
-    foreach ($paymentPlans as $recurContributionID) {
-      $transaction = new CRM_Core_Transaction();
-      try {
-        $this->setCurrentRecurringContribution($recurContributionID);
-        $this->setLastContribution();
-        $this->renew();
-        $this->dispatchMembershipRenewalHook();
-      }
-      catch (Exception $e) {
-        $transaction->rollback();
-        $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContributionID}): " . $e->getMessage();
-      }
-
-      $transaction->commit();
-    }
-
-    if (count($exceptions)) {
-      throw new CRM_Core_Exception(implode(";\n", $exceptions));
-    }
-  }
-
-  /**
-   * Retunrs an array of recurring contributions that need to be renewed.
-   *
-   * @return array
-   */
-  abstract protected function getRecurringContributions();
 
   /**
    * Renews the current payment plan.
@@ -263,7 +192,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Dispatches postOfflineAutoRenewal hook for the recurring contribution.
    */
-  private function dispatchMembershipRenewalHook() {
+  protected function dispatchMembershipRenewalHook() {
     $dispatcher = new PostOfflineAutoRenewalDispatcher(NULL, $this->newRecurringContributionID, $this->currentRecurContributionID);
     $dispatcher->dispatch();
   }
@@ -305,7 +234,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function setLastContribution() {
+  protected function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
       'return' => ['currency', 'contribution_source', 'net_amount',
@@ -426,7 +355,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return mixed
    * @throws \CiviCRM_API3_Exception
    */
-  private function getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue) {
+  protected function getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       $membershipTypeID = civicrm_api3('Membership', 'getsingle', [
         'id' => $lineItem['entity_id'],
@@ -452,7 +381,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return bool
    * @throws \CiviCRM_API3_Exception
    */
-  private function isUseLatestPriceForMembership($lineItem) {
+  protected function isUseLatestPriceForMembership($lineItem) {
     $isOptoutUsingLastPrice = FALSE;
     $optoutUsingLastPriceFieldID = civicrm_api3('CustomField', 'getvalue', [
       'return' => 'id',
@@ -597,7 +526,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return int
    * @throws \CiviCRM_API3_Exception
    */
-  private function getExistingMembershipForLineItem($lineItem, $priceFieldValue) {
+  protected function getExistingMembershipForLineItem($lineItem, $priceFieldValue) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       return $lineItem['entity_id'];
     }
@@ -633,7 +562,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return int
    * @throws \CiviCRM_API3_Exception
    */
-  private function createMembership($lineItem, $priceFieldValue) {
+  protected function createMembership($lineItem, $priceFieldValue) {
     $membershipCreateResult = civicrm_api3('Membership', 'create', [
       'contact_id' => $this->currentRecurringContribution['contact_id'],
       'membership_type_id' => $priceFieldValue['membership_type_id'],
@@ -655,7 +584,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function extendExistingMembership($membershipID) {
+  protected function extendExistingMembership($membershipID) {
     $endDate = MembershipEndDateCalculator::calculate($membershipID);
     $isUpdateStartDateRenewal = self::isUpdateStartDateRenewal();
     $relatedMemberships = $this->loadRelatedMembershipIDs($membershipID);
@@ -683,7 +612,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return array
    * @throws \CiviCRM_API3_Exception
    */
-  private function loadRelatedMembershipIDs($membershipID) {
+  protected function loadRelatedMembershipIDs($membershipID) {
     $result = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
       'owner_membership_id' => $membershipID,
@@ -864,7 +793,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  private function isDuplicateLineItem($lineItem) {
+  protected function isDuplicateLineItem($lineItem) {
     $priceFieldID = CRM_Utils_Array::value('price_field_id', $lineItem);
     $priceFieldValueID = CRM_Utils_Array::value('price_field_value_id', $lineItem);
     if (!$priceFieldID || !$priceFieldValueID) {
@@ -996,7 +925,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return mixed
    * @throws \CiviCRM_API3_Exception
    */
-  private function calculateUpgradedMembershipPrice($membershipTypeId) {
+  protected function calculateUpgradedMembershipPrice($membershipTypeId) {
     $membershipMinimumFee = civicrm_api3('MembershipType', 'getvalue', [
       'return' => 'minimum_fee',
       'id' => $membershipTypeId,
