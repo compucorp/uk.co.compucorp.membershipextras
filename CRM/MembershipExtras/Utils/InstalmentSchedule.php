@@ -29,10 +29,39 @@ class CRM_MembershipExtras_Utils_InstalmentSchedule {
     else {
       $instalmentDetails['instalments_count'] = self::getInstalmentCountBySchedule($schedule);
     }
-    $instalmentDetails['instalments_frequency'] = $membershipType['duration_interval'];
-    $instalmentDetails['instalments_frequency_unit'] = $durationUnit;
+    $instalmentDetails['instalments_frequency'] = self::getFrequencyInterval($schedule);
+    $instalmentDetails['instalments_frequency_unit'] = self::getFrequencyUnit($schedule, $instalmentDetails['instalments_frequency']);
 
     return $instalmentDetails;
+  }
+
+  /**
+   * Gets frequency interval by schedule
+   *
+   * For example, if schedule is quaterly interval shall be 3
+   * if schedule is annual or monthly interval shall be 1.
+   *
+   * @param $schedule
+   * @return int
+   */
+  private static function getFrequencyInterval($schedule) {
+    return $schedule == InstalmentsSchedule::QUARTERLY ? 3 : 1;
+  }
+
+  /**
+   * Gets frequency unit by schedule and interval
+   *
+   * If schedule is annual and frequency is 1
+   * the frequency unit shall be year and,
+   * quarterly or monthly the frequeny unit
+   * will always be month.
+   *
+   * @param $schedule
+   * @param $interval
+   * @return string
+   */
+  private static function getFrequencyUnit($schedule, $interval) {
+    return $interval == 1 && $schedule == InstalmentsSchedule::ANNUAL ? 'year' : 'month';
   }
 
   /**
