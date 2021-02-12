@@ -28,8 +28,21 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting extends Base {
     if (is_null($settings)) {
       return;
     }
-    $fields = [self::ANNUAL_PRORATA_CALCULATION_ELEMENT];
-    parent::setFieldsDefaultValue($settings, $fields);
+    if (empty($this->form->_id)) {
+      $this->setDefaultValue();
+    }
+    else {
+      $fields = [self::ANNUAL_PRORATA_CALCULATION_ELEMENT];
+      parent::setFieldsDefaultValue($settings, $fields);
+    }
+  }
+
+  /**
+   * Sets defaults settings for a create membership type form
+   */
+  private function setDefaultValue() {
+    $defaults = [self::ANNUAL_PRORATA_CALCULATION_ELEMENT => FixedPeriodCalculator::BY_DAYS];
+    $this->form->setDefaults($defaults);
   }
 
   /**
