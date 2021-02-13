@@ -16,6 +16,21 @@ use CRM_MembershipExtras_Hook_Pre_MembershipEdit as MembershipEditHook;
  */
 class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest {
 
+  public function setUp() {
+    $this->setCurrentPath();
+  }
+
+  /**
+   * Set the current path here to fix the error `Undefined index: q`
+   * when using CRM_Utils_System::currentPath
+   */
+  private function setCurrentPath() {
+    $config = CRM_Core_Config::singleton();
+    $tmpGlobals = [];
+    $tmpGlobals['_GET'][$config->userFrameworkURLVar] = '';
+    CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
+  }
+
   /**
    * Helper function to create memberships and its default price field value.
    *
