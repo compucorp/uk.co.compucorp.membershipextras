@@ -8,8 +8,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
   private $queue;
 
+  /**
+   * @var int
+   */
+  private $numberOfQueueItems;
+
   public function __construct() {
     $this->queue = OfflineAutoRenewalQueue::getQueue();
+    $this->numberOfQueueItems = (int) $this->queue->numberOfItems();
   }
 
   /**
@@ -26,6 +32,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
   }
 
   private function addTasksToQueue() {
+    if ($this->numberOfQueueItems > 0) {
+      return;
+    }
+
     $queueBuilders = [
       new OfflineMultipleInstalmentPlansQueueBuilder($this->queue),
       new OfflineSingleInstalmentPlansQueueBuilder($this->queue),
