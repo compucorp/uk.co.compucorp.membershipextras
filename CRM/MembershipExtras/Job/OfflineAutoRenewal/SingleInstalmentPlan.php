@@ -40,7 +40,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
-      SELECT ccr.id as contribution_recur_id, ccr.installments,
+      SELECT ccr.id as contribution_recur_id,
         CASE
           WHEN frequency_unit = 'day' THEN DATE_ADD(
             CASE
@@ -101,14 +101,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
     ";
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
-    $recurContributionsList = [];
+    $recurContributionIDs = [];
     while ($recurContributions->fetch()) {
-      $recurContribution['contribution_recur_id'] = $recurContributions->contribution_recur_id;
-      $recurContribution['installments'] = $recurContributions->installments;
-      $recurContributionsList[] = $recurContribution;
+      $recurContributionIDs[] = $recurContributions->contribution_recur_id;
     }
 
-    return $recurContributionsList;
+    return $recurContributionIDs;
   }
 
   /**

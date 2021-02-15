@@ -32,7 +32,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
-      SELECT ccr.id as contribution_recur_id, ccr.installments
+      SELECT ccr.id as contribution_recur_id
         FROM civicrm_contribution_recur ccr
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
@@ -57,14 +57,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     ";
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
-    $recurContributionsList = [];
+    $recurContributionIDs = [];
     while ($recurContributions->fetch()) {
-      $recurContribution['contribution_recur_id'] = $recurContributions->contribution_recur_id;
-      $recurContribution['installments'] = $recurContributions->installments;
-      $recurContributionsList[] = $recurContribution;
+      $recurContributionIDs[] = $recurContributions->contribution_recur_id;
     }
 
-    return $recurContributionsList;
+    return $recurContributionIDs;
   }
 
   /**
@@ -143,28 +141,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $instalmentReceiveDateCalculator = new InstalmentReceiveDateCalculator($this->currentRecurringContribution);
     $instalmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
     return $instalmentReceiveDateCalculator->calculate();
-  }
-
-  /**
-   * Obtains membership identified with provided ID.
-   *
-   * @param int $id
-   *   ID of the membership.
-   *
-   * @return array
-   *   Membership's data.
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getMembership($id) {
-    if (empty($id)) {
-      return [];
-    }
-
-    return civicrm_api3('Membership', 'getsingle', [
-      'sequential' => 1,
-      'id' => $id,
-    ]);
   }
 
   /**

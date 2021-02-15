@@ -227,17 +227,17 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $exceptions = [];
     $paymentPlans = $this->getRecurringContributions();
 
-    foreach ($paymentPlans as $recurContribution) {
+    foreach ($paymentPlans as $recurContributionID) {
       $transaction = new CRM_Core_Transaction();
       try {
-        $this->setCurrentRecurringContribution($recurContribution['contribution_recur_id']);
+        $this->setCurrentRecurringContribution($recurContributionID);
         $this->setLastContribution();
         $this->renew();
         $this->dispatchMembershipRenewalHook();
       }
       catch (Exception $e) {
         $transaction->rollback();
-        $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
+        $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContributionID}): " . $e->getMessage();
       }
 
       $transaction->commit();
