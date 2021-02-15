@@ -113,6 +113,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
 
   /**
    * @inheritdoc
+   * @throws \Exception
    */
   public function renew() {
     $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
@@ -155,6 +156,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
 
   /**
    * Sets new recurring contribution from current recurring contribution.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function setNewRecurringContribution() {
     $this->newRecurringContributionID = $this->currentRecurContributionID;
@@ -169,6 +172,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    * end date for the old line items.
    *
    * @param $recurringContributionID
+   *
+   * @throws \Exception
    */
   private function endCurrentLineItemsAndCreateNewOnesForNextPeriod($recurringContributionID) {
     $newStartDate = new DateTime($this->membershipsStartDate);
@@ -227,7 +232,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
   /**
    * Calculates the new start date for the payment plan
    * if its paid with no instalments.
+   *
    * @return string
+   * @throws \CiviCRM_API3_Exception
    */
   private function calculateNoInstalmentsPaymentPlanStartDate() {
     $currentRecurContribution = civicrm_api3('ContributionRecur', 'get', [
@@ -294,6 +301,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
 
   /**
    * @inheritdoc
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getNewPaymentPlanActiveLineItems() {
     $lineItems = civicrm_api3('ContributionRecurLineItem', 'get', [
@@ -324,6 +332,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
 
   /**
    * @inheritdoc
+   * @throws \CiviCRM_API3_Exception
    */
   protected function calculateRecurringContributionTotalAmount($recurringContributionID) {
     $totalAmount = 0;

@@ -123,6 +123,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan constructor.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   public function __construct() {
     $this->autoUpgradableMembershipCheckService = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
@@ -139,6 +141,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * into a clss attribute.
    *
    * @param $recurringContributionID
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function setCurrentRecurringContribution($recurringContributionID) {
     $this->currentRecurContributionID = $recurringContributionID;
@@ -150,6 +154,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Sets the value for the flag to determine if latest membership price should
    * be used or not on renewal.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function setUseMembershipLatestPrice() {
     $settingFieldName = 'membershipextras_paymentplan_use_membership_latest_price';
@@ -165,6 +171,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Loads value for Pending contribution status into a class attribute.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function setContributionPendingStatusValue() {
     $this->contributionPendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
@@ -177,7 +185,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Gets contribution Statuses Name to value Mapping
    *
-   * @return array $contributionStatusesNameMap
+   * @throws \CiviCRM_API3_Exception
    */
   private function setContributionStatusesNameMap() {
     $contributionStatuses = civicrm_api3('OptionValue', 'get', [
@@ -294,6 +302,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Sets $lastContribution
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   private function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
@@ -352,6 +362,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param array $lineItem
    *
    * @return float
+   * @throws \CiviCRM_API3_Exception
    */
   protected function calculateLineItemUnitPrice($lineItem) {
     $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
@@ -376,6 +387,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param int $priceFieldValueID
    *
    * @return array
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getPriceFieldValue($priceFieldValueID) {
     return civicrm_api3('PriceFieldValue', 'getsingle', [
@@ -412,6 +424,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param array $priceFieldValue
    *
    * @return mixed
+   * @throws \CiviCRM_API3_Exception
    */
   private function getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
@@ -437,6 +450,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param array $lineItem
    *
    * @return bool
+   * @throws \CiviCRM_API3_Exception
    */
   private function isUseLatestPriceForMembership($lineItem) {
     $isOptoutUsingLastPrice = FALSE;
@@ -501,10 +515,12 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
-   * Updates amount on recurring contribution by calculating from associated line
-   * items.
+   * Updates amount on recurring contribution by calculating from associated
+   * line items.
    *
    * @param $recurringContributionID
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   protected function updateRecurringContributionAmount($recurringContributionID) {
     $totalAmount = $this->calculateRecurringContributionTotalAmount($recurringContributionID);
@@ -579,6 +595,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param array $priceFieldValue
    *
    * @return int
+   * @throws \CiviCRM_API3_Exception
    */
   private function getExistingMembershipForLineItem($lineItem, $priceFieldValue) {
     if ($lineItem['entity_table'] == 'civicrm_membership') {
@@ -614,6 +631,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param array $priceFieldValue
    *
    * @return int
+   * @throws \CiviCRM_API3_Exception
    */
   private function createMembership($lineItem, $priceFieldValue) {
     $membershipCreateResult = civicrm_api3('Membership', 'create', [
@@ -752,6 +770,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Records the payment plan first contribution.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   protected function recordPaymentPlanFirstContribution() {
     $params = [
@@ -936,6 +956,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param int $newMembershipTypeId
    * @param int $recurContributionID
    * @param string $lineItemStartDate
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   protected function createUpgradableSubscriptionMembershipLine($newMembershipTypeId, $recurContributionID, $lineItemStartDate) {
     $newPriceFieldValue = civicrm_api3('PriceFieldValue', 'get', [
@@ -968,6 +990,12 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     ]);
   }
 
+  /**
+   * @param $membershipTypeId
+   *
+   * @return mixed
+   * @throws \CiviCRM_API3_Exception
+   */
   private function calculateUpgradedMembershipPrice($membershipTypeId) {
     $membershipMinimumFee = civicrm_api3('MembershipType', 'getvalue', [
       'return' => 'minimum_fee',
@@ -983,6 +1011,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param array $lineItemParams
    * @param string $startDate
    * @param int $newRecurContributionId
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   protected function duplicateSubscriptionLine($lineItemParams, $startDate, $newRecurContributionId) {
     $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams) ?: 0;

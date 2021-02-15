@@ -11,7 +11,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
   /**
    * Returns a list of payment plans with multiple instalments that have at
    * least one line item ready to be renewed (ie. has an end date, is not
-   * removed and is set to auto renew), mmeting these conditions:
+   * removed and is set to auto renew), meeting these conditions:
    *
    * 1- is using an offline payment processor (payment manual class).
    * 2- has an end date.
@@ -69,6 +69,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
 
   /**
    * @inheritdoc
+   * @throws \Exception
    */
   public function renew() {
     $this->createRecurringContribution();
@@ -172,6 +173,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    * @param int $paymentMethodId
    *
    * @return array
+   * @throws \CiviCRM_API3_Exception
    */
   private function getPaymentMethodNameFromItsId($paymentMethodId) {
     return civicrm_api3('OptionValue', 'getvalue', [
@@ -187,6 +189,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    *
    * @param int $currentContributionID
    * @param int $nextContributionID
+   *
+   * @throws \Exception
    */
   private function updateFieldsLinkingPeriods($currentContributionID, $nextContributionID) {
     $previousPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'previous_period');
@@ -305,6 +309,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
 
   /**
    * @inheritdoc
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getNewPaymentPlanActiveLineItems() {
     $lineItems = civicrm_api3('ContributionRecurLineItem', 'get', [
@@ -334,6 +339,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
 
   /**
    * @inheritdoc
+   * @throws \CiviCRM_API3_Exception
    */
   protected function calculateRecurringContributionTotalAmount($recurringContributionID) {
     $totalAmount = 0;
