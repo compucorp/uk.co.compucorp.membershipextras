@@ -4,14 +4,14 @@ use CRM_MembershipExtras_Queue_TestCase as QueueTestCase;
 use CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder as PaymentPlanMembershipOrder;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFabricator;
-use CRM_MembershipExtras_Queue_Builder_OfflineSingleInstalmentPlans as OfflineSingleInstalmentPlansQueueBuilder;
+use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_MultipleInstalmentPlan as OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder;
 
 /**
- * Class CRM_MembershipExtras_Queue_Builder_RenewSingleInstalmentPlanTest
+ * Class CRM_MembershipExtras_Queue_Builder_MultipleInstalmentPlansTest
  *
  * @group headless
  */
-class CRM_MembershipExtras_Queue_Builder_SingleInstalmentPlansTest extends QueueTestCase {
+class CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_MultipleInstalmentPlanTest extends QueueTestCase {
 
   /**
    * A rolling membership type that we
@@ -66,8 +66,8 @@ class CRM_MembershipExtras_Queue_Builder_SingleInstalmentPlansTest extends Queue
     $NumberOfPaymentPlans = 12;
     for ($i = 0; $i < $NumberOfPaymentPlans; $i++) {
       $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-      $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
-      $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+      $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
+      $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
       $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
       $paymentPlanMembershipOrder->lineItems[] = [
         'entity_table' => 'civicrm_membership',
@@ -83,7 +83,7 @@ class CRM_MembershipExtras_Queue_Builder_SingleInstalmentPlansTest extends Queue
       PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
     }
 
-    $this->runQueueBuilder(OfflineSingleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
 
     $expectedNumberOfTasks = ceil($NumberOfPaymentPlans / CRM_MembershipExtras_Queue_Builder_Base::RECORDS_LIMIT);
     $this->assertEquals($expectedNumberOfTasks, $this->getNumberOfTasks());

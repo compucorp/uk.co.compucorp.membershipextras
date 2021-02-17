@@ -1,5 +1,5 @@
 <?php
-use CRM_MembershipExtras_Queue_Task_OfflineRenewPaymentPlan as OfflineRenewPaymentPlanTask;
+use CRM_MembershipExtras_Queue_Task_OfflineAutoRenewal_RenewPaymentPlans as OfflineRenewPaymentPlansTask;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
@@ -11,7 +11,7 @@ use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstalmentR
  * pending contribution that links to the already existing recurring
  * contribution.
  */
-class CRM_MembershipExtras_Queue_Task_OfflineRenewSingleInstalmentPlan extends OfflineRenewPaymentPlanTask {
+class CRM_MembershipExtras_Queue_Task_OfflineAutoRenewal_RenewSingleInstalmentPlans extends OfflineRenewPaymentPlansTask {
 
   /**
    * @inheritdoc

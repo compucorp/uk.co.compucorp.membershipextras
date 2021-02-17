@@ -9,7 +9,7 @@ use CRM_MembershipExtras_SettingsManager as SettingsManager;
 /**
  * Renews a payment plan.
  */
-abstract class CRM_MembershipExtras_Queue_Task_OfflineRenewPaymentPlan extends BaseTask {
+abstract class CRM_MembershipExtras_Queue_Task_OfflineAutoRenewal_RenewPaymentPlans extends BaseTask {
 
   /**
    * Array with the recurring contribution's data.

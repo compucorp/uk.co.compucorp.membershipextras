@@ -5,7 +5,7 @@ use CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder as PaymentPlanMe
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFabricator;
 use CRM_MembershipExtras_Test_Fabricator_AutoMembershipUpgradeRule as AutoMembershipUpgradeRuleFabricator;
-use CRM_MembershipExtras_Queue_Builder_OfflineMultipleInstalmentPlans as OfflineMultipleInstalmentPlansQueueBuilder;
+use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_MultipleInstalmentPlan as OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder;
 use CRM_MembershipExtras_Test_Fabricator_LineItem as LineItemFabricator;
 use CRM_MembershipExtras_Test_Fabricator_RecurringLineItem as RecurringLineItemFabricator;
 
@@ -14,7 +14,7 @@ use CRM_MembershipExtras_Test_Fabricator_RecurringLineItem as RecurringLineItemF
  *
  * @group headless
  */
-class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends QueueTestCase {
+class CRM_MembershipExtras_Queue_Task_OfflineAutoRenewal_RenewMultipleInstalmentPlansTest extends QueueTestCase {
 
   /**
    * A rolling membership type that we
@@ -83,7 +83,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
@@ -107,7 +107,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year'));
@@ -131,7 +131,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +1 day'));
@@ -163,7 +163,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
@@ -187,7 +187,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
@@ -211,7 +211,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
@@ -239,7 +239,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +1 day'));
@@ -267,7 +267,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +14 day'));
@@ -295,7 +295,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $membership = civicrm_api3('Membership', 'get', [
@@ -327,7 +327,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $membership = civicrm_api3('Membership', 'get', [
@@ -356,7 +356,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
@@ -393,7 +393,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $currentPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
@@ -462,7 +462,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
@@ -512,7 +512,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $currentMembership = civicrm_api3('Membership', 'get', [
@@ -579,7 +579,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
@@ -663,7 +663,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
       'period_length_unit' => CRM_MembershipExtras_SelectValues_AutoMembershipUpgradeRules_PeriodUnit::YEARS,
     ]);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $currentPeriodSubscriptionLineItems = $this->getSubscriptionLineItems($paymentPlan['id']);
@@ -800,7 +800,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
       'duration_unit' => 'year',
     ]);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
@@ -905,7 +905,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
       'duration_unit' => 'year',
     ]);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
@@ -999,7 +999,7 @@ class CRM_MembershipExtras_Queue_Task_RenewMultipleInstalmentPlanTest extends Qu
       'duration_unit' => 'year',
     ]);
 
-    $this->runQueueBuilder(OfflineMultipleInstalmentPlansQueueBuilder::class);
+    $this->runQueueBuilder(OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder::class);
     $this->runQueueRunner();
 
     $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);

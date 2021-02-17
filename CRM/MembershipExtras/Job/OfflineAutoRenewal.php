@@ -1,7 +1,7 @@
 <?php
 
-use CRM_MembershipExtras_Queue_Builder_OfflineMultipleInstalmentPlans as OfflineMultipleInstalmentPlansQueueBuilder;
-use CRM_MembershipExtras_Queue_Builder_OfflineSingleInstalmentPlans as OfflineSingleInstalmentPlansQueueBuilder;
+use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_MultipleInstalmentPlan as OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder;
+use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_SingleInstalmentPlan as OfflineAutoRenewalSingleInstalmentPlanQueueBuilder;
 use CRM_MembershipExtras_Queue_OfflineAutoRenewal as OfflineAutoRenewalQueue;
 
 class CRM_MembershipExtras_Job_OfflineAutoRenewal {
@@ -37,8 +37,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     }
 
     $queueBuilders = [
-      new OfflineMultipleInstalmentPlansQueueBuilder($this->queue),
-      new OfflineSingleInstalmentPlansQueueBuilder($this->queue),
+      new OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder($this->queue),
+      new OfflineAutoRenewalSingleInstalmentPlanQueueBuilder($this->queue),
     ];
     foreach ($queueBuilders as $queueBuilder) {
       $queueBuilder->run();

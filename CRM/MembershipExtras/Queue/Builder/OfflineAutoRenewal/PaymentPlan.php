@@ -5,7 +5,7 @@ use CRM_MembershipExtras_Queue_Builder_Base as BaseQueueBuilder;
 /**
  * Adds payment plans queue.
  */
-class CRM_MembershipExtras_Queue_Builder_OfflinePaymentPlans extends BaseQueueBuilder {
+class CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_PaymentPlan extends BaseQueueBuilder {
 
   /**
    * Maps contribution status names to their corresponding ID's.

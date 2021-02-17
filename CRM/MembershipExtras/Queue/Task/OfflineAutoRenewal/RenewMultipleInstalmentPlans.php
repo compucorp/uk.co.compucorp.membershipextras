@@ -1,5 +1,5 @@
 <?php
-use CRM_MembershipExtras_Queue_Task_OfflineRenewPaymentPlan as OfflineRenewPaymentPlanTask;
+use CRM_MembershipExtras_Queue_Task_OfflineAutoRenewal_RenewPaymentPlans as OfflineRenewPaymentPlansTask;
 use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstalmentsHandler;
 use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
@@ -7,7 +7,7 @@ use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 /**
  * Renews a payment plan with multiple instalments.
  */
-class CRM_MembershipExtras_Queue_Task_OfflineRenewMultipleInstalmentPlan extends OfflineRenewPaymentPlanTask {
+class CRM_MembershipExtras_Queue_Task_OfflineAutoRenewal_RenewMultipleInstalmentPlans extends OfflineRenewPaymentPlansTask {
 
   /**
    * @inheritdoc

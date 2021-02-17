@@ -1,15 +1,15 @@
 <?php
 
-use CRM_MembershipExtras_Queue_Builder_OfflinePaymentPlans as OfflinePaymentPlansQueueBuilder;
-use CRM_MembershipExtras_Queue_Task_OfflineRenewMultipleInstalmentPlan as OfflineRenewMultipleInstalmentPlanTask;
+use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_PaymentPlan as OfflineAutoRenewalPaymentPlanQueueBuilder;
+use CRM_MembershipExtras_Queue_Task_OfflineAutoRenewal_RenewMultipleInstalmentPlans as OfflineRenewMultipleInstalmentPlansTask;
 
 /**
  * Adds payment plans with multiple instalments that are ready to
  * be renewed to the queue.
  */
-class CRM_MembershipExtras_Queue_Builder_OfflineMultipleInstalmentPlans extends OfflinePaymentPlansQueueBuilder {
+class CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_MultipleInstalmentPlan extends OfflineAutoRenewalPaymentPlanQueueBuilder {
 
-  protected $taskCallback = [OfflineRenewMultipleInstalmentPlanTask::class, 'run'];
+  protected $taskCallback = [OfflineRenewMultipleInstalmentPlansTask::class, 'run'];
 
   public function run() {
     $records = $this->getRecurringContributions();
