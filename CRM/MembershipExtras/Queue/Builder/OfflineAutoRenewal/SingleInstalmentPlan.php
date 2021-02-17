@@ -1,13 +1,15 @@
 <?php
 
-use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_PaymentPlan as OfflineAutoRenewalPaymentPlanQueueBuilder;
+use CRM_MembershipExtras_Queue_Builder_Base as BaseQueueBuilder;
+use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_PaymentPlanTrait as OfflineAutoRenewalPaymentPlanQueueBuilderTrait;
 use CRM_MembershipExtras_Queue_Task_OfflineAutoRenewal_RenewSingleInstalmentPlans as OfflineRenewSingleInstalmentPlansTask;
 
 /**
  * Adds payment plans with a single instalment that are ready to
  * be renewed to the queue.
  */
-class CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_SingleInstalmentPlan extends OfflineAutoRenewalPaymentPlanQueueBuilder {
+class CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_SingleInstalmentPlan extends BaseQueueBuilder {
+  use OfflineAutoRenewalPaymentPlanQueueBuilderTrait;
 
   protected $taskCallback = [OfflineRenewSingleInstalmentPlansTask::class, 'run'];
 
