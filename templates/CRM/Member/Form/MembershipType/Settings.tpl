@@ -53,10 +53,11 @@
       let durationInterval = $('#duration_interval');
       durationInterval.val(1);
       durationInterval.prop( 'readonly', true );
-      $('#duration_unit option').val('year');
-      $('#duration_unit').prop( 'readonly', true );
+      $('#duration_unit option[value="year"]').prop('selected', true);
       $('#fixed_period_start_day_d').val(1);
       $('#fixed_period_start_day_d option:not(:selected)').prop('disabled', true);
+      $('#fixed_start_day_row').show();
+      $('#fixed_rollover_day_row').show();
     }
 
     /**
@@ -65,7 +66,7 @@
     function handleRollingPeriod() {
       $('#membership_type_annual_pro_rata_calculation').hide();
       $('#duration_interval').prop( 'readonly', false );
-      $(`#duration_unit`).prop( 'readonly', false );
+      $(`#duration_interval`).val('');
     }
 
     /**
