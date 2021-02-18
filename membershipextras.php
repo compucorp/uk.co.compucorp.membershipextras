@@ -367,6 +367,11 @@ function membershipextras_civicrm_pageRun($page) {
  * Implements hook_civicrm_validateForm().
  */
 function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if ($formName === 'CRM_Member_Form_MembershipType') {
+    $membershipType = new CRM_MembershipExtras_Hook_ValidateForm_MembershipType($fields, $errors);
+    $membershipType->validate();
+  }
+
   $formAction = $form->getAction();
   $isNewMembershipForm = ($formName === 'CRM_Member_Form_Membership' && ($formAction & CRM_Core_Action::ADD));
   $isRenewMembershipForm = ($formName === 'CRM_Member_Form_MembershipRenewal' && ($formAction & CRM_Core_Action::RENEW));
