@@ -13,6 +13,7 @@
      */
     function moveFields() {
       $('#membership_type_annual_pro_rata_calculation').insertAfter($('#month_fixed_rollover_day_row'));
+      $('.crm-membership-type-form-block-period_type').insertBefore($('.crm-membership-type-form-block-duration_unit_interval'));
     }
 
     /**
