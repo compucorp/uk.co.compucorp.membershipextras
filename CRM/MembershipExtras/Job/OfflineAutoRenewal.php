@@ -43,9 +43,15 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     foreach ($queueBuilders as $queueBuilder) {
       $queueBuilder->run();
     }
+
+    $this->numberOfQueueItems = (int) $this->queue->numberOfItems();
   }
 
   private function runQueue() {
+    if ($this->numberOfQueueItems === 0) {
+      return;
+    }
+
     $runner = new CRM_Queue_Runner([
       'title' => ts('Processing membership renewals, this may take a while depending on how many records are processed ..'),
       'queue' => $this->queue,
