@@ -479,4 +479,55 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     return TRUE;
   }
 
+  public function upgrade_0006() {
+    $this->createIsActivePaymentPlanCustomGroupAndFields();
+
+    return TRUE;
+  }
+
+  /**
+   * Creates "Is Payment Plan active?"
+   * custom group and its "Is Active?"
+   * field.
+   *
+   * @throws CiviCRM_API3_Exception
+   */
+  private function createIsActivePaymentPlanCustomGroupAndFields() {
+    $customGroup = civicrm_api3('CustomGroup', 'get', [
+      'extends' => 'ContributionRecur',
+      'name' => 'payment_plan_is_active',
+    ]);
+
+    if (!$customGroup['count']) {
+      $customGroup = civicrm_api3('CustomGroup', 'create', [
+        'extends' => 'ContributionRecur',
+        'name' => 'payment_plan_is_active',
+        'title' => E::ts('Is Payment Plan active?'),
+        'table_name' => 'civicrm_value_payment_plan_is_active',
+        'is_active' => 1,
+        'style' => 'Inline',
+        'is_multiple' => 0,
+      ]);
+    }
+
+    $customField = civicrm_api3('CustomField', 'get', [
+      'custom_group_id' => $customGroup['id'],
+      'name' => 'is_active',
+    ]);
+    if (!$customField['count']) {
+      civicrm_api3('CustomField', 'create', [
+        'custom_group_id' => $customGroup['id'],
+        'name' => 'is_active',
+        'label' => E::ts('Is Active?'),
+        'data_type' => 'Boolean',
+        'html_type' => 'Radio',
+        'default_value' => 0,
+        'required' => 0,
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'column_name' => 'is_active',
+      ]);
+    }
+  }
+
 }

@@ -63,6 +63,19 @@
             <is_reserved>0</is_reserved>
             <is_public>1</is_public>
         </CustomGroup>
+        <CustomGroup>
+            <name>payment_plan_is_active</name>
+            <title>Is Payment Plan active?</title>
+            <extends>ContributionRecur</extends>
+            <style>Inline</style>
+            <collapse_display>1</collapse_display>
+            <weight>11</weight>
+            <is_active>1</is_active>
+            <table_name>civicrm_value_payment_plan_is_active</table_name>
+            <is_multiple>0</is_multiple>
+            <collapse_adv_display>0</collapse_adv_display>
+            <is_reserved>0</is_reserved>
+        </CustomGroup>
     </CustomGroups>
     <CustomFields>
         <CustomField>
@@ -165,6 +178,23 @@
             <column_name>next_period</column_name>
             <in_selector>0</in_selector>
             <custom_group_name>related_payment_plan_periods</custom_group_name>
+        </CustomField>
+        <CustomField>
+            <name>is_active</name>
+            <label>Is Active?</label>
+            <data_type>Boolean</data_type>
+            <html_type>Radio</html_type>
+            <is_required>0</is_required>
+            <default>0</default>
+            <is_searchable>1</is_searchable>
+            <is_search_range>0</is_search_range>
+            <is_active>1</is_active>
+            <is_view>0</is_view>
+            <text_length>64</text_length>
+            <note_columns>60</note_columns>
+            <note_rows>4</note_rows>
+            <column_name>is_active</column_name>
+            <custom_group_name>civicrm_value_payment_plan_is_active</custom_group_name>
         </CustomField>
     </CustomFields>
 </CustomData>
