@@ -481,6 +481,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   public function upgrade_0006() {
     $this->createIsActivePaymentPlanCustomGroupAndFields();
+    $this->migrateRelatedPeriodsCustomGroupToIsActiveCustomGroup();
 
     return TRUE;
   }
@@ -528,6 +529,28 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
         'column_name' => 'is_active',
       ]);
     }
+  }
+
+  /**
+   * Migrates the values from "Related Payment Plan Periods"
+   * to "Is Payment Plan active?" custom group.
+   *
+   * This new custom group is added to simplify the
+   * data structure, and here we create a record
+   * for every recurring contribution where we
+   * set is_active field value to 1 if the
+   * recurring contribution does not have
+   * next_period set, which means there is
+   * not recurring contributions that comes
+   * after this one and thus it is the last one,
+   * and to set it to 0 otherwise.
+   *
+   */
+  private function migrateRelatedPeriodsCustomGroupToIsActiveCustomGroup() {
+    $query = "INSERT INTO civicrm_value_payment_plan_is_active (entity_id, is_active)  
+               SELECT ccr.id as id, IF(rppp.next_period IS NULL, 1, 0) as is_active FROM civicrm_contribution_recur ccr 
+               LEFT JOIN civicrm_value_payment_plan_periods rppp ON ccr.id = rppp.entity_id";
+    CRM_Core_DAO::executeQuery($query);
   }
 
 }
