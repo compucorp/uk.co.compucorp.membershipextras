@@ -15,7 +15,6 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->createPaymentProcessor();
     $this->createLineItemExternalIDCustomField();
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
-    $this->updatePaymentPlans();
     $this->createManageInstallmentActivityTypes();
     $this->createFutureMembershipStatusRules();
   }
@@ -275,15 +274,6 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     ]);
   }
 
-  /**
-   * Finds all payment plans and populate the offline recurring contribution
-   * line item for the payment plans using an offline payment processor
-   */
-  private function updatePaymentPlans() {
-    $updater = new CRM_MembershipExtras_Upgrader_Setup_PaymentPlanUpdater();
-    $updater->run();
-  }
-
   private function createManageInstallmentActivityTypes() {
     $optionValues = [
       ['name' => 'update_payment_plan_next_period', 'label' => 'Update Payment Plan Next Period'],
@@ -423,7 +413,6 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   public function upgrade_0001() {
     $this->executeSqlFile('sql/auto_install.sql');
     $this->createPeriodLinkCustomGroupAndFields();
-    $this->updatePaymentPlans();
     $this->createManageInstallmentActivityTypes();
 
     return TRUE;
