@@ -194,7 +194,7 @@
             <note_columns>60</note_columns>
             <note_rows>4</note_rows>
             <column_name>is_active</column_name>
-            <custom_group_name>civicrm_value_payment_plan_is_active</custom_group_name>
+            <custom_group_name>payment_plan_is_active</custom_group_name>
         </CustomField>
     </CustomFields>
 </CustomData>

@@ -105,7 +105,9 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
   }
 
   /**
-   * Checks if current recurring contribution is the last in a payment plan.
+   * Checks if current recurring contribution is
+   * the last in a payment plan by checking if
+   * it is active or not.
    *
    * @return bool
    *   TRUE if the recurring contribution is the last in a succession of
@@ -114,9 +116,9 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    * @throws \Exception
    */
   private function isLastRenewalOfManualPaymentPlan() {
-    $nextPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'next_period');
+    $isActivePaymentPlanFieldId = $this->getCustomFieldID('payment_plan_is_active', 'is_active');
 
-    if (CRM_Utils_Array::value('custom_' . $nextPeriodFieldID, $this->recurringContribution, FALSE)) {
+    if (!CRM_Utils_Array::value('custom_' . $isActivePaymentPlanFieldId, $this->recurringContribution, FALSE)) {
       return FALSE;
     }
 

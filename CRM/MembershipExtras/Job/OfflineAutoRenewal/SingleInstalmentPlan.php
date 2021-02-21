@@ -75,7 +75,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
    LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
-   LEFT JOIN civicrm_value_payment_plan_periods ppp ON ppp.entity_id = ccr.id
+   LEFT JOIN civicrm_value_payment_plan_is_active ppia ON ppia.entity_id = ccr.id
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
          AND ccr.end_date IS NULL
          AND (
@@ -87,7 +87,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
           ccr.contribution_status_id != {$cancelledStatusID}
           AND ccr.contribution_status_id != {$refundedStatusID}
          )
-         AND ppp.next_period IS NULL
+         AND ppia.is_active = 1
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
          AND msl.end_date IS NULL

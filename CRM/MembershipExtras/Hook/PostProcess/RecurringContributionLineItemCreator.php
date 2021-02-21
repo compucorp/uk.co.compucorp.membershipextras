@@ -9,20 +9,17 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
 
   private $recurContribution;
 
-  private $previousPeriodFieldID;
-
   private $calculateAutorenewalFlag = FALSE;
 
   public function __construct($recurContributionID) {
     $this->recurContributionID = $recurContributionID;
-    $this->previousPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'previous_period');
     $this->setRecurContribution();
   }
 
   private function setRecurContribution() {
     $recurContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
-      'return' => ['start_date', 'payment_processor_id', 'custom_' . $this->previousPeriodFieldID],
+      'return' => ['start_date', 'payment_processor_id'],
       'id' => $this->recurContributionID,
     ]);
     if ($recurContribution['count'] < 1) {
@@ -45,8 +42,7 @@ class CRM_MembershipExtras_Hook_PostProcess_RecurringContributionLineItemCreator
 
   public function create() {
     $processorID = CRM_Utils_Array::value('payment_processor_id', $this->recurContribution);
-    $hasPreviousPeriod = CRM_Utils_Array::value('custom_' . $this->previousPeriodFieldID, $this->recurContribution, FALSE);
-    if ($hasPreviousPeriod || !ManualPaymentProcessors::isManualPaymentProcessor($processorID)) {
+    if (!ManualPaymentProcessors::isManualPaymentProcessor($processorID)) {
       return;
     }
 
