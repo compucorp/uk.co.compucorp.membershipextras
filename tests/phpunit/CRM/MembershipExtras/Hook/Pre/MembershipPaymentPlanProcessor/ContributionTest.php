@@ -223,6 +223,22 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTe
   }
 
   /**
+   * Tests if the recurring start date is altered as per membeship start date
+   */
+  public function testAlterReceiveDate() {
+    $_REQUEST['payment_plan_schedule'] = 'monthly';
+    $params = $this->mockFormParams('rolling', 'year', date('Y-01-01'));
+    //mock receive date as of today
+    $params['receive_date'] = date('Y-m-d');
+    $processor = new MembershipPaymentPlanProcessor($params);
+    $processor->createPaymentPlan();
+    $createdPaymentPlan = $this->getCreatedPaymentPlan($processor);
+    //civicrm returns YmdHis format by default, so we mock date as per civicrm format
+    $expectedDate = date('Y0101000000');
+    $this->assertEquals($expectedDate, $createdPaymentPlan['start_date']);
+  }
+
+  /**
    * Get payment plan from reflection object
    *
    * @param CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution $processor
@@ -237,13 +253,17 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTe
    *
    * @param $membershipPeriodType
    * @param $durationUnit
+   * @param null $startDate
+   *
    * @return array
    * @throws CiviCRM_API3_Exception
    */
-  private function mockFormParams($membershipPeriodType, $durationUnit) {
+  private function mockFormParams($membershipPeriodType, $durationUnit, $startDate = NULL) {
     $this->mockSalesTaxFinancialAccount();
     $contact = ContactFabricator::fabricate();
-    $startDate = date('Y-m-d');
+    if (is_null($startDate)) {
+      $startDate = date('Y-m-d');
+    }
     $membershipType = $this->mockMembershipType($membershipPeriodType, $durationUnit);
     $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
     $financialTypeId = $this->getFinancialTypeID('Member Dues');
