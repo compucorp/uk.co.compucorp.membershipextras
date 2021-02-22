@@ -35,8 +35,20 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
    * depending on the instalments count.
    */
   public function createPaymentPlan() {
+    $this->alterRecievedDate();
     $this->createRecurringContribution();
     $this->alterFirstContributionParameters();
+  }
+
+  /**
+   * Set Contribution receive date as Membership start date.
+   */
+  private function alterRecievedDate() {
+    $membership = civicrm_api3('Membership', 'getSingle', [
+      'sequential' => 1,
+      'id' => $this->membershipId,
+    ]);
+    $this->params['receive_date'] = $membership['start_date'];
   }
 
   /**
