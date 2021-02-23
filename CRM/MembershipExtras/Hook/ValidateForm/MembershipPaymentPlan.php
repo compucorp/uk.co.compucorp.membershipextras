@@ -40,9 +40,27 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
 
   /**
    * Validates the payment plan form submission
-   * fields when renewing or creating memberships.
+   * fields when creating a membership.
    */
   public function validate() {
+    $this->validateMembershipStartDate();
+    $this->validatePriceSet();
+  }
+
+  /**
+   * Validates that membership start date is entered.
+   */
+  private function validateMembershipStartDate() {
+    if (empty($this->fields['start_date'])) {
+      $this->errors['start_date'] = ts('Start date is required');
+    }
+  }
+
+  /**
+   * Validates selected fixed membermship types when using price set
+   * have that same period type and same period start day.
+   */
+  private function validatePriceSet() {
     $fixedPeriodStartDays = [];
     $periodTypes = [];
     $priceSetID = $this->fields['price_set_id'];
@@ -73,7 +91,6 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
     if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
       $this->errors['price_set_id'] = InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY;
     }
-
   }
 
   /**
