@@ -91,6 +91,7 @@
             }
           });
         }
+        assignFirstContributionReceiveDate();
       });
 
       $('#payment_plan_schedule, #payment_instrument_id, #start_date, #end_date').change(() => {
@@ -98,7 +99,17 @@
           return;
         }
         generateInstalmentSchedule(isPriceSetSelected());
+        assignFirstContributionReceiveDate();
       });
+    }
+
+    /**
+     * Assigns first contribution received date from either start date or join date
+     */
+    function assignFirstContributionReceiveDate() {
+      let startDate =  $('#start_date').val();
+      recievedDate = !startDate || 0 === startDate.length ? $('#join_date').val() : startDate;
+      $('#receive_date').val(recievedDate);
     }
 
     /**
@@ -269,7 +280,6 @@
     function setupPayPlanTogglingEvents () {
       $('#payment_plan_fields_tabs li').click(function () {
         const tabOptionId = $(this).attr('data-selector');
-
         selectPaymentPlanTab(tabOptionId);
       });
     }
@@ -292,6 +302,7 @@
         $('.crm-membership-form-block-payment_instrument_id')
                 .insertBefore('.crm-membership-form-block-contribution_status_id');
         $('.crm-membership-form-block-billing').insertAfter('.crm-membership-form-block-contribution_status_id');
+        $('#receive_date').val('');
       } else if (tabOptionId === 'payment_plan') {
         $('#payment_plan_schedule_row').show();
         $('#payment_plan_schedule_instalment_row').show();
@@ -306,6 +317,7 @@
         if ($('#membership_type_id_1').val()) {
           $('#membership_type_id_1').change();
         }
+        assignFirstContributionReceiveDate();
       }
     }
 
