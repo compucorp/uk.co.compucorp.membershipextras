@@ -70,7 +70,27 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     }
   }
 
+  /**
+   * @param \CRM_Queue_TaskContext $ctx
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
   public static function onEnd(CRM_Queue_TaskContext $ctx) {
+    $job = civicrm_api3('Job', 'getSingle', [
+      'name' => 'Renew offline auto-renewal memberships',
+    ]);
+
+    $result = civicrm_api3('JobLog', 'create', [
+      'domain_id' => $job['domain_id'],
+      'job_id' => $job['id'],
+      'name' => $job['name'],
+      'command' => ts("Entity:") . " " . $job['api_entity'] . " " . ts("Action:") . " " . $job['api_action'],
+      'description' => 'Finished execution of Renew offline auto-renewal memberships with result: Success',
+      'data' => "
+Full message:
+Finished execution of Renew offline auto-renewal memberships with result: Success ",
+    ]);
+
     $message = ts('Membership Renewals Processing Completed');
     CRM_Core_Session::setStatus($message, '', 'success');
   }
