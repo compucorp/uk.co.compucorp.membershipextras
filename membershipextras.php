@@ -374,9 +374,8 @@ function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$f
 
   $formAction = $form->getAction();
   $isNewMembershipForm = ($formName === 'CRM_Member_Form_Membership' && ($formAction & CRM_Core_Action::ADD));
-  $isRenewMembershipForm = ($formName === 'CRM_Member_Form_MembershipRenewal' && ($formAction & CRM_Core_Action::RENEW));
-  $isPaymentPlanPaymentlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanWithSchedule();
-  if (($isNewMembershipForm || $isRenewMembershipForm) && $isPaymentPlanPaymentlanPayment) {
+  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanWithSchedule();
+  if ($isNewMembershipForm && $isPaymentPlanPayment) {
     $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
     $paymentPlanValidateHook->validate();
   }
