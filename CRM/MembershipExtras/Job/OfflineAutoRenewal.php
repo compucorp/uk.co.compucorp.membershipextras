@@ -2,6 +2,7 @@
 
 use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_MultipleInstalmentPlan as OfflineAutoRenewalMultipleInstalmentPlanQueueBuilder;
 use CRM_MembershipExtras_Queue_Builder_OfflineAutoRenewal_SingleInstalmentPlan as OfflineAutoRenewalSingleInstalmentPlanQueueBuilder;
+use CRM_MembershipExtras_Queue_Task_PostRunAll as PostRunAllTask;
 use CRM_MembershipExtras_Queue_OfflineAutoRenewal as OfflineAutoRenewalQueue;
 
 class CRM_MembershipExtras_Job_OfflineAutoRenewal {
@@ -52,6 +53,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       return;
     }
 
+    $this->addPostRunAllTask();
+
     $runner = new CRM_Queue_Runner([
       'title' => ts('Processing membership renewals, this may take a while depending on how many records are processed ..'),
       'queue' => $this->queue,
@@ -93,6 +96,25 @@ Finished execution of Renew offline auto-renewal memberships with result: Succes
 
     $message = ts('Membership Renewals Processing Completed');
     CRM_Core_Session::setStatus($message, '', 'success');
+  }
+
+  /**
+   * PostRunAllTask will run as the last task in the queue. Leave
+   * CRM_MembershipExtras_Queue_Task_PostRunAll::process empty if there is no
+   * need for it because queue web-runner will show 'Done' message instead of
+   * the last task title.
+   */
+  protected function addPostRunAllTask() {
+    $taskTitle = 'Done';
+    $records = [1];
+
+    $task = new CRM_Queue_Task(
+      [PostRunAllTask::class, 'run'],
+      [$records],
+      $taskTitle
+    );
+
+    $this->queue->createItem($task);
   }
 
 }
