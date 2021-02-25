@@ -10,15 +10,15 @@ use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabri
 use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem as MembershipPaymentPlanProcessor;
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodCalculator;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
- * Class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest
+ * Class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest
  *
  * @group headless
  */
-class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest extends BaseHeadlessTest {
 
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
@@ -94,9 +94,10 @@ class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest e
     $params['unit_price'] = MoneyUtilities::roundToPrecision(($amount / $membershipTypeDurationInDays) * $diffInDays, 2);
     $params['tax_amount'] = MoneyUtilities::roundToPrecision(($params['tax_rate'] / 100) * $params['tax_amount'], 2);
 
-    //12 = number of instalment as we are paying montthly
-    $expectedLineToTal = MoneyUtilities::roundToPrecision($params['line_total'] / 12, 2);
-    $expectedTaxAmount = MoneyUtilities::roundToPrecision($params['tax_amount'] / 12, 2);
+    //diffInMonths = number of instalment as we are paying montthly
+    $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime($this->membership['start_date']));
+    $expectedLineToTal = MoneyUtilities::roundToPrecision($params['line_total'] / $diffInMonths, 2);
+    $expectedTaxAmount = MoneyUtilities::roundToPrecision($params['tax_amount'] / $diffInMonths, 2);
 
     //Make sure we unset $_REQUEST array before calling processor
     unset($_REQUEST);
