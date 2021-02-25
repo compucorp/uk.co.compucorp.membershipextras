@@ -1,13 +1,12 @@
 <?php
 
 use CRM_MembershipExtras_Service_MembershipPeriodType_PeriodTypeCalculatorInterface as Calculator;
-use CRM_MembershipExtras_Service_MembershipPeriodType_AbstractFixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 use CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator as MembershipInstalmentTaxAmountCalculator;
 use CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting as SettingField;
 
-class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator extends FixedPeriodTypeCalculator implements Calculator {
+class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator implements Calculator {
 
   /**
    * Constants for Annal ProRata Calculation
@@ -16,6 +15,23 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCal
    */
   const BY_DAYS = 1;
   const BY_MONTHS = 2;
+
+  const TWELVE_MONTHS = 12;
+
+  /**
+   * @var float
+   */
+  private $taxAmount = 0;
+
+  /**
+   * @var float
+   */
+  private $amount = 0;
+
+  /**
+   * @var DateTime|null
+   */
+  private $startDate = NULL;
 
   /**
    * @var \CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator
@@ -30,6 +46,19 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCal
   public function __construct(array $membershipTypes) {
     $this->instalmentTaxAmountCalculator = new MembershipInstalmentTaxAmountCalculator();
     $this->membershipTypes = $membershipTypes;
+  }
+
+  /**
+   * Calculate pro rated amount base on amount, duration and different.
+   * Amount, Tax amount can use this function.
+   *
+   * @param $amount
+   * @param $duration
+   * @param $diff
+   * @return float|int
+   */
+  private function calculateProRatedAmount($amount, $duration, $diff) {
+    return ($amount / $duration) * $diff;
   }
 
   /**
@@ -53,6 +82,55 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCal
       $this->amount += $this->calculateProRatedAmount($membershipAmount, $duration, $diff);
       $this->taxAmount += $this->calculateProRatedAmount($taxAmount, $duration, $diff);
     }
+  }
+
+  /**
+   * @return float
+   */
+  public function getTaxAmount() {
+    return $this->taxAmount;
+  }
+
+  /**
+   * @param float $taxAmount
+   */
+  public function setTaxAmount(float $taxAmount) {
+    $this->taxAmount = $taxAmount;
+  }
+
+  /**
+   * @return float
+   */
+  public function getAmount() {
+    return $this->amount;
+  }
+
+  /**
+   * @param float $amount
+   */
+  public function setAmount(float $amount) {
+    $this->amount = $amount;
+  }
+
+  /**
+   * @return DateTime|null
+   */
+  public function getStartDate() {
+    return $this->startDate;
+  }
+
+  /**
+   * @param DateTime $startDate
+   */
+  public function setStartDate(DateTime $startDate) {
+    $this->startDate = $startDate;
+  }
+
+  /**
+   * @return float|int
+   */
+  public function getTotalAmount() {
+    return $this->amount + $this->taxAmount;
   }
 
 }
