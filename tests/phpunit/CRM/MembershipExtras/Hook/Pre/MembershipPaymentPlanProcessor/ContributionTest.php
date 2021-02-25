@@ -7,11 +7,11 @@ use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabrica
 use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution as MembershipPaymentPlanProcessor;
 
 /**
- * Class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTest
+ * Class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTest
  *
  * @group headless
  */
-class CRM_MembershpExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTest extends BaseHeadlessTest implements HookInterface {
+class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTest extends BaseHeadlessTest implements HookInterface {
 
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
 

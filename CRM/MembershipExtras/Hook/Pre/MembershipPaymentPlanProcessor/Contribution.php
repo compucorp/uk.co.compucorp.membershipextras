@@ -15,6 +15,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
   public function __construct(&$params) {
     $this->params = &$params;
     $this->assignInstalmentDetails();
+    $this->fixedPeriodMembershipTypes = $this->getLineItemsFixedPeriodMembershipType();
   }
 
   /**
@@ -45,7 +46,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
   private function createRecurringContribution() {
     $this->dispatchReceiveDateCalculationHook();
 
-    $amountPerInstalment = $this->calculateSingleInstalmentAmount($this->params['total_amount']);
+    if (!empty($this->fixedPeriodMembershipTypes) && $this->isPaidMonthly()) {
+      $instalmentCount = $this->getInstalmentCountForFixedMembeship($this->fixedPeriodMembershipTypes[0]);
+      $amountPerInstalment = $this->calculateSingleInstalmentAmount($this->params['total_amount'], $instalmentCount);
+    }
+    else {
+      $amountPerInstalment = $this->calculateSingleInstalmentAmount($this->params['total_amount']);
+    }
     $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'name',
       'option_group_id' => 'payment_instrument',
@@ -110,23 +117,30 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
     $this->params['total_amount'] = $this->recurringContribution['amount'];
     $this->params['net_amount'] = $this->recurringContribution['amount'];
 
-    if ($this->isUsingPriceSet() && !empty($this->params['tax_amount'])) {
-      $membership = civicrm_api3('Membership', 'get', [
-        'sequential' => 1,
-        'id' => $this->membershipId,
-      ])['values'][0];
-      $membershipTypes = $this->getLineItemsFixedPeriodMembershipType();
-      if (!empty($membershipTypes)) {
-        $instalmentAmount = $this->getProRatedInstalmentAmount($membershipTypes, $membership['start_date']);
-        $this->params['tax_amount'] = $instalmentAmount->getCalculator()->getTaxAmount();
+    if (empty($this->params['tax_amount'])) {
+      return;
+    }
+
+    if (empty($this->fixedPeriodMembershipTypes)) {
+      $this->params['tax_amount'] = $this->calculateInstalmentTax($this->params['total_amount'], $this->params['financial_type_id']);
+
+      return;
+    }
+
+    $instalmentCount = $this->getInstalmentCountForFixedMembeship($this->fixedPeriodMembershipTypes[0]);
+    if ($this->isUsingPriceSet()) {
+      $instalmentAmount = $this->getProRatedInstalmentAmount($this->fixedPeriodMembershipTypes);
+      if ($this->isPaidMonthly()) {
+        $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTaxAmount(), $instalmentCount);
       }
       else {
-        $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount']);
+        $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTaxAmount());
       }
     }
-    elseif (!empty($this->params['tax_amount'])) {
-      $this->params['tax_amount'] = $this->calculateInstalmentTax($this->params['total_amount'], $this->params['financial_type_id']);
+    else {
+      $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount'], $instalmentCount);
     }
+
   }
 
   /**
@@ -143,7 +157,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
         }
       }
     }
-
     return $membershipTypes;
   }
 
@@ -161,6 +174,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
       $this->params['contribution_status_id'] = $statusId;
       $this->params['is_pay_later'] = TRUE;
     }
+  }
+
+  private function isPaidMonthly() {
+    return $this->paymentPlanSchedule == CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::MONTHLY;
   }
 
 }
