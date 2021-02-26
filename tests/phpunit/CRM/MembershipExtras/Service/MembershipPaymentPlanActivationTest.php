@@ -67,7 +67,7 @@ class CRM_MembershipExtras_Service_MembershipPaymentPlanActivationTest extends B
       'non_deductible_amount' => 0,
     ];
 
-    for($i = 0; $i < $renewalTermsCount; $i++) {
+    for ($i = 0; $i < $renewalTermsCount; $i++) {
       PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
     }
   }

@@ -107,6 +107,12 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
         break;
     }
 
+    $isActivePaymentPlanFieldId = civicrm_api3('CustomField', 'get', [
+      'sequential' => 1,
+      'custom_group_id' => 'payment_plan_is_active',
+      'name' => 'is_active',
+    ])['id'];
+
     $recurringContributionParams = [
       'sequential' => 1,
       'contact_id' => self::$paymentPlanMembershipOrder->contactId,
@@ -122,6 +128,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'financial_type_id' => self::$paymentPlanMembershipOrder->financialType,
       'payment_instrument_id' => self::$paymentPlanMembershipOrder->paymentMethod,
       'start_date' => self::$paymentPlanMembershipOrder->paymentPlanStartDate,
+      'custom_' . $isActivePaymentPlanFieldId => 1,
     ];
 
     return RecurringContributionFabricator::fabricate($recurringContributionParams);
@@ -336,7 +343,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    *
    * @return int|NULL
    */
-  private static function getMembershipIdWithSameTypeIfExist($priceFieldValueId){
+  private static function getMembershipIdWithSameTypeIfExist($priceFieldValueId) {
     $priceFieldValue = self::getPriceFieldValue($priceFieldValueId);
     $membershipTypeId = $priceFieldValue['membership_type_id'];
     $membership = civicrm_api3('Membership', 'get', [

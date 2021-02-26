@@ -83,7 +83,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    *
    * @param $recurContributionID
    */
-  private function createRecurringSubscriptionLineItems($recurContributionID ) {
+  private function createRecurringSubscriptionLineItems($recurContributionID) {
     $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
     $lineItemCreator->create();
   }

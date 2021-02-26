@@ -62,7 +62,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    */
   private function getRecurringContribution() {
     return civicrm_api3('ContributionRecur', 'getsingle', [
-      'id' => $this->recurringContributionID
+      'id' => $this->recurringContributionID,
     ]);
   }
 

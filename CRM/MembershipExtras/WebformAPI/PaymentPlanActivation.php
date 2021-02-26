@@ -46,4 +46,5 @@ class CRM_MembershipExtras_WebformAPI_PaymentPlanActivation {
 
     return $ids;
   }
+
 }
