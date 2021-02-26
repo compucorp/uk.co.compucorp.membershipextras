@@ -609,7 +609,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
         'financial_type_id' => $this->getFinancialTypeID('Member Dues'),
       ]
     ));
-    $this->mockSettings($memType['id'], CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator::BY_MONTHS);
+    $this->mockSettings($memType['id'], CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator::BY_MONTHS);
     $membershipType = CRM_Member_BAO_MembershipType::findById($memType['id']);
 
     return [$membershipType];

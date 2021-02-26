@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Hook_BuildForm_MembershipType_Base as Base;
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodCalculator;
 
 /**
  * Class CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting

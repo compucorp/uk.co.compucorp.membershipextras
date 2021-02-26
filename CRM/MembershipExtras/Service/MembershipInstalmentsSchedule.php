@@ -4,9 +4,8 @@ use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMembershipTypeInstalment;
 use CRM_MembershipExtras_DTO_ScheduleInstalmentAmount as ScheduleInstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodTypeAnnualCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeMonthlyCalculator as FixedPeriodTypeMonthlyCalculator;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule
@@ -169,16 +168,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   private function getInstalmentAmountCalculator() {
     $instalmentAmountObject = NULL;
     if ($this->membershipTypes[0]->period_type == 'fixed') {
-      if ($this->schedule == self::MONTHLY) {
-        $fixedPeriodTypeMonthlyCalculator = new FixedPeriodTypeMonthlyCalculator($this->membershipTypes);
-        $fixedPeriodTypeMonthlyCalculator->setStartDate($this->startDate);
-        $instalmentAmountObject = new InstalmentAmount($fixedPeriodTypeMonthlyCalculator);
-      }
-      else {
-        $fixedPeriodTypeAnnualCalculator = new FixedPeriodTypeAnnualCalculator($this->membershipTypes);
-        $fixedPeriodTypeAnnualCalculator->setStartDate($this->startDate);
-        $instalmentAmountObject = new InstalmentAmount($fixedPeriodTypeAnnualCalculator);
-      }
+      $fixedPeriodTypCalculator = new FixedPeriodTypeCalculator($this->membershipTypes);
+      $fixedPeriodTypCalculator->setStartDate($this->startDate);
+      $instalmentAmountObject = new InstalmentAmount($fixedPeriodTypCalculator);
     }
     else {
       $instalmentAmountObject = new InstalmentAmount(new RollingPeriodCalculator($this->membershipTypes));

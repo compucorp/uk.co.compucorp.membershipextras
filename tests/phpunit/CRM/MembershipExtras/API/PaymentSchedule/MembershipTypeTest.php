@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Service_MembershipInstalmentsSchedule as Schedule;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodTypeCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 
 /**
  * Class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest

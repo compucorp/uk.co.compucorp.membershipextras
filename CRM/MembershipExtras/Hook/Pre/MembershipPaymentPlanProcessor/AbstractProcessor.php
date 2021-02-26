@@ -2,9 +2,10 @@
 
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator as FixedPeriodTypeAnnualCalculator;
-use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeMonthlyCalculator as FixedPeriodTypeMonthlyCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
+use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
+use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProcessor {
 
@@ -71,11 +72,15 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
    * Calculates single installment amount.
    *
    * @param float $amount
+   * @param float $divisor
    *
    * @return float
    */
-  protected function calculateSingleInstalmentAmount($amount) {
-    return MoneyUtilities::roundToCurrencyPrecision($amount / $this->instalmentsCount);
+  protected function calculateSingleInstalmentAmount($amount, $divisor = NULL) {
+    if (is_null($divisor)) {
+      $divisor = $this->instalmentsCount;
+    }
+    return MoneyUtilities::roundToCurrencyPrecision($amount / $divisor, 2);
   }
 
   /**
@@ -114,21 +119,25 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
   /**
    * Gets pro rated instalment amount
    */
-  protected function getProRatedInstalmentAmount(array $membershipTypes, $membershipStartDate) {
-    if ($this->paymentPlanSchedule == CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::MONTHLY) {
-      $fixedPeriodTypeMonthlyCalculator = new FixedPeriodTypeMonthlyCalculator($membershipTypes);
-      $fixedPeriodTypeMonthlyCalculator->setStartDate(new DateTime($membershipStartDate));
-      $instalmentAmount = new InstalmentAmount($fixedPeriodTypeMonthlyCalculator);
-    }
-    else {
-      $fixedPeriodTypeAnnualCalculator = new FixedPeriodTypeAnnualCalculator($membershipTypes);
-      $fixedPeriodTypeAnnualCalculator->setStartDate(new DateTime($membershipStartDate));
-      $instalmentAmount = new InstalmentAmount($fixedPeriodTypeAnnualCalculator);
-    }
-
+  protected function getProRatedInstalmentAmount(array $membershipTypes) {
+    $fixedPeriodTypeCalculator = new FixedPeriodTypeCalculator($membershipTypes);
+    $fixedPeriodTypeCalculator->setStartDate(new DateTime($this->getMembership()['start_date']));
+    $instalmentAmount = new InstalmentAmount($fixedPeriodTypeCalculator);
     $instalmentAmount->getCalculator()->calculate();
 
     return $instalmentAmount;
+  }
+
+  protected function getInstalmentCountForFixedMembeship($fixedMembershipType) {
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($fixedMembershipType, new MembershipTypeDatesCalculator());
+    return $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime($this->getMembership()['start_date']));
+  }
+
+  protected function getMembership() {
+    return civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'id' => $this->membershipId,
+    ])['values'][0];
   }
 
 }

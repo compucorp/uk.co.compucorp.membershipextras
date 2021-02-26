@@ -88,11 +88,25 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
   /**
    * Tests get monthly fixed membership type
    */
-  public function testGetMonthlyFixedMembershipType() {
+  public function testGetMonthlyFixedMembershipTypeCalculatedByDays() {
     $membershipType = $this->mockFixedMembeshipType();
-    $startDate = new DateTime('today');
+    $this->mockSettings($membershipType['id'], CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator::BY_DAYS);
+    $startDate = new DateTime(date('2021-01-01'));
     $formattedStartDate = $startDate->format('Y-m-d');
-    $expectedAmount = $this->currencySymbol . 10;
+
+    //Mock end date as per membership type rollover day
+    $endDate = new DateTime(date('2021-09-30'));
+    $interval = $endDate->diff($startDate);
+    $interval = $endDate->diff($startDate);
+    $durationInDays = (int) $interval->format("%a") + 1;
+    //Calculate expected amount by days.
+    //Membership fee is 120
+    //Membership roll over day is 30 Sep
+    //No of days between start date 01 Jan 2021 to membership rollover day is 274 days
+    //No of months between start date 01 Jan to membership rollover day is 9 months
+    //2021 has 365 days
+    $expectedAmount = round(((120 / 365) * $durationInDays) / 9, 2);
+    $expectedAmount = $this->currencySymbol . $expectedAmount;
     $expectedTaxAmount = $this->currencySymbol . 0;
     $instalments = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly', $formattedStartDate);
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id'], $formattedStartDate));
@@ -102,17 +116,16 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
   /**
    * Tests get annual fixed membership type
    */
-  public function testGetAnnualFixedMembershipType() {
+  public function testGetAnnualFixedMembershipTypeCalculateByMonths() {
     $membershipType = $this->mockFixedMembeshipType();
-    $startDate = new DateTime('today');
+    $this->mockSettings($membershipType['id'], CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator::BY_MONTHS);
+    $startDate = new DateTime(date('Y-01-01'));
     $formattedStartDate = $startDate->format('Y-m-d');
-    $this->mockSettings($membershipType['id'], CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeAnnualCalculator::BY_MONTHS);
-    $memTypeObj = CRM_Member_BAO_MembershipType::findById($membershipType['id']);
-    $membershipTypeDurationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($memTypeObj, new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator());
-
-    $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
-    $expectedAmount = ($membershipType['minimum_fee'] / 12) * $diffInMonths;
-
+    //Calculate expected amount by months
+    //Membership fee is 120
+    //Membership rollover day is 30 Sep
+    //No of months between start date 01 Jan to membership rollover day is 9 months
+    $expectedAmount = (120 / 12) * 9;
     $instalments = $this->getMembershipTypeSchedule($membershipType['id'], 'annual', $formattedStartDate);
     $this->assertCount(1, $instalments['instalments']);
     $expectedAmount = $this->currencySymbol . $expectedAmount;
