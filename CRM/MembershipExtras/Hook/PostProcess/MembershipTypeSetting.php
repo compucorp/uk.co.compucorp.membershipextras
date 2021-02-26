@@ -48,13 +48,12 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSetting {
       $this->settings = [];
     }
 
-    if (!empty($this->form->_id)) {
-      $annualProRataCalculationValue = $this->form->_submitValues['membership_type_annual_pro_rata_calculation'];
-      $this->settings[$this->form->_id]  = [
-        'membership_type_annual_pro_rata_calculation' => $annualProRataCalculationValue,
-      ];
-      Civi::settings()->set(SettingsManager::MEMBERSHIP_TYPE_SETTINGS_KEY, $this->settings);
-    }
+    $membershipTypeId = $this->getMembershipTypeId();
+    $annualProRataCalculationValue = $this->form->_submitValues['membership_type_annual_pro_rata_calculation'];
+    $this->settings[$membershipTypeId]  = [
+      'membership_type_annual_pro_rata_calculation' => $annualProRataCalculationValue,
+    ];
+    Civi::settings()->set(SettingsManager::MEMBERSHIP_TYPE_SETTINGS_KEY, $this->settings);
   }
 
   /**
@@ -67,6 +66,17 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSetting {
       unset($this->settings[$membershipTypeId]);
       Civi::settings()->set(SettingsManager::MEMBERSHIP_TYPE_SETTINGS_KEY, $this->settings);
     }
+  }
+
+  private function getMembershipTypeId() {
+    if (!empty($this->form->_id)) {
+      return $this->form->_id;
+    }
+
+    return civicrm_api3('MembershipType', 'getsingle', [
+      'return' => ['id'],
+      'name' => $this->form->exportValues()['name'],
+    ])['id'];
   }
 
 }

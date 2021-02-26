@@ -49,6 +49,7 @@
      * Handles fields when Membership Type fixed period is selected
     */
     function handleFixedPeriod() {
+      $('#month_fixed_rollover_day_row').hide();
       $('#membership_type_annual_pro_rata_calculation').show();
       let durationInterval = $('#duration_interval');
       durationInterval.val(1);

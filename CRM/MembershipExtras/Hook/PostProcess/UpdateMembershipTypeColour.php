@@ -12,7 +12,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour {
   private $form;
 
   /**
-   * @var array.
+   * @var array
    */
   private $membershipTypeColourSettings;
 
@@ -48,16 +48,15 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour {
       $membershipTypeColourSettings = [];
     }
 
-    if (!empty($this->form->_id)) {
-      $setMembershipColour = $this->form->_submitValues['set_membership_colour'];
-      $membershipColour = $this->form->_submitValues['membership_colour'];
-      $membershipTypeColourSettings[$this->form->_id] = [
-        'set_membership_colour' => $setMembershipColour,
-        'membership_colour' => $setMembershipColour ? $membershipColour : ''
-      ];
+    $membershipTypeId = $this->getMembershipTypeId();
+    $setMembershipColour = $this->form->_submitValues['set_membership_colour'];
+    $membershipColour = $this->form->_submitValues['membership_colour'];
+    $membershipTypeColourSettings[$membershipTypeId] = [
+      'set_membership_colour' => $setMembershipColour,
+      'membership_colour' => $setMembershipColour ? $membershipColour : '',
+    ];
 
-      Civi::settings()->set(MembershipTypeSettings::COLOUR_SETTINGS_KEY, $membershipTypeColourSettings);
-    }
+    Civi::settings()->set(MembershipTypeSettings::COLOUR_SETTINGS_KEY, $membershipTypeColourSettings);
   }
 
   /**
@@ -75,4 +74,16 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour {
       Civi::settings()->set(MembershipTypeSettings::COLOUR_SETTINGS_KEY, $membershipTypeColourSettings);
     }
   }
+
+  private function getMembershipTypeId() {
+    if (!empty($this->form->_id)) {
+      return $this->form->_id;
+    }
+
+    return civicrm_api3('MembershipType', 'getsingle', [
+      'return' => ['id'],
+      'name' => $this->form->exportValues()['name'],
+    ])['id'];
+  }
+
 }
