@@ -12,7 +12,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour {
   private $form;
 
   /**
-   * @var array.
+   * @var array
    */
   private $membershipTypeColourSettings;
 
@@ -53,7 +53,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour {
     $membershipColour = $this->form->_submitValues['membership_colour'];
     $membershipTypeColourSettings[$membershipTypeId] = [
       'set_membership_colour' => $setMembershipColour,
-      'membership_colour' => $setMembershipColour ? $membershipColour : ''
+      'membership_colour' => $setMembershipColour ? $membershipColour : '',
     ];
 
     Civi::settings()->set(MembershipTypeSettings::COLOUR_SETTINGS_KEY, $membershipTypeColourSettings);
