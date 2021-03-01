@@ -82,13 +82,15 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
 
     $formattedInstalments = [];
     foreach ($instalments as $key => $instalment) {
-      $instalmentAmount = $currencySymbol . $instalment->getInstalmentAmount()->getTaxAmount();;
-      $instalmentTaxAmount = $currencySymbol . $instalment->getInstalmentAmount()->getAmount();;
+      $instalmentAmount = $currencySymbol . $instalment->getInstalmentAmount()->getTaxAmount();
+      $instalmentTaxAmount = $currencySymbol . $instalment->getInstalmentAmount()->getAmount();
+      $instalmentTotalAmount = $currencySymbol . $instalment->getInstalmentAmount()->getTotalAmount();
       $instalmentDate = CRM_Utils_Date::customFormat($instalment->getInstalmentDate()->format('Y-m-d'), $this->getDateformatFull());
       $formattedInstalment['instalment_no'] = $key + 1;
       $formattedInstalment['instalment_date'] = $instalmentDate;
       $formattedInstalment['instalment_tax_amount'] = $instalmentAmount;
       $formattedInstalment['instalment_amount'] = $instalmentTaxAmount;
+      $formattedInstalment['instalment_total_amount'] = $instalmentTotalAmount;
       $formattedInstalment['instalment_status'] = $pendingStatusLabel;
       array_push($formattedInstalments, $formattedInstalment);
     }

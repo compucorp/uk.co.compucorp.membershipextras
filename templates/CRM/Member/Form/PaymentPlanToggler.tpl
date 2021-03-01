@@ -242,7 +242,7 @@
       tbody.append('<td>' + rowData.instalment_no + ' </td>');
       tbody.append('<td>' + rowData.instalment_date + '</td>');
       tbody.append('<td>' + rowData.instalment_tax_amount + '</td>');
-      tbody.append('<td>' + rowData.instalment_amount + '</td>');
+      tbody.append('<td>' + rowData.instalment_total_amount + '</td>');
       tbody.append('<td>' + rowData.instalment_status + '</td>');
       tbody.append('</tr>');
     }
