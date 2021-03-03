@@ -116,7 +116,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    * @throws \Exception
    */
   private function isLastRenewalOfManualPaymentPlan() {
-    $isActivePaymentPlanFieldId = $this->getCustomFieldID('payment_plan_is_active', 'is_active');
+    $isActivePaymentPlanFieldId = $this->getCustomFieldID('payment_plan_extra_attributes', 'is_active');
 
     if (!CRM_Utils_Array::value('custom_' . $isActivePaymentPlanFieldId, $this->recurringContribution, FALSE)) {
       return FALSE;

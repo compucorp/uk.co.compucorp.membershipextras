@@ -81,10 +81,10 @@ class CRM_MembershipExtras_Service_MembershipPaymentPlanActivationTest extends B
 
   private function getMembershipRelatedPaymentPlansWithTheirActiveStatus($membershipId) {
     $query = "
-      SELECT cc.contribution_recur_id as id, ppia.is_active as is_active FROM civicrm_membership cm 
+      SELECT cc.contribution_recur_id as id, ppea.is_active as is_active FROM civicrm_membership cm 
       INNER JOIN civicrm_membership_payment cmp ON cm.id = cmp.membership_id
       INNER JOIN civicrm_contribution cc ON cmp.contribution_id = cc.id  
-      LEFT JOIN civicrm_value_payment_plan_is_active ppia ON cc.contribution_recur_id = ppia.entity_id 
+      LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON cc.contribution_recur_id = ppea.entity_id 
       WHERE cm.id = {$membershipId} 
       GROUP BY cc.contribution_recur_id 
       ORDER BY cc.contribution_recur_id ASC 

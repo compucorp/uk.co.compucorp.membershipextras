@@ -60,7 +60,7 @@ class CRM_MembershipExtras_Service_MembershipPaymentPlanActivation {
       $formattedRecurIds = '(' . implode(',', $recurContributionsIds) . ')';
 
       $deactivationQuery = "
-      UPDATE civicrm_value_payment_plan_is_active 
+      UPDATE civicrm_value_payment_plan_extra_attributes    
       SET is_active = 0 WHERE entity_id IN $formattedRecurIds
     ";
       CRM_Core_DAO::executeQuery($deactivationQuery);
@@ -68,7 +68,7 @@ class CRM_MembershipExtras_Service_MembershipPaymentPlanActivation {
 
     $lastRecurContributionId = end($recurContributionsIds);
     $activationQuery = "
-      INSERT INTO civicrm_value_payment_plan_is_active 
+      INSERT INTO civicrm_value_payment_plan_extra_attributes    
       (entity_id, is_active) VALUES ({$lastRecurContributionId}, 1) 
       ON DUPLICATE KEY UPDATE is_active = 1 
      ";

@@ -164,7 +164,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     $this->removeOfflineAutoRenewalScheduledJob();
     $this->removeCustomExternalIDs();
-    $this->removeIsActivePaymentPlanCustomGroupAndField();
+    $this->removePaymentPlanExtraAttributesCustomGroupAndFields();
     $this->removeManageInstallmentActivityTypes();
     $this->removeFutureMembershipStatusRules();
   }
@@ -197,20 +197,20 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   /**
-   * Remove 'Is Active Payment plan' Custom and Fields and Group
+   * Remove 'Payment Plan extra attributes' Custom group and Fields
    */
-  private function removeIsActivePaymentPlanCustomGroupAndField() {
+  private function removePaymentPlanExtraAttributesCustomGroupAndFields() {
     $customFields = [
       'is_active',
     ];
     civicrm_api3('CustomField', 'get', [
       'name' => ['IN' => $customFields],
-      'custom_group_id' => 'payment_plan_is_active',
+      'custom_group_id' => 'payment_plan_extra_attributes',
       'api.CustomField.delete' => ['id' => '$value.id'],
     ]);
 
     civicrm_api3('CustomGroup', 'get', [
-      'name' => 'payment_plan_is_active',
+      'name' => 'payment_plan_extra_attributes',
       'api.CustomGroup.delete' => ['id' => '$value.id'],
     ]);
   }
@@ -409,31 +409,30 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   public function upgrade_0006() {
-    $this->createIsActivePaymentPlanCustomGroupAndFields();
-    $this->migrateRelatedPeriodsCustomGroupToIsActiveCustomGroup();
+    $this->createPaymentPlanExtraAttributesCustomGroupAndFields();
+    $this->migrateRelatedPeriodsCustomGroupToIsActiveCustomField();
 
     return TRUE;
   }
 
   /**
-   * Creates "Is Payment Plan active?"
-   * custom group and its "Is Active?"
-   * field.
+   * Creates "Payment Plan extra attributes"
+   * custom group and its custom fields.
    *
    * @throws CiviCRM_API3_Exception
    */
-  private function createIsActivePaymentPlanCustomGroupAndFields() {
+  private function createPaymentPlanExtraAttributesCustomGroupAndFields() {
     $customGroup = civicrm_api3('CustomGroup', 'get', [
       'extends' => 'ContributionRecur',
-      'name' => 'payment_plan_is_active',
+      'name' => 'payment_plan_extra_attributes',
     ]);
 
     if (!$customGroup['count']) {
       $customGroup = civicrm_api3('CustomGroup', 'create', [
         'extends' => 'ContributionRecur',
-        'name' => 'payment_plan_is_active',
-        'title' => E::ts('Is Payment Plan active?'),
-        'table_name' => 'civicrm_value_payment_plan_is_active',
+        'name' => 'payment_plan_extra_attributes',
+        'title' => E::ts('Payment Plan extra attributes'),
+        'table_name' => 'civicrm_value_payment_plan_extra_attributes',
         'is_active' => 1,
         'style' => 'Inline',
         'is_multiple' => 0,
@@ -462,9 +461,9 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   /**
    * Migrates the values from "Related Payment Plan Periods"
-   * to "Is Payment Plan active?" custom group.
+   * to Payment Plan "Is active?" custom field.
    *
-   * This new custom group is added to simplify the
+   * This Is active?" custom field is added to simplify the
    * data structure, and here we create a record
    * for every recurring contribution where we
    * set is_active field value to 1 if the
@@ -475,8 +474,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    * and to set it to 0 otherwise.
    *
    */
-  private function migrateRelatedPeriodsCustomGroupToIsActiveCustomGroup() {
-    $query = "INSERT INTO civicrm_value_payment_plan_is_active (entity_id, is_active)  
+  private function migrateRelatedPeriodsCustomGroupToIsActiveCustomField() {
+    $query = "INSERT INTO civicrm_value_payment_plan_extra_attributes (entity_id, is_active)  
                SELECT ccr.id as id, IF(rppp.next_period IS NULL, 1, 0) as is_active FROM civicrm_contribution_recur ccr 
                LEFT JOIN civicrm_value_payment_plan_periods rppp ON ccr.id = rppp.entity_id";
     CRM_Core_DAO::executeQuery($query);

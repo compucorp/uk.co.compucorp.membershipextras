@@ -47,14 +47,14 @@
             <collapse_adv_display>0</collapse_adv_display>
         </CustomGroup>
         <CustomGroup>
-            <name>payment_plan_is_active</name>
-            <title>Is Payment Plan active?</title>
+            <name>payment_plan_extra_attributes</name>
+            <title>Payment Plan extra attributes</title>
             <extends>ContributionRecur</extends>
             <style>Inline</style>
             <collapse_display>1</collapse_display>
             <weight>11</weight>
             <is_active>1</is_active>
-            <table_name>civicrm_value_payment_plan_is_active</table_name>
+            <table_name>civicrm_value_payment_plan_extra_attributes</table_name>
             <is_multiple>0</is_multiple>
             <collapse_adv_display>0</collapse_adv_display>
             <is_reserved>0</is_reserved>
@@ -141,7 +141,7 @@
             <note_columns>60</note_columns>
             <note_rows>4</note_rows>
             <column_name>is_active</column_name>
-            <custom_group_name>payment_plan_is_active</custom_group_name>
+            <custom_group_name>payment_plan_extra_attributes</custom_group_name>
         </CustomField>
     </CustomFields>
 </CustomData>

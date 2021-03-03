@@ -109,7 +109,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
 
     $isActivePaymentPlanFieldId = civicrm_api3('CustomField', 'get', [
       'sequential' => 1,
-      'custom_group_id' => 'payment_plan_is_active',
+      'custom_group_id' => 'payment_plan_extra_attributes',
       'name' => 'is_active',
     ])['id'];
 
