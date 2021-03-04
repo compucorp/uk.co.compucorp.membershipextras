@@ -141,6 +141,19 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
+      $this->assertCount(count($membershipTypes), $instalment->getInstalmentAmount()->getLineItems());
+      foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
+        $membershipFee = $membershipTypes[$key]->minimum_fee;
+        $expectedLineItemAmount = $this->calculateExpectedLineItemAmount($membershipFee, $monthlyInstalmentCount);
+        $expectedLineItemTaxAmount = $this->calculateExpectedTaxAmount($expectedLineItemAmount);
+        $expectedLineItemTotalAmount = $expectedLineItemAmount + $expectedLineItemTaxAmount;
+        $this->assertEquals(1, $lineItem->getQuantity());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getUnitPrice());
+        $this->assertEquals(self::TAX_RATE, $lineItem->getTaxRate());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getSubTotal());
+        $this->assertEquals($expectedLineItemTaxAmount, $lineItem->getTaxAmount());
+        $this->assertEquals($expectedLineItemTotalAmount, $lineItem->getTotalAmount());
+      }
     }
   }
 
@@ -155,16 +168,29 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $membershipTypes = $this->mockRollingMembershipTypes();
     $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::QUARTERLY);
 
-    $this->assertCount(4, $schedule['instalments']);
+    $expectedCount = 4;
+    $this->assertCount($expectedCount, $schedule['instalments']);
 
-    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 4);
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, $expectedCount);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
     foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
+      $this->assertCount(count($membershipTypes), $instalment->getInstalmentAmount()->getLineItems());
+      foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
+        $membershipFee = $membershipTypes[$key]->minimum_fee;
+        $expectedLineItemAmount = $this->calculateExpectedLineItemAmount($membershipFee, $expectedCount);
+        $expectedLineItemTaxAmount = $this->calculateExpectedTaxAmount($expectedLineItemAmount);
+        $expectedLineItemTotalAmount = $expectedLineItemAmount + $expectedLineItemTaxAmount;
+        $this->assertEquals(1, $lineItem->getQuantity());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getUnitPrice());
+        $this->assertEquals(self::TAX_RATE, $lineItem->getTaxRate());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getSubTotal());
+        $this->assertEquals($expectedLineItemTaxAmount, $lineItem->getTaxAmount());
+        $this->assertEquals($expectedLineItemTotalAmount, $lineItem->getTotalAmount());
+      }
     }
-
   }
 
   /**
@@ -185,11 +211,26 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $diffInMonth = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
     $this->assertCount($diffInMonth, $schedule['instalments']);
 
-    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12);
+    $divisor = 12;
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, $divisor);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
     foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
+      $this->assertCount(count($membershipTypes), $instalment->getInstalmentAmount()->getLineItems());
+      foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
+        $membershipFee = $membershipTypes[$key]->minimum_fee;
+        $expectedLineItemAmount = $this->calculateExpectedLineItemAmount($membershipFee, $divisor);
+        $expectedLineItemTaxAmount = $this->calculateExpectedTaxAmount($expectedLineItemAmount);
+        $expectedLineItemTotalAmount = $expectedLineItemAmount + $expectedLineItemTaxAmount;
+        $this->assertEquals(1, $lineItem->getQuantity());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getUnitPrice());
+        $this->assertEquals(self::TAX_RATE, $lineItem->getTaxRate());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getSubTotal());
+        $this->assertEquals($expectedLineItemTaxAmount, $lineItem->getTaxAmount());
+        $this->assertEquals($expectedLineItemTotalAmount, $lineItem->getTotalAmount());
+      }
     }
   }
 
@@ -203,13 +244,28 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $membershipTypes = $this->mockRollingMembershipTypes();
     $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::ANNUAL);
 
-    $this->assertCount(1, $schedule['instalments']);
+    $expectedCount = 1;
+    $this->assertCount($expectedCount, $schedule['instalments']);
 
-    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 1);
+    $expectedAmount = $this->calculateExpectedAmount($membershipTypes, $expectedCount);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
 
-    $this->assertEquals($expectedAmount, $schedule['instalments'][0]->getInstalmentAmount()->getAmount());
-    $this->assertEquals($expectedTaxAmount, $schedule['instalments'][0]->getInstalmentAmount()->getTaxAmount());
+    $instalment = $schedule['instalments'][0];
+    $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
+    $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
+    $this->assertCount(count($membershipTypes), $instalment->getInstalmentAmount()->getLineItems());
+    foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
+      $membershipFee = $membershipTypes[$key]->minimum_fee;
+      $expectedLineItemAmount = $this->calculateExpectedLineItemAmount($membershipFee, $expectedCount);
+      $expectedLineItemTaxAmount = $this->calculateExpectedTaxAmount($expectedLineItemAmount);
+      $expectedLineItemTotalAmount = $expectedLineItemAmount + $expectedLineItemTaxAmount;
+      $this->assertEquals(1, $lineItem->getQuantity());
+      $this->assertEquals($expectedLineItemAmount, $lineItem->getUnitPrice());
+      $this->assertEquals(self::TAX_RATE, $lineItem->getTaxRate());
+      $this->assertEquals($expectedLineItemAmount, $lineItem->getSubTotal());
+      $this->assertEquals($expectedLineItemTaxAmount, $lineItem->getTaxAmount());
+      $this->assertEquals($expectedLineItemTotalAmount, $lineItem->getTotalAmount());
+    }
   }
 
   /**
@@ -228,9 +284,19 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
 
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12, $diffInMonths);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $instalment = $schedule['instalments'][0];
+    $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
+    $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
+    $this->assertCount(1, $instalment->getInstalmentAmount()->getLineItems());
+    $lineItem = $instalment->getInstalmentAmount()->getLineItems()[0];
+    $this->assertEquals(1, $lineItem->getQuantity());
+    $this->assertEquals($expectedAmount, $lineItem->getUnitPrice());
+    $this->assertEquals(self::TAX_RATE, $lineItem->getTaxRate());
+    $this->assertEquals($expectedAmount, $lineItem->getSubTotal());
+    $this->assertEquals($expectedTaxAmount, $lineItem->getTaxAmount());
+    $this->assertEquals($expectedTotalAmount, $lineItem->getTotalAmount());
 
-    $this->assertEquals($expectedAmount, $schedule['instalments'][0]->getInstalmentAmount()->getAmount());
-    $this->assertEquals($expectedTaxAmount, $schedule['instalments'][0]->getInstalmentAmount()->getTaxAmount());
   }
 
   /**
@@ -313,6 +379,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     foreach ($schedule['instalments'] as $index => $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals(0, $instalment->getInstalmentAmount()->getTaxAmount());
+      $this->assertCount(count($membershipTypes), $instalment->getInstalmentAmount()->getLineItems());
+      foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
+        $membershipFee = $membershipTypes[$key]->minimum_fee;
+        $expectedLineItemAmount = $this->calculateExpectedLineItemAmount($membershipFee, 12);
+        $this->assertEquals(1, $lineItem->getQuantity());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getUnitPrice());
+        $this->assertEquals(0, $lineItem->getTaxRate());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getSubTotal());
+        $this->assertEquals(0, $lineItem->getTaxAmount());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getTotalAmount());
+      }
     }
   }
 
@@ -337,6 +414,19 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100) / 12;
     foreach ($schedule['instalments'] as $index => $instalment) {
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
+      $this->assertCount(count($membershipTypes), $instalment->getInstalmentAmount()->getLineItems());
+      foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
+        $membershipFee = $membershipTypes[$key]->minimum_fee;
+        $expectedLineItemAmount = $this->calculateExpectedLineItemAmount($membershipFee, 12);
+        $expectedLineItemTaxAmount = $this->calculateExpectedTaxAmount($expectedLineItemAmount);
+        $expectedLineItemTotalAmount = $expectedLineItemAmount + $expectedLineItemTaxAmount;
+        $this->assertEquals(1, $lineItem->getQuantity());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getUnitPrice());
+        $this->assertEquals(self::TAX_RATE, $lineItem->getTaxRate());
+        $this->assertEquals($expectedLineItemAmount, $lineItem->getSubTotal());
+        $this->assertEquals($expectedLineItemTaxAmount, $lineItem->getTaxAmount());
+        $this->assertEquals($expectedLineItemTotalAmount, $lineItem->getTotalAmount());
+      }
     }
   }
 
@@ -376,20 +466,53 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       new DateTime($membershipTypeDates['join_date'])
     );
 
-    $totalNonMembershipPriceFieldValueAmount = 0;
+    $totalUnitPrice = 0;
     foreach ($nonMembershipPriceFieldValues as $priceFieldValue) {
-      $totalNonMembershipPriceFieldValueAmount = +$priceFieldValue['values']['amount'];
+      $totalUnitPrice = +$priceFieldValue['values']['amount'];
     }
-    $totalNonMembershipPriceFieldValueTaxAmount = $totalNonMembershipPriceFieldValueAmount * self::TAX_RATE / 100;
-    $totalNonMembershipPriceFieldValueAmount *= $mockedQuantity;
+    $totalNonMembershipPriceFieldValueTaxAmount = $totalUnitPrice * self::TAX_RATE / 100;
     $totalNonMembershipPriceFieldValueTaxAmount *= $mockedQuantity;
+    $totalNonMembershipPriceFieldValueAmount  = $totalUnitPrice * $mockedQuantity;
+    $totalNonMembershipPriceFieldValueTotal = $totalNonMembershipPriceFieldValueTaxAmount + $totalNonMembershipPriceFieldValueAmount;
 
-    $expectedAmount = ($totalAmount + $totalNonMembershipPriceFieldValueAmount) / 12;
-    $expectedTaxAmount = ($taxAmount + $totalNonMembershipPriceFieldValueTaxAmount) / 12;
+    $mockInstalmentNumber = 12;
+    $expectedAmount = ($totalAmount + $totalNonMembershipPriceFieldValueAmount) / $mockInstalmentNumber;
+    $expectedTaxAmount = ($taxAmount + $totalNonMembershipPriceFieldValueTaxAmount) / $mockInstalmentNumber;
 
     foreach ($schedule['instalments'] as $index => $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
+      //Membership type array size = 1 and none membership price field size = 1
+      $this->assertCount(2, $instalment->getInstalmentAmount()->getLineItems());
+
+      //Asserting membership type line item
+      $membershipFee = $membershipTypes[0]->minimum_fee;
+      $membershipTypeLineItem = $instalment->getInstalmentAmount()->getLineItems()[0];
+      $expectedLineItemAmount = $this->calculateExpectedLineItemAmount($membershipFee, $mockInstalmentNumber);
+      $expectedLineItemTaxAmount = $this->calculateExpectedTaxAmount($expectedLineItemAmount);
+      $expectedLineItemTotalAmount = $expectedLineItemAmount + $expectedLineItemTaxAmount;
+      $this->assertEquals(1, $membershipTypeLineItem->getQuantity());
+      $this->assertEquals($expectedLineItemAmount, $membershipTypeLineItem->getUnitPrice());
+      $this->assertEquals(self::TAX_RATE, $membershipTypeLineItem->getTaxRate());
+      $this->assertEquals($expectedLineItemAmount, $membershipTypeLineItem->getSubTotal());
+      $this->assertEquals($expectedLineItemTaxAmount, $membershipTypeLineItem->getTaxAmount());
+      $this->assertEquals($expectedLineItemTotalAmount, $membershipTypeLineItem->getTotalAmount());
+
+      //Asserting non membership type line item
+      $noneMembershipTypeLineItem = $instalment->getInstalmentAmount()->getLineItems()[1];
+      $this->assertEquals($mockedQuantity, $noneMembershipTypeLineItem->getQuantity());
+
+      $expectedUnitPrice = $totalUnitPrice / $mockInstalmentNumber;
+      $expectedNonMembershipSubTotalLineItem = ($totalUnitPrice * $mockedQuantity) / $mockInstalmentNumber;
+      $expectedNonMembershipTaxAmountLineItem = $this->calculateExpectedTaxAmount($expectedNonMembershipSubTotalLineItem);
+      $expectedNonMembershipTotalAmountLineItem = $expectedNonMembershipSubTotalLineItem + $expectedNonMembershipTaxAmountLineItem;
+
+      $this->assertEquals($expectedUnitPrice, $noneMembershipTypeLineItem->getUnitPrice());
+      $this->assertEquals(self::TAX_RATE, $noneMembershipTypeLineItem->getTaxRate());
+      $this->assertEquals($expectedNonMembershipSubTotalLineItem, $noneMembershipTypeLineItem->getSubTotal());
+      $this->assertEquals($expectedNonMembershipTaxAmountLineItem, $noneMembershipTypeLineItem->getTaxAmount());
+      $this->assertEquals($expectedNonMembershipTotalAmountLineItem, $noneMembershipTypeLineItem->getTotalAmount());
+
     }
   }
 
@@ -683,6 +806,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     foreach ($membershipTypes as $membershipType) {
       $amount += $membershipType->minimum_fee;
     }
+    return ($amount / $divisor) * $diff;
+  }
+
+  private function calculateExpectedLineItemAmount($amount, $divisor, $diff = 1) {
     return ($amount / $divisor) * $diff;
   }
 
