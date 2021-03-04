@@ -82,14 +82,25 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
   public function testFormatInstalments() {
     $paymentSchedule = $this->mockRollingMembershipTypeSchedule(Schedule::ANNUAL);
     $schedule = $paymentSchedule->getPaymentSchedule();
-    $pendingStatusLabel = civicrm_api3('OptionValue', 'get', [
-      'sequential' => 1,
-      'option_group_id' => "contribution_status",
-      'name' => "pending",
-    ])['values'][0]['label'];
     $paymentSchedule->formatInstalments($schedule['instalments']);
     foreach ($schedule['instalments'] as $formattedInstalment) {
-      $this->assertEquals($pendingStatusLabel, $formattedInstalment['instalment_status']);
+      $this->assertArrayHasKey('instalment_no', $formattedInstalment);
+      $this->assertArrayHasKey('instalment_date', $formattedInstalment);
+      $this->assertArrayHasKey('instalment_tax_amount', $formattedInstalment);
+      $this->assertArrayHasKey('instalment_amount', $formattedInstalment);
+      $this->assertArrayHasKey('instalment_total_amount', $formattedInstalment);
+      $this->assertArrayHasKey('instalment_status', $formattedInstalment);
+      $this->assertArrayHasKey('instalment_lineitems', $formattedInstalment);
+      foreach ($formattedInstalment['instalment_lineitems'] as $lineitem) {
+        $this->assertArrayHasKey('item_no', $lineitem);
+        $this->assertArrayHasKey('financial_type_id', $lineitem);
+        $this->assertArrayHasKey('quantity', $lineitem);
+        $this->assertArrayHasKey('unit_price', $lineitem);
+        $this->assertArrayHasKey('sub_total', $lineitem);
+        $this->assertArrayHasKey('tax_rate', $lineitem);
+        $this->assertArrayHasKey('tax_amount', $lineitem);
+        $this->assertArrayHasKey('total_amount', $lineitem);
+      }
     }
   }
 
