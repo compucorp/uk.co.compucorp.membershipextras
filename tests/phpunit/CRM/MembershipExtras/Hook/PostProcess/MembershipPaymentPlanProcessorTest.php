@@ -175,14 +175,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
       'api.Membership.get' => [],
     ])['values'][0]['api.Membership.get']['values'];
 
-    $membershipIDs = [];
-    foreach ($memberships as $membership) {
-      array_push($membershipIDs, $membership['id']);
-    }
-    $formReflection = new ReflectionObject($this->form);
-    $propertyReflection = $formReflection->getProperty('_membershipIDs');
-    $propertyReflection->setAccessible(TRUE);
-    $propertyReflection->setValue(new stdClass(), $membershipIDs);
+    $this->form->_id = $memberships[0]['id'];
   }
 
   private function getMembershipPayment($membershipId) {
