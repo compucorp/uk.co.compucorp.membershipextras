@@ -1,6 +1,5 @@
 <?php
 
-use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMembershipTypeInstalment;
 use CRM_MembershipExtras_DTO_ScheduleInstalmentAmount as ScheduleInstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
@@ -149,15 +148,45 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     $instalmentAmount->getCalculator()->calculate();
 
     $divisor = $this->getInstalmentsNumber($this->membershipTypes[0], $this->schedule, $this->startDate);
-    $amount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getAmount() / $divisor, 2);
-    $taxAmount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getTaxAmount() / $divisor, 2);
-    $totalAmount = MoneyUtilities::roundToPrecision($instalmentAmount->getCalculator()->getTotalAmount() / $divisor, 2);
+
+    $amount = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getAmount(), $divisor);
+    $taxAmount = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTaxAmount(), $divisor);
+    $totalAmount = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTotalAmount(), $divisor);
+
     $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalmentAmount();
     $instalment->setAmount($amount);
     $instalment->setTaxAmount($taxAmount);
     $instalment->setTotalAmount($totalAmount);
-
+    $lineItems = $instalmentAmount->getCalculator()->getLineItems();
+    if ($divisor != 1) {
+      $lineItems = $this->setLineItemsAmountPerInstalment($lineItems, $divisor);
+    }
+    $instalment->setLineItems($lineItems);
     return $instalment;
+  }
+
+  /**
+   * @param array $lineItems
+   * @param $instalmentCount
+   * @return array
+   */
+  private function setLineItemsAmountPerInstalment(array $lineItems, $instalmentCount) {
+    $newInstalmentLineItems = [];
+    foreach ($lineItems as $lineItem) {
+      $instalmentUnitPrice = $this->calculateSingleInstalmentAmount($lineItem->getUnitPrice(), $instalmentCount);
+      $instalmentSubTotal = $this->calculateSingleInstalmentAmount($lineItem->getSubTotal(), $instalmentCount);
+      $instalmentTaxAmount = $this->calculateSingleInstalmentAmount($lineItem->getTaxAmount(), $instalmentCount);
+      $instalmentTotal = $this->calculateSingleInstalmentAmount($lineItem->getTotalAmount(), $instalmentCount);
+
+      $lineItem->setUnitPrice($instalmentUnitPrice);
+      $lineItem->setSubTotal($instalmentSubTotal);
+      $lineItem->setTaxAmount($instalmentTaxAmount);
+      $lineItem->setTotalAmount($instalmentTotal);
+
+      array_push($newInstalmentLineItems, $lineItem);
+    }
+
+    return $newInstalmentLineItems;
   }
 
   /**
@@ -189,24 +218,52 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   private function applyNonMembershipPriceFieldValueAmount(ScheduleInstalmentAmount $instalmentAmount) {
     $totalNonMembershipPriceFieldValueAmount = 0;
     $totalNonMembershipPriceFieldValueTaxAmount = 0;
+    $lineItemTotalAmount = 0;
+    $nonMembershipPriceFieldValueLineItems = [];
+    $divisor = $this->getInstalmentsNumber($this->membershipTypes[0], $this->schedule, $this->startDate);
     foreach ($this->nonMembershipPriceFieldValues as $priceFieldValue) {
       $quantity = $priceFieldValue['quantity'];
       $amount = $priceFieldValue['values']['amount'];
-      $totalNonMembershipPriceFieldValueAmount += (float) $amount * (float) $quantity;
-      $salesTax = $this->membershipInstalmentTaxAmountCalculator->calculateByPriceFieldValue($priceFieldValue['values']);
-      $totalNonMembershipPriceFieldValueTaxAmount += (float) $salesTax * (float) $quantity;
+      $subTotal = (float) $amount * (float) $quantity;
+      $totalNonMembershipPriceFieldValueAmount += $subTotal;
+      $salesTax = $this->membershipInstalmentTaxAmountCalculator->calculateByPriceFieldValue($priceFieldValue['values']) * (float) $quantity;
+      $totalNonMembershipPriceFieldValueTaxAmount += $salesTax;
+
+      $scheduleInstalmentLineItem = new CRM_MembershipExtras_DTO_ScheduleInstalmentLineItem();
+      $financialTypeId = $priceFieldValue['values']['financial_type_id'];
+      $scheduleInstalmentLineItem->setFinancialTypeId($financialTypeId);
+      $scheduleInstalmentLineItem->setQuantity($quantity);
+      $scheduleInstalmentLineItem->setUnitPrice($this->calculateSingleInstalmentAmount($amount, $divisor));
+      $scheduleInstalmentLineItem->setSubTotal($this->calculateSingleInstalmentAmount($subTotal, $divisor));
+      $scheduleInstalmentLineItem->setTaxRate($this->membershipInstalmentTaxAmountCalculator->getTaxRateByFinancialTypeId($financialTypeId));
+      $scheduleInstalmentLineItem->setTaxAmount($this->calculateSingleInstalmentAmount($salesTax, $divisor));
+      $lineItemTotalAmount = $this->calculateSingleInstalmentAmount($subTotal + $salesTax, $divisor);
+      $scheduleInstalmentLineItem->setTotalAmount($lineItemTotalAmount);
+      $nonMembershipPriceFieldValueLineItems[] = $scheduleInstalmentLineItem;
     }
 
-    $divisor = $this->getInstalmentsNumber($this->membershipTypes[0], $this->schedule, $this->startDate);
-    $newInstalmentAmount = MoneyUtilities::roundToPrecision(
-      ($totalNonMembershipPriceFieldValueAmount / $divisor) + $instalmentAmount->getAmount(), 2
-    );
-    $newInstalmentTaxAmount = MoneyUtilities::roundToPrecision(
-      ($totalNonMembershipPriceFieldValueTaxAmount / $divisor) + $instalmentAmount->getTaxAmount(), 2
-    );
+    $totalNonMembershipPriceFieldValueAmountPerInstalment = $this->calculateSingleInstalmentAmount($totalNonMembershipPriceFieldValueAmount, $divisor);
+    $newInstalmentAmount = $totalNonMembershipPriceFieldValueAmountPerInstalment + $instalmentAmount->getAmount();
+    $totalNonMembershipPriceFieldValueTaxAmountPerInstalment = $this->calculateSingleInstalmentAmount($totalNonMembershipPriceFieldValueTaxAmount, $divisor);
+    $newInstalmentTaxAmount = $totalNonMembershipPriceFieldValueTaxAmountPerInstalment + $instalmentAmount->getTaxAmount();
 
     $instalmentAmount->setAmount($newInstalmentAmount);
     $instalmentAmount->setTaxAmount($newInstalmentTaxAmount);
+
+    $nonMembershipPriceFieldValueTotalAmount = $totalNonMembershipPriceFieldValueAmountPerInstalment + $totalNonMembershipPriceFieldValueTaxAmountPerInstalment;
+    $currentTotalAmount = $instalmentAmount->getTotalAmount();
+    $totalAmount = $nonMembershipPriceFieldValueTotalAmount + $currentTotalAmount;
+    $instalmentAmount->setTotalAmount($totalAmount);
+
+    if (empty($nonMembershipPriceFieldValueLineItems)) {
+      return;
+    }
+
+    $currentLineItems = $instalmentAmount->getLineItems();
+    foreach ($nonMembershipPriceFieldValueLineItems as $priceFieldLineItem) {
+      array_push($currentLineItems, $priceFieldLineItem);
+    }
+    $instalmentAmount->setLineItems($currentLineItems);
   }
 
   /**
@@ -254,7 +311,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   }
 
   /**
-   * Gets instalment total amount
+   * Calculates instalment total amount.
+   *
+   * @param array $instalments
+   * @return float
    */
   private function getInstalmentsTotalAmount(array $instalments) {
     $totalAmount = 0.0;
@@ -265,10 +325,23 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   }
 
   /**
-   * Sets Non Membership Price Field Values
+   * Sets Non Membership Price Field values to the class property.
+   *
+   * @param array $nonMembershipPriceFieldValues
    */
   public function setNonMembershipPriceFieldValues(array $nonMembershipPriceFieldValues) {
     $this->nonMembershipPriceFieldValues = $nonMembershipPriceFieldValues;
+  }
+
+  /**
+   * Calculates Single Instalment Amount
+   *
+   * @param $amount
+   * @param $divisor
+   * @return float|int
+   */
+  private function calculateSingleInstalmentAmount($amount, $divisor) {
+    return $amount / $divisor;
   }
 
 }
