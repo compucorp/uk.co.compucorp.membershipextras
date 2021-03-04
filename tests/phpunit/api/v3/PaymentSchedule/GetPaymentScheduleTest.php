@@ -15,15 +15,6 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
 
   /**
-   * @var string
-   */
-  private $currencySymbol;
-
-  public function setUp() {
-    $this->currencySymbol = CRM_Core_BAO_Country::defaultCurrencySymbol();
-  }
-
-  /**
    * Test ExceptionIsThrownIfScheduleIsNotValid
    *
    * @throws CiviCRM_API3_Exception
@@ -47,8 +38,8 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], $schedule);
     $this->assertCount(12, $scheduleInstalment['instalments']);
 
-    $expectedAmount = $this->currencySymbol . 10;
-    $expectedTaxAmount = $this->currencySymbol . 0;
+    $expectedAmount = 10;
+    $expectedTaxAmount = 0;
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id']));
     $this->assertInstalments($scheduleInstalment, $expectedAmount, $expectedTaxAmount, $expectedInstalmentDate, 'P1M');
   }
@@ -64,8 +55,8 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], $schedule);
     $this->assertCount(4, $scheduleInstalment['instalments']);
 
-    $expectedAmount = $this->currencySymbol . 30;
-    $expectedTaxAmount = $this->currencySymbol . 0;
+    $expectedAmount = 30;
+    $expectedTaxAmount = 0;
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id']));
     $this->assertInstalments($scheduleInstalment, $expectedAmount, $expectedTaxAmount, $expectedInstalmentDate, 'P3M');
   }
@@ -79,8 +70,8 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $membershipType = $this->mockRollingMembershipType();
     $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], $schedule);
     $this->assertCount(1, $scheduleInstalment['instalments']);
-    $expectedAmount = $this->currencySymbol . 120;
-    $expectedTaxAmount = $this->currencySymbol . 0;
+    $expectedAmount = 120;
+    $expectedTaxAmount = 0;
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id']));
     $this->assertInstalments($scheduleInstalment, $expectedAmount, $expectedTaxAmount, $expectedInstalmentDate);
   }
@@ -106,8 +97,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     //No of months between start date 01 Jan to membership rollover day is 9 months
     //2021 has 365 days
     $expectedAmount = round(((120 / 365) * $durationInDays) / 9, 2);
-    $expectedAmount = $this->currencySymbol . $expectedAmount;
-    $expectedTaxAmount = $this->currencySymbol . 0;
+    $expectedTaxAmount = 0;
     $instalments = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly', $formattedStartDate);
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id'], $formattedStartDate));
     $this->assertInstalments($instalments, $expectedAmount, $expectedTaxAmount, $expectedInstalmentDate, 'P1M');
@@ -128,8 +118,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $expectedAmount = (120 / 12) * 9;
     $instalments = $this->getMembershipTypeSchedule($membershipType['id'], 'annual', $formattedStartDate);
     $this->assertCount(1, $instalments['instalments']);
-    $expectedAmount = $this->currencySymbol . $expectedAmount;
-    $expectedTaxAmount = $this->currencySymbol . 0;
+    $expectedTaxAmount = 0;
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id'], $formattedStartDate));
     $this->assertInstalments($instalments, $expectedAmount, $expectedTaxAmount, $expectedInstalmentDate);
 
@@ -293,29 +282,21 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     ]);
   }
 
-  private function getExpectedDateFormat() {
-    return civicrm_api3('Setting', 'get', [
-      'sequential' => 1,
-      'return' => ["dateformatFull"],
-    ])['values'][0]['dateformatFull'];
-  }
-
   /**
    * Generic functions for asserting instalments
    *
    * @param array $instalments
-   * @param string $expectedAmount
-   * @param string $expectedTaxAmount
+   * @param float $expectedAmount
+   * @param float $expectedTaxAmount
    * @param DateTime $expectedDate
    * @param string|null $dateInterval
    * @throws Exception
    */
-  private function assertInstalments(array $instalments, string $expectedAmount, string $expectedTaxAmount, DateTime $expectedDate, string $dateInterval = NULL) {
+  private function assertInstalments(array $instalments, float $expectedAmount, float $expectedTaxAmount, DateTime $expectedDate, string $dateInterval = NULL) {
     foreach ($instalments['instalments'] as $instalment) {
-      $expectedInstalmentDate = CRM_Utils_Date::customFormat($expectedDate->format('Y-m-d'), $this->getExpectedDateFormat());
-      $this->assertEquals($expectedAmount, $instalment['instalment_amount']);
-      $this->assertEquals($expectedTaxAmount, $instalment['instalment_tax_amount']);
-      $this->assertEquals($expectedInstalmentDate, $instalment['instalment_date']);
+      $this->assertEquals(round($expectedAmount, 2), round($instalment['instalment_amount'], 2));
+      $this->assertEquals(round($expectedTaxAmount, 2), round($instalment['instalment_tax_amount'], 2));
+      $this->assertEquals($expectedDate->format('Y-m-d'), $instalment['instalment_date']);
       if (!is_null($dateInterval)) {
         $expectedDate->add(new DateInterval($dateInterval));
       }

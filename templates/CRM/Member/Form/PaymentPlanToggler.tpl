@@ -131,29 +131,29 @@
     function generateInstalmentSchedule(isPriceSet) {
       let schedule = $('#payment_plan_schedule').val();
       let params = {
-        "schedule": schedule,
-        "start_date" : $('#start_date').val(),
-        "end_date" : $('#end_date').val(),
-        "join_date" : $('#join_date').val(),
+        schedule: schedule,
+        start_date : $('#start_date').val(),
+        end_date : $('#end_date').val(),
+        join_date : $('#join_date').val(),
       };
-      let apiAction;
       if (isPriceSet) {
         let selectedPriceFieldValues = getSelectedPriceFieldValues();
         if (jQuery.isEmptyObject(selectedPriceFieldValues)) {
           return;
         }
-        params.price_field_values = {'IN' : selectedPriceFieldValues};
-        apiAction = 'getByPriceFieldValues';
+        params.price_field_values = selectedPriceFieldValues;
       } else {
         params.membership_type_id =  parseInt($('#membership_type_id_1').val());;
-        apiAction = 'getByMembershipType';
       }
-      CRM.api3('PaymentSchedule', apiAction, params).then(function(data) {
-        if (data.is_error === 0) {
-          drawTable(data);
-          updateTotalAmount(data.values.total_amount, isPriceSet);
-        } else {
+      let url = CRM.url('civicrm/member/instalment-schedule', params, 'back');
+      CRM.loadPage(url, {
+        target : '#instalment_schedule_table',
+        dialog : false,
+      }).on('crmLoad', function(event, data) {
+        if (data.hasOwnProperty('is_error') && data.is_error == true) {
           CRM.alert(data.error_message, 'Error', 'error');
+        } else {
+          updateTotalAmount($('#instalment-total-amount').html(), isPriceSet);
         }
       });
     }
@@ -218,33 +218,6 @@
       if (isPriceSet) {
         $('#pricevalue').html(currencySymbol + ' ' + CRM.formatMoney(totalAmount, true));
       }
-    }
-
-    /**
-     * Draws instalment table based on given data return from PaymentSchedule API
-     *
-     * @param data
-     */
-    function drawTable(data) {
-      $('#instalment_row_table tbody td').remove();
-      let rows = data.values.instalments;
-      rows.forEach(drawRow);
-    }
-
-    /**
-     * Draws instalment row based given row data
-     *
-     * @param rowData
-     */
-    function drawRow(rowData) {
-      let tbody = $('#instalment_row_table tbody');
-      tbody.append('<tr>');
-      tbody.append('<td>' + rowData.instalment_no + ' </td>');
-      tbody.append('<td>' + rowData.instalment_date + '</td>');
-      tbody.append('<td>' + rowData.instalment_tax_amount + '</td>');
-      tbody.append('<td>' + rowData.instalment_amount + '</td>');
-      tbody.append('<td>' + rowData.instalment_status + '</td>');
-      tbody.append('</tr>');
     }
 
     /**
@@ -338,7 +311,6 @@
     </ul>
   </div>
 </div>
-
 <table id="payment_plan_fields">
   <tr id="payment_plan_schedule_row">
     <td class="label" nowrap>
@@ -351,18 +323,7 @@
   <tr id="payment_plan_schedule_instalment_row">
     <td class="label" nowrap><label>{ts}Instalment Schedule{/ts}</label></td>
     <td>
-        <table id="instalment_row_table" class="selector row-highlight" style="position: relative;">
-          <thead class="sticky">
-          <tr>
-            <th scope="col">{ts}Instalment no{/ts}</th>
-            <th scope="col">{ts}Date{/ts}</th>
-            <th scope="col">{ts}Tax Amount{/ts}</th>
-            <th scope="col">{ts}Total{/ts}</th>
-            <th scope="col">{ts}Status{/ts}</th>
-          </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div id="instalment_schedule_table"> </div>
     </td>
   </tr>
 </table>
