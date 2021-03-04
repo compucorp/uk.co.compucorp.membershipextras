@@ -65,31 +65,34 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
   }
 
   /**
-   * Formats instalments for displaying in Payment Plan toggle screen.
+   * Formats instalments for a result of the PaymentSchedule API.
    *
    * @param array $instalments
    *
    * @throws CiviCRM_API3_Exception
    */
   public function formatInstalments(array &$instalments) {
-    $pendingStatusLabel = civicrm_api3('OptionValue', 'get', [
-      'sequential' => 1,
-      'option_group_id' => "contribution_status",
-      'name' => "pending",
-    ])['values'][0]['label'];
-
-    $currencySymbol = CRM_Core_BAO_Country::defaultCurrencySymbol();
-
     $formattedInstalments = [];
     foreach ($instalments as $key => $instalment) {
-      $instalmentAmount = $currencySymbol . $instalment->getInstalmentAmount()->getTaxAmount();;
-      $instalmentTaxAmount = $currencySymbol . $instalment->getInstalmentAmount()->getAmount();;
-      $instalmentDate = CRM_Utils_Date::customFormat($instalment->getInstalmentDate()->format('Y-m-d'), $this->getDateformatFull());
       $formattedInstalment['instalment_no'] = $key + 1;
-      $formattedInstalment['instalment_date'] = $instalmentDate;
-      $formattedInstalment['instalment_tax_amount'] = $instalmentAmount;
-      $formattedInstalment['instalment_amount'] = $instalmentTaxAmount;
-      $formattedInstalment['instalment_status'] = $pendingStatusLabel;
+      $formattedInstalment['instalment_date'] = $instalment->getInstalmentDate()->format('Y-m-d');
+      $formattedInstalment['instalment_tax_amount'] = $instalment->getInstalmentAmount()->getTaxAmount();
+      $formattedInstalment['instalment_amount'] = $instalment->getInstalmentAmount()->getAmount();
+      $formattedInstalment['instalment_total_amount'] = $instalment->getInstalmentAmount()->getTotalAmount();
+      $formattedInstalment['instalment_status'] = $this->getPendingStatusValue();
+      $formattedLineItems = [];
+      foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
+        $formattedLineItems[$key]['item_no'] = $key + 1;
+        $formattedLineItems[$key]['financial_type_id'] = $lineItem->getFinancialTypeId();
+        $formattedLineItems[$key]['quantity'] = $lineItem->getQuantity();
+        $formattedLineItems[$key]['unit_price'] = $lineItem->getUnitPrice();
+        $formattedLineItems[$key]['sub_total'] = $lineItem->getSubTotal();
+        $formattedLineItems[$key]['tax_rate'] = $lineItem->getTaxRate();
+        $formattedLineItems[$key]['tax_amount'] = $lineItem->getTaxAmount();
+        $formattedLineItems[$key]['total_amount'] = $lineItem->getTotalAmount();
+      }
+
+      $formattedInstalment['instalment_lineitems'] = $formattedLineItems;
       array_push($formattedInstalments, $formattedInstalment);
     }
 
@@ -117,14 +120,12 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
     return $options;
   }
 
-  /**
-   * Gets CiviCRM's Date Format: Complete Date
-   */
-  private function getDateformatFull() {
-    return civicrm_api3('Setting', 'get', [
+  private function getPendingStatusValue() {
+    return civicrm_api3('OptionValue', 'getsingle', [
       'sequential' => 1,
-      'return' => ["dateformatFull"],
-    ])['values'][0]['dateformatFull'];
+      'option_group_id' => "contribution_status",
+      'name' => "Pending",
+    ])['value'];
   }
 
 }
