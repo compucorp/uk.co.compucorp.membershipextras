@@ -60,4 +60,10 @@
     <title>Cancel Recurring Contribution</title>
     <access_arguments>edit contributions</access_arguments>
   </item>
+  <item>
+    <path>civicrm/member/instalment-schedule</path>
+    <page_callback>CRM_MembershipExtras_Page_InstalmentSchedule</page_callback>
+    <title>InstalmentSchedule</title>
+    <access_arguments>edit memberships</access_arguments>
+  </item>
 </menu>
