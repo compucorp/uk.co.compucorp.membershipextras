@@ -1,11 +1,27 @@
 <?php
 
 
+/**
+ * Class CRM_MembershipExtras_DTO_ScheduleInstalmentAmount
+ */
 class CRM_MembershipExtras_DTO_ScheduleInstalmentAmount {
 
+  /**
+   * @var float
+   */
   private $amount;
+  /**
+   * @var float
+   */
   private $taxAmount;
+  /**
+   * @var float
+   */
   private $totalAmount;
+  /**
+   * @var array
+   */
+  private $lineItems;
 
   /**
    * @return float
@@ -47,6 +63,20 @@ class CRM_MembershipExtras_DTO_ScheduleInstalmentAmount {
    */
   public function setTotalAmount(float $totalAmount) {
     $this->totalAmount = $totalAmount;
+  }
+
+  /**
+   * @param array $lineItems
+   */
+  public function setLineItems(array $lineItems) {
+    $this->lineItems = $lineItems;
+  }
+
+  /**
+   * @return array
+   */
+  public function getLineItems() {
+    return $this->lineItems;
   }
 
 }
