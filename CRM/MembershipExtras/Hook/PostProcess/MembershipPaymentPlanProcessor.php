@@ -40,6 +40,10 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $recurContributionID = $this->getMembershipLastRecurContributionID();
     $this->createRecurringSubscriptionLineItems($recurContributionID);
 
+    $membershipId = $this->form->_id;
+    $paymentPlanActivationService = new CRM_MembershipExtras_Service_MembershipPaymentPlanActivation();
+    $paymentPlanActivationService->activateMembershipCurrentPaymentPlan($membershipId);
+
     $paymentPlanSchedule = $this->formSubmittedValues['payment_plan_schedule'];
     $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($paymentPlanSchedule, $this->form->_id);
     $instalmentsCount = $instalmentDetails['instalments_count'];

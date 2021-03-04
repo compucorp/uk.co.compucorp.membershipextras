@@ -7,9 +7,9 @@
  * extension.
  */
 class CRM_MembershipExtras_ExtensionUtil {
-  const SHORT_NAME = "membershipextras";
-  const LONG_NAME = "uk.co.compucorp.membershipextras";
-  const CLASS_PREFIX = "CRM_MembershipExtras";
+  const SHORT_NAME = 'membershipextras';
+  const LONG_NAME = 'uk.co.compucorp.membershipextras';
+  const CLASS_PREFIX = 'CRM_MembershipExtras';
 
   /**
    * Translate a string using the extension's domain.
