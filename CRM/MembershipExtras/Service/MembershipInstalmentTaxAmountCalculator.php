@@ -29,7 +29,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator {
    */
   public function calculateByMembershipType(MembershipType $membershipType, $membershipTypeAmount = NULL) {
     $membershipTypeAmount = $membershipTypeAmount ? $membershipTypeAmount : $membershipType->minimum_fee;
-    $taxRate = CRM_Utils_Array::value($membershipType->financial_type_id, $this->taxRates, 0);
+    $taxRate = $this->getTaxRateByFinancialTypeId($membershipType->financial_type_id);
 
     return $this->calculateTaxAmount($membershipTypeAmount, $taxRate);
   }
@@ -41,9 +41,19 @@ class CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator {
    * @return float|int
    */
   public function calculateByPriceFieldValue(array $priceFieldValue) {
-    $taxRate = CRM_Utils_Array::value($priceFieldValue['financial_type_id'], $this->taxRates, 0);
+    $taxRate = $this->getTaxRateByFinancialTypeId($priceFieldValue['financial_type_id']);
 
     return $this->calculateTaxAmount($priceFieldValue['amount'], $taxRate);
+  }
+
+  /**
+   * Gets Tax Rate by Financial Type Id
+   *
+   * @params int $id
+   * @return float
+   */
+  public function getTaxRateByFinancialTypeId(int $id) {
+    return CRM_Utils_Array::value($id, $this->taxRates, 0);
   }
 
   /**
