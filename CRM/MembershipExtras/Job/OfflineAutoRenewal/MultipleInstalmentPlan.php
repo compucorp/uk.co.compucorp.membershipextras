@@ -37,7 +37,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
    LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
-   LEFT JOIN civicrm_value_payment_plan_periods ppp ON ppp.entity_id = ccr.id
+   LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
          AND ccr.installments > 1
          AND ccr.auto_renew = 1
@@ -45,7 +45,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
           ccr.contribution_status_id != {$cancelledStatusID}
           AND ccr.contribution_status_id != {$refundedStatusID}
          )
-         AND (ppp.next_period IS NULL OR ppp.next_period = 0)
+         AND (ppea.is_active = 1)
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
     GROUP BY ccr.id
@@ -123,7 +123,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
       $newRecurringContribution['id'],
       'ContributionRecur'
     );
-    $this->updateFieldsLinkingPeriods($currentRecurContribution['id'], $newRecurringContribution['id']);
+    $this->setActiveRecuringContribution($currentRecurContribution['id'], $newRecurringContribution['id']);
     $this->copyRecurringLineItems($currentRecurContribution, $newRecurringContribution);
     $this->updateRecurringContributionAmount($newRecurringContribution['id']);
 
@@ -182,24 +182,23 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
   }
 
   /**
-   * Uses given ID's to set 'previous period' on new payment plan, and 'next
-   * period' on current payment plan.
+   * Sets the new recurring contribution
+   * as active and the previous one as inactive.
    *
    * @param int $currentContributionID
    * @param int $nextContributionID
    */
-  private function updateFieldsLinkingPeriods($currentContributionID, $nextContributionID) {
-    $previousPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'previous_period');
-    $nextPeriodFieldID = $this->getCustomFieldID('related_payment_plan_periods', 'next_period');
+  private function setActiveRecuringContribution($currentContributionID, $nextContributionID) {
+    $isActivePaymentPlanFieldId = $this->getCustomFieldID('payment_plan_extra_attributes', 'is_active');
 
     civicrm_api3('ContributionRecur', 'create', [
       'id' => $currentContributionID,
-      'custom_' . $nextPeriodFieldID => $nextContributionID,
+      'custom_' . $isActivePaymentPlanFieldId => 0,
     ]);
 
     civicrm_api3('ContributionRecur', 'create', [
       'id' => $nextContributionID,
-      'custom_' . $previousPeriodFieldID => $currentContributionID,
+      'custom_' . $isActivePaymentPlanFieldId => 1,
     ]);
   }
 

@@ -107,6 +107,12 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
         break;
     }
 
+    $isActivePaymentPlanFieldId = civicrm_api3('CustomField', 'get', [
+      'sequential' => 1,
+      'custom_group_id' => 'payment_plan_extra_attributes',
+      'name' => 'is_active',
+    ])['id'];
+
     $recurringContributionParams = [
       'sequential' => 1,
       'contact_id' => self::$paymentPlanMembershipOrder->contactId,
@@ -122,6 +128,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'financial_type_id' => self::$paymentPlanMembershipOrder->financialType,
       'payment_instrument_id' => self::$paymentPlanMembershipOrder->paymentMethod,
       'start_date' => self::$paymentPlanMembershipOrder->paymentPlanStartDate,
+      'custom_' . $isActivePaymentPlanFieldId => 1,
     ];
 
     return RecurringContributionFabricator::fabricate($recurringContributionParams);
@@ -143,9 +150,16 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
 
     foreach (self::$paymentPlanMembershipOrder->lineItems as $lineItem) {
       if (self::isMembershipLineItem($lineItem)) {
-        $membershipID = self::createMembership($lineItem, $recurringContribution);
-        $lineItem['entity_id'] = $membershipID;
-        $lineItem['entity_table'] = 'civicrm_membership';
+        $existingMembershipId = self::getMembershipIdWithSameTypeIfExist($lineItem['price_field_value_id']);
+        if ($existingMembershipId) {
+          $lineItem['entity_id'] = $existingMembershipId;
+          $lineItem['entity_table'] = 'civicrm_membership';
+        }
+        else {
+          $membershipID = self::createMembership($lineItem, $recurringContribution);
+          $lineItem['entity_id'] = $membershipID;
+          $lineItem['entity_table'] = 'civicrm_membership';
+        }
       }
 
       $newLineItem = LineItemFabricator::fabricate($lineItem);
@@ -318,6 +332,31 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
     }
 
     return FALSE;
+  }
+
+  /**
+   * Checks if the contact has a membership
+   * with the same type and return its id
+   * if there is any.
+   *
+   * @param int $priceFieldValueId
+   *
+   * @return int|NULL
+   */
+  private static function getMembershipIdWithSameTypeIfExist($priceFieldValueId) {
+    $priceFieldValue = self::getPriceFieldValue($priceFieldValueId);
+    $membershipTypeId = $priceFieldValue['membership_type_id'];
+    $membership = civicrm_api3('Membership', 'get', [
+      'sequential'   => 1,
+      'membership_type_id' => $membershipTypeId,
+      'contact_id' => self::$paymentPlanMembershipOrder->contactId,
+    ]);
+
+    if (!empty($membership['count'])) {
+      return $membership['values'][0]['id'];
+    }
+
+    return NULL;
   }
 
   /**

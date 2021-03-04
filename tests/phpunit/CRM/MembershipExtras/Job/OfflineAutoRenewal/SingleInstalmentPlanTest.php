@@ -806,7 +806,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
 
   public function testRenewalWithNonRenewableLineOnCurrentPeriodAndNewMembershipForNextPeriod() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year'));
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-3 year'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
@@ -861,7 +861,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     ]);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 years'));
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-3 years'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems = [
@@ -939,7 +939,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     ]);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 years'));
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-3 years'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems = [

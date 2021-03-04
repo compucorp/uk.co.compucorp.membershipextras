@@ -750,26 +750,29 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
   }
 
   private function getTheNewRecurContributionIdFromCurrentOne($currentRecurContributionId) {
-    $nextPeriodCustomFieldId = $this->getCustomFieldId('related_payment_plan_periods', 'next_period');
-
-    $nextCustomPeriodDetails = civicrm_api3('ContributionRecur', 'get', [
+    $contactId = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
-      'return' => 'custom_' . $nextPeriodCustomFieldId,
+      'return' => 'contact_id',
       'id' => $currentRecurContributionId,
+    ])['values'][0]['contact_id'];
+
+    $lastRecurContribution = civicrm_api3('ContributionRecur', 'get', [
+      'sequential' => 1,
+      'contact_id' => $contactId,
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ]);
-    if (!empty($nextCustomPeriodDetails['values'][0]['custom_' . $nextPeriodCustomFieldId])) {
-      return $nextCustomPeriodDetails['values'][0]['custom_' . $nextPeriodCustomFieldId];
+
+    if (empty($lastRecurContribution['values'][0]['id'])) {
+      return NULL;
+    }
+
+    $lastRecurContributionId = $lastRecurContribution['values'][0]['id'];
+
+    if ($lastRecurContributionId != $currentRecurContributionId) {
+      return $lastRecurContributionId;
     }
 
     return NULL;
-  }
-
-  private function getCustomFieldId($customGroupName, $customFieldName) {
-    return civicrm_api3('CustomField', 'getvalue', [
-      'return' => 'id',
-      'custom_group_id' => $customGroupName,
-      'name' => $customFieldName,
-    ]);
   }
 
   public function testRenewalWithNonRenewableLineOnCurrentPeriodAndNewMembershipForNextPeriod() {

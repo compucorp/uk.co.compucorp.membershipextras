@@ -31,6 +31,10 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $recurContributionID = $this->getMembershipLastRecurContributionID();
     $this->createRecurringSubscriptionLineItems($recurContributionID);
 
+    $membershipId = $this->form->_id;
+    $paymentPlanActivationService = new CRM_MembershipExtras_Service_MembershipPaymentPlanActivation();
+    $paymentPlanActivationService->activateMembershipCurrentPaymentPlan($membershipId);
+
     $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     if ($installmentsCount > 1) {
       $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
@@ -79,7 +83,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    *
    * @param $recurContributionID
    */
-  private function createRecurringSubscriptionLineItems($recurContributionID ) {
+  private function createRecurringSubscriptionLineItems($recurContributionID) {
     $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
     $lineItemCreator->create();
   }
