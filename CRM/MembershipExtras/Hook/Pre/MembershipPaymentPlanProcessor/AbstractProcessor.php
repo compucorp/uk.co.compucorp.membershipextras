@@ -122,6 +122,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
   protected function getProRatedInstalmentAmount(array $membershipTypes) {
     $fixedPeriodTypeCalculator = new FixedPeriodTypeCalculator($membershipTypes);
     $fixedPeriodTypeCalculator->setStartDate(new DateTime($this->getMembership()['start_date']));
+    $fixedPeriodTypeCalculator->setEndDate(new DateTime($this->getMembership()['end_date']));
+    $fixedPeriodTypeCalculator->setJoinDate(new DateTime($this->getMembership()['join_date']));
     $instalmentAmount = new InstalmentAmount($fixedPeriodTypeCalculator);
     $instalmentAmount->getCalculator()->calculate();
 
@@ -129,8 +131,14 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
   }
 
   protected function getInstalmentCountForFixedMembeship($fixedMembershipType) {
+    if ($this->instalmentsCount == 1) {
+      return $this->instalmentsCount;
+    }
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($fixedMembershipType, new MembershipTypeDatesCalculator());
-    return $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime($this->getMembership()['start_date']));
+
+    $startDate = new DateTime($this->getMembership()['start_date']);
+    $endDate = new DateTime($this->getMembership()['end_date']);
+    return $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate, $endDate);
   }
 
   protected function getMembership() {
