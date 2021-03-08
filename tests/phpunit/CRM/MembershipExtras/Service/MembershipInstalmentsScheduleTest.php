@@ -87,11 +87,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     //Mock period start day 01 Oct
     //Mock period rollover day 30 Sep
     $membershipTypes = $this->mockFixedMembershipTypes();
-    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
+    $startDate = new DateTime('today');
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY, $startDate);
 
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipTypes[0], new MembershipTypeDatesCalculator());
-
-    $startDate = new DateTime('today');
     $diffInMonth = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
 
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12) * $diffInMonth;
@@ -203,11 +202,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     //Mock period start day 01 Oct
     //Mock period rollover day 30 Sep
     $membershipTypes = $this->mockFixedMembershipTypes();
-    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
+    $startDate = new DateTime('today');
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY, $startDate);
 
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipTypes[0], new MembershipTypeDatesCalculator());
-
-    $startDate = new DateTime('today');
     $diffInMonth = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
     $this->assertCount($diffInMonth, $schedule['instalments']);
 
@@ -276,11 +274,12 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   public function testFixedAnnualInstalmentAmounts() {
     $this->mockSalesTaxFinancialAccount();
     $membershipTypes = $this->mockFixedMembershipTypes();
-    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::ANNUAL);
+    $startDate = new DateTime('today');
+    $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::ANNUAL, $startDate);
     $this->assertCount(1, $schedule['instalments']);
 
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipTypes[0], new MembershipTypeDatesCalculator());
-    $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime('today'));
+    $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
 
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12, $diffInMonths);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
@@ -642,13 +641,14 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   /**
    * @param $membershipTypes
    * @param $schedule
+   * @param $startDate
+   *
    * @return mixed
    * @throws Exception
    */
-  private function getMembershipSchedule($membershipTypes, $schedule) {
+  private function getMembershipSchedule($membershipTypes, $schedule, $startDate = NULL) {
     $membershipInstalmentsSchedule = $this->getMembershipInstalmentsSchedule($membershipTypes, $schedule);
-
-    $membershipTypeDates = $this->getMembershipDates($membershipTypes[0]->id);
+    $membershipTypeDates = $this->getMembershipDates($membershipTypes[0]->id, $startDate);
 
     return $membershipInstalmentsSchedule->generate(
       new DateTime($membershipTypeDates['start_date']),
@@ -676,20 +676,25 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    * Get Membership Dates by Membership Type Id
    *
    * @param $membershipTypeId
+   * @param $startDate
+   *
    * @return array
    */
-  private function getMembershipDates($membershipTypeId) {
-    $mockedDate = $this->mockMembershipDates();
-
+  private function getMembershipDates($membershipTypeId, $startDate = NULL) {
     $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
-    $membershipTypeDates = $membershipTypeDatesCalculator->getDatesForMembershipType(
-      $membershipTypeId,
-      $mockedDate['start_date'],
-      $mockedDate['end_date'],
-      $mockedDate['join_date']
+
+    if (!is_null($startDate)) {
+      return $membershipTypeDatesCalculator->getDatesForMembershipType($membershipTypeId, $startDate);
+    }
+    $mockedDate = $this->mockMembershipDates();
+    $dates = $membershipTypeDatesCalculator->getDatesForMembershipType(
+        $membershipTypeId,
+        $mockedDate['start_date'],
+        $mockedDate['end_date'],
+        $mockedDate['join_date']
     );
 
-    return $membershipTypeDates;
+    return $dates;
   }
 
   /**
