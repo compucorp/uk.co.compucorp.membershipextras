@@ -122,6 +122,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     }
 
     $instalments['total_amount'] = $this->getInstalmentsTotalAmount($instalments['instalments']);
+    $instalments['membership_start_date'] = $this->startDate->format('Y-m-d');
+    $instalments['membership_end_date'] = $this->endDate->format('Y-m-d');
 
     return $instalments;
   }

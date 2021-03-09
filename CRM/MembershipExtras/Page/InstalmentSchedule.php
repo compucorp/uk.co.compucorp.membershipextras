@@ -37,6 +37,8 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
       $result = civicrm_api3('PaymentSchedule', $action, $params);
       $this->assign('instalments', $result['values']['instalments']);
       $this->assign('total_amount', $result['values']['total_amount']);
+      $this->assign('membership_start_date', $result['values']['membership_start_date']);
+      $this->assign('membership_end_date', $result['values']['membership_end_date']);
     }
     catch (CiviCRM_API3_Exception $e) {
       $errorResponse = [

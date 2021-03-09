@@ -83,3 +83,5 @@
   </tbody>
 </table>
 <div id="instalment-total-amount" style="display: none;">{$total_amount}</div>
+<div id="instalment-membership-start-date" style="display: none;">{$membership_start_date}</div>
+<div id="instalment-membership-end-date" style="display: none;">{$membership_end_date}</div>

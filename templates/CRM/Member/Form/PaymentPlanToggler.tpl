@@ -154,6 +154,7 @@
           CRM.alert(data.error_message, 'Error', 'error');
         } else {
           updateTotalAmount($('#instalment-total-amount').html(), isPriceSet);
+          setMembershipEndDate($('#instalment-membership-end-date').html());
         }
       });
     }
@@ -208,6 +209,14 @@
       }else {
         delete selectedPriceFieldValues[priceFieldId];
       }
+    }
+
+    /**
+     * Sets membership end date
+     */
+    function setMembershipEndDate($date) {
+      $('#end_date').val($date);
+      $('#end_date').next('.hasDatepicker').datepicker('setDate', new Date($date));
     }
 
     /**
