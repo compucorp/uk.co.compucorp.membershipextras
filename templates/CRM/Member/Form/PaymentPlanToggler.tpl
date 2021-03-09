@@ -133,7 +133,6 @@
       let params = {
         schedule: schedule,
         start_date : $('#start_date').val(),
-        end_date : $('#end_date').val(),
         join_date : $('#join_date').val(),
       };
       if (isPriceSet) {
@@ -154,7 +153,7 @@
           CRM.alert(data.error_message, 'Error', 'error');
         } else {
           updateTotalAmount($('#instalment-total-amount').html(), isPriceSet);
-          setMembershipEndDate($('#instalment-membership-end-date').html());
+          setMembershipDates($('#instalment-membership-start-date').html(), $('#instalment-membership-end-date').html());
         }
       });
     }
@@ -212,11 +211,13 @@
     }
 
     /**
-     * Sets membership end date
+     * Sets membership dates
      */
-    function setMembershipEndDate($date) {
-      $('#end_date').val($date);
-      $('#end_date').next('.hasDatepicker').datepicker('setDate', new Date($date));
+    function setMembershipDates(startDate, endDate) {
+      $('#start_date').val(startDate);
+      $('#start_date').next('.hasDatepicker').datepicker('setDate', new Date(startDate));
+      $('#end_date').val(endDate);
+      $('#end_date').next('.hasDatepicker').datepicker('setDate', new Date(endDate));
     }
 
     /**
