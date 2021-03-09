@@ -80,7 +80,6 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
     }
 
     $periodTypes = array_unique($periodTypes);
-
     if (!empty($periodTypes)) {
       if (!empty($periodTypes) && count($periodTypes) != 1) {
         $this->errors['price_set_id'] = InvalidMembershipTypeInstalment::PERIOD_TYPE;
@@ -91,17 +90,16 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
     if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
       $this->errors['price_set_id'] = InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY;
     }
+
   }
 
   /**
    * Gets price field values and membership types from the submitted form fields.
    */
   private function getMembershipTypesFromPriceFieldValueFields() {
-    $indexes = array_keys($this->fields);
-    //Search for field starting with price_ follwoing by arbitrary numbers
-    $matchedPriceFieldFields = preg_grep('/^price_(\d+)/', $indexes);
+    $matchedPriceFields = $this->getMatchedPriceFields();
     $selectedPriceFieldIdValues = [];
-    foreach ($matchedPriceFieldFields as $matchedField) {
+    foreach ($matchedPriceFields as $matchedField) {
       if ((is_array($this->fields[$matchedField]))) {
         foreach ($this->fields[$matchedField] as $priceFieldValueId => $value) {
           $selectedPriceFieldIdValues[] = $priceFieldValueId;
@@ -131,6 +129,40 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
     }
 
     return $membershipTypes;
+  }
+
+  /***
+   * Finds price fields from submitted form and return only membership price field
+   */
+  private function getMatchedPriceFields() {
+    $indexes = array_keys($this->fields);
+    //Search for field starting with price_ follwoing by arbitrary numbers
+    $matchedPriceFieldFields = preg_grep('/^price_(\d+)/', $indexes);
+    foreach ($matchedPriceFieldFields as $key => $matchedPriceFieldField) {
+      $explodedField = explode('_', $matchedPriceFieldField);
+      $pricFieldId = $explodedField[1];
+      if ($this->isTextTypePriceField($pricFieldId)) {
+        //Unset any price field that is input text as they are not membership price field
+        unset($matchedPriceFieldFields[$key]);
+      };
+    }
+
+    return $matchedPriceFieldFields;
+  }
+
+  /**
+   * Checks if price field is using Text field
+   */
+  private function isTextTypePriceField($id) {
+    $priceField = civicrm_api3('PriceField', 'getsingle', [
+      'id' => $id,
+    ]);
+
+    if ($priceField['html_type'] == 'Text') {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
 }
