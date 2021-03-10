@@ -183,8 +183,8 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
 
   static $isFirstPaymentPlanContribution = TRUE;
   $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithAtLeastOneInstallment();
-  $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
-  if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
+  $isContributionCreation = ($objectName === 'Contribution' && $op === 'create');
+  if ($isContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
     $paymentPlanProcessor->createPaymentPlan();
     $isFirstPaymentPlanContribution = FALSE;
