@@ -44,7 +44,7 @@ class CRM_MembershipExtras_Utils_InstalmentSchedule {
    * @param $schedule
    * @return int
    */
-  private static function getFrequencyInterval($schedule) {
+  public static function getFrequencyInterval($schedule) {
     return $schedule == InstalmentsSchedule::QUARTERLY ? 3 : 1;
   }
 
@@ -60,7 +60,7 @@ class CRM_MembershipExtras_Utils_InstalmentSchedule {
    * @param $interval
    * @return string
    */
-  private static function getFrequencyUnit($schedule, $interval) {
+  public static function getFrequencyUnit($schedule, $interval) {
     return $interval == 1 && $schedule == InstalmentsSchedule::ANNUAL ? 'year' : 'month';
   }
 
