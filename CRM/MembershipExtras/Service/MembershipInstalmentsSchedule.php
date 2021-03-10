@@ -5,6 +5,9 @@ use CRM_MembershipExtras_DTO_ScheduleInstalmentAmount as ScheduleInstalmentAmoun
 use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeMonthlyCalculator as FixedPeriodTypeMonthlyCalculator;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
+use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule
@@ -97,25 +100,51 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
       $this->applyNonMembershipPriceFieldValueAmount($instalmentAmount);
     }
 
+    $firstInstalmentDate =  $this->startDate->format('Y-m-d');
+    $instalmentFrequencyInterval = InstalmentScheduleUtils::getFrequencyInterval($this->schedule);
+    $instalmentFrequencyUnit = InstalmentScheduleUtils::getFrequencyUnit($this->schedule, $instalmentFrequencyInterval);
+
+    //As per spec, we only support monthly payment for recieved date dispatcher
+    //therefore cycle day will be a day in day of a membership start date which would be the first instalment date.
+    $params = [
+      'payment_instrument_id' => 'direct_debit', //This is a mocking value, the actual payment method should be passed from the form
+      'membership_start_date' => $firstInstalmentDate,
+      'previous_instalment_date' => NULL,
+      'cycle_day' =>  $this->startDate->format('d'),
+      'frequency_interval' => $instalmentFrequencyInterval,
+      'frequency_unit' => $instalmentFrequencyUnit,
+    ];
+
+    $dispatcher = new CalculateContributionReceiveDateDispatcher(1,  $firstInstalmentDate, $params);
+    $dispatcher->dispatch();
+
     $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
-    $instalment->setInstalmentDate($startDate);
+    $instalment->setInstalmentDate(new DateTime($firstInstalmentDate));
     $instalment->setInstalmentAmount($instalmentAmount);
 
     $instalments['instalments'][] = $instalment;
 
     $noOfInstalment = $this->getInstalmentsNumber($this->membershipTypes[0], $this->schedule, $this->startDate, $this->endDate, $this->joinDate);
     if ($noOfInstalment > 1) {
-      $nextInstalmentDate = $startDate->format('Y-m-d');
-      for ($i = 1; $i < $noOfInstalment; $i++) {
+      $previousInstalmentDate = $firstInstalmentDate;
+      for ($instalmentNumber = 2; $instalmentNumber <= $noOfInstalment; $instalmentNumber++) {
         $intervalSpec = 'P1M';
         if ($this->schedule == self::QUARTERLY) {
           $intervalSpec = 'P3M';
         }
-        $instalmentDate = new DateTime($nextInstalmentDate);
+
+        $params['previous_instalment_date'] = $previousInstalmentDate;
+        $instalmentDate = new DateTime($previousInstalmentDate);
         $instalmentDate->add(new DateInterval($intervalSpec));
-        $nextInstalmentDate = $instalmentDate->format('Y-m-d');
+        $instalmentDate = $instalmentDate->format('Y-m-d');
+        $previousInstalmentDate = $instalmentDate;
+
+        $dispatchedInstalmentDate = $instalmentDate;
+        $dispatcher = new CalculateContributionReceiveDateDispatcher($instalmentNumber,  $dispatchedInstalmentDate, $params);
+        $dispatcher->dispatch();
+
         $followingInstalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
-        $followingInstalment->setInstalmentDate($instalmentDate);
+        $followingInstalment->setInstalmentDate(new DateTime($dispatchedInstalmentDate));
         $followingInstalment->setInstalmentAmount($instalmentAmount);
         array_push($instalments['instalments'], $followingInstalment);
       }
