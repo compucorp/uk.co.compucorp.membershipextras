@@ -31,6 +31,14 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
    * @var DateTime|null
    */
   private $endDate = NULL;
+  /**
+   * @var int
+   */
+  private $proRatedNumber = 0;
+  /**
+   * @var string
+   */
+  private $proRatedUnit = NULL;
 
   /**
    * @var array
@@ -66,23 +74,25 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
       $membershipAmount = $membershipType->minimum_fee;
       $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipAmount);
       if ($annualProRataCalculation == self::BY_MONTHS) {
+        $this->proRatedUnit = self::BY_MONTHS;
         $duration = self::TWELVE_MONTHS;
-        $diff = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
-        if ($this->isDurationWithInOneYearPeriod($duration, $diff)) {
+        $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
+        if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
           $this->recalCalcuateEndDate();
+          $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
         }
-        $diff = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
       }
       else {
+        $this->proRatedUnit = self::BY_DAYS;
         $duration  = $membershipTypeDurationCalculator->calculateOriginalInDays();
-        $diff = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
-        if ($this->isDurationWithInOneYearPeriod($duration, $diff)) {
+        $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
+        if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
           $this->recalCalcuateEndDate();
-          $diff = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
+          $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
         }
       }
-      $amount = $this->calculateProRatedAmount($membershipAmount, $duration, $diff);
-      $taxAmount = $this->calculateProRatedAmount($taxAmount, $duration, $diff);
+      $amount = $this->calculateProRatedAmount($membershipAmount, $duration, $this->proRatedNumber);
+      $taxAmount = $this->calculateProRatedAmount($taxAmount, $duration, $this->proRatedNumber);
 
       $this->amount += $amount;
       $this->taxAmount += $taxAmount;
@@ -131,6 +141,34 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
    */
   public function setEndDate(DateTime $endDate) {
     $this->endDate = $endDate;
+  }
+
+  /**
+   * @return int
+   */
+  public function getProRatedNumber() {
+    return $this->proRatedNumber;
+  }
+
+  /**
+   * @param int $proRatedNumber
+   */
+  public function setProRatedNumber(int $proRatedNumber) {
+    $this->proRatedNumber = $proRatedNumber;
+  }
+
+  /**
+   * @return string
+   */
+  public function getProRatedUnit() {
+    return $this->proRatedUnit;
+  }
+
+  /**
+   * @param string $proRatedUnit
+   */
+  public function setProRatedUnit(string $proRatedUnit) {
+    $this->proRatedUnit = $proRatedUnit;
   }
 
   /**
