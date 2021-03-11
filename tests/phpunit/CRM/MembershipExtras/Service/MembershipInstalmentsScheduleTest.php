@@ -66,9 +66,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
-   * Tests rolling membership type schedule total amount
+   * Tests rolling membership type schedulesub sub total, total tax amount and total amount
    */
-  public function testRollingMembershipTypeScheduleTotalAmount() {
+  public function testRollingMembershipTypeScheduleTotalAmounts() {
     $this->mockSalesTaxFinancialAccount();
     $membershipTypes = $this->mockRollingMembershipTypes();
     $schedule = $this->getMembershipSchedule($membershipTypes, MembershipInstalmentsSchedule::MONTHLY);
@@ -76,13 +76,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 1);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
     $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $this->assertEquals($expectedAmount, $schedule['sub_total']);
+    $this->assertEquals($expectedTaxAmount, $schedule['tax_amount']);
     $this->assertEquals($expectedTotalAmount, $schedule['total_amount']);
+    $this->assertArrayNotHasKey('prorated_number', $schedule);
+    $this->assertArrayNotHasKey('prorated_unit', $schedule);
   }
 
   /**
-   * Tests fixed membership ype schedule total amount
+   * Tests fixed membership ype schedule sub total, total tax amount and total amount
    */
-  public function testFixedMembershipTypeScheduleTotalAmount() {
+  public function testFixedMembershipTypeScheduleTotalAmounts() {
     $this->mockSalesTaxFinancialAccount();
     //Mock period start day 01 Oct
     //Mock period rollover day 30 Sep
@@ -96,27 +100,33 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, 12) * $diffInMonth;
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
     $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $this->assertEquals($expectedAmount, $schedule['sub_total']);
+    $this->assertEquals($expectedTaxAmount, $schedule['tax_amount']);
     $this->assertEquals($expectedTotalAmount, $schedule['total_amount']);
+    $this->assertArrayHasKey('prorated_number', $schedule);
+    $this->assertArrayHasKey('prorated_unit', $schedule);
   }
 
   /**
-   * Tests price field schedule total amount
+   * Tests price field schedule sub total, total tax amount and total amount
    */
-  public function testPriceFieldScheduleTotalAmount() {
+  public function testPriceFieldScheduleTotalAmounts() {
     $this->mockSalesTaxFinancialAccount();
     $priceFieldValues = $this->mockPriceFieldValues();
     $membershipTypes = [];
-    $totalAmount = 0;
+    $expectedAmount = 0;
     foreach ($priceFieldValues as $priceFieldValue) {
       $membershipTypes[] = $this->assignPriceFieldValueToMembershipType($priceFieldValue);
-      $totalAmount += $priceFieldValue['amount'];
+      $expectedAmount += $priceFieldValue['amount'];
     }
     $schedule = $this->getMembershipSchedule(
       $membershipTypes,
       MembershipInstalmentsSchedule::MONTHLY
     );
-    $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100);
-    $expectedTotalAmount = $totalAmount + $expectedTaxAmount;
+    $expectedTaxAmount = ($expectedAmount * self::TAX_RATE / 100);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $this->assertEquals($expectedAmount, $schedule['sub_total']);
+    $this->assertEquals($expectedTaxAmount, $schedule['tax_amount']);
     $this->assertEquals($expectedTotalAmount, $schedule['total_amount']);
   }
 
