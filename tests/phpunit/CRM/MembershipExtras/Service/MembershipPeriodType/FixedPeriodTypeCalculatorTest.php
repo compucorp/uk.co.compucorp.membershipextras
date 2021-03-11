@@ -42,6 +42,9 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
     $this->assertEquals($expectedAmount, $calculator->getAmount());
     $this->assertEquals($expectedTaxAmount, $calculator->getTaxAmount());
     $this->assertEquals($expectedTotalAmount, $calculator->getTotalAmount());
+    $this->assertNotEmpty($calculator->getLineItems());
+    $this->assertEquals($diffInMonths, $calculator->getProRatedNumber());
+    $this->assertEquals(FixedPeriodCalculator::BY_MONTHS, $calculator->getProRatedUnit());
   }
 
   /**
@@ -66,6 +69,9 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
     $this->assertEquals($expectedAmount, $calculator->getAmount());
     $this->assertEquals($expectedTaxAmount, $calculator->getTaxAmount());
     $this->assertEquals($expectedTotalAmount, $calculator->getTotalAmount());
+    $this->assertNotEmpty($calculator->getLineItems());
+    $this->assertEquals($diffInDays, $calculator->getProRatedNumber());
+    $this->assertEquals(FixedPeriodCalculator::BY_DAYS, $calculator->getProRatedUnit());
   }
 
   protected function fabricateMembeshipType($params = []) {

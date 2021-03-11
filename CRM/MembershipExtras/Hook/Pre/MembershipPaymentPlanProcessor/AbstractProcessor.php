@@ -3,7 +3,7 @@
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
-use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
+use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as InstalmentAmountCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
 
@@ -124,10 +124,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
     $fixedPeriodTypeCalculator->setStartDate(new DateTime($this->getMembership()['start_date']));
     $fixedPeriodTypeCalculator->setEndDate(new DateTime($this->getMembership()['end_date']));
     $fixedPeriodTypeCalculator->setJoinDate(new DateTime($this->getMembership()['join_date']));
-    $instalmentAmount = new InstalmentAmount($fixedPeriodTypeCalculator);
-    $instalmentAmount->getCalculator()->calculate();
+    $instalmentAmountCalculator = new InstalmentAmountCalculator($fixedPeriodTypeCalculator);
+    $instalmentAmountCalculator->getCalculator()->calculate();
 
-    return $instalmentAmount;
+    return $instalmentAmountCalculator;
   }
 
   protected function getInstalmentCountForFixedMembeship($fixedMembershipType) {

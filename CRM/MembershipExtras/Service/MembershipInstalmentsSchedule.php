@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMembershipTypeInstalment;
 use CRM_MembershipExtras_DTO_ScheduleInstalmentAmount as ScheduleInstalmentAmount;
-use CRM_MembershipExtras_Service_MembershipInstalmentAmount as InstalmentAmount;
+use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as InstalmentAmountCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
 
@@ -56,6 +56,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @var DateTime|null
    */
   private $joinDate;
+  /**
+   * @var \CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator
+   */
+  private $instalmentCalculator;
 
   /**
    * CRM_MembershipExtras_Service_MembershipTypeInstalment constructor.
@@ -121,9 +125,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
       }
     }
 
+    $instalments['sub_total'] = $this->getInstalmentsSubTotalAmount($instalments['instalments']);
+    $instalments['tax_amount'] = $this->getInstalmentsTaxAmount($instalments['instalments']);
     $instalments['total_amount'] = $this->getInstalmentsTotalAmount($instalments['instalments']);
+
     $instalments['membership_start_date'] = $this->startDate->format('Y-m-d');
     $instalments['membership_end_date'] = $this->endDate->format('Y-m-d');
+
+    if ($this->membershipTypes[0]->period_type == 'fixed') {
+      $instalments['prorated_number'] = $this->instalmentCalculator->getCalculator()->getProRatedNumber();
+      $instalments['prorated_unit'] = $this->instalmentCalculator->getCalculator()->getProRatedUnit();
+    }
 
     return $instalments;
   }
@@ -157,18 +169,18 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @throws Exception
    */
   private function calculateInstalmentAmount() {
-    $instalmentAmount = $this->getInstalmentAmountCalculator();
-    $instalmentAmount->getCalculator()->calculate();
+    $this->getInstalmentAmountCalculator();
+    $this->instalmentCalculator->getCalculator()->calculate();
     $divisor = $this->getInstalmentsNumber($this->membershipTypes[0], $this->schedule, $this->startDate, $this->endDate, $this->joinDate);
-    $amount = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getAmount(), $divisor);
-    $taxAmount = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTaxAmount(), $divisor);
-    $totalAmount = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTotalAmount(), $divisor);
+    $amount = $this->calculateSingleInstalmentAmount($this->instalmentCalculator->getCalculator()->getAmount(), $divisor);
+    $taxAmount = $this->calculateSingleInstalmentAmount($this->instalmentCalculator->getCalculator()->getTaxAmount(), $divisor);
+    $totalAmount = $this->calculateSingleInstalmentAmount($this->instalmentCalculator->getCalculator()->getTotalAmount(), $divisor);
 
     $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalmentAmount();
     $instalment->setAmount($amount);
     $instalment->setTaxAmount($taxAmount);
     $instalment->setTotalAmount($totalAmount);
-    $lineItems = $instalmentAmount->getCalculator()->getLineItems();
+    $lineItems = $this->instalmentCalculator->getCalculator()->getLineItems();
     if ($divisor != 1) {
       $lineItems = $this->setLineItemsAmountPerInstalment($lineItems, $divisor);
     }
@@ -203,22 +215,18 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   /**
    * Provides instalment calculator object based on membership type
    *
-   * @return \CRM_MembershipExtras_Service_MembershipInstalmentAmount
    */
   private function getInstalmentAmountCalculator() {
-    $instalmentAmountObject = NULL;
     if ($this->membershipTypes[0]->period_type == 'fixed') {
       $fixedPeriodTypCalculator = new FixedPeriodTypeCalculator($this->membershipTypes);
       $fixedPeriodTypCalculator->setStartDate($this->startDate);
       $fixedPeriodTypCalculator->setEndDate($this->endDate);
       $fixedPeriodTypCalculator->setJoinDate($this->joinDate);
-      $instalmentAmountObject = new InstalmentAmount($fixedPeriodTypCalculator);
+      $this->instalmentCalculator = new InstalmentAmountCalculator($fixedPeriodTypCalculator);
     }
     else {
-      $instalmentAmountObject = new InstalmentAmount(new RollingPeriodCalculator($this->membershipTypes));
+      $this->instalmentCalculator = new InstalmentAmountCalculator(new RollingPeriodCalculator($this->membershipTypes));
     }
-
-    return $instalmentAmountObject;
   }
 
   /**
@@ -321,6 +329,34 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
         throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY));
       }
     }
+  }
+
+  /**
+   * Calculates Instalments Sub Total Amount
+   *
+   * @param array $instalments
+   * @return float
+   */
+  private function getInstalmentsSubTotalAmount(array $instalments) {
+    $subTotalAmount = 0.0;
+    foreach ($instalments as $instalment) {
+      $subTotalAmount += $instalment->getInstalmentAmount()->getAmount();
+    }
+    return $subTotalAmount;
+  }
+
+  /**
+   * Calculates Instalments Tax Amount
+   *
+   * @param array $instalments
+   * @return float
+   */
+  private function getInstalmentsTaxAmount(array $instalments) {
+    $taxAmount = 0.0;
+    foreach ($instalments as $instalment) {
+      $taxAmount += $instalment->getInstalmentAmount()->getTaxAmount();
+    }
+    return $taxAmount;
   }
 
   /**
