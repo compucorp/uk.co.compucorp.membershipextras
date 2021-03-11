@@ -6,6 +6,7 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
   public function run() {
     $this->assignInstalments();
     $this->assignCurrencySymbol();
+    $this->assignTaxTerm();
 
     parent::run();
   }
@@ -13,7 +14,6 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
   private function assignInstalments() {
     $startDate = CRM_Utils_Request::retrieve('start_date', 'String');
     $joinDate = CRM_Utils_Request::retrieve('join_date', 'String');
-    $endDate = CRM_Utils_Request::retrieve('end_date', 'String');
     $schedule = CRM_Utils_Request::retrieve('schedule', 'String');
     $membershipTypeId = CRM_Utils_Request::retrieve('membership_type_id', 'Int');
     $priceFieldValues = CRM_Utils_Request::retrieve('price_field_values', 'String');
@@ -31,14 +31,26 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
     $params['schedule'] = $schedule;
     $params['start_date'] = $startDate;
     $params['join_date'] = $joinDate;
-    $params['end_date'] = $endDate;
 
     try {
       $result = civicrm_api3('PaymentSchedule', $action, $params);
+
       $this->assign('instalments', $result['values']['instalments']);
+      $this->assign('sub_total', $result['values']['sub_total']);
+      $this->assign('tax_amount', $result['values']['tax_amount']);
       $this->assign('total_amount', $result['values']['total_amount']);
       $this->assign('membership_start_date', $result['values']['membership_start_date']);
       $this->assign('membership_end_date', $result['values']['membership_end_date']);
+
+      if (isset($result['values']['prorated_number']) && isset($result['values']['prorated_unit'])) {
+        $this->assign('prorated_number', $result['values']['prorated_number']);
+        if ($result['values']['prorated_unit'] == CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator::BY_DAYS) {
+          $this->assign('prorated_unit', ts('days'));
+        }
+        else {
+          $this->assign('prorated_unit', ts('months'));
+        }
+      }
     }
     catch (CiviCRM_API3_Exception $e) {
       $errorResponse = [
@@ -52,6 +64,14 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
   private function assignCurrencySymbol() {
     $currencySymbol = CRM_Core_BAO_Country::defaultCurrencySymbol();
     $this->assign('currency_symbol', $currencySymbol);
+  }
+
+  private function assignTaxTerm() {
+    $taxTerm = civicrm_api3('Setting', 'get', [
+      'sequential' => 1,
+      'return' => ["tax_term"],
+    ])['values'][0]['tax_term'];
+    $this->assign('tax_term', $taxTerm);
   }
 
 }
