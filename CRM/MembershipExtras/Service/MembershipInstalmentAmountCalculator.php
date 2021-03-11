@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Service_MembershipPeriodType_PeriodTypeCalculatorInterface as Calculator;
 
-class CRM_MembershipExtras_Service_MembershipInstalmentAmount {
+class CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator {
 
   /**
    * @var \CRM_MembershipExtras_Service_MembershipPeriodType_PeriodTypeCalculatorInterface
