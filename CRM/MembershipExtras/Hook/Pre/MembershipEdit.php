@@ -30,6 +30,15 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   private $paymentContributionID;
 
   /**
+   * The payment type e.g. refund or owed
+   *
+   * see CRM_Contribute_Form_AdditionalPayment::getPaymentType
+   *
+   * @var string
+   */
+  private $paymentType;
+
+  /**
    * We don't want to extend the same membership
    * more than one time if for whatever reason
    * this hook get called more than one time
@@ -41,10 +50,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private static $extendedMemberships = [];
 
-  public function __construct($id, &$params, $contributionID) {
+  public function __construct($id, &$params, $contributionID, $paymentType) {
     $this->id = $id;
     $this->params = &$params;
     $this->paymentContributionID = $contributionID;
+    $this->paymentType = $paymentType;
   }
 
   /**
@@ -86,7 +96,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       $contributionId = $paymentRecordingDetails['id'];
     }
 
-    $isRecordPayment = CRM_Utils_Request::retrieve('_qf_AdditionalPayment_upload', 'String') === 'Record Payment';
+    $isRecordPayment = $this->paymentType === 'owed';
 
     if ($isAddAction && $contributionId && $isRecordPayment) {
       $this->paymentContributionID = $contributionId;
