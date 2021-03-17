@@ -54,12 +54,16 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
     if (!$isManualPaymentPlan) {
       return;
     }
+    $this->addElements();
+    $this->addTemplates();
+  }
 
+  private function addElements() {
     $amount = $this->form->getElement('amount');
-    $amount->setAttribute('readonly', true);
+    $amount->setAttribute('readonly', TRUE);
 
     $installments = $this->form->getElement('installments');
-    $installments->setAttribute('readonly', true);
+    $installments->setAttribute('readonly', TRUE);
 
     $this->form->add('checkbox', 'auto_renew', ts('Auto-renew?'));
     $this->form->setDefaults(['auto_renew' => $this->recurringContribution['auto_renew']]);
@@ -75,22 +79,24 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
     $this->form->add('text', 'cycle_day', ts('Cycle Day'), TRUE);
     $this->form->setDefaults(['cycle_day' => $this->recurringContribution['cycle_day']]);
 
-    CRM_Core_Region::instance('page-body')->add([
-      'template' => "{$this->templatePath}/CRM/Member/Form/UpdateSubscriptionModifications.tpl"
-    ]);
-
     $this->form->addButtons([
       [
         'type' => 'upload',
         'name' => ts('Confirm'),
         'spacing' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
         'isDefault' => TRUE,
-        'js' => ['onclick' => "return processUpdate(this,'" . $this->form->getName() . "','" . ts('Processing') . "');"],
+        'js' => ['onclick' => "return processUpdate(event);"],
       ],
       [
         'type' => 'cancel',
         'name' => ts('Cancel'),
       ],
+    ]);
+  }
+
+  private function addTemplates() {
+    CRM_Core_Region::instance('page-body')->add([
+      'template' => "{$this->templatePath}/CRM/Member/Form/UpdateSubscriptionModifications.tpl",
     ]);
   }
 
