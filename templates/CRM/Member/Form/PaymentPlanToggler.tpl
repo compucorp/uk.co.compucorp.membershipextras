@@ -95,7 +95,7 @@
         const memType = parseInt($('#membership_type_id_1').val());
         const isPriceSet = cj('#price_set_id').length > 0 && cj('#price_set_id').val();
 
-        if (!isPriceSet) {
+        if (memType && !isPriceSet) {
           currentMembershipData = membershipextrasAllMembershipData[memType];
           taxRate = membershipextrasTaxRates[currentMembershipData['financial_type_id']];
 
@@ -344,7 +344,7 @@
       const memType = parseInt($('#membership_type_id_1').val());
       const isPriceSet = cj('#price_set_id').length > 0 && cj('#price_set_id').val();
 
-      if (!isPriceSet) {
+      if (memType && !isPriceSet) {
         currentMembershipData = membershipextrasAllMembershipData[memType];
         taxRate = membershipextrasTaxRates[currentMembershipData['financial_type_id']];
 
