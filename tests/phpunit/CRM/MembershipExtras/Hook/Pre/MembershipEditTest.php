@@ -113,8 +113,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
     $membershipParams = array_shift($memberships);
     $membershipParams['end_date'] = date('Y-m-d');
+    $paymentType = 'owed';
 
-    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id']);
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id'], $paymentType);
     $hook->preProcess();
 
     $this->assertTrue(!isset($membership['end_date']));
@@ -134,14 +135,17 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
     $membershipParams = array_shift($memberships);
     $membershipParams['end_date'] = date('Y-m-d');
+    $paymentType = 'owed';
 
-    $_REQUEST['entryURL'] = 'action=add&id=' . $contributions[0]['id'];
-    $_REQUEST['_qf_AdditionalPayment_upload'] = 'Record Payment';
+    $tmpGlobals = [];
+    $tmpGlobals['_REQUEST']['entryURL'] = 'action=add&id=' . $contributions[0]['id'];
+    CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
 
-    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL);
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL, $paymentType);
     $hook->preProcess();
 
     $this->assertTrue(!isset($membership['end_date']));
+    CRM_Utils_GlobalStack::singleton()->pop();
   }
 
   public function testPreventExtendingPaymentPlanMembershipOnBulkStatusUpdate() {
@@ -157,15 +161,19 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
     $membershipParams = array_shift($memberships);
     $membershipParams['end_date'] = date('Y-m-d');
+    $paymentType = 'owed';
 
-    $_REQUEST['q'] = 'civicrm/contribute/search';
-    $_REQUEST['_qf_Status_next'] = 'Update Pending Status';
-    $_REQUEST['contribution_status_id'] = '1';
+    $tmpGlobals = [];
+    $tmpGlobals['_REQUEST']['q'] = 'civicrm/contribute/search';
+    $tmpGlobals['_REQUEST']['_qf_Status_next'] = 'Update Pending Status';
+    $tmpGlobals['_REQUEST']['contribution_status_id'] = '1';
+    CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
 
-    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL);
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL, $paymentType);
     $hook->preProcess();
 
     $this->assertTrue(!isset($membership['end_date']));
+    CRM_Utils_GlobalStack::singleton()->pop();
   }
 
   public function testMembershipNotInPaymentPlanIsNotPreventedFromExtending() {
@@ -214,7 +222,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
 
     $newEndDate = date('Y-m-d', strtotime($membership['end_date'] . '+2 years'));
     $membership['end_date'] = $newEndDate;
-    $hook = new MembershipEditHook($membership['id'], $membership, $payment['id']);
+    $paymentType = 'owed';
+    $hook = new MembershipEditHook($membership['id'], $membership, $payment['id'], $paymentType);
     $hook->preProcess();
 
     $this->assertEquals($newEndDate, $membership['end_date']);
@@ -234,24 +243,28 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
     $membershipParams = array_shift($memberships);
     $membershipEndDate = $membershipParams['end_date'];
+    $paymentType = 'owed';
 
-    $_REQUEST['action'] = CRM_Core_Action::RENEW;
-    $_REQUEST['contribution_status_id'] = civicrm_api3('OptionValue', 'getvalue', [
+    $tmpGlobals = [];
+    $tmpGlobals['_REQUEST']['action'] = CRM_Core_Action::RENEW;
+    $tmpGlobals['_REQUEST']['contribution_status_id'] = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
     ]);
-    $_REQUEST['installments'] = $paymentPlan['installments'];
-    $_REQUEST['record_contribution'] = 1;
-    $_REQUEST['contribution_type_toggle'] = 'payment_plan';
+    $tmpGlobals['_REQUEST']['installments'] = $paymentPlan['installments'];
+    $tmpGlobals['_REQUEST']['record_contribution'] = 1;
+    $tmpGlobals['_REQUEST']['contribution_type_toggle'] = 'payment_plan';
+    CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
 
-    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id']);
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id'], $paymentType);
     $hook->preProcess();
 
     $this->assertEquals(
       date('Y-m-d', strtotime($membershipEndDate . ' +12 months')),
       date('Y-m-d', strtotime($membershipParams['end_date']))
     );
+    CRM_Utils_GlobalStack::singleton()->pop();
   }
 
   public function testExtendPendingPlanWithFixedMembershipAndOneInstalment() {
@@ -270,24 +283,27 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
     $membershipParams = array_shift($memberships);
     $membershipEndDate = $membershipParams['end_date'];
+    $paymentType = 'owed';
 
-    $_REQUEST['action'] = CRM_Core_Action::RENEW;
-    $_REQUEST['contribution_status_id'] = civicrm_api3('OptionValue', 'getvalue', [
+    $tmpGlobals['_REQUEST']['action'] = CRM_Core_Action::RENEW;
+    $tmpGlobals['_REQUEST']['contribution_status_id'] = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'value',
       'option_group_id' => 'contribution_status',
       'name' => 'Pending',
     ]);
-    $_REQUEST['installments'] = $paymentPlan['installments'];
-    $_REQUEST['record_contribution'] = 1;
-    $_REQUEST['contribution_type_toggle'] = 'payment_plan';
+    $tmpGlobals['_REQUEST']['installments'] = $paymentPlan['installments'];
+    $tmpGlobals['_REQUEST']['record_contribution'] = 1;
+    $tmpGlobals['_REQUEST']['contribution_type_toggle'] = 'payment_plan';
+    CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
 
-    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id']);
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id'], $paymentType);
     $hook->preProcess();
 
     $this->assertEquals(
       date('Y-m-d', strtotime($membershipEndDate . ' +12 months')),
       date('Y-m-d', strtotime($membershipParams['end_date']))
     );
+    CRM_Utils_GlobalStack::singleton()->pop();
   }
 
   public function testVerifyMembershipStartDate() {
@@ -305,8 +321,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $membershipParams = array_shift($memberships);
     $originalStartDate = $membershipParams['start_date'];
     $membershipParams['start_date'] = date('Y-m-d', strtotime('+1000 years'));
+    $paymentType = 'owed';
 
-    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id']);
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id'], $paymentType);
     $hook->preProcess();
 
     $this->assertEquals($originalStartDate, $membershipParams['start_date']);

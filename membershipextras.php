@@ -177,14 +177,15 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   if ($objectName === 'Membership' && $op == 'edit') {
-    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID);
+    $paymentType = Civi::$statics[E::LONG_NAME]['paymentType'] ?? '';
+    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID, $paymentType);
     $membershipPreHook->preProcess();
   }
 
   static $isFirstPaymentPlanContribution = TRUE;
   $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanWithSchedule();
-  $membershipContributionCreation = ($objectName === 'Contribution' && $op === 'create' && !empty($params['membership_id']));
-  if ($membershipContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
+  $isContributionCreation = ($objectName === 'Contribution' && $op === 'create');
+  if ($isContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanProcessor->createPaymentPlan();
     $paymentPlanProcessor->setContributionToPayLater();
@@ -324,6 +325,10 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName === 'CRM_Contribute_Form_Contribution') {
     $contributionEditHook = new CRM_MembershipExtras_Hook_BuildForm_ContributionEdit();
     $contributionEditHook->buildForm();
+  }
+
+  if ($formName == 'CRM_Contribute_Form_AdditionalPayment') {
+    Civi::$statics[E::LONG_NAME]['paymentType'] = $form->getVar('_paymentType');
   }
 }
 

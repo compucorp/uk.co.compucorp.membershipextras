@@ -9,7 +9,7 @@ use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as Offlin
  */
 class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
-  public function Install() {
+  public function postInstall() {
     $this->createOfflineAutoRenewalScheduledJob();
     $this->createPaymentProcessorType();
     $this->createPaymentProcessor();
