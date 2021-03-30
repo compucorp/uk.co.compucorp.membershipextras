@@ -1,13 +1,15 @@
+{crmScript ext=uk.co.compucorp.membershipextras file=js/paymentPlanToggler.js region=html-header}
 <script type="text/javascript">
   {literal}
-  (function ($) {
+  CRM.$(function ($) {
     {/literal}
     const togglerValue = '{$contribution_type_toggle}';
     const currencySymbol = '{$currency_symbol}';
+    paymentPlanToggler(togglerValue, currencySymbol);
     {literal}
+  });
   {/literal}
 </script>
-{crmScript ext=uk.co.compucorp.membershipextras file=js/paymentPlanToggler.js}
 <div id="payment_plan_fields_tabs">
   <input name="contribution_type_toggle" type="hidden">
   <div class="ui-tabs">
