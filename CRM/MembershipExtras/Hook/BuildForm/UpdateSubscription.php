@@ -76,7 +76,7 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
     $this->form->setDefaults(['payment_instrument_id' => $this->recurringContribution['payment_instrument_id']]);
     $this->form->assign('isBackOffice', 1);
 
-    $this->form->add('text', 'cycle_day', ts('Cycle Day'), TRUE);
+    $this->form->add('text', 'cycle_day', ts('Cycle Day'), [], TRUE);
     $this->form->setDefaults(['cycle_day' => $this->recurringContribution['cycle_day']]);
 
     $this->form->addButtons([

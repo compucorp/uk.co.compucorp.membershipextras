@@ -65,7 +65,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
 
   public function testRenewalWithMembershipEndDateLessThanTodayDateWillRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
@@ -84,7 +84,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     $singleInstalmentRenewal = new SingleInstalmentRenewalJob();
     $singleInstalmentRenewal->run();
 
-    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
+    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '-1 month -1 day'));
   }
 
   public function testRenewalWithMembershipEndDateEqualTodayDateWillRenew() {
@@ -169,7 +169,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
 
   public function testRenewalWithNonCompletedInstalmentWillRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
     $paymentPlanMembershipOrder->lineItems[] = [
@@ -188,7 +188,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     $singleInstalmentRenewal = new SingleInstalmentRenewalJob();
     $singleInstalmentRenewal->run();
 
-    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
+    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '-1 month -1 day'));
   }
 
   public function testRenewalWithCancelledPaymentPlanWillNotRenew() {
@@ -726,7 +726,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     ])['values'][0];
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
@@ -745,7 +745,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     $singleInstalmentRenewal = new SingleInstalmentRenewalJob();
     $singleInstalmentRenewal->run();
 
-    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year -1 month -1 day'));
+    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '-1 month -1 day'));
   }
 
   /**
