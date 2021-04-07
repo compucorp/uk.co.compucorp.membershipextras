@@ -1,6 +1,6 @@
 <div class="crm-block crm-form-block crm-payment-plan-cancel-form-block">
   <div class="messages status no-popup">
-    <div class="icon inform-icon"></div>
+    <div class="crm-i fa-info-circle"></div>
     WARNING - This action sets the CiviCRM recurring contribution status to cancelled, but does NOT send a cancellation request to the payment processor. You will need to ensure that this recurring payment (subscription) is cancelled by the payment processor.
   </div>
   <p>
