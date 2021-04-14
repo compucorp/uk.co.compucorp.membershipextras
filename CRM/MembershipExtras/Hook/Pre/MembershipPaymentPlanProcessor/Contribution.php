@@ -3,6 +3,9 @@
 use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProcessor as AbstractProcessor;
 use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
 
+/**
+ * Class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution
+ */
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution extends AbstractProcessor {
 
   /**
@@ -12,10 +15,60 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
    */
   private $recurringContribution;
 
+  /**
+   * @var array
+   */
+  private $membershipTypeLineItems = [];
+
+  /**
+   * @var array
+   */
+  private $nonMembershipTypeLineItems = [];
+
+  /**
+   * @var CRM_MembershipExtras_DTO_ScheduleInstalmentAmount
+   */
+  private $instalmentAmount;
+
+  /**
+   * @var string
+   */
+  private $periodType;
+
+  /**
+   * @var void
+   */
+  private $instalmentAmountCalculator;
+
+  /**
+   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
+   */
   public function __construct(&$params) {
     $this->params = &$params;
+    $this->setMembershipId();
     $this->assignInstalmentDetails();
-    $this->fixedPeriodMembershipTypes = $this->getLineItemsFixedPeriodMembershipType();
+    $this->handleContributionLineItems();
+    $this->instalmentAmountCalculator = $this->getInstalmentAmountCalculator($this->membershipTypeLineItems, $this->periodType);
+  }
+
+  /**
+   * Sets membership ID from line item.
+   *
+   * Since CiviCRM 5.35.1, membership ID will not be passed
+   * to contribution param, as we would need the membership dates from
+   * membership object to calculate instalment details, in order to
+   * do this, we need to get membership ID from line item entity.
+   */
+  public function setMembershipId() {
+    $lineItems = $this->params['line_item'];
+    array_walk($lineItems, function (&$lineItem, $key) {
+      array_walk($lineItem, function (&$line, $key) {
+        if ($line['entity_table'] == 'civicrm_membership') {
+          self::$membership_id = $line['entity_id'];
+        }
+      });
+    });
   }
 
   /**
@@ -34,10 +87,29 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
    * For now, it creates the recurring contribution
    * and update the first contribution amount
    * depending on the instalments count.
+   *
+   * @throws Exception
    */
   public function createPaymentPlan() {
+    $this->calculateInstalmentAmount();
     $this->createRecurringContribution();
     $this->alterFirstContributionParameters();
+  }
+
+  /**
+   * Calculates Instalment Amount from the actual instalment count
+   *
+   * @throws Exception
+   */
+  private function calculateInstalmentAmount() {
+    $actualInstalmentCount = $this->instalmentsCount;
+
+    if ($this->periodType == 'fixed') {
+      $actualInstalmentCount = $this->getInstalmentCount($this->membershipTypeLineItems[0]);
+    }
+
+    $this->instalmentAmount = $this->instalmentAmountCalculator->calculateInstalmentAmount($actualInstalmentCount);
+    $this->applyNonMembershipPriceValues($this->instalmentAmount, $actualInstalmentCount);
   }
 
   /**
@@ -45,14 +117,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
    */
   private function createRecurringContribution() {
     $this->dispatchReceiveDateCalculationHook();
+    $amountPerInstalment = $this->instalmentAmount->getTotalAmount();
 
-    if (!empty($this->fixedPeriodMembershipTypes) && $this->isPaidMonthly()) {
-      $instalmentCount = $this->getInstalmentCountForFixedMembeship($this->fixedPeriodMembershipTypes[0]);
-      $amountPerInstalment = $this->calculateSingleInstalmentAmount($this->params['total_amount'], $instalmentCount);
-    }
-    else {
-      $amountPerInstalment = $this->calculateSingleInstalmentAmount($this->params['total_amount']);
-    }
     $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
       'return' => 'name',
       'option_group_id' => 'payment_instrument',
@@ -89,6 +155,38 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
   }
 
   /**
+   * Applies non membership price values to the instalment amount
+   *
+   * @param $instalmentAmount
+   * @param $instalmentCount
+   * @throws Exception
+   */
+  private function applyNonMembershipPriceValues($instalmentAmount, $instalmentCount) {
+    if (empty($this->nonMembershipTypeLineItems)) {
+      return;
+    }
+
+    $nonPriceFieldValues = [];
+    foreach ($this->nonMembershipTypeLineItems as $item) {
+      $values = [
+        'id' => $item['price_field_value_id'],
+        'amount' => $item['unit_price'],
+        'financial_type_id' => $item['financial_type_id'],
+      ];
+      $quantity = $item['qty'];
+      $nonPriceFieldValues[$item['price_field_value_id']]['values'] = $values;
+      $nonPriceFieldValues[$item['price_field_value_id']]['quantity'] = $quantity;
+    }
+
+    $this->instalmentAmountCalculator->setNonMembershipPriceFieldValueAmount(
+      $instalmentAmount,
+      $nonPriceFieldValues,
+      new CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator(),
+      $instalmentCount
+    );
+  }
+
+  /**
    * Dispatches the membershipextras_calculateContributionReceiveDate.
    *
    * This allows other extensions to change the payment plan's first instalment
@@ -116,48 +214,84 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
     $this->params['contribution_recur_id'] = $this->recurringContribution['id'];
     $this->params['total_amount'] = $this->recurringContribution['amount'];
     $this->params['net_amount'] = $this->recurringContribution['amount'];
-
-    if (empty($this->params['tax_amount'])) {
-      return;
-    }
-
-    if (empty($this->fixedPeriodMembershipTypes)) {
-      $this->params['tax_amount'] = $this->calculateInstalmentTax($this->params['total_amount'], $this->params['financial_type_id']);
-
-      return;
-    }
-
-    $instalmentCount = $this->getInstalmentCountForFixedMembeship($this->fixedPeriodMembershipTypes[0]);
-    if ($this->isUsingPriceSet()) {
-      $instalmentAmount = $this->getProRatedInstalmentAmount($this->fixedPeriodMembershipTypes);
-      if ($this->isPaidMonthly()) {
-        $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTaxAmount(), $instalmentCount);
-      }
-      else {
-        $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTaxAmount());
-      }
-    }
-    else {
-      $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount'], $instalmentCount);
-    }
-
+    $this->params['tax_amount'] = $this->instalmentAmount->getTaxAmount();
   }
 
   /**
-   * Gets only fixed period membeship type that belong to each line item
+   * Handles contribution line items
+   *
+   * @throws CRM_Core_Exception
    */
-  private function getLineItemsFixedPeriodMembershipType() {
-    $membershipTypes = [];
+  private function handleContributionLineItems() {
     foreach (CRM_Utils_Array::value('line_item', $this->params, []) as $types) {
-      foreach ($types as &$line) {
-        $membershipType = CRM_Member_BAO_MembershipType::findById($line['membership_type_id']);
-        if ($membershipType->period_type == 'fixed') {
-          $membershipType->minimum_fee = $line['line_total'];
-          array_push($membershipTypes, $membershipType);
+      foreach ($types as $line) {
+        if (!empty($line['membership_type_id'])) {
+          $this->handleMembershipTypeLineItems($line);
+        }
+        else {
+          $this->handleNonMembershipTypeLineItems($line);
         }
       }
     }
-    return $membershipTypes;
+  }
+
+  /***
+   * Handles membership type line item
+   *
+   * We adjust membership fee and set period type based on line item
+   *
+   * @param array $line
+   *
+   * @throws CRM_Core_Exception
+   */
+  private function handleMembershipTypeLineItems(array $line) {
+    $membershipType = CRM_Member_BAO_MembershipType::findById($line['membership_type_id']);
+    $this->adjustMembershipFee($membershipType, $line['line_total']);
+    $this->setPeriodType($membershipType->period_type);
+
+    array_push($this->membershipTypeLineItems, $membershipType);
+  }
+
+  /**
+   * Sets period type for the contribution object.
+   *
+   * @param string $periodType
+   */
+  private function setPeriodType(string $periodType) {
+    if (isset($this->periodType)) {
+      return;
+    }
+
+    $this->periodType = $periodType;
+  }
+
+  /**
+   * Adjusts membership fee
+   *
+   * When using price set, membership fee may be different
+   * from membership type minimum fee, we need to adjust
+   * it before calculate instalment amount before price set is used.
+   *
+   * @param CRM_Member_DAO_MembershipType $membershipType
+   * @param float $lineTotal
+   *
+   * @throws CRM_Core_Exception
+   */
+  private function adjustMembershipFee(CRM_Member_DAO_MembershipType $membershipType, float $lineTotal) {
+    if (!$this->isUsingPriceSet()) {
+      return;
+    }
+
+    $membershipType->minimum_fee = $lineTotal;
+  }
+
+  /**
+   * Sets non membership type line items
+   *
+   * @param array $line
+   */
+  private function handleNonMembershipTypeLineItems(array $line) {
+    array_push($this->nonMembershipTypeLineItems, $line);
   }
 
   /**
@@ -174,10 +308,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
       $this->params['contribution_status_id'] = $statusId;
       $this->params['is_pay_later'] = TRUE;
     }
-  }
-
-  private function isPaidMonthly() {
-    return $this->paymentPlanSchedule == CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::MONTHLY;
   }
 
 }
