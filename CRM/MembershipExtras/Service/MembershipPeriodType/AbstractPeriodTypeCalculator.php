@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtils;
+
 /**
  * Class CRM_MembershipExtras_Service_MembershipPeriodType_AbstractPeriodTypeCalculator
  */
@@ -45,7 +47,7 @@ abstract class CRM_MembershipExtras_Service_MembershipPeriodType_AbstractPeriodT
   }
 
   /**
-   * @return flaot
+   * @return float
    */
   public function getTotalAmount() {
     return $this->amount + $this->taxAmount;
@@ -61,16 +63,16 @@ abstract class CRM_MembershipExtras_Service_MembershipPeriodType_AbstractPeriodT
   /**
    * Generates line item for each instalment
    *
-   * @param int $fiancialTypeId
+   * @param int $financialTypeId
    * @param float $amount
    * @param float $taxAmount
    */
-  protected function generateLineItem(int $fiancialTypeId, float $amount, float $taxAmount) {
-    $subTotal = $amount * $this->quantity;
-    $totalAmount = $subTotal + $taxAmount;
-    $taxRate = $this->instalmentTaxAmountCalculator->getTaxRateByFinancialTypeId($fiancialTypeId);
+  protected function generateLineItem(int $financialTypeId, float $amount, float $taxAmount) {
+    $subTotal = MoneyUtils::roundToPrecision($amount, 2) * MoneyUtils::roundToPrecision($this->quantity, 2);
+    $totalAmount = $subTotal + MoneyUtils::roundToPrecision($taxAmount, 2);
+    $taxRate = $this->instalmentTaxAmountCalculator->getTaxRateByFinancialTypeId($financialTypeId);
     $scheduleInstalmentLineItem = new CRM_MembershipExtras_DTO_ScheduleInstalmentLineItem();
-    $scheduleInstalmentLineItem->setFinancialTypeId($fiancialTypeId);
+    $scheduleInstalmentLineItem->setFinancialTypeId($financialTypeId);
     $scheduleInstalmentLineItem->setQuantity($this->quantity);
     $scheduleInstalmentLineItem->setUnitPrice($amount);
     $scheduleInstalmentLineItem->setSubTotal($subTotal);
