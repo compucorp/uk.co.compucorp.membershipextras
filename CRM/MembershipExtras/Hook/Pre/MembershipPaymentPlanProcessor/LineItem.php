@@ -1,9 +1,10 @@
 <?php
 
 use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProcessor as AbstractProcessor;
-use CRM_Member_BAO_MembershipType as MembershipType;
 
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem extends AbstractProcessor {
+
+  use CRM_MembershipExtras_Helper_InstalmentCalculatorTrait;
 
   public function __construct(&$params) {
     $this->params = &$params;
@@ -23,92 +24,49 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem exte
       $this->handleMembershipTypeLineItem();
     }
     else {
-      $this->calculateLineItemAmounts();
+      $this->handleNonMembershipTypeLineItem();
     }
   }
 
   /**
-   * Adjusts line items when line item has membeship type.
+   * Adjusts line items when line item has membership type.
    */
   private function handleMembershipTypeLineItem() {
     $lineItemMembershipType = CRM_Member_BAO_MembershipType::findById($this->params['membership_type_id']);
-    if ($this->isMonthlyPaymentWithFixedMembershipPriceSet($lineItemMembershipType)) {
-      $instalmentCount = $this->getInstalmentCountForFixedMembeship($lineItemMembershipType);
-      $this->calculateProRataLineItemAmounts($lineItemMembershipType, $instalmentCount);
+    if ($this->isUsingPriceSet()) {
+      //Since line item amount can be different from membership type amount
+      //Make sure we are using line item total amount when using PriceSet
+      $lineItemMembershipType->minimum_fee = $this->params['line_total'];
     }
-    elseif ($this->isAnnualPaymentWithFixedMembershipPriceSet($lineItemMembershipType)) {
-      $this->calculateProRataLineItemAmounts($lineItemMembershipType);
-    }
-    elseif ($this->isNonPriceSetFixedMembership($lineItemMembershipType)) {
-      $instalmentCount = $this->getInstalmentCountForFixedMembeship($lineItemMembershipType);
-      $this->calculateLineItemAmounts($instalmentCount);
-    }
-    else {
-      $this->calculateLineItemAmounts();
-    }
+    $instalmentAmountCalculator = $this->getInstalmentAmountCalculator([$lineItemMembershipType], $lineItemMembershipType->period_type);
+    $instalmentAmount = $instalmentAmountCalculator->calculateInstalmentAmount($this->getLineItemInstalmentCount($lineItemMembershipType));
+    $this->params['line_total'] = $instalmentAmount->getAmount();
+    $this->params['unit_price'] = $instalmentAmount->getAmount();
+    $this->params['tax_amount'] = $instalmentAmount->getTaxAmount();
   }
 
   /**
-   * Checks if line item is price set, membemrship type is fixed and payment schedule is monthly.
-   *
-   * @param CRM_Member_BAO_MembershipType $membershipType
+   * @throws Exception
    */
-  private function isMonthlyPaymentWithFixedMembershipPriceSet($membershipType) {
-    $isMonthlySchedule = $this->paymentPlanSchedule == CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::MONTHLY;
-    $isFixedMembershipType = $membershipType->period_type == 'fixed';
-    return $this->isUsingPriceSet() && $isFixedMembershipType && $isMonthlySchedule;
+  private function getLineItemInstalmentCount($lineItemMembershipType) {
+    if ($lineItemMembershipType->period_type == 'fixed') {
+      return $this->getInstalmentCount($lineItemMembershipType);
+    }
+
+    return $this->instalmentsCount;
   }
 
   /**
-   * Checks if line item is price set, membemrship type is fixed and payment schedule is annual.
-   *
-   * @param \CRM_Member_BAO_MembershipType $membershipType
+   * Adjusts line items when line item is a non membership type.
    */
-  private function isAnnualPaymentWithFixedMembershipPriceSet($membershipType) {
-    $isNonMonthlySchedule = $this->paymentPlanSchedule == CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::ANNUAL;
-    $isFixedMembershipType = $membershipType->period_type == 'fixed';
-    return $this->isUsingPriceSet() && $isFixedMembershipType && $isNonMonthlySchedule;
-  }
+  private function handleNonMembershipTypeLineItem() {
+    $instalmentCount = $this->getInstalmentCount();
 
-  /**
-   * Checks if line item is fixed membership and not using price set.
-   *
-   * @param \CRM_Member_BAO_MembershipType $membershipType
-   */
-  private function isNonPriceSetFixedMembership($membershipType) {
-    $isFixedMembershipType = $membershipType->period_type == 'fixed';
-    return !$this->isUsingPriceSet() && $isFixedMembershipType;
-  }
-
-  /**
-   * Calcuclates line item amounts and assign amounts to line item.
-   *
-   * @param int $instalmentCount
-   */
-  private function calculateLineItemAmounts($instalmentCount = NULL) {
     $this->params['line_total'] = $this->calculateSingleInstalmentAmount($this->params['line_total'], $instalmentCount);
     $this->params['unit_price'] = $this->calculateSingleInstalmentAmount($this->params['unit_price'], $instalmentCount);
     if (!empty($this->params['tax_amount'])) {
       $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($this->params['tax_amount'], $instalmentCount);
     }
-  }
-
-  /**
-   * Calculates pro rata amounts for line item for fixed period membership type
-   *
-   * @param \CRM_Member_BAO_MembershipType $membershipType
-   * @param int $instalmentCount
-   */
-  private function calculateProRataLineItemAmounts(MembershipType $membershipType, int $instalmentCount = NULL) {
-    if (is_null($instalmentCount)) {
-      $instalmentCount = $this->instalmentsCount;
-    }
-    //Make sure we pro rated using line item total amount
-    $membershipType->minimum_fee = $this->params['unit_price'];
-    $instalmentAmount = $this->getProRatedInstalmentAmount([$membershipType]);
-    $this->params['line_total'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getAmount(), $instalmentCount);
-    $this->params['unit_price'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getAmount(), $instalmentCount);
-    $this->params['tax_amount'] = $this->calculateSingleInstalmentAmount($instalmentAmount->getCalculator()->getTaxAmount(), $instalmentCount);
   }
 
 }
