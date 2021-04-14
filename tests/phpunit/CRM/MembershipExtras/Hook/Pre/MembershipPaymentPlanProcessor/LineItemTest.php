@@ -23,8 +23,17 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
 
-  private $membrship;
   private $priceSet;
+  /**
+   * @var mixed
+   */
+  private $membership;
+
+  public function setUp() {
+    //We mocked membership ID as the membership ID is always when
+    //Contribution pre_process hook is called.
+    MembershipPaymentPlanProcessor::$membership_id = $this->membership['id'];;
+  }
 
   /**
    * Tests pro rated price set contribution line item on calucation by month for fixed period membership type.
@@ -33,6 +42,12 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    */
   public function testProRatedPriceSetContributionLineItemOnCalculationByMonthFixedMembershipType() {
     $params = $this->mockParams('fixed', 'year', FixedPeriodCalculator::BY_MONTHS);
+    //Since we test price set, line item amount can be different
+    //from membership type that attached to price field value
+    //the line total is changed here to test if the hook
+    //is working correct with different price.
+    $params['line_total'] = 240;
+
     $memTypeObj = CRM_Member_BAO_MembershipType::findById($params['membership_type_id']);
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($memTypeObj, new MembershipTypeDatesCalculator());
     $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime($this->membership['start_date']));
@@ -67,8 +82,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
     $processor = new MembershipPaymentPlanProcessor($params);
     $processor->alterLineItemParameters();
 
-    $this->assertEquals($expectedLineToTal, $params['line_total']);
-    $this->assertEquals($expectedTaxAmount, $params['tax_amount']);
+    $this->assertEquals($expectedLineToTal, MoneyUtilities::roundToPrecision($params['line_total'], 2));
+    $this->assertEquals($expectedTaxAmount, MoneyUtilities::roundToPrecision($params['tax_amount'], 2));
   }
 
   /**
@@ -88,13 +103,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
     //Make sure we pro rated the line item amounts before calling processor for default membership type price set
     //as when we select non price set price on the membership sign up form, the default line item will be used
     //and the price will already be pro prorated as per total amount thus we need to do there to make sure that
-    //the processor will calculate line item amounts correcly.
+    //the processor will calculate line item amounts correctly.
     $amount = $params['line_total'];
     $params['line_total'] = MoneyUtilities::roundToPrecision(($amount / $membershipTypeDurationInDays) * $diffInDays, 2);
-    $params['unit_price'] = MoneyUtilities::roundToPrecision(($amount / $membershipTypeDurationInDays) * $diffInDays, 2);
-    $params['tax_amount'] = MoneyUtilities::roundToPrecision(($params['tax_rate'] / 100) * $params['tax_amount'], 2);
+    $params['unit_price'] = $params['line_total'];
+    $params['tax_amount'] = MoneyUtilities::roundToPrecision(($params['tax_rate'] / 100) * $params['line_total'], 2);
 
-    //diffInMonths = number of instalment as we are paying montthly
+    //diffInMonths = number of instalment as we are paying monthly
     $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime($this->membership['start_date']));
     $expectedLineToTal = MoneyUtilities::roundToPrecision($params['line_total'] / $diffInMonths, 2);
     $expectedTaxAmount = MoneyUtilities::roundToPrecision($params['tax_amount'] / $diffInMonths, 2);
@@ -142,6 +157,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
     $membershipType = $this->mockMembershipType($membershipPeriodType, $membershipTypeDuration, $membershipTypeSetting);
     $this->membership = $this->mockMembership($contact['id'], $membershipType['id'], date('Y-m-d'));
     $contribution = $this->mockContribution($this->membership, $membershipType);
+
     if (is_null($priceSet)) {
       $this->priceSet = $this->mockPriceSet();
       $priceField = $this->mockPriceField($this->priceSet['id'], 'price field for price set ' . $priceSet['id']);
@@ -149,8 +165,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
     else {
       $priceField = $this->mockPriceField($priceSet['id']);
     }
-    $priceFieldValue = $this->mockPriceFieldValue($priceField['id'], $membershipType['id']);
+
+    $priceFieldValue = $this->mockPriceFieldValue($priceField['id'], $membershipType['id'], $membershipType['minimum_fee']);
     $rate = $this->getMemberDuesTaxRate();
+
     return [
       'price_field_id' => $priceField['id'],
       'price_field_value_id' => $priceFieldValue['id'],
@@ -291,11 +309,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    * @return array
    * @throws CiviCRM_API3_Exception
    */
-  private function mockPriceFieldValue($priceFieldId, $membershipTypeId) {
+  private function mockPriceFieldValue($priceFieldId, $membershipTypeId, $priceFieldAmount) {
     return PriceFieldValueFabricator::fabricate([
       'price_field_id' => $priceFieldId,
-      'label' => "Price Field Value with Membership Type " . (string) $membershipTypeId,
-      'amount' => 240,
+      'label' => "Price Field Value with Membership Type " . $membershipTypeId,
+      'amount' => $priceFieldAmount,
       'membership_type_id' => $membershipTypeId,
       'financial_type_id' => "Member Dues",
     ]);
