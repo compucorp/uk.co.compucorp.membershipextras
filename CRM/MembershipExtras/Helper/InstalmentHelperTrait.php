@@ -9,17 +9,17 @@ trait CRM_MembershipExtras_Helper_InstalmentHelperTrait {
   /**
    * Gets Membership start date
    *
-   * @param int $membershipId
+   * @param int $membershipTypeId
    * @param DateTime|NULL $startDate
    * @param DateTime|NULL $endDate
    * @param DateTime|NULL $joinDate
    *
    * @return mixed
    */
-  private function getMembershipStartDate(int $membershipId, DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+  private function getMembershipStartDate(int $membershipTypeId, DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
     $membershipTypeDatesCalculator = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
     $membershipDates = $membershipTypeDatesCalculator->getDatesForMembershipType(
-      $membershipId,
+      $membershipTypeId,
       $startDate,
       $endDate,
       $joinDate
