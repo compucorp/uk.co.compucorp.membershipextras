@@ -220,7 +220,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      * Updates total amount based and also updated price value if is price set amount
      */
     function updateTotalAmount(totalAmount, isPriceSet) {
-      $('#total_amount').val(CRM.formatMoney(totalAmount, true));
+      $('#total_amount').val(totalAmount);
       if (isPriceSet) {
         $('#pricevalue').html(currencySymbol + ' ' + CRM.formatMoney(totalAmount, true));
       }
