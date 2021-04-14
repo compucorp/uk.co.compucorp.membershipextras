@@ -180,7 +180,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator {
   }
 
   /**
-   * Calculates instalment total amount.
+   * Calculates instalments total amount.
    *
    * @param array $instalments
    * @return float
