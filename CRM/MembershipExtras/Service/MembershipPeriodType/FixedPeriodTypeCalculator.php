@@ -78,7 +78,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
         $duration = self::TWELVE_MONTHS;
         $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
         if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
-          $this->recalCalcuateEndDate();
+          $this->reCalculateEndDate();
           $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
         }
       }
@@ -87,7 +87,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
         $duration  = $membershipTypeDurationCalculator->calculateOriginalInDays();
         $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
         if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
-          $this->recalCalcuateEndDate();
+          $this->reCalculateEndDate();
           $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
         }
       }
@@ -183,7 +183,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
    * Subtracts end date by 1 year as
    * Membership extras default fixed membership to 1 year duration.
    */
-  private function recalCalcuateEndDate() {
+  private function reCalculateEndDate() {
     $this->endDate->sub(new DateInterval('P1Y'));
   }
 

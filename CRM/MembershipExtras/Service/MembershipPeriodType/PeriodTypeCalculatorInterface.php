@@ -11,4 +11,6 @@ interface CRM_MembershipExtras_Service_MembershipPeriodType_PeriodTypeCalculator
 
   public function getTotalAmount();
 
+  public function getLineItems();
+
 }

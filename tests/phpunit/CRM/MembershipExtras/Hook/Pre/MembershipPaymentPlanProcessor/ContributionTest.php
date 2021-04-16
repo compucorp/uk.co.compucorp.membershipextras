@@ -14,6 +14,7 @@ use CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution as
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionTest extends BaseHeadlessTest implements HookInterface {
 
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
+  use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
 
   /**
    * Implements calculateContributionReceiveDate hook for testing.
@@ -49,7 +50,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
       'currency' => NULL,
       'is_test' => FALSE,
       'campaign_id' => NULL,
-      'membership_id' => $membership['id'],
+      'line_item' => [
+        0 => [
+          1 => [
+            'membership_type_id' => $membershipType['id'],
+            'entity_table' => 'civicrm_membership',
+            'entity_id' => $membership['id'],
+            'line_total' => 1200,
+          ],
+        ],
+      ],
     ];
     $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanCreator->createPaymentPlan();
@@ -85,7 +95,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
       'currency' => NULL,
       'is_test' => FALSE,
       'campaign_id' => NULL,
-      'membership_id' => $membership['id'],
+      'line_item' => [
+        0 => [
+          1 => [
+            'membership_type_id' => $membershipType['id'],
+            'entity_table' => 'civicrm_membership',
+            'entity_id' => $membership['id'],
+            'line_total' => 1200,
+          ],
+        ],
+      ],
     ];
     $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanCreator->createPaymentPlan();
@@ -123,7 +142,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
       'is_test' => FALSE,
       'campaign_id' => NULL,
       'test_receive_date_calculation_hook' => $newReceiveDate,
-      'membership_id' => $membership['id'],
+      'line_item' => [
+        0 => [
+          1 => [
+            'membership_type_id' => $membershipType['id'],
+            'entity_table' => 'civicrm_membership',
+            'entity_id' => $membership['id'],
+            'line_total' => 1200,
+          ],
+        ],
+      ],
     ];
     $paymentPlanCreator = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanCreator->createPaymentPlan();
@@ -251,6 +279,17 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
     $rate = CRM_Utils_Array::value($financialTypeId, $taxRates, 0);
     $taxAmount  = ($membershipType['minimum_fee'] * $rate) / 100;
     $totalAmount = $membershipType['minimum_fee'] + $taxAmount;
+    $lineItem = [
+      0 => [
+        1 => [
+          'membership_type_id' => $membershipType['id'],
+          'entity_table' => 'civicrm_membership',
+          'entity_id' => $membership['id'],
+          'line_total' => $totalAmount,
+        ],
+      ],
+    ];
+
     return [
       'currency' => 'GBP',
       'receipt_date' => NULL,
@@ -271,17 +310,17 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
       'check_number' => NULL,
       'campaign_id' => NULL,
       'is_pay_later' => 1,
-      'membership_id' => $membership['id'],
       'tax_amount' => $taxAmount,
       'skipLineItem' => 1,
       'contribution_recur_id' => NULL,
       'pan_truncation' => NULL,
       'card_type_id' => NULL,
+      'line_item' => $lineItem,
     ];
   }
 
   private function mockMembershipType($membershipPeriodType, $durationUnit) {
-    return MembershipTypeFabricator::fabricate([
+    $membershipType = MembershipTypeFabricator::fabricate([
       'name' => 'Mock Membership type',
       'period_type' => $membershipPeriodType,
       'minimum_fee' => 120,
@@ -292,6 +331,15 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
       // 30 Sep
       'fixed_period_rollover_day' => 930,
     ]);
+
+    if ($membershipPeriodType == 'fixed') {
+      $this->mockSettings(
+        $membershipType['id'],
+        CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator::BY_MONTHS
+      );
+    }
+
+    return $membershipType;
   }
 
   private function mockMembership($contactID, $membershipTypeID, $startDate) {
