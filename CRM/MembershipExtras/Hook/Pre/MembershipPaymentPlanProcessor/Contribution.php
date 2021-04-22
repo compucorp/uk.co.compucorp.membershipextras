@@ -116,7 +116,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
    * Creates the recurring contribution.
    */
   private function createRecurringContribution() {
-    $this->dispatchReceiveDateCalculationHook();
     $amountPerInstalment = $this->instalmentAmount->getTotalAmount();
 
     $paymentInstrument = civicrm_api3('OptionValue', 'getvalue', [
@@ -132,6 +131,18 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
 
     $payLaterPaymentProcessorId = CRM_MembershipExtras_SettingsManager::getDefaultProcessorID();
     $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->instalmentsFrequencyUnit);
+
+    $contributionReceiveDateParam = [
+      'membership_id' => $this->getMembership()['id'],
+      'membership_start_date' => $this->getMembership()['start_date'],
+      'contribution_recur_id' => NULL,
+      'previous_instalment_date' => NULL,
+      'payment_schedule' => $this->paymentPlanSchedule,
+      'payment_instrument_id' => $paymentInstrument,
+      'frequency_interval' => $this->instalmentsFrequency,
+      'frequency_unit' => $this->instalmentsFrequencyUnit,
+    ];
+    $this->dispatchReceiveDateCalculationHook($this->params['receive_date'], $contributionReceiveDateParam);
 
     $contributionRecurParams = [
       'sequential' => 1,
@@ -192,10 +203,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
    * This allows other extensions to change the payment plan's first instalment
    * receive date.
    */
-  private function dispatchReceiveDateCalculationHook() {
-    $receiveDate = $this->params['receive_date'];
-
-    $dispatcher = new CalculateContributionReceiveDateDispatcher(1, $receiveDate, $this->params);
+  private function dispatchReceiveDateCalculationHook($receiveDate, $contributionReceiveDateParams) {
+    $dispatcher = new CalculateContributionReceiveDateDispatcher(1, $receiveDate, $contributionReceiveDateParams);
     $dispatcher->dispatch();
 
     $this->params['receive_date'] = $receiveDate;
