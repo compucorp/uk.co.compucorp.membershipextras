@@ -1,8 +1,5 @@
 <?php
 
-
-use CRM_MembershipExtras_ExtensionUtil as E;
-
 function _civicrm_api3_payment_schedule_getbypriceset_spec(&$spec) {
   $spec['price_field_values'] = [
     'name' => 'price_field_value',
@@ -16,6 +13,13 @@ function _civicrm_api3_payment_schedule_getbypriceset_spec(&$spec) {
     'name' => 'schedule',
     'title' => 'Schedule (monthly, quarterly, annual)',
     'type' => CRM_Utils_Type::T_STRING,
+    'api.required' => 1,
+  ];
+
+  $spec['payment_method'] = [
+    'name' => 'payment_method',
+    'title' => 'Payment method',
+    'type' => CRM_Utils_Type::T_INT,
     'api.required' => 1,
   ];
 

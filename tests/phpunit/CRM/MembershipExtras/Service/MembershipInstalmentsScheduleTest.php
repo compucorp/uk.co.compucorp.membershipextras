@@ -18,6 +18,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
 
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
+  use CRM_MembershipExtras_Test_Helper_PaymentMethodTrait;
 
   /**
    * Defatuls tax rate
@@ -222,7 +223,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $divisor = 12;
     $expectedAmount = $this->calculateExpectedAmount($membershipTypes, $divisor);
     $expectedTaxAmount = $this->calculateExpectedTaxAmount($expectedAmount);
-    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
     foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
@@ -385,7 +385,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       MembershipInstalmentsSchedule::MONTHLY
     );
     $expectedAmount = $totalAmount / 12;
-    foreach ($schedule['instalments'] as $index => $instalment) {
+    foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals(0, $instalment->getInstalmentAmount()->getTaxAmount());
       $this->assertCount(count($membershipTypes), $instalment->getInstalmentAmount()->getLineItems());
@@ -421,7 +421,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
       MembershipInstalmentsSchedule::MONTHLY
     );
     $expectedTaxAmount = ($totalAmount * self::TAX_RATE / 100) / 12;
-    foreach ($schedule['instalments'] as $index => $instalment) {
+    foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
       $this->assertCount(count($membershipTypes), $instalment->getInstalmentAmount()->getLineItems());
       foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
@@ -482,13 +482,12 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $totalNonMembershipPriceFieldValueTaxAmount = $totalUnitPrice * self::TAX_RATE / 100;
     $totalNonMembershipPriceFieldValueTaxAmount *= $mockedQuantity;
     $totalNonMembershipPriceFieldValueAmount  = $totalUnitPrice * $mockedQuantity;
-    $totalNonMembershipPriceFieldValueTotal = $totalNonMembershipPriceFieldValueTaxAmount + $totalNonMembershipPriceFieldValueAmount;
 
     $mockInstalmentNumber = 12;
     $expectedAmount = ($totalAmount + $totalNonMembershipPriceFieldValueAmount) / $mockInstalmentNumber;
     $expectedTaxAmount = ($taxAmount + $totalNonMembershipPriceFieldValueTaxAmount) / $mockInstalmentNumber;
 
-    foreach ($schedule['instalments'] as $index => $instalment) {
+    foreach ($schedule['instalments'] as $instalment) {
       $this->assertEquals($expectedAmount, $instalment->getInstalmentAmount()->getAmount());
       $this->assertEquals($expectedTaxAmount, $instalment->getInstalmentAmount()->getTaxAmount());
       //Membership type array size = 1 and none membership price field size = 1
@@ -661,6 +660,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $membershipTypeDates = $this->getMembershipDates($membershipTypes[0]->id, $startDate);
 
     return $membershipInstalmentsSchedule->generate(
+      $this->getPaymentMethodValue(),
       new DateTime($membershipTypeDates['start_date']),
       new DateTime($membershipTypeDates['end_date']),
       new DateTime($membershipTypeDates['join_date'])
