@@ -274,29 +274,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
   }
 
   /**
-   * Copies the contribution custom field values from
-   * the first contribution to the specified upfront contribution
-   *
-   * @param $contributionId
-   *   The upfront contribution Id
-   */
-  private function copyContributionCustomFields($contributionId) {
-    $customValues = CRM_Core_BAO_CustomValueTable::getEntityValues($this->lastContribution['id'], 'Contribution');
-    if (empty($customValues)) {
-      return;
-    }
-
-    foreach ($customValues as $key => $value) {
-      if (!empty($value)) {
-        $customParams["custom_{$key}"] = $value;
-      }
-    }
-    $customParams['id'] = $contributionId;
-
-    civicrm_api3('Contribution', 'create', $customParams);
-  }
-
-  /**
    * Creates the contribution line items.
    *
    * @param CRM_Contribute_BAO_Contribution $contribution
