@@ -1,4 +1,3 @@
-{crmScript ext=uk.co.compucorp.membershipextras file=js/paymentPlanToggler.js region=html-header}
 <script type="text/javascript">
   {literal}
   CRM.$(function ($) {
