@@ -31,7 +31,7 @@ class CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate implemen
   /**
    * Sets membership typ colour styles on member dashboard page.
    *
-   * @param CRM_Core_Page$page
+   * @param CRM_Core_Page $page
    */
   private function setMembershipTypeColourStyle($page) {
     $rows = $page->get_template_vars('rows');
@@ -63,4 +63,5 @@ class CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate implemen
     }
     CRM_Core_Resources::singleton()->addStyle($css);
   }
+
 }

@@ -56,4 +56,5 @@ class CRM_MembershipExtras_Hook_PageRun_MemberPageTabColourUpdate implements CRM
     }
     CRM_Core_Resources::singleton()->addStyle($css, 10);
   }
+
 }

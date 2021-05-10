@@ -26,7 +26,7 @@ class CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate implement
     $membershipTypeColourSettings = Civi::settings()->get(MembershipTypeSettings::COLOUR_SETTINGS_KEY);
     $css = '';
 
-    foreach ($membershipTypeColourSettings  as $membershipTypeId => $settings) {
+    foreach ($membershipTypeColourSettings as $membershipTypeId => $settings) {
       $backgroundColour = $settings['membership_colour'];
       if (empty($settings['set_membership_colour'])) {
         $backgroundColour = 'inherit';
@@ -59,4 +59,5 @@ class CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate implement
     CRM_Core_Resources::singleton()->addScriptFile('uk.co.compucorp.membershipextras', 'js/vendor/spectrum/spectrum.min.js');
     CRM_Core_Resources::singleton()->addStyleFile('uk.co.compucorp.membershipextras', 'js/vendor/spectrum/spectrum.css');
   }
+
 }
