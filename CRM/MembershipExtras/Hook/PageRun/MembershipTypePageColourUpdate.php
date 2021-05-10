@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_SettingsManager as MembershipTypeSettings;
 
-class CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate {
+class CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate implements CRM_MembershipExtras_Hook_PageRun_PageRunInterface {
 
   /**
    * Modifies the membership type background colour.
