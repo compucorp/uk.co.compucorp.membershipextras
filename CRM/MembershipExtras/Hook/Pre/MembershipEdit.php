@@ -159,10 +159,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
-   * Prevents editing the active Membership if its contribution has another
-   * payment.
+   * Prevents editing the active Membership if its non payment-plan
+   * contribution has another payment.
    *
    * Usually recording the payment for the membership's contribution means :
+   *
    * - Activating the membership by changing its status from pending to active.
    * - Renewing the membership by extending its end_date.
    *
@@ -175,25 +176,30 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * and this method will prevent it.
    */
   public function preventEditingTheActiveMembershipIfItsContributionHasAnotherPayment() {
-    // Check if the membership is active and is not pay later.
-    $membershipCount = civicrm_api3('Membership', 'getcount', [
+    // Check if the contribution is a non payment plan.
+    $recContributionID = $this->getMembershipRecurringContributionID();
+    if ($recContributionID !== NULL) {
+      return FALSE;
+    }
+
+    // Check if the membership is active.
+    $result = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
       'active_only' => 1,
       'id' => $this->id,
-      'is_pay_later' => 0,
     ]);
-    if (!$membershipCount) {
+    if ($result['count'] < 1) {
       return;
     }
 
     // Check if the contribution is "Partially paid".
-    $contributionCount = civicrm_api3('Contribution', 'getcount', [
+    $result = civicrm_api3('Contribution', 'getcount', [
       'sequential' => 1,
       'return' => ["contribution_status_id"],
       'id' => $this->paymentContributionID,
       'contribution_status_id' => "Partially paid",
     ]);
-    if (!$contributionCount) {
+    if ($result['count'] < 1) {
       return;
     }
 
