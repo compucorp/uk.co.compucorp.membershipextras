@@ -342,7 +342,9 @@ function membershipextras_civicrm_pageRun($page) {
     new CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate(),
     new CRM_MembershipExtras_Hook_PageRun_MemberPageTabColourUpdate(),
     new CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate(),
+    new CRM_MembershipExtras_Hook_PageRun_MemberPageTab(),
   ];
+
   foreach ($hooks as $hook) {
     $hook->handle($page);
   }

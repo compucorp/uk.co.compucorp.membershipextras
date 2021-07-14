@@ -8,6 +8,8 @@ use CRM_MembershipExtras_ExtensionUtil as E;
  */
 class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
 
+  use CRM_MembershipExtras_Helper_PaymentPlanTogglerTrait;
+
   /**
    * @var string
    *   Path where template with new fields is stored.
@@ -53,6 +55,8 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan {
     CRM_Core_Region::instance('page-body')->add([
       'template' => "{$this->templatePath}/CRM/Member/Form/PaymentPlanToggler.tpl",
     ]);
+
+    $this->addResources('html-header');
   }
 
 }

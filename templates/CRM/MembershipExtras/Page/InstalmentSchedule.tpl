@@ -1,9 +1,4 @@
 {crmStyle ext=uk.co.compucorp.membershipextras file=css/instalmentSchedule.css}
-<script type="text/javascript">
-  {literal}
-
-  {/literal}
-</script>
 {crmScript ext=uk.co.compucorp.membershipextras file=js/instalmentSchedule.js}
 <table id="instalment_row_table" class="selector row-highlight" style="position: relative;">
   <thead class="sticky">
