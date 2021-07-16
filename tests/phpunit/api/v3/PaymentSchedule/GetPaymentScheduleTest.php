@@ -13,6 +13,7 @@ use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabri
 class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
 
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
+  use CRM_MembershipExtras_Test_Helper_PaymentMethodTrait;
 
   /**
    * Test ExceptionIsThrownIfScheduleIsNotValid
@@ -24,6 +25,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     civicrm_api3('PaymentSchedule', 'getByMembershipType', [
       'membership_type_id' => 1,
       'schedule' => 'xyz',
+      'payment_method' => $this->getPaymentMethodValue(),
     ])['values'];
   }
 
@@ -87,7 +89,6 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
 
     //Mock end date as per membership type rollover day
     $endDate = new DateTime(date('2021-09-30'));
-    $interval = $endDate->diff($startDate);
     $interval = $endDate->diff($startDate);
     $durationInDays = (int) $interval->format("%a") + 1;
     //Calculate expected amount by days.
@@ -171,6 +172,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $priceFieldValues = $this->mockPriceFieldValues();
     $params = [
       'schedule' => 'monthly',
+      'payment_method' => $this->getPaymentMethodValue(),
     ];
     $selectedPriceFieldValues = [];
     foreach ($priceFieldValues as $priceFieldValue) {
@@ -247,6 +249,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $params = [
       'membership_type_id' => $membershipID,
       'schedule' => $schedule,
+      'payment_method' => $this->getPaymentMethodValue(),
     ];
     if (!is_null($startDate)) {
       $params['start_date'] = $startDate;

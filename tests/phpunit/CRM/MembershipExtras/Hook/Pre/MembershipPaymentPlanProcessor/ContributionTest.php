@@ -16,6 +16,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
 
+  private $mockCalculatedReceiveDate;
+
   /**
    * Implements calculateContributionReceiveDate hook for testing.
    *
@@ -24,8 +26,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
    * @param $contributionCreationParams
    */
   public function hook_membershipextras_calculateContributionReceiveDate($instalment, &$receiveDate, &$contributionCreationParams) {
-    if (isset($contributionCreationParams['test_receive_date_calculation_hook'])) {
-      $receiveDate = $contributionCreationParams['test_receive_date_calculation_hook'];
+    if (isset($this->mockCalculatedReceiveDate)) {
+      $receiveDate = $this->mockCalculatedReceiveDate;
     }
   }
 
@@ -126,6 +128,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
     $membershipType = $this->mockMembershipType('rolling', 'month');
     $membership = $this->mockMembership($contact['id'], $membershipType['id'], $startDate);
     $newReceiveDate = date('Y-m-27');
+    $this->mockCalculatedReceiveDate = $newReceiveDate;
     $params = [
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
@@ -141,7 +144,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
       'currency' => NULL,
       'is_test' => FALSE,
       'campaign_id' => NULL,
-      'test_receive_date_calculation_hook' => $newReceiveDate,
       'line_item' => [
         0 => [
           1 => [

@@ -1,7 +1,5 @@
 <?php
 
-use CRM_MembershipExtras_ExtensionUtil as E;
-
 function _civicrm_api3_payment_schedule_getbymembershiptype_spec(&$spec) {
   $spec['membership_type_id'] = [
     'name' => 'membership_type_id',
@@ -17,6 +15,13 @@ function _civicrm_api3_payment_schedule_getbymembershiptype_spec(&$spec) {
     'name' => 'schedule',
     'title' => 'Schedule (monthly, quarterly, annual)',
     'type' => CRM_Utils_Type::T_STRING,
+    'api.required' => 1,
+  ];
+
+  $spec['payment_method'] = [
+    'name' => 'payment_method',
+    'title' => 'Payment method',
+    'type' => CRM_Utils_Type::T_INT,
     'api.required' => 1,
   ];
 

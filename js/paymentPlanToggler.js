@@ -129,6 +129,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
         schedule: schedule,
         start_date: $('#start_date').val(),
         join_date: $('#join_date').val(),
+        payment_method: $('#payment_instrument_id').val(),
       };
       if (isPriceSet) {
         let selectedPriceFieldValues = getSelectedPriceFieldValues();

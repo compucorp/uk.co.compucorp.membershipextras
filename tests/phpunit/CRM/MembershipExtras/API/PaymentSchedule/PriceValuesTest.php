@@ -12,6 +12,8 @@ use CRM_MembershipExtras_Test_Fabricator_PriceFieldValue as PriceFieldValueFabri
  */
 class CRM_MembershipExtras_API_PaymentSchedule_PriceValuesTest extends BaseHeadlessTest {
 
+  use CRM_MembershipExtras_Test_Helper_PaymentMethodTrait;
+
   /**
    * @throws CiviCRM_API3_Exception
    * @throws API_Exception
@@ -37,6 +39,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_PriceValuesTest extends BaseHeadl
     $params = [
       'schedule' => CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::MONTHLY,
       'price_field_values' => ['IN' => $selectedPriceFieldValues],
+      'payment_method' => $this->getPaymentMethodValue(),
     ];
 
     $paymentSchedule = new CRM_MembershipExtras_API_PaymentSchedule_PriceValues($params);
@@ -57,6 +60,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_PriceValuesTest extends BaseHeadl
     $params = [
       'sequential' => 1,
       'schedule' => 'monthly',
+      'payment_method' => $this->getPaymentMethodValue(),
     ];
     $selectedPriceFieldValues = [];
     foreach ($priceFieldValues as $priceFieldValue) {

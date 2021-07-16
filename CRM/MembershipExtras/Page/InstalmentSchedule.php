@@ -1,5 +1,4 @@
 <?php
-use CRM_MembershipExtras_ExtensionUtil as E;
 
 class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
 
@@ -12,9 +11,6 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
   }
 
   private function assignInstalments() {
-    $startDate = CRM_Utils_Request::retrieve('start_date', 'String');
-    $joinDate = CRM_Utils_Request::retrieve('join_date', 'String');
-    $schedule = CRM_Utils_Request::retrieve('schedule', 'String');
     $membershipTypeId = CRM_Utils_Request::retrieve('membership_type_id', 'Int');
     $priceFieldValues = CRM_Utils_Request::retrieve('price_field_values', 'String');
 
@@ -28,9 +24,10 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
       $action = 'getbypricefieldvalues';
     }
 
-    $params['schedule'] = $schedule;
-    $params['start_date'] = $startDate;
-    $params['join_date'] = $joinDate;
+    $params['schedule'] = CRM_Utils_Request::retrieve('schedule', 'String');
+    $params['payment_method'] = CRM_Utils_Request::retrieve('payment_method', 'Int');
+    $params['start_date'] = CRM_Utils_Request::retrieve('start_date', 'String');
+    $params['join_date'] = CRM_Utils_Request::retrieve('join_date', 'String');
 
     try {
       $result = civicrm_api3('PaymentSchedule', $action, $params);

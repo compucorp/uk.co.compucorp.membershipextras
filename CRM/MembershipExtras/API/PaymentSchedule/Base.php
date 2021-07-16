@@ -57,7 +57,10 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
       return new DateTime($date);
     }, $membershipTypeDates);
 
+    $paymentMethod = $this->params['payment_method'];
+
     return $membershipInstalmentsSchedule->generate(
+      $paymentMethod,
       $membershipTypeDates['start_date'],
       $membershipTypeDates['end_date'],
       $membershipTypeDates['join_date']
@@ -81,15 +84,15 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
       $formattedInstalment['instalment_total_amount'] = $instalment->getInstalmentAmount()->getTotalAmount();
       $formattedInstalment['instalment_status'] = $this->getPendingStatusValue();
       $formattedLineItems = [];
-      foreach ($instalment->getInstalmentAmount()->getLineItems() as $key => $lineItem) {
-        $formattedLineItems[$key]['item_no'] = $key + 1;
-        $formattedLineItems[$key]['financial_type_id'] = $lineItem->getFinancialTypeId();
-        $formattedLineItems[$key]['quantity'] = $lineItem->getQuantity();
-        $formattedLineItems[$key]['unit_price'] = $lineItem->getUnitPrice();
-        $formattedLineItems[$key]['sub_total'] = $lineItem->getSubTotal();
-        $formattedLineItems[$key]['tax_rate'] = $lineItem->getTaxRate();
-        $formattedLineItems[$key]['tax_amount'] = $lineItem->getTaxAmount();
-        $formattedLineItems[$key]['total_amount'] = $lineItem->getTotalAmount();
+      foreach ($instalment->getInstalmentAmount()->getLineItems() as $lineKey => $lineItem) {
+        $formattedLineItems[$lineKey]['item_no'] = $lineKey + 1;
+        $formattedLineItems[$lineKey]['financial_type_id'] = $lineItem->getFinancialTypeId();
+        $formattedLineItems[$lineKey]['quantity'] = $lineItem->getQuantity();
+        $formattedLineItems[$lineKey]['unit_price'] = $lineItem->getUnitPrice();
+        $formattedLineItems[$lineKey]['sub_total'] = $lineItem->getSubTotal();
+        $formattedLineItems[$lineKey]['tax_rate'] = $lineItem->getTaxRate();
+        $formattedLineItems[$lineKey]['tax_amount'] = $lineItem->getTaxAmount();
+        $formattedLineItems[$lineKey]['total_amount'] = $lineItem->getTotalAmount();
       }
 
       $formattedInstalment['instalment_lineitems'] = $formattedLineItems;

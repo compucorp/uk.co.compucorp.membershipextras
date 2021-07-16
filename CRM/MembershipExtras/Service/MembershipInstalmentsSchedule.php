@@ -4,6 +4,8 @@ use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMem
 use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as InstalmentAmountCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
+use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule
@@ -83,6 +85,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * Generates instalments for a set of membership types given that the conditions
    * for calculating instalments
    *
+   * @param int|string $paymentMethod
    * @param DateTime|null $startDate
    * @param DateTime|null $endDate
    * @param DateTime|null $joinDate
@@ -90,7 +93,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @return mixed
    * @throws Exception
    */
-  public function generate(DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+  public function generate($paymentMethod, DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
     if (empty($startDate)) {
       $startDate = new DateTime($this->getMembershipStartDate($this->membershipTypes[0]->id, $startDate, $endDate, $joinDate));
     }
@@ -112,24 +115,51 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
       );
     }
 
+    $firstInstalmentDate = $this->startDate->format('Y-m-d');
+    $instalmentFrequencyInterval = InstalmentScheduleUtils::getFrequencyInterval($this->schedule);
+    $instalmentFrequencyUnit = InstalmentScheduleUtils::getFrequencyUnit($this->schedule, $instalmentFrequencyInterval);
+
+    $params = [
+      'membership_id' => NULL,
+      'contribution_recur_id' => NULL,
+      'previous_instalment_date' => NULL,
+      'payment_schedule' => $this->schedule,
+      'payment_instrument_id' => $paymentMethod,
+      'membership_start_date' => $firstInstalmentDate,
+      'frequency_interval' => $instalmentFrequencyInterval,
+      'frequency_unit' => $instalmentFrequencyUnit,
+    ];
+
+    $this->dispatchContributionReceiveDateCalculation(1, $firstInstalmentDate, $params);
+
     $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
-    $instalment->setInstalmentDate($startDate);
+    $instalment->setInstalmentDate(new DateTime($firstInstalmentDate));
     $instalment->setInstalmentAmount($instalmentAmount);
 
     $instalments['instalments'][] = $instalment;
 
     if ($this->instalmentCount > 1) {
-      $nextInstalmentDate = $startDate->format('Y-m-d');
-      for ($i = 1; $i < $this->instalmentCount; $i++) {
+      $previousInstalmentDate = $firstInstalmentDate;
+      for ($instalmentNumber = 2; $instalmentNumber <= $this->instalmentCount; $instalmentNumber++) {
         $intervalSpec = 'P1M';
         if ($this->schedule == self::QUARTERLY) {
           $intervalSpec = 'P3M';
         }
-        $instalmentDate = new DateTime($nextInstalmentDate);
+
+        $params['previous_instalment_date'] = $previousInstalmentDate;
+
+        $instalmentDate = new DateTime($previousInstalmentDate);
         $instalmentDate->add(new DateInterval($intervalSpec));
-        $nextInstalmentDate = $instalmentDate->format('Y-m-d');
+        $instalmentDate = $instalmentDate->format('Y-m-d');
+
+        $dispatchedInstalmentDate = $instalmentDate;
+
+        $this->dispatchContributionReceiveDateCalculation($instalmentNumber, $dispatchedInstalmentDate, $params);
+
+        $previousInstalmentDate = $dispatchedInstalmentDate;
+
         $followingInstalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
-        $followingInstalment->setInstalmentDate($instalmentDate);
+        $followingInstalment->setInstalmentDate(new DateTime($dispatchedInstalmentDate));
         $followingInstalment->setInstalmentAmount($instalmentAmount);
         array_push($instalments['instalments'], $followingInstalment);
       }
@@ -233,6 +263,11 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    */
   public function setNonMembershipPriceFieldValues(array $nonMembershipPriceFieldValues) {
     $this->nonMembershipPriceFieldValues = $nonMembershipPriceFieldValues;
+  }
+
+  private function dispatchContributionReceiveDateCalculation($instalmentNumber, &$instalmentDate, $params) {
+    $dispatcher = new CalculateContributionReceiveDateDispatcher($instalmentNumber, $instalmentDate, $params);
+    $dispatcher->dispatch();
   }
 
 }

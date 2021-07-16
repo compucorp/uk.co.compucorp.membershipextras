@@ -12,6 +12,7 @@ use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator 
 class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHeadlessTest {
 
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
+  use CRM_MembershipExtras_Test_Helper_PaymentMethodTrait;
 
   /**
    * Tests exception is thrown if invalid schedule is passed
@@ -30,6 +31,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
     $this->expectException(API_Exception::class);
     $params['schedule'] = 'xyz';
     $params['membership_type_id'] = $membershipType['id'];
+    $params['payment_method'] = $this->getPaymentMethodValue();
     $schedule = new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
     $schedule->getPaymentSchedule();
   }
@@ -129,6 +131,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
     $params = [
       'schedule' => $schedule,
       'membership_type_id' => $membershipType['id'],
+      'payment_method' => $this->getPaymentMethodValue(),
     ];
 
     return new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
@@ -152,6 +155,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
     $params = [
       'schedule' => $schedule,
       'membership_type_id' => $membershipType['id'],
+      'payment_method' => $this->getPaymentMethodValue(),
       //make sure we pass start date in params,
       //so the calculators can calculate correct dates and amounts for
       // fixed period membership type.

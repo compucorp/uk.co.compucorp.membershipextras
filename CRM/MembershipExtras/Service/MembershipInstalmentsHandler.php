@@ -39,6 +39,11 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
   private $receiveDateCalculator;
 
   /**
+   * @var DateTime
+   */
+  private $previousInstalmentDate;
+
+  /**
    * @var int
    */
   private $instalmentsCount = 0;
@@ -46,10 +51,12 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
   public function __construct($currentRecurContributionId) {
     $this->setCurrentRecurContribution($currentRecurContributionId);
     $this->setLastContribution();
+    $this->setPreviousInstalmentDate($this->lastContribution['receive_date']);
 
     $this->receiveDateCalculator = new InstalmentReceiveDateCalculator($this->currentRecurContribution);
 
     $this->setContributionPendingStatusValue();
+
   }
 
   /**
@@ -73,7 +80,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
       'return' => [
         'currency', 'contribution_source', 'net_amount', 'contact_id',
         'fee_amount', 'total_amount', 'payment_instrument_id', 'is_test',
-        'tax_amount', 'contribution_recur_id', 'financial_type_id',
+        'tax_amount', 'contribution_recur_id', 'financial_type_id', 'receive_date',
       ],
       'contribution_recur_id' => $this->currentRecurContribution['id'],
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
@@ -130,8 +137,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    */
   private function createContribution($contributionNumber = 1) {
     $contribution = $this->recordMembershipContribution($contributionNumber);
-
+    $this->setPreviousInstalmentDate($contribution->receive_date);
     $this->createLineItems($contribution);
+  }
+
+  /**
+   * Sets Previous Instalment Date.
+   *
+   * @throws Exception
+   */
+  private function setPreviousInstalmentDate(string $dateString) {
+    $this->previousInstalmentDate = new DateTime($dateString);
   }
 
   /**
@@ -228,33 +244,33 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
   private function dispatchReceiveDateCalculationHook($contributionNumber, &$params) {
     $receiveDate = $params['receive_date'];
 
-    $dispatcher = new CalculateContributionReceiveDateDispatcher($contributionNumber, $receiveDate, $params);
+    $contributionReceiveDateParams = [
+      'membership_id' => $this->getMembership()['membership_id.id'],
+      'contribution_recur_id' => $this->currentRecurContribution['id'],
+      'previous_instalment_date' => $this->previousInstalmentDate->format('Y-m-d'),
+      'payment_schedule' => CRM_MembershipExtras_Utils_InstalmentSchedule::getPaymentPlanSchedule(),
+      'payment_instrument_id' => $params['payment_instrument_id'],
+      'membership_start_date' => $this->getMembership()['membership_id.start_date'],
+      'frequency_interval' => $this->currentRecurContribution['frequency_interval'],
+      'frequency_unit' => $this->currentRecurContribution['frequency_unit'],
+    ];
+
+    $dispatcher = new CalculateContributionReceiveDateDispatcher($contributionNumber, $receiveDate, $contributionReceiveDateParams);
     $dispatcher->dispatch();
 
     $params['receive_date'] = $receiveDate;
+
   }
 
-  /**
-   * Copies the contribution custom field values from
-   * the first contribution to the specified upfront contribution
-   *
-   * @param $contributionId
-   *   The upfront contribution Id
-   */
-  private function copyContributionCustomFields($contributionId) {
-    $customValues = CRM_Core_BAO_CustomValueTable::getEntityValues($this->lastContribution['id'], 'Contribution');
-    if (empty($customValues)) {
-      return;
-    }
-
-    foreach ($customValues as $key => $value) {
-      if (!empty($value)) {
-        $customParams["custom_{$key}"] = $value;
-      }
-    }
-    $customParams['id'] = $contributionId;
-
-    civicrm_api3('Contribution', 'create', $customParams);
+  private function getMembership() {
+    return civicrm_api3('MembershipPayment', 'get', [
+      'sequential' => 1,
+      'return' => [
+        'membership_id.start_date',
+        'membership_id.id',
+      ],
+      'contribution_id' => $this->lastContribution['id'],
+    ])['values'][0];
   }
 
   /**
