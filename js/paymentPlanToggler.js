@@ -55,7 +55,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      */
     function setScheduleEvents() {
       $('#total_amount, #membership_type_id_1').change(() => {
-        if ($('#payment_plan_schedule_row').is(":hidden")) {
+        if (!isPaymentPlanTabActive()) {
           return;
         }
         let isPriceSet = isPriceSetSelected();
@@ -90,21 +90,48 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       });
 
       $('#payment_plan_schedule, #payment_instrument_id, #start_date, #end_date').change(() => {
-        if ($('#payment_plan_schedule_row').is(":hidden")) {
+        if (!isPaymentPlanTabActive()) {
           return;
         }
-        generateInstalmentSchedule(isPriceSetSelected());
+        generateInstalmentSchedule(isPriceSetSelected(), $('#start_date').val());
+        assignFirstContributionReceiveDate();
+      });
+
+      $('#renewal_date').change(() => {
+        if (!isPaymentPlanTabActive()) {
+          return;
+        }
+        generateInstalmentSchedule(isPriceSetSelected(), $('#renewal_date').val());
         assignFirstContributionReceiveDate();
       });
     }
 
     /**
+     * Checks if payment plan tab is active
+     *
+     * @returns {boolean}
+     */
+    function isPaymentPlanTabActive() {
+      if ($('#payment_plan_schedule_row').is(":hidden")) {
+        return false;
+      }
+
+      return true;
+    }
+
+    /**
      * Assigns first contribution received date from either start date or join date
+     * on new Membership Form and renewal date on renew membership form
      */
     function assignFirstContributionReceiveDate() {
-      let startDate = $('#start_date').val();
-      recievedDate = !startDate || 0 === startDate.length ? $('#join_date').val() : startDate;
-      $('#receive_date').val(recievedDate);
+      let receivedDate;
+      if (isRenewMembershipForm()) {
+        receivedDate = $('#renewal_date').val();
+      } else {
+        let startDate = $('#start_date').val();
+        receivedDate = !startDate || 0 === startDate.length ? $('#join_date').val() : startDate;
+      }
+      $('#receive_date').val(receivedDate);
     }
 
     /**
@@ -122,12 +149,13 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      * and selected price set or membership type
      *
      * @param {boolean} isPriceSet
+     * @param startDate
      */
-    function generateInstalmentSchedule(isPriceSet) {
+    function generateInstalmentSchedule(isPriceSet, startDate) {
       let schedule = $('#payment_plan_schedule').val();
       let params = {
         schedule: schedule,
-        start_date: $('#start_date').val(),
+        start_date: startDate,
         join_date: $('#join_date').val(),
         payment_method: $('#payment_instrument_id').val(),
       };
@@ -139,7 +167,6 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
         params.price_field_values = selectedPriceFieldValues;
       } else {
         params.membership_type_id = parseInt($('#membership_type_id_1').val());
-        ;
       }
       let url = CRM.url('civicrm/member/instalment-schedule', params, 'back');
       CRM.loadPage(url, {
@@ -208,9 +235,13 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
     }
 
     /**
-     * Sets membership dates
+     * Sets membership dates when using new membership form
+     *
      */
     function setMembershipDates(startDate, endDate) {
+      if (isRenewMembershipForm()) {
+        return;
+      }
       $('#start_date').val(startDate);
       $('#start_date').next('.hasDatepicker').datepicker('setDate', new Date(startDate));
       $('#end_date').val(endDate);
@@ -271,21 +302,32 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      * @param {String} tabOptionId
      */
     function updateContributionPaymentPlanView(tabOptionId) {
-      if (tabOptionId === 'contribution') {
-        $('#payment_plan_schedule_row').hide();
-        $('#payment_plan_schedule_instalment_row').hide();
-        $('.crm-membership-form-block-trxn_id').show();
-        $('.crm-membership-form-block-receive_date').show();
-        $('.crm-membership-form-block-total_amount').show();
-        $('.crm-membership-form-block-financial_type_id').show();
-        $('.crm-membership-form-block-contribution_status_id').show();
-        $('.crm-membership-form-block-payment_instrument_id')
-          .insertBefore('.crm-membership-form-block-contribution_status_id');
-        $('.crm-membership-form-block-billing').insertAfter('.crm-membership-form-block-contribution_status_id');
-        $('#receive_date').val('');
-      } else if (tabOptionId === 'payment_plan') {
+      if (isPaymentPlanTab(tabOptionId)) {
         $('#payment_plan_schedule_row').show();
         $('#payment_plan_schedule_instalment_row').show();
+        if ($('#membership_type_id_1').val()) {
+          $('#membership_type_id_1').change();
+        }
+      } else {
+        $('#payment_plan_schedule_row').hide();
+        $('#payment_plan_schedule_instalment_row').hide();
+        $('#receive_date').val('');
+      }
+      if (isRenewMembershipForm()) {
+        updateRenewMembershipForm(tabOptionId);
+      } else {
+        updateNewMembershipForm(tabOptionId);
+      }
+      assignFirstContributionReceiveDate();
+    }
+
+    /**
+     * Updates view for New Membership Form
+     *
+     * @param tabOptionId
+     */
+    function updateNewMembershipForm(tabOptionId) {
+      if (isPaymentPlanTab(tabOptionId)) {
         $('.crm-membership-form-block-trxn_id').hide();
         $('.crm-membership-form-block-receive_date').hide();
         $('.crm-membership-form-block-total_amount').hide();
@@ -294,11 +336,62 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
         $('.crm-membership-form-block-payment_instrument_id')
           .insertBefore('.crm-membership-form-block-contribution-contact');
         $('.crm-membership-form-block-billing').insertAfter('.crm-membership-form-block-payment_instrument_id');
-        if ($('#membership_type_id_1').val()) {
-          $('#membership_type_id_1').change();
-        }
-        assignFirstContributionReceiveDate();
+      } else {
+        $('.crm-membership-form-block-trxn_id').show();
+        $('.crm-membership-form-block-receive_date').show();
+        $('.crm-membership-form-block-total_amount').show();
+        $('.crm-membership-form-block-financial_type_id').show();
+        $('.crm-membership-form-block-contribution_status_id').show();
+        $('.crm-membership-form-block-payment_instrument_id')
+          .insertBefore('.crm-membership-form-block-contribution_status_id');
+        $('.crm-membership-form-block-billing').insertAfter('.crm-membership-form-block-contribution_status_id');
       }
+    }
+
+    /**
+     * Updates view for RenewMembership Form
+     *
+     * @param tabOptionId
+     */
+    function updateRenewMembershipForm(tabOptionId) {
+      if (isPaymentPlanTab(tabOptionId)) {
+        $('.crm-membershiprenew-form-block-trxn_id').hide();
+        $('.crm-membershiprenew-form-block-receive_date').hide();
+        $('.crm-membershiprenew-form-block-total_amount').hide();
+        $('.crm-membershiprenew-form-block-financial_type_id').hide();
+        $('.crm-membershiprenew-form-block-contribution_status_id').hide();
+        $('.crm-membershiprenew-form-block-payment_instrument_id')
+          .insertBefore('.crm-membershiprenew-form-block-contribution-contact');
+        $('.crm-membershiprenew-form-block-billing').insertAfter('.crm-membershiprenew-form-block-payment_instrument_id');
+      } else {
+        $('.crm-membershiprenew-form-block-trxn_id').show();
+        $('.crm-membershiprenew-form-block-receive_date').show();
+        $('.crm-membershiprenew-form-block-total_amount').show();
+        $('.crm-membershiprenew-form-block-financial_type_id').show();
+        $('.crm-membershiprenew-form-block-contribution_status_id').show();
+        $('.crm-membershiprenew-form-block-payment_instrument_id')
+          .insertBefore('.crm-membershiprenew-form-block-contribution_status_id');
+        $('.crm-membershiprenew-form-block-billing').insertAfter('.crm-membershiprenew-form-block-contribution_status_id');
+      }
+    }
+
+    /**
+     * Checks if payment plan tab is selected.
+     *
+     * @param tabOptionId
+     * @returns {boolean}
+     */
+    function isPaymentPlanTab(tabOptionId) {
+      return tabOptionId === 'payment_plan';
+    }
+
+    /**
+     * Checks if the form is a Renew Membership Form.
+     *
+     * @returns {boolean}
+     */
+    function isRenewMembershipForm() {
+      return !!$('#MembershipRenewal').length;
     }
   });
 
