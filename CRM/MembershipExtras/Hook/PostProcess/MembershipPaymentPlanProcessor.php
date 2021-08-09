@@ -14,11 +14,26 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    */
   private $form;
 
+  /**
+   * @var array
+   */
   private $formSubmittedValues;
 
-  public function __construct(&$form) {
+  /**
+   * @var string
+   */
+  private $formName;
+
+  /**
+   * @var int
+   */
+  private $membershipTypeId;
+
+  public function __construct($formName, &$form) {
+    $this->formName = $formName;
     $this->form = &$form;
     $this->formSubmittedValues = $this->form->exportValues();
+    $this->membershipTypeId = $this->getMembershipTypeId();
   }
 
   /**
@@ -51,14 +66,8 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
       return;
     }
 
-    $membershipTypeId = $this->getMembershipTypeId();
-    $joinDate = !empty($this->formSubmittedValues['join_date']) ? new DateTime($this->formSubmittedValues['join_date']) : NULL;
-    $startDate = !empty($this->formSubmittedValues['start_date']) ? new DateTime($this->formSubmittedValues['start_date']) : $joinDate;
-    $endDate = !empty($this->formSubmittedValues['end_date']) ? new DateTime($this->formSubmittedValues['end_date']) : NULL;
-    if (empty($startDate)) {
-      $startDate = new DateTime($this->getMembershipStartDate($membershipTypeId, $startDate, $endDate, $joinDate));
-    }
-    $membershipTypeObj = CRM_Member_BAO_MembershipType::findById($membershipTypeId);
+    $membershipTypeObj = CRM_Member_BAO_MembershipType::findById($this->membershipTypeId);
+    $startDate = $this->getStartDate();
     $actualInstalmentCount = $this->getInstalmentsNumber($membershipTypeObj, $paymentPlanSchedule, $startDate);
     $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($recurContributionID);
     $instalmentsHandler->setInstalmentsCount($actualInstalmentCount);
@@ -117,6 +126,25 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
       'id' => $this->form->_id,
       'return' => ["membership_type_id"],
     ])['values'][0]['membership_type_id'];
+  }
+
+  /**
+   * Gets membership start date based on the submitted form.
+   */
+  private function getStartDate() {
+    if ($this->formName === 'CRM_Member_Form_MembershipRenewal') {
+      $startDate = new DateTime($this->formSubmittedValues['received_date']);
+    }
+    else {
+      $joinDate = !empty($this->formSubmittedValues['join_date']) ? new DateTime($this->formSubmittedValues['join_date']) : NULL;
+      $startDate = !empty($this->formSubmittedValues['start_date']) ? new DateTime($this->formSubmittedValues['start_date']) : $joinDate;
+      $endDate = !empty($this->formSubmittedValues['end_date']) ? new DateTime($this->formSubmittedValues['end_date']) : NULL;
+      if (empty($startDate)) {
+        $startDate = new DateTime($this->getMembershipStartDate($this->membershipTypeId, $startDate, $endDate, $joinDate));
+      }
+    }
+
+    return $startDate;
   }
 
 }

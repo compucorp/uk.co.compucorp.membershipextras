@@ -34,6 +34,8 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
    */
   private $paymentPlanMembershipOrder;
 
+  private static $NEW_MEMBERSHIP_FORM_NAME = 'CRM_Member_Form_Membership';
+
   public function setUp() {
     $this->setUpMembershipForm();
   }
@@ -41,7 +43,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
   public function testProcessFormWithRollingMembershipTypeAndMonthlySchedule() {
     $this->createPaymentPlanMembershipOrder('rolling');
     $this->simulateMembershipSignupForm('monthly', date('Y-m-d'));
-    $processor = new MembershipPaymentPlanProcessor($this->form);
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
     $processor->postProcess();
 
     $membershipPayments = $this->getMembershipPayment($this->form->_id);
@@ -52,7 +54,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
   public function testProcessFormWithRollingMembershipTypeAndQuarterlySchedule() {
     $this->createPaymentPlanMembershipOrder('rolling');
     $this->simulateMembershipSignupForm('quarterly', date('Y-m-d'));
-    $processor = new MembershipPaymentPlanProcessor($this->form);
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
     $processor->postProcess();
 
     $membershipPayments = $this->getMembershipPayment($this->form->_id);
@@ -63,7 +65,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
   public function testProcessFormWithFixedPeriodTypeWithMonthlySchedule() {
     $this->createPaymentPlanMembershipOrder('fixed');
     $this->simulateMembershipSignupForm('monthly', date('Y-01-15'));
-    $processor = new MembershipPaymentPlanProcessor($this->form);
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
     $processor->postProcess();
 
     $membershipPayments = $this->getMembershipPayment($this->form->_id);
@@ -80,7 +82,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
   public function testPostProcessFormForOneInstalment() {
     $this->createPaymentPlanMembershipOrder('rolling');
     $this->simulateMembershipSignupForm('annual', date('Y-m-d'));
-    $processor = new MembershipPaymentPlanProcessor($this->form);
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
     $processor->postProcess();
 
     $membershipPayments = $this->getMembershipPayment($this->form->_id);
@@ -183,7 +185,6 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
       'sequential' => 1,
       'membership_id' => $membershipId,
     ]);
-
   }
 
 }
