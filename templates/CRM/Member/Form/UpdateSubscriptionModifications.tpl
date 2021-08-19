@@ -21,6 +21,14 @@
       <input type="hidden" name="old_cycle_day" id="old_cycle_day" value="{$form.cycle_day.value}"/>
     </td>
   </tr>
+  <tr id="next_sched_contribution_date_field">
+    <td class="label">
+      {$form.next_sched_contribution_date.label}
+    </td>
+    <td>
+      {$form.next_sched_contribution_date.html}
+    </td>
+  </tr>
   <tr id="autorenew_field">
     <td class="label">
       {$form.auto_renew.label}

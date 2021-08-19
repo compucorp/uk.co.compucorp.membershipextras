@@ -15,6 +15,13 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
   private $form;
 
   /**
+   * The submitted form values
+   *
+   * @var array
+   */
+  private $formValues;
+
+  /**
    * Array with the data of the recurring contribution that is being updated.
    *
    * @var array
@@ -28,15 +35,9 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    */
   private $receiveDateCalculator;
 
-  /**
-   * Due date of next contribution of the payment plan.
-   *
-   * @var string
-   */
-  private $nextContributionDate;
-
   public function __construct(CRM_Contribute_Form_UpdateSubscription $form) {
     $this->form = $form;
+    $this->formValues = $this->form->exportValues();
     $this->setRecurringContribution();
   }
 
@@ -75,9 +76,12 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       'auto_renew' => $autoRenew,
     ];
 
-    if ($this->isUpdatedCycleDay()) {
-      $params['next_sched_contribution_date'] = $this->nextContributionDate;
+    $nextScheduledDate = CRM_Utils_Array::value('next_sched_contribution_date', $this->formValues);
+    if (!empty($nextScheduledDate)) {
+      $params['next_sched_contribution_date'] = $this->formValues['next_sched_contribution_date'];
+    }
 
+    if ($this->isUpdatedCycleDay()) {
       $firstInstallment = $this->getFirstInstallment();
       if ($firstInstallment['contribution_status'] == 'Pending') {
         $params['start_date'] = $firstInstallment['receive_date'];
@@ -196,10 +200,9 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       return;
     }
 
-    $formValues = $this->form->exportValues();
     $newFirstInstallmentReceiveDate = $this->calculateFirstReceiveDate(
       $contributions[0]['receive_date'],
-      $formValues['cycle_day']
+      $this->formValues['cycle_day']
     );
 
     $installmentCount = 0;
@@ -210,7 +213,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       $installmentCount++;
       $this->updateContribution(
         $payment,
-        $formValues['payment_instrument_id'],
+        $this->formValues['payment_instrument_id'],
         $installmentCount
       );
     }
@@ -281,10 +284,6 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     $params = [];
     if ($this->isUpdatedCycleDay() && !$this->isReceiveDateInThePast($contribution)) {
       $params['receive_date'] = $this->receiveDateCalculator->calculate($installmentNumber);
-
-      if (empty($this->nextContributionDate)) {
-        $this->nextContributionDate = $params['receive_date'];
-      }
     }
 
     if ($this->isUpdatedPaymentInstrument()) {
@@ -323,10 +322,9 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    *   True if the value was changed by user, false otherwise.
    */
   private function isUpdatedCycleDay() {
-    $formValues = $this->form->exportValues();
     $oldCycleDay = CRM_Utils_Request::retrieve('old_cycle_day', 'Integer', $this->form, TRUE);
 
-    return $formValues['cycle_day'] != $oldCycleDay;
+    return $this->formValues['cycle_day'] != $oldCycleDay;
   }
 
   /**
@@ -336,10 +334,9 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    *   True if the value was changed by user, false otherwise.
    */
   private function isUpdatedPaymentInstrument() {
-    $formValues = $this->form->exportValues();
     $oldPaymentInstrument = CRM_Utils_Request::retrieve('old_payment_instrument_id', 'Integer', $this->form, TRUE);
 
-    return $formValues['cycle_day'] != $oldPaymentInstrument;
+    return $this->formValues['cycle_day'] != $oldPaymentInstrument;
   }
 
 }
