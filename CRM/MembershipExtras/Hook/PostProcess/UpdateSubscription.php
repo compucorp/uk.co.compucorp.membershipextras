@@ -76,11 +76,6 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       'auto_renew' => $autoRenew,
     ];
 
-    $nextScheduledDate = CRM_Utils_Array::value('next_sched_contribution_date', $this->formValues);
-    if (!empty($nextScheduledDate)) {
-      $params['next_sched_contribution_date'] = $this->formValues['next_sched_contribution_date'];
-    }
-
     if ($this->isUpdatedCycleDay()) {
       $firstInstallment = $this->getFirstInstallment();
       if ($firstInstallment['contribution_status'] == 'Pending') {
@@ -89,6 +84,15 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     }
 
     civicrm_api3('ContributionRecur', 'create', $params);
+
+    $nextScheduledDate = CRM_Utils_Array::value('next_sched_contribution_date', $this->formValues);
+    if (!empty($nextScheduledDate)) {
+      $query = 'UPDATE civicrm_contribution_recur SET next_sched_contribution_date = %1 WHERE id = %2';
+      CRM_Core_DAO::executeQuery($query, [
+        1 => [$nextScheduledDate, 'String'],
+        2 => [$params['id'], 'Integer'],
+      ]);
+    }
   }
 
   /**
