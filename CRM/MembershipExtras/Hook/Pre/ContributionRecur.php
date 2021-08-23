@@ -2,6 +2,7 @@
 
 use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 use CRM_MembershipExtras_Service_PaymentPlanStatusCalculator as PaymentPlanStatusCalculator;
+
 /**
  * Implements pre hook on ContributionRecur entity.
  */
@@ -72,6 +73,10 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $this->recurringContribution, 0);
     $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($paymentProcessorID);
 
+    if ($isManualPaymentPlan) {
+      $this->preventUpdatingNextScheduledContributionDate();
+    }
+
     if ($this->operation == 'edit' && $isManualPaymentPlan) {
       $this->rectifyPaymentPlanStatus();
     }
@@ -81,6 +86,21 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     if (!empty($this->params['start_date']) && !empty($this->params['frequency_unit'])) {
       $this->params['cycle_day'] =
         CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['start_date'], $this->params['frequency_unit']);
+    }
+  }
+
+  /**
+   * Prevents any update to 'next_sched_contribution_date' field through API or DAO.
+   * We do this since we don't want CiviCRM core or webform_civicrm module to alter
+   * the value of this field, any update to it should only happen through Membershipextras,
+   * since this field has an impact on auto-renewal.
+   * This also means that Membershipextras cannot alter the value of
+   * this field through DAO or API, but rather through direct SQL query
+   * or otherwise the value will be unset here.
+   */
+  private function preventUpdatingNextScheduledContributionDate() {
+    if (!empty($this->params['next_sched_contribution_date'])) {
+      unset($this->params['next_sched_contribution_date']);
     }
   }
 
