@@ -17,17 +17,18 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * Fabricates payment plan order.
    *
    * @param CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder $paymentPlanMembershipOrder
+   * @param bool $createUpfrontContributions
    *
    * @return array
    */
-  public static function fabricate(PaymentPlanMembershipOrderEntity $paymentPlanMembershipOrder) {
+  public static function fabricate(PaymentPlanMembershipOrderEntity $paymentPlanMembershipOrder, $createUpfrontContributions = TRUE) {
     self::$paymentPlanMembershipOrder = $paymentPlanMembershipOrder;
     self::updatePaymentPlanMissingParams();
 
     $recurringContribution = self::createRecurringContribution();
     $lineItems = self::createRecurringLineItems($recurringContribution);
     self::updateRecurringContributionAmount($recurringContribution);
-    self::createInstalments($recurringContribution, $lineItems);
+    self::createInstalments($recurringContribution, $lineItems, $createUpfrontContributions);
 
     return $recurringContribution;
   }
@@ -238,13 +239,17 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    *
    * @param array $recurringContribution
    * @param array $lineItems
+   * @param bool $createUpfrontContributions
    *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createInstalments($recurringContribution, $lineItems) {
+  private static function createInstalments($recurringContribution, $lineItems, $createUpfrontContributions) {
     self::createFirstInstalment($recurringContribution, $lineItems);
-    self::createRemainingInstalments($recurringContribution['id']);
+
+    if ($createUpfrontContributions) {
+      self::createRemainingInstalments($recurringContribution['id']);
+    }
   }
 
   /**
