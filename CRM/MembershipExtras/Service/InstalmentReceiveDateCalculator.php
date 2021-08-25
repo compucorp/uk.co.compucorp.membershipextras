@@ -54,7 +54,7 @@ class CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator {
    */
   public function calculate($contributionNumber = 1) {
     $receiveDate = $this->calculateReceiveDate($contributionNumber);
-    $newReceiveDate = $this->rectifyReceiveDateBasedOnCurrentCycleDay($receiveDate);
+    $newReceiveDate = $this->rectifyMonthlyPaymentPlanReceiveDateBasedOnCurrentCycleDay($receiveDate);
 
     return $newReceiveDate->format('Y-m-d');
   }
@@ -134,8 +134,21 @@ class CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator {
     return new DateTime("$year-$month-$day");
   }
 
-  private function rectifyReceiveDateBasedOnCurrentCycleDay($receiveDate) {
+  /**
+   * Corrects monthly payment plan installments receive date based on their current cycle day.
+   *
+   * Hence that Starting from version 5, we are supporting cycle day only
+   * for monthly payment plans.
+   *
+   * @param $receiveDate
+   * @return DateTime|mixed
+   */
+  private function rectifyMonthlyPaymentPlanReceiveDateBasedOnCurrentCycleDay($receiveDate) {
     $frequencyUnit = $this->recurContribution['frequency_unit'];
+
+    if ($frequencyUnit != 'month') {
+      return $receiveDate;
+    }
 
     $originalCycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate(
       $receiveDate->format('Y-m-d'),
@@ -148,26 +161,7 @@ class CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator {
       return $receiveDate;
     }
 
-    $op = 'add';
-    if ($daysToAddOrSubtract < 0) {
-      $daysToAddOrSubtract = abs($daysToAddOrSubtract);
-      $op = 'sub';
-    }
-
-    switch ($frequencyUnit) {
-      case 'day':
-      case 'week':
-      case 'year':
-        $interval = "P{$daysToAddOrSubtract}D";
-        $receiveDate->{$op}(new DateInterval($interval));
-        break;
-
-      case 'month':
-        $receiveDate = $this->changeDayOfMonthInDate($receiveDate, $currentCycleDay);
-        break;
-    }
-
-    return $receiveDate;
+    return $this->changeDayOfMonthInDate($receiveDate, $currentCycleDay);
   }
 
   private function changeDayOfMonthInDate($receiveDate, $newMonthDay) {
