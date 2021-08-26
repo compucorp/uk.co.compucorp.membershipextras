@@ -1182,6 +1182,43 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     }
   }
 
+  public function testRenewalWillUpdateNextScheduledContributionAmountToOneYearAfterLastContributionDate() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+
+    $singleInstalmentRenewal = new SingleInstalmentRenewalJob();
+    $singleInstalmentRenewal->run();
+
+    $lastContributionReceiveDate = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['receive_date'],
+      'contribution_recur_id' => $paymentPlan['id'],
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ])['values'][0]['receive_date'];
+    $expectedNextDate = date('Y-m-d 00:00:00', strtotime('+1 year', strtotime($lastContributionReceiveDate)));
+
+    $nextDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'next_sched_contribution_date',
+      'id' => $paymentPlan['id'],
+    ]);
+
+    $this->assertEquals($expectedNextDate, $nextDate);
+  }
+
   /**
    * Obtains list of memberships set to auto-rnew with the payment plan.
    *
