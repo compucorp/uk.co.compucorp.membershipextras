@@ -79,6 +79,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
 
     $instalmentsHandler = new MembershipInstalmentsHandler($this->newRecurringContributionID);
     $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
+
+    $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->newRecurringContributionID);
+    $nextContributionDateService->calculateAndUpdate();
   }
 
   /**
