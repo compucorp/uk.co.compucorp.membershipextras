@@ -535,7 +535,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    */
   protected function renewPaymentPlanMemberships($sourceRecurringContribution) {
     $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($sourceRecurringContribution);
-    $existingMembershipID = NULL;
 
     foreach ($recurringLineItems as $lineItem) {
       $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
