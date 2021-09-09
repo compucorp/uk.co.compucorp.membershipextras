@@ -68,16 +68,19 @@ abstract class CRM_MembershipExtras_Service_MembershipPeriodType_AbstractPeriodT
    * @param float $taxAmount
    */
   protected function generateLineItem(int $financialTypeId, float $amount, float $taxAmount) {
-    $subTotal = MoneyUtils::roundToPrecision($amount, 2) * MoneyUtils::roundToPrecision($this->quantity, 2);
-    $totalAmount = $subTotal + MoneyUtils::roundToPrecision($taxAmount, 2);
+    $roundedAmount = MoneyUtils::roundToPrecision($amount, 2);
+    $roundedTaxAmount = MoneyUtils::roundToPrecision($taxAmount, 2);
+
+    $subTotal = $roundedAmount * $this->quantity;
+    $totalAmount = $subTotal + $roundedTaxAmount;
     $taxRate = $this->instalmentTaxAmountCalculator->getTaxRateByFinancialTypeId($financialTypeId);
     $scheduleInstalmentLineItem = new CRM_MembershipExtras_DTO_ScheduleInstalmentLineItem();
     $scheduleInstalmentLineItem->setFinancialTypeId($financialTypeId);
     $scheduleInstalmentLineItem->setQuantity($this->quantity);
-    $scheduleInstalmentLineItem->setUnitPrice($amount);
+    $scheduleInstalmentLineItem->setUnitPrice($roundedAmount);
     $scheduleInstalmentLineItem->setSubTotal($subTotal);
     $scheduleInstalmentLineItem->setTaxRate($taxRate);
-    $scheduleInstalmentLineItem->setTaxAmount($taxAmount);
+    $scheduleInstalmentLineItem->setTaxAmount($roundedTaxAmount);
     $scheduleInstalmentLineItem->setTotalAmount($totalAmount);
     $this->lineItems[] = $scheduleInstalmentLineItem;
   }
