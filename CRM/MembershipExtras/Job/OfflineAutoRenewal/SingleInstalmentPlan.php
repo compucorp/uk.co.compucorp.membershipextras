@@ -19,15 +19,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    * - Recurring contribution is set to auto-renew.
    * - Recurring contribution has no end date.
    * - Recurring contribution is active
-   * - Recurring contribution is not cancelled or refunded.
+   * - Recurring contribution is not cancelled
    * - next scheduled contribution date is less or equal current date (with 'days to renew in advance' setting in mind)
    *
    * @return array
    */
   protected function getRecurringContributions() {
     $manualPaymentProcessorsIDs = implode(',', $this->manualPaymentProcessorIDs);
-    $cancelledStatusID = $this->contributionStatusesNameMap['Cancelled'];
-    $refundedStatusID = $this->contributionStatusesNameMap['Refunded'];
+    $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
@@ -42,10 +41,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
           OR ccr.installments IS NULL
          )
          AND ccr.auto_renew = 1
-         AND (
-          ccr.contribution_status_id != {$cancelledStatusID}
-          AND ccr.contribution_status_id != {$refundedStatusID}
-         )
+         AND ccr.contribution_status_id != {$cancelledStatusID}
          AND ppea.is_active = 1
          AND msl.auto_renew = 1
          AND msl.is_removed = 0

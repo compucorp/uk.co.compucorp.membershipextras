@@ -14,7 +14,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    *
    * - is using an offline payment processor (payment manual class).
    * - is set to auto-renew
-   * - is not in status cancelled or refunded
+   * - is not in status cancelled
    * - is active
    * - has at least one autorenewal subscription line item
    * - next scheduled contribution date is less or equal current date (with 'days to renew in advance' setting in mind)
@@ -23,8 +23,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    */
   protected function getRecurringContributions() {
     $manualPaymentProcessorsIDs = implode(',', $this->manualPaymentProcessorIDs);
-    $cancelledStatusID = $this->contributionStatusesNameMap['Cancelled'];
-    $refundedStatusID = $this->contributionStatusesNameMap['Refunded'];
+    $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
@@ -35,10 +34,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
          AND ccr.installments > 1
          AND ccr.auto_renew = 1
-         AND (
-          ccr.contribution_status_id != {$cancelledStatusID}
-          AND ccr.contribution_status_id != {$refundedStatusID}
-         )
+         AND ccr.contribution_status_id != {$cancelledStatusID}
          AND ppea.is_active = 1
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
