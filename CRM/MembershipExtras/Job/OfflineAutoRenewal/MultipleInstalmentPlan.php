@@ -1,6 +1,5 @@
 <?php
 use CRM_MembershipExtras_Service_MembershipInstalmentsHandler as MembershipInstalmentsHandler;
-use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
@@ -13,47 +12,35 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    * least one line item ready to be renewed (ie. has an end date, is not
    * removed and is set to auto renew), meeting these conditions:
    *
-   * 1- is using an offline payment processor (payment manual class).
-   * 2- has an end date.
-   * 3- is set to auto-renew
-   * 4- is not in status cancelled
-   * 5- "Next Payment Plan Period" is empty
-   * 6- has either of the following conditions:
-   *    - end date of at least one membership is equal to or smaller than today
-   *    - there are no related line items with memberships to be renewed and
-   *      line items have an end date
+   * - is using an offline payment processor (payment manual class).
+   * - is set to auto-renew
+   * - is not in status cancelled
+   * - is active
+   * - has at least one autorenewal subscription line item
+   * - next scheduled contribution date is less or equal current date (with 'days to renew in advance' setting in mind)
    *
    * @return array
    */
   protected function getRecurringContributions() {
     $manualPaymentProcessorsIDs = implode(',', $this->manualPaymentProcessorIDs);
-    $cancelledStatusID = $this->contributionStatusesNameMap['Cancelled'];
-    $refundedStatusID = $this->contributionStatusesNameMap['Refunded'];
+    $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
       SELECT ccr.id as contribution_recur_id, ccr.installments
         FROM civicrm_contribution_recur ccr
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
-   LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
-   LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
    LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
          AND ccr.installments > 1
          AND ccr.auto_renew = 1
-         AND (
-          ccr.contribution_status_id != {$cancelledStatusID}
-          AND ccr.contribution_status_id != {$refundedStatusID}
-         )
-         AND (ppea.is_active = 1)
+         AND ccr.contribution_status_id != {$cancelledStatusID}
+         AND ppea.is_active = 1
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
+         AND ccr.next_sched_contribution_date IS NOT NULL
+         AND DATE(ccr.next_sched_contribution_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
     GROUP BY ccr.id
-      HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
-          OR (
-            COUNT(cm.id) = 0
-            AND COUNT(msl.id) > 0
-          )
     ";
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
@@ -98,7 +85,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $paymentProcessorID = !empty($currentRecurContribution['payment_processor_id']) ? $currentRecurContribution['payment_processor_id'] : NULL;
 
     $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
-    $this->paymentPlanStartDate = $this->calculateNewPeriodStartDate();
+    $this->paymentPlanStartDate = $this->currentRecurringContribution['next_sched_contribution_date'];
     $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
 
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
@@ -130,41 +117,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
 
     $this->newRecurringContribution = $newRecurringContribution;
     $this->newRecurringContributionID = $newRecurringContribution['id'];
-  }
-
-  /**
-   * Calculates the new period's start date.
-   *
-   * @return string
-   *   The new period's start date.
-   * @throws \Exception
-   */
-  private function calculateNewPeriodStartDate() {
-    $instalmentReceiveDateCalculator = new InstalmentReceiveDateCalculator($this->currentRecurringContribution);
-    $instalmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
-    return $instalmentReceiveDateCalculator->calculate();
-  }
-
-  /**
-   * Obtains membership identified with provided ID.
-   *
-   * @param int $id
-   *   ID of the membership.
-   *
-   * @return array
-   *   Membership's data.
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function getMembership($id) {
-    if (empty($id)) {
-      return [];
-    }
-
-    return civicrm_api3('Membership', 'getsingle', [
-      'sequential' => 1,
-      'id' => $id,
-    ]);
   }
 
   /**

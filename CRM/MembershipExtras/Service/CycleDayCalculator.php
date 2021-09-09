@@ -5,7 +5,12 @@ class CRM_MembershipExtras_Service_CycleDayCalculator {
   /**
    * Calculates the cycle date for
    * the recurring contribution given the
-   * date (or start date) and the frequency unit.
+   * date (or start date).
+   *
+   * hence that we are currently only support cycle
+   * day for monthly payment plans, so for everything
+   * else we return 1 which is the default value for
+   * this field in CiviCRM.
    *
    * @param string $targetDate
    *   DateTime acceptable format
@@ -16,23 +21,12 @@ class CRM_MembershipExtras_Service_CycleDayCalculator {
    * @return int
    */
   public static function calculate($targetDate, $frequencyUnit) {
-    $recurContStartDate = new DateTime($targetDate);
-
-    switch ($frequencyUnit) {
-      case 'week':
-        $cycleDay =  $recurContStartDate->format('N');
-        break;
-      case 'month':
-        $cycleDay =  $recurContStartDate->format('j');
-        break;
-      case 'year':
-        $cycleDay =  (int) $recurContStartDate->format('z') + 1;
-        break;
-      default:
-        $cycleDay = 1;
+    if ($frequencyUnit == 'month') {
+      $recurContStartDate = new DateTime($targetDate);
+      return $recurContStartDate->format('j');
     }
 
-    return $cycleDay;
+    return 1;
   }
 
 }

@@ -75,7 +75,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
     $this->assertEquals('27', $recurringContribution['cycle_day']);
   }
 
-  public function testYearlyCycleDayIsCalculatedFromReceiveDate() {
+  public function testYearlyCycleDayDefaultsToValueOne() {
     $_REQUEST['payment_plan_schedule'] = 'annual';
 
     $contact = ContactFabricator::fabricate();
@@ -117,7 +117,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
       'options' => ['limit' => 0],
     ])['values'][0];
 
-    $this->assertEquals('32', $recurringContribution['cycle_day']);
+    $this->assertEquals('1', $recurringContribution['cycle_day']);
   }
 
   public function testReceiveDateCalculationHookChangesReceiveDate() {
