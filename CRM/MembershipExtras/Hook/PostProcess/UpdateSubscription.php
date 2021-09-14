@@ -61,6 +61,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     $this->updateMemberships();
     $this->updateRelatedInstallments();
     $this->updateRecurringContribution();
+    $this->updateNextScheduledContributionDate();
     $this->updateSubscriptionLineItems();
   }
 
@@ -84,15 +85,29 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
     }
 
     civicrm_api3('ContributionRecur', 'create', $params);
+  }
 
+  private function updateNextScheduledContributionDate() {
     $nextScheduledDate = CRM_Utils_Array::value('next_sched_contribution_date', $this->formValues);
-    if (!empty($nextScheduledDate)) {
-      $query = 'UPDATE civicrm_contribution_recur SET next_sched_contribution_date = %1 WHERE id = %2';
-      CRM_Core_DAO::executeQuery($query, [
-        1 => [$nextScheduledDate, 'String'],
-        2 => [$params['id'], 'Integer'],
-      ]);
+    if (empty($nextScheduledDate)) {
+      return;
     }
+
+    if ($this->isUpdatedCycleDay()) {
+      $currentDayInMonth = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($nextScheduledDate, 'month');
+      $currentCycleDay = $this->formValues['cycle_day'];
+      $adjustmentDaysAmount = $currentCycleDay - $currentDayInMonth;
+
+      $nextScheduledDate = new DateTime($nextScheduledDate);
+      $nextScheduledDate->modify("$adjustmentDaysAmount day");
+      $nextScheduledDate = $nextScheduledDate->format('Y-m-d 00:00:00');
+    }
+
+    $query = 'UPDATE civicrm_contribution_recur SET next_sched_contribution_date = %1 WHERE id = %2';
+    CRM_Core_DAO::executeQuery($query, [
+      1 => [$nextScheduledDate, 'String'],
+      2 => [$this->recurringContribution['id'], 'Integer'],
+    ]);
   }
 
   /**

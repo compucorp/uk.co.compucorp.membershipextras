@@ -59,7 +59,8 @@
   <div class="messages status no-popup">
     {if $paymentPlanFrequency == 'month'}
       <i aria-hidden="true" class="crm-i fa-info-circle"></i>{ts}Do you want to update any outstanding instalment
-      contribution with the new Payment Method or Cycle Day?{/ts}
+      contribution with the new Payment Method or Cycle Day? Hence that updating the cycle day will also update the next
+      scheduled contribution date.{/ts}
     {else}
       <i aria-hidden="true" class="crm-i fa-info-circle"></i>{ts}Do you want to update any outstanding instalment
       contribution with the new Payment Method?{/ts}
