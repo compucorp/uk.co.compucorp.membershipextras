@@ -179,6 +179,39 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
     }
   }
 
+  public function testChangingCycleDayForMonthlyPaymentPlanWillAdjustNextScheduledContributionDateToThatDay() {
+    $paymentPlanMembershipOrder = new CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = '2019-01-15';
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
+    $paymentPlanMembershipOrder->nextContributionDate = '2019-01-15';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder::fabricate($paymentPlanMembershipOrder);
+
+    $newCycleDay = 3;
+    $this->simulateUpdateCycleDayWithForm($paymentPlan, $newCycleDay);
+
+    $updateHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription($this->updateSubscriptionForm);
+    $updateHook->postProcess();
+
+    $nextContributionDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'next_sched_contribution_date',
+      'id' => $paymentPlan['id'],
+    ]);
+
+    $this->assertEquals('2019-01-03 00:00:00', $nextContributionDate);
+  }
+
   /**
    * Completes the given installment.
    *

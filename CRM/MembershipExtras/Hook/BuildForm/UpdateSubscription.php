@@ -59,6 +59,8 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
   }
 
   private function addElements() {
+    $this->form->assign('paymentPlanFrequency', $this->recurringContribution['frequency_unit']);
+
     $amount = $this->form->getElement('amount');
     $amount->setAttribute('readonly', TRUE);
 
