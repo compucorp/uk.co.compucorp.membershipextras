@@ -229,20 +229,6 @@ function _membershipextras_isPaymentPlanWithAtLeastOneInstallment() {
   return FALSE;
 }
 
-function membershipextras_civicrm_preSave_civicrm_contribution($dao) {
-  if (!empty($dao->id)) {
-    $membershipPreSaveHook = new CRM_MembershipExtras_Hook_PreSave_Membership();
-    $membershipPreSaveHook->setContributionId($dao->id);
-  }
-}
-
-function membershipextras_civicrm_preSave_civicrm_membership($dao) {
-  if (!empty($dao->id) && !empty($dao->status_id)) {
-    $membershipPreSaveHook = new CRM_MembershipExtras_Hook_PreSave_Membership($dao);
-    $membershipPreSaveHook->preventCancellationOnInstallmentCancellation();
-  }
-}
-
 /**
  * Implements hook_civicrm_post().
  */
