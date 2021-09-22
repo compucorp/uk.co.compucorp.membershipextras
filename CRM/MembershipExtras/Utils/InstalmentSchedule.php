@@ -93,20 +93,29 @@ class CRM_MembershipExtras_Utils_InstalmentSchedule {
    *
    * @return bool
    */
-  public static function isPaymentPlanWithSchedule() {
-    $paymentPlanSchedule = self::getPaymentPlanSchedule();
+  public static function isPaymentPlanPayment() {
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
     $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
 
-    if ($isSavingContribution && $contributionIsPaymentPlan && $paymentPlanSchedule) {
+    if ($isSavingContribution && $contributionIsPaymentPlan) {
       return TRUE;
     }
 
     return FALSE;
   }
 
-  public static function getPaymentPlanSchedule() {
-    return CRM_Utils_Request::retrieve('payment_plan_schedule', 'String');
+  public static function getPaymentPlanSchedule($frequencyUnit, $frequencyInterval, $installmentsCount) {
+    if ($frequencyUnit == 'month' && $frequencyInterval == 1 && $installmentsCount == 12) {
+      return InstalmentsSchedule::MONTHLY;
+    }
+
+    if ($frequencyUnit == 'month' && $frequencyInterval == 3 && $installmentsCount == 4) {
+      return InstalmentsSchedule::QUARTERLY;
+    }
+
+    if ($frequencyUnit == 'year' && $frequencyInterval == 1 && $installmentsCount == 1) {
+      return InstalmentsSchedule::ANNUAL;
+    }
   }
 
 }
