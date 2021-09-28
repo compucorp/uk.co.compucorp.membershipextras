@@ -489,10 +489,11 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   /**
    * As of Membershipextras v5 we are using next_sched_contribution_date
-   * to control the autorenewal instead of using the payment plan related
-   * memberships end dates. In this upgrader we update this field value for
-   * all offline payment plans so it equals the minimum membership end date
-   * that is attached to it, so it can support this new autorenewal behaviour.
+   * to calculate the installments receive dates after autorenewal
+   * instead of using the payment plan related memberships end dates.
+   * In this upgrader we update this field value for all offline payment plans
+   * so it equals the minimum membership end date that is attached to it,
+   * so it can support this new autorenewal behaviour.
    */
   private function migratePaymentPlansToSupportNextContributionDateAutorenewal() {
     CRM_Core_DAO::executeQuery('CREATE TABLE recur_conts_to_update (`recur_id` int(11), `next_cont_date` varchar(255))');

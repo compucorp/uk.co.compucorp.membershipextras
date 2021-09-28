@@ -17,7 +17,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    * - is not in status cancelled
    * - is active
    * - has at least one autorenewal subscription line item
-   * - next scheduled contribution date is less or equal current date (with 'days to renew in advance' setting in mind)
+   * - End date of at least one membership is equal to or smaller than today (with 'days to renew in advance' setting in mind)
    *
    * @return array
    */
@@ -30,6 +30,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
       SELECT ccr.id as contribution_recur_id, ccr.installments
         FROM civicrm_contribution_recur ccr
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
+   LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
+   LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
    LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
          AND ccr.installments > 1
@@ -38,9 +40,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
          AND ppea.is_active = 1
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
-         AND ccr.next_sched_contribution_date IS NOT NULL
-         AND DATE(ccr.next_sched_contribution_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
     GROUP BY ccr.id
+      HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
+          OR (
+            COUNT(cm.id) = 0
+            AND COUNT(msl.id) > 0
+          )
     ";
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
