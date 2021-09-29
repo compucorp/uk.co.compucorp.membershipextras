@@ -20,7 +20,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    * - Recurring contribution has no end date.
    * - Recurring contribution is active
    * - Recurring contribution is not cancelled
-   * - next scheduled contribution date is less or equal current date (with 'days to renew in advance' setting in mind)
+   * - Recurring contribution has either:
+   *   - At least one auto-renew, un-removed line item for a membership with an
+   *     end date before today + $daysToRenewInAdvance.
+   *   - At least one auto-renew, un-removed line item and NO memberships, and
+   *     next_run_date(*) is before today + $daysToRenewInAdvance.
+   *
+   * (*) next_run_date corresponds to either maximum end date of all line items
+   * related to the recurring contribution + 1 period, or the start date of the
+   * recurring contribution + 1 period, if there are no line items with end
+   * dates.
    *
    * @return array
    */
@@ -30,9 +39,41 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
-      SELECT ccr.id as contribution_recur_id, ccr.installments
+      SELECT ccr.id as contribution_recur_id, ccr.installments,
+        CASE
+          WHEN frequency_unit = 'day' THEN DATE_ADD(
+            CASE
+              WHEN MAX(msl.end_date) IS NULL THEN ccr.start_date
+              ELSE MAX(msl.end_date)
+            END,
+            INTERVAL frequency_interval DAY
+          )
+          WHEN frequency_unit = 'week' THEN DATE_ADD(
+            CASE
+              WHEN MAX(msl.end_date) IS NULL THEN ccr.start_date
+              ELSE MAX(msl.end_date)
+            END,
+            INTERVAL frequency_interval WEEK
+          )
+          WHEN frequency_unit = 'month' THEN DATE_ADD(
+            CASE
+              WHEN MAX(msl.end_date) IS NULL THEN ccr.start_date
+              ELSE MAX(msl.end_date)
+            END,
+            INTERVAL frequency_interval MONTH
+          )
+          WHEN frequency_unit = 'year' THEN DATE_ADD(
+            CASE
+              WHEN MAX(msl.end_date) IS NULL THEN ccr.start_date
+              ELSE MAX(msl.end_date)
+            END,
+            INTERVAL frequency_interval YEAR
+          )
+        END AS next_run_date
         FROM civicrm_contribution_recur ccr
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
+   LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
+   LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
    LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
          AND ccr.end_date IS NULL
@@ -46,9 +87,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
          AND msl.end_date IS NULL
-         AND ccr.next_sched_contribution_date IS NOT NULL
-         AND DATE(ccr.next_sched_contribution_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
     GROUP BY ccr.id
+      HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
+      OR (
+        COUNT(cm.id) = 0
+        AND next_run_date <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
+      )
     ";
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
