@@ -125,8 +125,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    */
   private function calculateRecurringContributionTotalAmount() {
     $totalAmount = 0;
-
-    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
+    $conditions = [
       'sequential' => 1,
       'contribution_recur_id' => $this->recurringContribution['id'],
       'start_date' => ['IS NOT NULL' => 1],
@@ -136,7 +135,14 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
         'entity_table' => ['IS NOT NULL' => 1],
         'entity_id' => ['IS NOT NULL' => 1],
       ],
-    ]);
+    ];
+
+    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 0);
+    if ($installments <= 1) {
+      $conditions['end_date'] = ['IS NULL' => 1];
+    }
+
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', $conditions);
 
     if ($result['count'] > 0) {
       foreach ($result['values'] as $lineItemData) {
