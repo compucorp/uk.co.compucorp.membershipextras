@@ -46,7 +46,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       'api.LineItem.getsingle' => [
         'id' => '$value.line_item_id',
         'entity_table' => ['IS NOT NULL' => 1],
-        'entity_id' => ['IS NOT NULL' => 1]
+        'entity_id' => ['IS NOT NULL' => 1],
       ],
     ]);
 
@@ -64,8 +64,8 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
   }
 
   /**
-  * @inheritdoc
-  */
+   * @inheritdoc
+   */
   public function buildQuickForm() {
     $lineItemLabel = $this->recurringLineItemData['label'];
     CRM_Utils_System::setTitle(E::ts('Remove ' . $lineItemLabel . '?'));
@@ -84,14 +84,14 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
 
     $this->addButtons([
       [
-          'type' => 'submit',
-          'name' => E::ts('Apply'),
-          'isDefault' => TRUE,
+        'type' => 'submit',
+        'name' => E::ts('Apply'),
+        'isDefault' => TRUE,
       ],
       [
-          'type' => 'cancel',
-          'name' => E::ts('Cancel'),
-          'isDefault' => FALSE,
+        'type' => 'cancel',
+        'name' => E::ts('Cancel'),
+        'isDefault' => FALSE,
       ],
     ]);
   }
@@ -125,7 +125,8 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
         "Remove {$this->recurringLineItemData['label']}",
         'success'
       );
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       $tx->rollback();
 
       CRM_Core_Session::setStatus(
@@ -284,9 +285,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    * @return array
    */
   private function getCorrespondingContributionLineItem($contributionID) {
-    $entityID = $this->recurringLineItemData['entity_table'] == 'civicrm_contribution' ?
-      $contributionID : $this->recurringLineItemData['entity_id']
-    ;
+    $entityID = $this->recurringLineItemData['entity_table'] == 'civicrm_contribution' ? $contributionID : $this->recurringLineItemData['entity_id'];
 
     $lineItem = [];
     try {
@@ -305,7 +304,8 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       if ($apiResponse['count'] > 0) {
         $lineItem = $apiResponse['values'][0];
       }
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       return [];
     }
 
@@ -319,8 +319,8 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
   private function updateRecurringLineItem() {
     civicrm_api3('ContributionRecurLineItem', 'create', [
       'id' => $this->recurringLineItemData['id'],
-      'auto_renew' => false,
-      'is_removed' => true,
+      'auto_renew' => FALSE,
+      'is_removed' => TRUE,
       'end_date' => $this->lineItemEndDate,
     ]);
   }
