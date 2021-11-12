@@ -242,6 +242,12 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
         'label' => $lineItemBefore['label'] . " - Line removed from contribution [{$lineItemBefore['contribution_id']}]",
         'contribution_id' => 'null',
       ]);
+
+      // Remove the link between the membership and the contribution
+      $query = "DELETE FROM civicrm_membership_payment
+                WHERE membership_id = {$this->recurringLineItemData['entity_id']}
+                AND contribution_id = {$contribution['id']}";
+      CRM_Core_DAO::executeQuery($query);
     }
   }
 
