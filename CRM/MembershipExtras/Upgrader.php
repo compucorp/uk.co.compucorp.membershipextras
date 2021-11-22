@@ -17,6 +17,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $this->executeSqlFile('sql/set_unique_external_ids.sql');
     $this->createManageInstallmentActivityTypes();
     $this->createFutureMembershipStatusRules();
+    $this->disableContributionCancelActionsExtension();
   }
 
   /**
@@ -475,10 +476,34 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
    *
    */
   private function migrateRelatedPeriodsCustomGroupToIsActiveCustomField() {
-    $query = "INSERT INTO civicrm_value_payment_plan_extra_attributes (entity_id, is_active)  
-               SELECT ccr.id as id, IF(rppp.next_period IS NULL, 1, 0) as is_active FROM civicrm_contribution_recur ccr 
+    $query = "INSERT INTO civicrm_value_payment_plan_extra_attributes (entity_id, is_active)
+               SELECT ccr.id as id, IF(rppp.next_period IS NULL, 1, 0) as is_active FROM civicrm_contribution_recur ccr
                LEFT JOIN civicrm_value_payment_plan_periods rppp ON ccr.id = rppp.entity_id";
     CRM_Core_DAO::executeQuery($query);
+  }
+
+  public function upgrade_0007() {
+    $this->disableContributionCancelActionsExtension();
+
+    return TRUE;
+  }
+
+  /**
+   * Disables "Contribution cancel actions" core extension.
+   * To prevent CiviCRM from canceling the membership if the user
+   * cancels any of its installments.
+   *
+   */
+  private function disableContributionCancelActionsExtension() {
+    $extension = civicrm_api3('Extension', 'get', [
+      'keys' => "contributioncancelactions",
+    ]);
+
+    if (!empty($extension['id'])) {
+      civicrm_api3('Extension', 'disable', [
+        'keys' => 'contributioncancelactions',
+      ]);
+    }
   }
 
 }

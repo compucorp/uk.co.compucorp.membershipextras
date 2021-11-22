@@ -17,8 +17,8 @@ With Membership Extras, any membership sign-up or renewal will create a new memb
 
 There will also be some enhancement shipped with this feature to allow better automated control over the benefit delivery for membership.
 
-#### Subscription management (coming soon)
-This will allow staff to modify a members benefits during the current membership period - upgrading, downgrading or adding add-ons as needed. These will all flow through as part of the same billing order as the previous membership - i.e. as part of the same recurring contribution and hence will all be kept on the same invoice. This will lower transaction costs for organisations and tidy up billing processes.
+#### Subscription management
+Allows staff to modify a member benefits during the current membership period - upgrading, downgrading or adding add-ons as needed. These will all flow through as part of the same billing order as the previous membership - i.e. as part of the same recurring contribution and hence will all be kept on the same invoice. This will lower transaction costs for organisations and tidy up billing processes.
 
 #### Offline auto-renewal
 CiviCRM has support for many payment processors, including several Direct Debit payment processors. With these “online” payment processors, when the membership comes to renew, the logic is actually managed by the payment processor in order to renew the membership and take next years payment. CiviCRM doesn’t however have any functionality for memberships where the payment is “offline” i.e. some Direct Debit processes or where you invoice clients in advance of receiving the payment. With Membership extras CiviCRM now fully supports offline automated renewal including sending email notifications with invoices for payment. We also have created a new offline batch direct debit export module which allows for full management of high volume direct debits through export processes.
@@ -26,7 +26,7 @@ CiviCRM has support for many payment processors, including several Direct Debit 
 ## Supported versions of CiviCRM
 This extension is designed and tested with a specific (and patched) version of CiviCRM and may have unforeseen issues if used with different (including later) versions.
 
-In the extension info.xml file see the “comments” field where we specify the currently supported version of CiviCRM and have a download link to the correct version.
+In the extension info.xml file, see the “comments” field where we specify the currently supported version of CiviCRM and have a download link to the correct version.
 
 Compuco normally undertakes to update the compatible version shortly after a new CiviCRM security release.
 
@@ -43,6 +43,8 @@ You can get the bleeding edge version of the extension by downloading [the repos
 Also, the repository of our webform companion Drupal module is [here](https://github.com/compucorp/webform_civicrm_membership_extras).
 
 ## Do I need to configure Membership Extras?
+**Note: This extension disables the core extension "Contribution Cancel Action" by default, it does not function properly with it being installed**
+
 Membership Extras is a plug and play extension. Most of the generic functionality works out of the box.
 
 There are a few exceptions where we chose to not presumptively configure for you during the extension installation mainly due to those configurations vary largely from organisation to organisation.
