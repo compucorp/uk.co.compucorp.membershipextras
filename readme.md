@@ -93,6 +93,6 @@ However, if there are custom information on the contributions that should not be
 ## Support
 CiviCRM extension directory page: [https://civicrm.org/extensions/membership-extras](https://civicrm.org/extensions/membership-extras)
 
-Please contact the follow email if you have any question: <hello@compucorp.co.uk>
+Please contact the follow email if you have any question: <hello@compuco.io>
 
-Paid support for this extension is available, please contact us either via Github or at <hello@compucorp.co.uk>
+Paid support for this extension is available, please contact us either via Github or at <hello@compuco.io>

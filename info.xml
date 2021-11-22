@@ -5,8 +5,8 @@
   <description>This extension includes a huge amount of untility features that completes CiviCRM's membership management process. Notebly membership payment in instalments, payment plan management and more.</description>
   <license>AGPL-3.0</license>
   <maintainer>
-    <author>Compucorp Ltd.</author>
-    <email>info@compucorp.co.uk</email>
+    <author>Compuco</author>
+    <email>hello@compuco.io</email>
   </maintainer>
   <releaseDate>2021-10-18</releaseDate>
   <version>4.7.0</version>
