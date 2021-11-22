@@ -23,12 +23,14 @@ This will allow staff to modify a members benefits during the current membership
 #### Offline auto-renewal
 CiviCRM has support for many payment processors, including several Direct Debit payment processors. With these “online” payment processors, when the membership comes to renew, the logic is actually managed by the payment processor in order to renew the membership and take next years payment. CiviCRM doesn’t however have any functionality for memberships where the payment is “offline” i.e. some Direct Debit processes or where you invoice clients in advance of receiving the payment. With Membership extras CiviCRM now fully supports offline automated renewal including sending email notifications with invoices for payment. We also have created a new offline batch direct debit export module which allows for full management of high volume direct debits through export processes.
 
-## How do I get Membership Extras?
-This version of the extension is designed and tested with a patched version of CiviCRM v5.28.3 and may have unforeseen issues with newer versions of CiviCRM and hence we would recommend only using it with that version of CiviCRM. Compucorp normally undertakes to update these extensions shortly after a new CiviCRM security release.
+## Supported versions of CiviCRM
+This extension is designed and tested with a specific (and patched) version of CiviCRM and may have unforeseen issues if used with different (including later) versions.
 
-You can find this compatible CiviCRM version here: [CiviCRM v5.28.3](https://github.com/compucorp/civicrm-core/releases/download/5.28.3%2Bpatch.8d3481/civicrm-5.28.3+patch.8d3481.tar.)
+In the extension info.xml file see the “comments” field where we specify the currently supported version of CiviCRM and have a download link to the correct version.
 
-If your CiviCRM is already on the patched version of 5.28.3 plus and this is the first time you use an extension,  please see [Here](http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions "CiviCRM Extensions Installation") for full instructions and information on how to set and configure extensions.
+Compuco normally undertakes to update the compatible version shortly after a new CiviCRM security release.
+
+If you are already on the mentioned version of CiviCRM and this is the first time you use this extension, please see [Here](https://docs.civicrm.org/sysadmin/en/latest/customize/extensions/ "CiviCRM Extensions Installation") for full instructions and information on how to set and configure extensions.
 
 ### What Exactly is Being Patched?
 Currently, we are maintaining two patches, required for Membership Extras extension to work. The first one will prevent a membership to be cancelled if one of the installments of a payment plan gets cancelled. The second one fixes a known bug in CiviCRM where a failed validation on the form to create a membership (eg. if you failed to fill in a required field), will cause taxes to be recalculated and added again to the membership fee.
