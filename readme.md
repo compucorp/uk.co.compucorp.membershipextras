@@ -32,25 +32,6 @@ Compuco normally undertakes to update the compatible version shortly after a new
 
 If you are already on the mentioned version of CiviCRM and this is the first time you use this extension, please see [Here](https://docs.civicrm.org/sysadmin/en/latest/customize/extensions/ "CiviCRM Extensions Installation") for full instructions and information on how to set and configure extensions.
 
-### What Exactly is Being Patched?
-Currently, we are maintaining two patches, required for Membership Extras extension to work. The first one will prevent a membership to be cancelled if one of the installments of a payment plan gets cancelled. The second one fixes a known bug in CiviCRM where a failed validation on the form to create a membership (eg. if you failed to fill in a required field), will cause taxes to be recalculated and added again to the membership fee.
-
-#### Patch #1: Prevent Cancelled Installments From Cancelling Membership
-TL;DR: We've added a way to intercept a membership update before it is stored in the database, to prevent the membership from being cancelled when a single installment in the payment plan is cancelled.
-
-The technical overview of this is we've proposed to CiviCRM core team a new hook that runs before saving information to a table that is associated to an entity DAO. Currently, there is already a `hook_civicrm_postSave_table_name` hook that is run *after* a write operation is done on a table associated to a DAO. But on many cases it is useful to have a hook that runs before the write operation. This hook takes the form `hook_civicrm_preSave_table_name`, and we use it precisely to prevent cancelling the membership when a single installment in the payment plan is cancelled by checking the status of the plan and other installments *before* actually updating the membership.
-
-The change is being discussed on [this lab ticket](https://lab.civicrm.org/dev/core/issues/161), if you'd like to participate, and help push for the change to be accepted into core.
-
-The PR with the implementation for the feature can be checked [here](https://github.com/civicrm/civicrm-core/pull/12253).
-
-#### Patch #2: Prevent Taxes to be Recalculated and Added to Membership Fee Each Time a Validation Fails
-There is a known bug in CiviCRM, tracked [here](https://lab.civicrm.org/dev/core/issues/778), where when creating a membership and clicking save, if a validation fails (say for example if the user skipped a required field), taxes would be recalculated and added again to the membership's fee. So, for example, if a membership's price was $100 with a 10% tax, the full price would be calculated to $110 before saving the membership. After the first validation error, the price would be recalculated to $121, then to $133.10 on the second failed validation, and so on every time the validation failed.
-
-Our patch fixes this by making sure every time the validation fails, the membership's fee without tax is used to calculate taxes. This is a temporary fix, though, as CiviCRM core team has laid down new groundwork on which we can base a more permanent solution that can be part of CiviCRM core in the near future.
-
-The PR with the bug fix can be seen [here](https://github.com/civicrm/civicrm-core/pull/15895).
-
 ### If I am a user
 You can get the latest release of Membership Extras from [CiviCRM extension directory page](https://civicrm.org/extensions/membership-extras) or our [Github repository release page](https://github.com/compucorp/uk.co.compucorp.membershipextras/releases).
 
