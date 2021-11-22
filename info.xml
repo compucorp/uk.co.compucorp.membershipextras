@@ -16,7 +16,7 @@
   </compatibility>
   <comments>
     Supported CiviCRM versions  :
-    - 5.35.2
+    - A patched version of CiviCRM 5.35.2 (Download link: https://github.com/compucorp/civicrm-core/releases/download/5.35.2%2Bpatch.3c757c/civicrm-5.35.2+patch.3c757c.tar.gz)
   </comments>
   <civix>
     <namespace>CRM/MembershipExtras</namespace>
