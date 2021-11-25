@@ -1,4 +1,4 @@
-  <?php
+<?php
 
 require_once 'membershipextras.civix.php';
 
@@ -442,4 +442,38 @@ function membershipextras_civicrm_preProcess($formName, $form) {
  * @param $context
  */
 function membershipextras_civicrm_alterMailParams(&$params, $context) {
-  $alterMailParamsHook = new
+  $alterMailParamsHook = new CRM_MembershipExtras_Hook_Alter_MailParamsHandler($params);
+  $alterMailParamsHook->handle();
+}
+
+/**
+ * Implements hook_civicrm_permission().
+ *
+ */
+function membershipextras_civicrm_permission(&$permissions) {
+  $permissions += [
+    'administer MembershipExtras' => [
+      E::ts('MembershipExtras: administer Membership Extras'),
+      E::ts('Perform all Membership Extras administration tasks in CiviCRM'),
+    ],
+  ];
+}
+
+function _membershipextras_appendJSToModifyRecurringContributionPage(&$page) {
+  if (!($page instanceof CRM_Contribute_Page_ContributionRecur)) {
+    return;
+  }
+
+  $contributionData = $page->get_template_vars('recur');
+  $frequency = CRM_Utils_Array::value('frequency_unit', $contributionData, '');
+
+  CRM_Core_Resources::singleton()->addScriptFile(
+    CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+    'js/modifyAnnualRecuringContributionPage.js',
+    1,
+    'page-header'
+  )->addVars(
+    CRM_MembershipExtras_ExtensionUtil::SHORT_NAME,
+    ['contribution_frequency' => $frequency]
+  );
+}
