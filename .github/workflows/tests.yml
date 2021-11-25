@@ -6,7 +6,7 @@ jobs:
   run-unit-tests:
 
     runs-on: ubuntu-latest
-    container: compucorp/civicrm-buildkit:1.0.0
+    container: compucorp/civicrm-buildkit:1.1.1-php7.2
 
     env:
       CIVICRM_EXTENSIONS_DIR: site/web/sites/all/modules/civicrm/tools/extensions

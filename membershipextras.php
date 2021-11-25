@@ -134,8 +134,8 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
     'name' => 'payment_plan_settings',
     'label' => ts('Payment Plan Settings'),
     'url' => 'civicrm/admin/payment_plan_settings',
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
+    'permission' => 'administer CiviCRM,administer MembershipExtras',
+    'operator' => 'OR',
     'separator' => NULL,
   ];
 
@@ -145,8 +145,8 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
     'name' => 'automated_membership_upgrade_rules',
     'label' => ts('Membership Automated Upgrade Rules'),
     'url' => 'civicrm/admin/member/automated-upgrade-rules?reset=1',
-    'permission' => 'administer CiviCRM',
-    'operator' => NULL,
+    'permission' => 'administer CiviCRM,administer MembershipExtras',
+    'operator' => 'OR',
     'separator' => 2,
   ];
   _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviMember', $automatedMembershipUpgradeRulesMenuItem);
@@ -209,20 +209,6 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   if ($objectName === 'Contribution') {
     $contributionPreHook = new CRM_MembershipExtras_Hook_Pre_Contribution($op, $id, $params);
     $contributionPreHook->preProcess();
-  }
-}
-
-function membershipextras_civicrm_preSave_civicrm_contribution($dao) {
-  if (!empty($dao->id)) {
-    $membershipPreSaveHook = new CRM_MembershipExtras_Hook_PreSave_Membership();
-    $membershipPreSaveHook->setContributionId($dao->id);
-  }
-}
-
-function membershipextras_civicrm_preSave_civicrm_membership($dao) {
-  if (!empty($dao->id) && !empty($dao->status_id)) {
-    $membershipPreSaveHook = new CRM_MembershipExtras_Hook_PreSave_Membership($dao);
-    $membershipPreSaveHook->preventCancellationOnInstallmentCancellation();
   }
 }
 
@@ -458,6 +444,19 @@ function membershipextras_civicrm_preProcess($formName, $form) {
 function membershipextras_civicrm_alterMailParams(&$params, $context) {
   $alterMailParamsHook = new CRM_MembershipExtras_Hook_Alter_MailParamsHandler($params);
   $alterMailParamsHook->handle();
+}
+
+/**
+ * Implements hook_civicrm_permission().
+ *
+ */
+function membershipextras_civicrm_permission(&$permissions) {
+  $permissions += [
+    'administer MembershipExtras' => [
+      E::ts('MembershipExtras: administer Membership Extras'),
+      E::ts('Perform all Membership Extras administration tasks in CiviCRM'),
+    ],
+  ];
 }
 
 function _membershipextras_appendJSToModifyRecurringContributionPage(&$page) {

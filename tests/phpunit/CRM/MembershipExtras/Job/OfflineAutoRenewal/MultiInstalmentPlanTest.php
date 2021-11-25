@@ -1059,6 +1059,58 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $this->assertEquals($expectedNextDate, $nextDate);
   }
 
+  public function testRenewalWillNotCopyContributionFeeAmountFromPreviousTerm() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+
+    // updating the fees for the previous term last contribution
+    $previousTermLastContributionId = $this->getPaymentPlanContributions($paymentPlan['id'])[11]['id'];
+    civicrm_api3('Contribution', 'create', [
+      'id' => $previousTermLastContributionId,
+      'fee_amount' => 10,
+    ]);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+
+    $newTermContributionFees = $this->getPaymentPlanContributions($nextPeriodId)[0]['fee_amount'];
+    $this->assertEquals('0.00', $newTermContributionFees);
+  }
+
+  /**
+   * Returns list of contributions associated to the given payment plan ID.
+   * @param int $paymentPlanID
+   *
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getPaymentPlanContributions($paymentPlanID) {
+    return civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlanID,
+      'options' => [
+        'limit' => 0,
+        'sort' => 'id',
+      ],
+    ])['values'];
+  }
+
   /**
    * Checks the structure of the payment plan follows the given expected values.
    *
