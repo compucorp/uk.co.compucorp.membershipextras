@@ -296,8 +296,8 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'return' => ['currency', 'contribution_source', 'net_amount',
-        'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
+      'return' => ['currency', 'contribution_source',
+        'contact_id', 'total_amount', 'payment_instrument_id',
         'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id',
       ],
       'contribution_recur_id' => $this->currentRecurContributionID,
@@ -755,8 +755,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'currency' => $this->lastContribution['currency'],
       'source' => $this->lastContribution['contribution_source'],
       'contact_id' => $this->lastContribution['contact_id'],
-      'fee_amount' => $this->lastContribution['fee_amount'],
-      'net_amount' => $this->totalAmount - $this->lastContribution['fee_amount'],
+      'net_amount' => $this->totalAmount,
       'total_amount' => $this->totalAmount,
       'receive_date' => $this->paymentPlanStartDate,
       'payment_instrument_id' => $this->lastContribution['payment_instrument_id'],

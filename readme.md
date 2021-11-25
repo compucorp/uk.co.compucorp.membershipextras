@@ -17,37 +17,20 @@ With Membership Extras, any membership sign-up or renewal will create a new memb
 
 There will also be some enhancement shipped with this feature to allow better automated control over the benefit delivery for membership.
 
-#### Subscription management (coming soon)
-This will allow staff to modify a members benefits during the current membership period - upgrading, downgrading or adding add-ons as needed. These will all flow through as part of the same billing order as the previous membership - i.e. as part of the same recurring contribution and hence will all be kept on the same invoice. This will lower transaction costs for organisations and tidy up billing processes.
+#### Subscription management
+Allows staff to modify a member benefits during the current membership period - upgrading, downgrading or adding add-ons as needed. These will all flow through as part of the same billing order as the previous membership - i.e. as part of the same recurring contribution and hence will all be kept on the same invoice. This will lower transaction costs for organisations and tidy up billing processes.
 
 #### Offline auto-renewal
 CiviCRM has support for many payment processors, including several Direct Debit payment processors. With these “online” payment processors, when the membership comes to renew, the logic is actually managed by the payment processor in order to renew the membership and take next years payment. CiviCRM doesn’t however have any functionality for memberships where the payment is “offline” i.e. some Direct Debit processes or where you invoice clients in advance of receiving the payment. With Membership extras CiviCRM now fully supports offline automated renewal including sending email notifications with invoices for payment. We also have created a new offline batch direct debit export module which allows for full management of high volume direct debits through export processes.
 
-## How do I get Membership Extras?
-This version of the extension is designed and tested with a patched version of CiviCRM v5.28.3 and may have unforeseen issues with newer versions of CiviCRM and hence we would recommend only using it with that version of CiviCRM. Compucorp normally undertakes to update these extensions shortly after a new CiviCRM security release.
+## Supported versions of CiviCRM
+This extension is designed and tested with a specific (and patched) version of CiviCRM and may have unforeseen issues if used with different (including later) versions.
 
-You can find this compatible CiviCRM version here: [CiviCRM v5.28.3](https://github.com/compucorp/civicrm-core/releases/download/5.28.3%2Bpatch.8d3481/civicrm-5.28.3+patch.8d3481.tar.)
+In the extension info.xml file, see the “comments” field where we specify the currently supported version of CiviCRM and have a download link to the correct version.
 
-If your CiviCRM is already on the patched version of 5.28.3 plus and this is the first time you use an extension,  please see [Here](http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions "CiviCRM Extensions Installation") for full instructions and information on how to set and configure extensions.
+Compuco normally undertakes to update the compatible version shortly after a new CiviCRM security release.
 
-### What Exactly is Being Patched?
-Currently, we are maintaining two patches, required for Membership Extras extension to work. The first one will prevent a membership to be cancelled if one of the installments of a payment plan gets cancelled. The second one fixes a known bug in CiviCRM where a failed validation on the form to create a membership (eg. if you failed to fill in a required field), will cause taxes to be recalculated and added again to the membership fee.
-
-#### Patch #1: Prevent Cancelled Installments From Cancelling Membership
-TL;DR: We've added a way to intercept a membership update before it is stored in the database, to prevent the membership from being cancelled when a single installment in the payment plan is cancelled.
-
-The technical overview of this is we've proposed to CiviCRM core team a new hook that runs before saving information to a table that is associated to an entity DAO. Currently, there is already a `hook_civicrm_postSave_table_name` hook that is run *after* a write operation is done on a table associated to a DAO. But on many cases it is useful to have a hook that runs before the write operation. This hook takes the form `hook_civicrm_preSave_table_name`, and we use it precisely to prevent cancelling the membership when a single installment in the payment plan is cancelled by checking the status of the plan and other installments *before* actually updating the membership.
-
-The change is being discussed on [this lab ticket](https://lab.civicrm.org/dev/core/issues/161), if you'd like to participate, and help push for the change to be accepted into core.
-
-The PR with the implementation for the feature can be checked [here](https://github.com/civicrm/civicrm-core/pull/12253).
-
-#### Patch #2: Prevent Taxes to be Recalculated and Added to Membership Fee Each Time a Validation Fails
-There is a known bug in CiviCRM, tracked [here](https://lab.civicrm.org/dev/core/issues/778), where when creating a membership and clicking save, if a validation fails (say for example if the user skipped a required field), taxes would be recalculated and added again to the membership's fee. So, for example, if a membership's price was $100 with a 10% tax, the full price would be calculated to $110 before saving the membership. After the first validation error, the price would be recalculated to $121, then to $133.10 on the second failed validation, and so on every time the validation failed.
-
-Our patch fixes this by making sure every time the validation fails, the membership's fee without tax is used to calculate taxes. This is a temporary fix, though, as CiviCRM core team has laid down new groundwork on which we can base a more permanent solution that can be part of CiviCRM core in the near future.
-
-The PR with the bug fix can be seen [here](https://github.com/civicrm/civicrm-core/pull/15895).
+If you are already on the mentioned version of CiviCRM and this is the first time you use this extension, please see [Here](https://docs.civicrm.org/sysadmin/en/latest/customize/extensions/ "CiviCRM Extensions Installation") for full instructions and information on how to set and configure extensions.
 
 ### If I am a user
 You can get the latest release of Membership Extras from [CiviCRM extension directory page](https://civicrm.org/extensions/membership-extras) or our [Github repository release page](https://github.com/compucorp/uk.co.compucorp.membershipextras/releases).
@@ -60,6 +43,8 @@ You can get the bleeding edge version of the extension by downloading [the repos
 Also, the repository of our webform companion Drupal module is [here](https://github.com/compucorp/webform_civicrm_membership_extras).
 
 ## Do I need to configure Membership Extras?
+**Note: This extension disables the core extension "Contribution Cancel Action" by default, it does not function properly with it being installed**
+
 Membership Extras is a plug and play extension. Most of the generic functionality works out of the box.
 
 There are a few exceptions where we chose to not presumptively configure for you during the extension installation mainly due to those configurations vary largely from organisation to organisation.
@@ -110,6 +95,6 @@ However, if there are custom information on the contributions that should not be
 ## Support
 CiviCRM extension directory page: [https://civicrm.org/extensions/membership-extras](https://civicrm.org/extensions/membership-extras)
 
-Please contact the follow email if you have any question: <hello@compucorp.co.uk>
+Please contact the follow email if you have any question: <hello@compuco.io>
 
-Paid support for this extension is available, please contact us either via Github or at <hello@compucorp.co.uk>
+Paid support for this extension is available, please contact us either via Github or at <hello@compuco.io>
