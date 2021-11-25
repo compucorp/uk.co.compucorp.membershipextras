@@ -3,7 +3,7 @@
 use CRM_MembershipExtras_ExtensionUtil as E;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
 /**
  * Abstract class defining methods used to add a new line item to a recurring
@@ -21,7 +21,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
   /**
    * Parameters to be used to create the new line item.
    *
-   * @var
+   * @var array
    */
   protected $lineItemParams;
 
@@ -51,7 +51,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    */
   protected function getRecurringContribution($id) {
     return civicrm_api3('ContributionRecur', 'getsingle', [
-      'id' => $id
+      'id' => $id,
     ]);
   }
 
@@ -60,7 +60,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    */
   public function setDefaultValues() {
     return [
-      'first_installment_amount' => $this->getProratedFirstInstalmentAmount()
+      'first_installment_amount' => $this->getProratedFirstInstalmentAmount(),
     ];
   }
 
@@ -98,7 +98,8 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
       $this->updateRecurringContributionAmount();
       $this->addLineItemToPendingContributions($recurringLineItem);
       $this->showOnSuccessNotifications();
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       $tx->rollback();
       $this->showErrorNotification($e);
     }
@@ -124,8 +125,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    */
   private function calculateRecurringContributionTotalAmount() {
     $totalAmount = 0;
-
-    $result = civicrm_api3('ContributionRecurLineItem', 'get', [
+    $conditions = [
       'sequential' => 1,
       'contribution_recur_id' => $this->recurringContribution['id'],
       'start_date' => ['IS NOT NULL' => 1],
@@ -135,7 +135,14 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
         'entity_table' => ['IS NOT NULL' => 1],
         'entity_id' => ['IS NOT NULL' => 1],
       ],
-    ]);
+    ];
+
+    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 0);
+    if ($installments <= 1) {
+      $conditions['end_date'] = ['IS NULL' => 1];
+    }
+
+    $result = civicrm_api3('ContributionRecurLineItem', 'get', $conditions);
 
     if ($result['count'] > 0) {
       foreach ($result['values'] as $lineItemData) {
@@ -237,7 +244,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
     if ($daysUntilNextCycle) {
       $membershipTypeDurationInDays = $membershipDurationCalculator->calculateOriginalInDays();
       $membershipTypeAmount = $membershipType->minimum_fee;
-      $proratedAmount = ($membershipTypeAmount/$membershipTypeDurationInDays) * $daysUntilNextCycle;
+      $proratedAmount = ($membershipTypeAmount / $membershipTypeDurationInDays) * $daysUntilNextCycle;
       $proratedAmount = MoneyUtilities::roundToPrecision($proratedAmount, 2);
     }
 
@@ -250,7 +257,7 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
    * @return int|null
    */
   protected function getDaysRemainingUntilNextCycleDate() {
-    $receiveDateCalculator = new InstallmentReceiveDateCalculator($this->recurringContribution);
+    $receiveDateCalculator = new InstalmentReceiveDateCalculator($this->recurringContribution);
     $installmentsCount = (int) $this->recurringContribution['installments'];
     $todaysDate = new DateTime('today');
 
@@ -266,7 +273,6 @@ abstract class CRM_MembershipExtras_Form_RecurringContribution_AddLineItem exten
 
     return NULL;
   }
-
 
   /**
    * Returns an array with the information of pending recurring contributions

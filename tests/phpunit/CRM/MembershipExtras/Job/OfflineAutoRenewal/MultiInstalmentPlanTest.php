@@ -132,7 +132,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
     $multipleInstalmentRenewal->run();
 
-    $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '+1 year +1 day'));
+    $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '-1 month -1 day'));
   }
 
   public function testRenewalWithNonOfflinePaymentProcessorPaymentPlanWillNotRenew() {
@@ -373,7 +373,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $this->assertEquals(2, $copyLineItemsCount);
   }
 
-  public function testRenewingMembershipWithEndDateLessThanTodayDateWillCreateCorrectSubscriptionLineItems() {
+  public function testRenewalWillCreateCorrectSubscriptionLineItems() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
@@ -778,6 +778,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
   public function testRenewalWithNonRenewableLineOnCurrentPeriodAndNewMembershipForNextPeriod() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 years'));
+    $paymentPlanMembershipOrder->nextContributionDate = date('Y-m-d', strtotime('-1 years'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
@@ -807,12 +808,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
     $this->assertPaymentPlanStructureIsOk($nextPeriodID, [
       'total_amount' => 1200,
-      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->nextContributionDate)),
       'line_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
       'line_item_count' => 1,
       'membership_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
       'membership_end_date_offset' => ' +1 year -1 day',
-      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->nextContributionDate)),
       'installments' => 12,
     ]);
   }
@@ -867,6 +868,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 years'));
+    $paymentPlanMembershipOrder->nextContributionDate = date('Y-m-d', strtotime('-1 years'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems = [
@@ -913,12 +915,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
 
     $this->assertPaymentPlanStructureIsOk($nextPeriodID, [
       'total_amount' => 240,
-      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months')),
+      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->nextContributionDate)),
       'line_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months')),
       'line_item_count' => 1,
       'membership_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months')),
       'membership_end_date_offset' => ' +1 year -1 day',
-      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +18 months')),
+      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->nextContributionDate)),
       'installments' => 12,
     ]);
   }
@@ -948,6 +950,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 years'));
+    $paymentPlanMembershipOrder->nextContributionDate = date('Y-m-d', strtotime('-1 years'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems = [
@@ -1007,14 +1010,53 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
 
     $this->assertPaymentPlanStructureIsOk($nextPeriodID, [
       'total_amount' => 360,
-      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'plan_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->nextContributionDate)),
       'line_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
       'line_item_count' => 2,
       'membership_start_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
       'membership_end_date_offset' => ' +1 year -1 day',
-      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +12 months')),
+      'first_receive_date' => date('Y-m-d', strtotime($paymentPlanMembershipOrder->nextContributionDate)),
       'installments' => 12,
     ]);
+  }
+
+  public function testRenewalWillUpdateNextScheduledContributionAmountToOneMonthAfterLastContributionDate() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+
+    $lastContributionReceiveDate = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['receive_date'],
+      'contribution_recur_id' => $nextPeriodID,
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ])['values'][0]['receive_date'];
+    $expectedNextDate = date('Y-m-d 00:00:00', strtotime('+1 month', strtotime($lastContributionReceiveDate)));
+
+    $nextDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'next_sched_contribution_date',
+      'id' => $nextPeriodID,
+    ]);
+
+    $this->assertEquals($expectedNextDate, $nextDate);
   }
 
   public function testRenewalWillNotCopyContributionFeeAmountFromPreviousTerm() {

@@ -29,6 +29,8 @@ class CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder {
 
   public $paymentPlanStartDate;
 
+  public $nextContributionDate;
+
   public $financialType;
 
   public $paymentPlanFrequency;
@@ -38,5 +40,7 @@ class CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder {
   public $paymentPlanStatus;
 
   public $paymentProcessor;
+
+  public $autoRenew;
 
 }

@@ -183,19 +183,20 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   static $isFirstPaymentPlanContribution = TRUE;
-  $isPaymentPlanPayment = _membershipextras_isPaymentPlanWithAtLeastOneInstallment();
+  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanPayment();
   $isContributionCreation = ($objectName === 'Contribution' && $op === 'create');
   if ($isContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
-    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanProcessor->createPaymentPlan();
+    $paymentPlanProcessor->setContributionToPayLater();
     $isFirstPaymentPlanContribution = FALSE;
   }
 
   static $firstPaymentPlanContributionId;
-  $firstPaymentPlanContributionLineItemCreation = ($objectName === 'LineItem' && $op === 'create' && !empty($params['contribution_id'])
-                                                  && (empty($firstPaymentPlanContributionId) || $firstPaymentPlanContributionId == $params['contribution_id']));
+  $lineItemContributionCreation = $objectName === 'LineItem' && $op === 'create' && !empty($params['contribution_id']);
+  $firstPaymentPlanContributionLineItemCreation = ($lineItemContributionCreation && (empty($firstPaymentPlanContributionId) || $firstPaymentPlanContributionId == $params['contribution_id']));
   if ($firstPaymentPlanContributionLineItemCreation && $isPaymentPlanPayment) {
-    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor($params);
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem($params);
     $paymentPlanProcessor->alterLineItemParameters();
     $firstPaymentPlanContributionId = $params['contribution_id'];
   }
@@ -209,24 +210,6 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $contributionPreHook = new CRM_MembershipExtras_Hook_Pre_Contribution($op, $id, $params);
     $contributionPreHook->preProcess();
   }
-}
-
-/**
- * Determines if the membership is paid using payment plan option having at
- * least one instalment.
- *
- * @return bool
- */
-function _membershipextras_isPaymentPlanWithAtLeastOneInstallment() {
-  $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
-  $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
-  $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
-
-  if ($isSavingContribution && $contributionIsPaymentPlan && $installmentsCount > 0) {
-    return TRUE;
-  }
-
-  return FALSE;
 }
 
 /**
@@ -256,16 +239,23 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
   $isAddAction = $form->getAction() & CRM_Core_Action::ADD;
   $isRenewAction = $form->getAction() & CRM_Core_Action::RENEW;
 
-  if (
-    ($formName === 'CRM_Member_Form_Membership' && $isAddAction)
-    ||
-    ($formName === 'CRM_Member_Form_MembershipRenewal' && $isRenewAction)
-  ) {
-    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor($form);
+  if (($formName === 'CRM_Member_Form_Membership' && $isAddAction) || ($formName === 'CRM_Member_Form_MembershipRenewal' && $isRenewAction)) {
+
+    $contributionIsPaymentPlan =
+      CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
+
+    if (!$contributionIsPaymentPlan) {
+      return;
+    }
+
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor($formName, $form);
     $paymentPlanProcessor->postProcess();
 
-    $offlineAutoRenewProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
-    $offlineAutoRenewProcessor->postProcess();
+    if ($formName == 'CRM_Member_Form_Membership') {
+      $offlineAutoRenewProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessor($form);
+      $offlineAutoRenewProcessor->postProcess();
+    }
+
   }
 
   if ($formName === 'CRM_Contribute_Form_UpdateSubscription') {
@@ -276,6 +266,9 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
   if ($formName === 'CRM_Member_Form_MembershipType') {
     $membershipTypeHook = new CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour($form);
     $membershipTypeHook->process();
+
+    $membershipTypeProRataCalculationHook = new CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSetting($form);
+    $membershipTypeProRataCalculationHook->process();
   }
 }
 
@@ -284,22 +277,17 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
  */
 function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::UPDATE)) {
-    $offlineAutoRenew = new CRM_MembershipExtras_Hook_BuildForm_MembershipEdit($form);
-    $offlineAutoRenew->buildForm();
+    $membershipEdit = new CRM_MembershipExtras_Hook_BuildForm_MembershipEdit($form);
+    $membershipEdit->buildForm();
   }
 
   if (
     ($formName === 'CRM_Member_Form_Membership' && ($form->getAction() & CRM_Core_Action::ADD))
     || ($formName === 'CRM_Member_Form_MembershipRenewal' && ($form->getAction() & CRM_Core_Action::RENEW))
   ) {
-    $offlineAutoRenew = new CRM_MembershipExtras_Hook_BuildForm_MembershipOfflineAutoRenew($form);
-    $offlineAutoRenew->buildForm();
-
     $membershipHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlan($form);
     $membershipHook->buildForm();
 
-    $membershipAmountHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipAmountProRata($form);
-    $membershipAmountHook->buildForm();
   }
 
   if ($formName === 'CRM_Member_Form_MembershipStatus') {
@@ -313,13 +301,16 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   }
 
   if ($formName === 'CRM_Member_Form_MembershipType') {
-    $membershipTypeHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipTypeColour($form);
-    $membershipTypeHook->buildForm();
+    $membershipTypeColourHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipType_Colour($form);
+    $membershipTypeColourHook->buildForm();
+
+    $membershipSettingsHook = new CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting($form);
+    $membershipSettingsHook->buildForm();
   }
 
   if ($formName === 'CRM_Contribute_Form_Contribution') {
-    $membershipTypeHook = new CRM_MembershipExtras_Hook_BuildForm_ContributionEdit();
-    $membershipTypeHook->buildForm();
+    $contributionEditHook = new CRM_MembershipExtras_Hook_BuildForm_ContributionEdit();
+    $contributionEditHook->buildForm();
   }
 
   if ($formName == 'CRM_Contribute_Form_AdditionalPayment') {
@@ -337,7 +328,9 @@ function membershipextras_civicrm_pageRun($page) {
     new CRM_MembershipExtras_Hook_PageRun_MembershipTypePageColourUpdate(),
     new CRM_MembershipExtras_Hook_PageRun_MemberPageTabColourUpdate(),
     new CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate(),
+    new CRM_MembershipExtras_Hook_PageRun_MemberPageTab(),
   ];
+
   foreach ($hooks as $hook) {
     $hook->handle($page);
   }
@@ -361,26 +354,25 @@ function membershipextras_civicrm_pageRun($page) {
       'page-header'
     );
   }
+
+  _membershipextras_appendJSToModifyRecurringContributionPage($page);
 }
 
 /**
  * Implements hook_civicrm_validateForm().
  */
 function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if ($formName === 'CRM_Member_Form_MembershipType') {
+    $membershipType = new CRM_MembershipExtras_Hook_ValidateForm_MembershipType($fields, $errors);
+    $membershipType->validate();
+  }
+
   $formAction = $form->getAction();
   $isNewMembershipForm = ($formName === 'CRM_Member_Form_Membership' && ($formAction & CRM_Core_Action::ADD));
-  $isRenewMembershipForm = ($formName === 'CRM_Member_Form_MembershipRenewal' && ($formAction & CRM_Core_Action::RENEW));
-  if ($isNewMembershipForm || $isRenewMembershipForm) {
-    $contributionIsPaymentPlan = CRM_Utils_Request::retrieve('contribution_type_toggle', 'String') === 'payment_plan';
-
-    if ($contributionIsPaymentPlan) {
-      $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
-      $paymentPlanValidateHook->validate();
-    }
-    else {
-      $contributionValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipContribution($form, $fields, $errors);
-      $contributionValidateHook->validate();
-    }
+  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanPayment();
+  if ($isNewMembershipForm && $isPaymentPlanPayment) {
+    $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
+    $paymentPlanValidateHook->validate();
   }
 
   $isMembershipUpdateForm = $formName === 'CRM_Member_Form_Membership' && ($formAction & CRM_Core_Action::UPDATE);
@@ -444,7 +436,7 @@ function membershipextras_civicrm_preProcess($formName, $form) {
 }
 
 /**
- * Implements alterMailParams hook.
+ * Implements alterMailParams hook().
  *
  * @param array $params
  * @param $context
@@ -465,4 +457,23 @@ function membershipextras_civicrm_permission(&$permissions) {
       E::ts('Perform all Membership Extras administration tasks in CiviCRM'),
     ],
   ];
+}
+
+function _membershipextras_appendJSToModifyRecurringContributionPage(&$page) {
+  if (!($page instanceof CRM_Contribute_Page_ContributionRecur)) {
+    return;
+  }
+
+  $contributionData = $page->get_template_vars('recur');
+  $frequency = CRM_Utils_Array::value('frequency_unit', $contributionData, '');
+
+  CRM_Core_Resources::singleton()->addScriptFile(
+    CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+    'js/modifyAnnualRecuringContributionPage.js',
+    1,
+    'page-header'
+  )->addVars(
+    CRM_MembershipExtras_ExtensionUtil::SHORT_NAME,
+    ['contribution_frequency' => $frequency]
+  );
 }

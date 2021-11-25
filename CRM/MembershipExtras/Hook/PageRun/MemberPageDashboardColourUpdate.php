@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_SettingsManager as MembershipTypeSettings;
 
-class CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate {
+class CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate implements CRM_MembershipExtras_Hook_PageRun_PageRunInterface {
 
   /**
    * Modifies the membership type background colour on the member dashboard page
@@ -31,7 +31,7 @@ class CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate {
   /**
    * Sets membership typ colour styles on member dashboard page.
    *
-   * @param CRM_Core_Page$page
+   * @param CRM_Core_Page $page
    */
   private function setMembershipTypeColourStyle($page) {
     $rows = $page->get_template_vars('rows');
@@ -63,4 +63,5 @@ class CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate {
     }
     CRM_Core_Resources::singleton()->addStyle($css);
   }
+
 }

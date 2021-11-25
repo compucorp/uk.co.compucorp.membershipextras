@@ -1,0 +1,9 @@
+{htxt id="membership_type_annual_pro_rata_calculation-title"}
+  {ts}Annual Pro-rata calculation{/ts}
+{/htxt}
+{htxt id="membership_type_annual_pro_rata_calculation"}
+<p>{ts}When a membership is billed annually, you can define how the first years fee is calculated.{/ts}</p>
+<p>{ts}The options are: {/ts}</p>
+<p>{ts}By days: The system will calculate how many days until the next renewal date and then will divide this by number of days in a standard year.{/ts}</p>
+<p>{ts}By months: The system will calculate how many complete months the membership will be active for before the next renewal date.{/ts}</p>
+{/htxt}

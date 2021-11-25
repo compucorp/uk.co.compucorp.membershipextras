@@ -5,7 +5,13 @@
  */
 class CRM_MembershipExtras_SettingsManager {
 
+  /**
+   * Constant variables for settings use in Membership Type
+   * The membership_extras_membership_type_settings key should be used
+   * for all adding settings required for Membership Type
+   */
   const COLOUR_SETTINGS_KEY = 'membership_type_colour';
+  const MEMBERSHIP_TYPE_SETTINGS_KEY = 'membership_extras_membership_type_settings';
 
   /**
    * Returns the details of the default payment processor as per payment plan
@@ -91,6 +97,21 @@ class CRM_MembershipExtras_SettingsManager {
     }
 
     return $updateStartDateRenewal;
+  }
+
+  public static function getMembershipTypeSettings(int $membershipTypeId) {
+    $settings = [];
+    $membershipTypeSettings = Civi::settings()->get(self::MEMBERSHIP_TYPE_SETTINGS_KEY);
+    if (!isset($membershipTypeSettings)) {
+      return $settings;
+    }
+    foreach ($membershipTypeSettings as $id => $settingFields) {
+      if ($id == $membershipTypeId) {
+        $settings = $settingFields;
+      }
+    }
+
+    return $settings;
   }
 
   /**

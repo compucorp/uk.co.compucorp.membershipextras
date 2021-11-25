@@ -1,6 +1,5 @@
 <?php
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
-use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 
 /**
  * Renews the payment plan and the related memberships if it paid by once and
@@ -16,11 +15,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    * Obtains list of payment plans with a single instalment that are ready to
    * be renewed. This means:
    *
-   * 1- Recurring contribution is a manual payment plan
-   * 2- Recurring contribution is set to auto-renew.
-   * 3- Recurring contribution has no end date.
-   * 4- Recurring contribution is not cancelled nor complete.
-   * 5- Recurring contribution has either:
+   * - Recurring contribution is a manual payment plan
+   * - Recurring contribution is set to auto-renew.
+   * - Recurring contribution has no end date.
+   * - Recurring contribution is active
+   * - Recurring contribution is not cancelled
+   * - Recurring contribution has either:
    *   - At least one auto-renew, un-removed line item for a membership with an
    *     end date before today + $daysToRenewInAdvance.
    *   - At least one auto-renew, un-removed line item and NO memberships, and
@@ -35,8 +35,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    */
   protected function getRecurringContributions() {
     $manualPaymentProcessorsIDs = implode(',', $this->manualPaymentProcessorIDs);
-    $cancelledStatusID = $this->contributionStatusesNameMap['Cancelled'];
-    $refundedStatusID = $this->contributionStatusesNameMap['Refunded'];
+    $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
@@ -79,19 +78,15 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
          AND ccr.end_date IS NULL
          AND (
-          ccr.installments < 2
+          ccr.installments <= 1
           OR ccr.installments IS NULL
          )
          AND ccr.auto_renew = 1
-         AND (
-          ccr.contribution_status_id != {$cancelledStatusID}
-          AND ccr.contribution_status_id != {$refundedStatusID}
-         )
+         AND ccr.contribution_status_id != {$cancelledStatusID}
          AND ppea.is_active = 1
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
          AND msl.end_date IS NULL
-
     GROUP BY ccr.id
       HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
       OR (
@@ -116,11 +111,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    */
   public function renew() {
     $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
-    $this->paymentPlanStartDate = $this->membershipsStartDate;
-
-    if (!$this->areAnyMembershipsFixed()) {
-      $this->paymentPlanStartDate = $this->calculateNoInstalmentsPaymentPlanStartDate();
-    }
+    $this->paymentPlanStartDate = $this->currentRecurringContribution['next_sched_contribution_date'];
 
     $this->endCurrentLineItemsAndCreateNewOnesForNextPeriod($this->currentRecurContributionID);
     $this->updateRecurringContributionAmount($this->currentRecurContributionID);
@@ -129,28 +120,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
-  }
 
-  /**
-   * Checks if any of the memberships in the plan are fixed.
-   *
-   * @return bool
-   */
-  private function areAnyMembershipsFixed() {
-    $currentPeriodLines = $this->getRecurringContributionLineItemsToBeRenewed($this->currentRecurContributionID);
-
-    foreach ($currentPeriodLines as $lineItem) {
-      if ($lineItem['entity_table'] != 'civicrm_membership') {
-        continue;
-      }
-
-      if ($lineItem['period_type'] === 'fixed') {
-        return TRUE;
-      }
-
-    }
-
-    return FALSE;
+    $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->newRecurringContributionID);
+    $nextContributionDateService->calculateAndUpdate();
   }
 
   /**
@@ -222,22 +194,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
       'id' => $lineID,
       'end_date' => $endDate->format('Y-m-d'),
     ]);
-  }
-
-  /**
-   * Calculates the new start date for the payment plan
-   * if its paid with no instalments.
-   * @return string
-   */
-  private function calculateNoInstalmentsPaymentPlanStartDate() {
-    $currentRecurContribution = civicrm_api3('ContributionRecur', 'get', [
-      'sequential' => 1,
-      'id' => $this->currentRecurContributionID,
-    ])['values'][0];
-    $instalmentReceiveDateCalculator = new InstalmentReceiveDateCalculator($currentRecurContribution);
-    $instalmentReceiveDateCalculator->setStartDate($this->membershipsStartDate);
-
-    return $instalmentReceiveDateCalculator->calculate();
   }
 
   /**
