@@ -2,7 +2,7 @@
 ## Do I need Membership Extras?
 If your organisation have memberships then the answer is almost certainly: **Yes!**
 
-Membership Extras is designed to overcome many challenges that prevent CiviCRM from being a great membership management system.
+Membership Extras is designed to overcome many challengses that prevent CiviCRM from being a great membership management system.
 
 #### Membership fee in Instalments
 Whilst CiviCRM allows you to have memberships that can have different durations (eg. monthly, annual, lifetime) CiviCRM doesn’t support actual payment by instalments. This is where an organisation will want to offer a membership that has a different duration to the payment duration. For example an annual membership that is paid in monthly or quarterly instalments. With Membership Extra’s you can!
