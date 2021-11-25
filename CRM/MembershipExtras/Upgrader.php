@@ -593,5 +593,5 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
     CRM_Core_DAO::executeQuery('DROP TABLE IF Exists recur_conts_to_update');
   }
-  
+
 }

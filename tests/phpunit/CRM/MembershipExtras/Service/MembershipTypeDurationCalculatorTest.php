@@ -80,9 +80,9 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
       'duration_unit' => 'year',
       'period_type' => 'fixed',
       'duration_interval' => 1,
-    //01 Oct
+      //01 Oct
       'fixed_period_start_day' => 1001,
-    // 30 Sep
+      // 30 Sep
       'fixed_period_rollover_day' => 930,
     ];
 
@@ -90,14 +90,10 @@ class CRM_MembershipExtras_Service_MembershipTypeDurationCalculatorTest extends 
     $membershipTypeDatesCalculator = new MembershipTypeDatesCalculator();
     $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, $membershipTypeDatesCalculator);
 
-    $startDate = new DateTime('today');
-    //end date is 30 Sep
-    $expectedEndDate = new DateTime(date('Y-09-30'));
-    $expectedDiff = $expectedEndDate->diff($startDate);
-    $expectedMonthInterval = $expectedDiff->format('%m') + 1;
+    $startDate = new DateTime('2021-06-25');
     $noOfMonth = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($startDate);
 
-    $this->assertEquals($expectedMonthInterval, $noOfMonth);
+    $this->assertEquals(4, $noOfMonth);
   }
 
   private function fabricateMembeshipType($params = []) {
