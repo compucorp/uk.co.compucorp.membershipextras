@@ -29,6 +29,11 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    */
   private $membershipTypeId;
 
+  /**
+   * @var int
+   */
+  private $recurContributionID;
+
   public function __construct($formName, &$form) {
     $this->formName = $formName;
     $this->form = &$form;
@@ -52,8 +57,8 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
       return;
     }
 
-    $recurContributionID = $this->getMembershipLastRecurContributionID();
-    $this->createRecurringSubscriptionLineItems($recurContributionID);
+    $this->setMembershipRecurContributionID();
+    $this->createRecurringSubscriptionLineItems();
 
     $membershipId = $this->form->_id;
     $paymentPlanActivationService = new CRM_MembershipExtras_Service_MembershipPaymentPlanActivation();
@@ -63,23 +68,24 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($paymentPlanSchedule, $this->form->_id);
     $instalmentsCount = $instalmentDetails['instalments_count'];
     if ($instalmentsCount == 1) {
+      $this->updateNextScheduledContributionDate();
       return;
     }
 
     $membershipTypeObj = CRM_Member_BAO_MembershipType::findById($this->membershipTypeId);
     $startDate = $this->getStartDate();
     $actualInstalmentCount = $this->getInstalmentsNumber($membershipTypeObj, $paymentPlanSchedule, $startDate);
-    $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($recurContributionID);
+    $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($this->recurContributionID);
     $instalmentsHandler->setInstalmentsCount($actualInstalmentCount);
     $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
+
+    $this->updateNextScheduledContributionDate();
   }
 
   /**
-   * Gets the membership last recurring contribution ID.
-   *
-   * @return mixed
+   * Sets the membership recurring contribution ID.
    */
-  private function getMembershipLastRecurContributionID() {
+  private function setMembershipRecurContributionID() {
     $membershipID = $this->form->_id;
 
     $recurContributionID = civicrm_api3('MembershipPayment', 'get', [
@@ -89,17 +95,15 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
       'options' => ['limit' => 1, 'sort' => 'contribution_id.contribution_recur_id DESC'],
     ])['values'][0]['contribution_id.contribution_recur_id'];
 
-    return $recurContributionID;
+    $this->recurContributionID = $recurContributionID;
   }
 
   /**
    * Creates recurring contribution's line items to set up current and next
    * periods.
-   *
-   * @param $recurContributionID
    */
-  private function createRecurringSubscriptionLineItems($recurContributionID) {
-    $lineItemCreator = new RecurringContributionLineItemCreator($recurContributionID);
+  private function createRecurringSubscriptionLineItems() {
+    $lineItemCreator = new RecurringContributionLineItemCreator($this->recurContributionID);
     $lineItemCreator->create();
   }
 
@@ -145,6 +149,11 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     }
 
     return $startDate;
+  }
+
+  private function updateNextScheduledContributionDate() {
+    $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->recurContributionID);
+    $nextContributionDateService->calculateAndUpdate();
   }
 
 }

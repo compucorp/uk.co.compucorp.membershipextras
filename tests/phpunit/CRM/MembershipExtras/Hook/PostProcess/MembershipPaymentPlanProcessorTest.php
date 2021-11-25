@@ -41,8 +41,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
   }
 
   public function testProcessFormWithRollingMembershipTypeAndMonthlySchedule() {
-    $this->createPaymentPlanMembershipOrder('rolling');
-    $this->simulateMembershipSignupForm('monthly', date('Y-m-d'));
+    $this->simulateMembershipSignupForm('monthly', 'rolling', date('Y-m-d'));
     $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
     $processor->postProcess();
 
@@ -52,8 +51,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
   }
 
   public function testProcessFormWithRollingMembershipTypeAndQuarterlySchedule() {
-    $this->createPaymentPlanMembershipOrder('rolling');
-    $this->simulateMembershipSignupForm('quarterly', date('Y-m-d'));
+    $this->simulateMembershipSignupForm('quarterly', 'rolling', date('Y-m-d'));
     $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
     $processor->postProcess();
 
@@ -63,8 +61,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
   }
 
   public function testProcessFormWithFixedPeriodTypeWithMonthlySchedule() {
-    $this->createPaymentPlanMembershipOrder('fixed');
-    $this->simulateMembershipSignupForm('monthly', date('Y-01-15'));
+    $this->simulateMembershipSignupForm('monthly', 'fixed', date('Y-01-15'));
     $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
     $processor->postProcess();
 
@@ -80,8 +77,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
    * Tests post process form for one instalment (annual schedule or one month duration unit)
    */
   public function testPostProcessFormForOneInstalment() {
-    $this->createPaymentPlanMembershipOrder('rolling');
-    $this->simulateMembershipSignupForm('annual', date('Y-m-d'));
+    $this->simulateMembershipSignupForm('annual', 'rolling', date('Y-m-d'));
     $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
     $processor->postProcess();
 
@@ -90,13 +86,127 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
     $this->assertEquals(1, $membershipPayments['count']);
   }
 
+  public function testMonthlyPaymentPlanNextContributionDateWillBePlusOneMonthFromLastContributionDate() {
+    $this->simulateMembershipSignupForm('monthly', 'rolling', date('2020-01-01'));
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
+    $processor->postProcess();
+
+    $recurContributionId = civicrm_api3('Membership', 'getvalue', [
+      'return' => 'contribution_recur_id',
+      'id' => $this->form->_id,
+    ]);
+
+    $lastContributionReceiveDate = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['receive_date'],
+      'contribution_recur_id' => $recurContributionId,
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ])['values'][0]['receive_date'];
+    $expectedNextDate = date('Y-m-d 00:00:00', strtotime('+1 month', strtotime($lastContributionReceiveDate)));
+
+    $nextDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'next_sched_contribution_date',
+      'id' => $recurContributionId,
+    ]);
+
+    $this->assertEquals($expectedNextDate, $nextDate);
+  }
+
+  public function testQuarterlyPaymentPlanNextContributionDateWillBePlusThreeMonthsFromLastContributionDate() {
+    $this->simulateMembershipSignupForm('quarterly', 'rolling', date('2020-01-01'));
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
+    $processor->postProcess();
+
+    $recurContributionId = civicrm_api3('Membership', 'getvalue', [
+      'return' => 'contribution_recur_id',
+      'id' => $this->form->_id,
+    ]);
+
+    $lastContributionReceiveDate = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['receive_date'],
+      'contribution_recur_id' => $recurContributionId,
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ])['values'][0]['receive_date'];
+    $expectedNextDate = date('Y-m-d 00:00:00', strtotime('+3 month', strtotime($lastContributionReceiveDate)));
+
+    $nextDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'next_sched_contribution_date',
+      'id' => $recurContributionId,
+    ]);
+
+    $this->assertEquals($expectedNextDate, $nextDate);
+  }
+
+  public function testYearlyPaymentPlanNextContributionDateWillBePlusOneYearFromLastContributionDate() {
+    $this->simulateMembershipSignupForm('annual', 'rolling', date('2020-01-01'));
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form);
+    $processor->postProcess();
+
+    $recurContributionId = civicrm_api3('Membership', 'getvalue', [
+      'return' => 'contribution_recur_id',
+      'id' => $this->form->_id,
+    ]);
+
+    $lastContributionReceiveDate = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['receive_date'],
+      'contribution_recur_id' => $recurContributionId,
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ])['values'][0]['receive_date'];
+    $expectedNextDate = date('Y-m-d 00:00:00', strtotime('+1 year', strtotime($lastContributionReceiveDate)));
+
+    $nextDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'next_sched_contribution_date',
+      'id' => $recurContributionId,
+    ]);
+
+    $this->assertEquals($expectedNextDate, $nextDate);
+  }
+
+  /**
+   * Sets Membership Form
+   */
+  private function setUpMembershipForm() {
+    $controller = new CRM_Core_Controller();
+    $this->form = new CRM_Member_Form_Membership();
+    $this->form->controller = $controller;
+  }
+
+  /**
+   * @param string $schedule
+   * @param string $periodType
+   * @param string $startDate
+   *
+   * @throws CiviCRM_API3_Exception
+   * @throws ReflectionException
+   */
+  private function simulateMembershipSignupForm($schedule, $periodType, $startDate) {
+    $this->createPaymentPlanMembershipOrder($schedule, $periodType, $startDate);
+
+    $this->setFormMembershipIDs();
+    $this->form->setVar('_submitValues', [
+      'record_contribution' => 1,
+      'membership_type_id' => [$this->membershipTypePriceFieldValue['id'], $this->membershipType['id']],
+      'financial_type_id' => $this->paymentPlanMembershipOrder->financialType,
+      'payment_instrument_id' => $this->paymentPlanMembershipOrder->paymentMethod,
+      'contribution_status_id' => $this->paymentPlanMembershipOrder->paymentPlanStatus,
+      'payment_plan_schedule' => $schedule,
+      'join_date' => date('Y-m-d'),
+      'start_date' => $startDate,
+    ]);
+    $this->form->buildForm();
+  }
+
   /**
    * Fabricates payment plan membership order
    *
-   * @param $periodType
+   * @param string $schedule
+   * @param string $periodType
+   * @param string $startDate
    * @throws CiviCRM_API3_Exception
    */
-  private function createPaymentPlanMembershipOrder($periodType) {
+  private function createPaymentPlanMembershipOrder($schedule, $periodType, $startDate) {
     $this->membershipType = CRM_MembershipExtras_Test_Fabricator_MembershipType::fabricate([
       'name' => 'Test Membership',
       'period_type' => $periodType,
@@ -118,6 +228,8 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
     $this->paymentPlanMembershipOrder = new CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder();
     $this->paymentPlanMembershipOrder->autoRenew = 0;
     $this->paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
+    $this->paymentPlanMembershipOrder->paymentPlanFrequency = $this->getPaymentPlanFrequency($schedule);
+    $this->paymentPlanMembershipOrder->paymentPlanStartDate = $startDate;
     $this->paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
       'price_field_id' => $this->membershipTypePriceFieldValue['price_field_id'],
@@ -131,39 +243,23 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
       'auto_renew' => 0,
     ];
 
-    $this->paymentPlan = PaymentPlanOrder::fabricate($this->paymentPlanMembershipOrder);
+    $this->paymentPlan = PaymentPlanOrder::fabricate($this->paymentPlanMembershipOrder, FALSE);
   }
 
-  /**
-   * Sets Membership Form
-   */
-  private function setUpMembershipForm() {
-    $controller = new CRM_Core_Controller();
-    $this->form = new CRM_Member_Form_Membership();
-    $this->form->controller = $controller;
-  }
+  private function getPaymentPlanFrequency($schedule) {
+    if ($schedule == 'monthly') {
+      return 'Monthly';
+    }
 
-  /**
-   *
-   * @param $schedule
-   * @param $startDate
-   *
-   * @throws CiviCRM_API3_Exception
-   * @throws ReflectionException
-   */
-  private function simulateMembershipSignupForm($schedule, $startDate) {
-    $this->setFormMembershipIDs();
-    $this->form->setVar('_submitValues', [
-      'record_contribution' => 1,
-      'membership_type_id' => [$this->membershipTypePriceFieldValue['id'], $this->membershipType['id']],
-      'financial_type_id' => $this->paymentPlanMembershipOrder->financialType,
-      'payment_instrument_id' => $this->paymentPlanMembershipOrder->paymentMethod,
-      'contribution_status_id' => $this->paymentPlanMembershipOrder->paymentPlanStatus,
-      'payment_plan_schedule' => $schedule,
-      'join_date' => date('Y-m-d'),
-      'start_date' => $startDate,
-    ]);
-    $this->form->buildForm();
+    if ($schedule == 'quarterly') {
+      return 'Quarterly';
+    }
+
+    if ($schedule == 'annual') {
+      return 'Yearly';
+    }
+
+    return 'Yearly';
   }
 
   /**

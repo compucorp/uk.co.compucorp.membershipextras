@@ -100,7 +100,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *
    * @var array
    */
-  protected $contributionStatusesNameMap;
+  protected $recurContributionStatusesNameMap;
 
   /**
    * Number of days in advance a membership shuld be renewed.
@@ -129,7 +129,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
     $this->setUseMembershipLatestPrice();
     $this->setContributionPendingStatusValue();
-    $this->setContributionStatusesNameMap();
+    $this->setRecurContributionStatusesNameMap();
     $this->setManualPaymentProcessorIDs();
     $this->setDaysToRenewInAdvance();
   }
@@ -175,24 +175,22 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   }
 
   /**
-   * Gets contribution Statuses Name to value Mapping
-   *
-   * @return array $contributionStatusesNameMap
+   * Sets recur contribution Statuses Name to Value mapping
    */
-  private function setContributionStatusesNameMap() {
-    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
+  private function setRecurContributionStatusesNameMap() {
+    $recurContributionStatuses = civicrm_api3('OptionValue', 'get', [
       'sequential' => 1,
       'return' => ['name', 'value'],
-      'option_group_id' => 'contribution_status',
+      'option_group_id' => 'contribution_recur_status',
       'options' => ['limit' => 0],
     ])['values'];
 
-    $contributionStatusesNameMap = [];
-    foreach ($contributionStatuses as $status) {
-      $contributionStatusesNameMap[$status['name']] = $status['value'];
+    $recurContributionStatusesNameMap = [];
+    foreach ($recurContributionStatuses as $status) {
+      $recurContributionStatusesNameMap[$status['name']] = $status['value'];
     }
 
-    $this->contributionStatusesNameMap = $contributionStatusesNameMap;
+    $this->recurContributionStatusesNameMap = $recurContributionStatusesNameMap;
   }
 
   /**
@@ -535,7 +533,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    */
   protected function renewPaymentPlanMemberships($sourceRecurringContribution) {
     $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($sourceRecurringContribution);
-    $existingMembershipID = NULL;
 
     foreach ($recurringLineItems as $lineItem) {
       $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];

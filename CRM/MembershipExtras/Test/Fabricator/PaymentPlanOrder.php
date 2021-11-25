@@ -17,17 +17,19 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * Fabricates payment plan order.
    *
    * @param CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder $paymentPlanMembershipOrder
+   * @param bool $createUpfrontContributions
    *
    * @return array
    */
-  public static function fabricate(PaymentPlanMembershipOrderEntity $paymentPlanMembershipOrder) {
+  public static function fabricate(PaymentPlanMembershipOrderEntity $paymentPlanMembershipOrder, $createUpfrontContributions = TRUE) {
     self::$paymentPlanMembershipOrder = $paymentPlanMembershipOrder;
     self::updatePaymentPlanMissingParams();
 
     $recurringContribution = self::createRecurringContribution();
+    self::updateNextContributionDate($recurringContribution['id']);
     $lineItems = self::createRecurringLineItems($recurringContribution);
     self::updateRecurringContributionAmount($recurringContribution);
-    self::createInstalments($recurringContribution, $lineItems);
+    self::createInstalments($recurringContribution, $lineItems, $createUpfrontContributions);
 
     return $recurringContribution;
   }
@@ -75,6 +77,10 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
 
     if (empty(self::$paymentPlanMembershipOrder->paymentPlanStartDate)) {
       self::$paymentPlanMembershipOrder->paymentPlanStartDate = self::$paymentPlanMembershipOrder->membershipStartDate;
+    }
+
+    if (empty(self::$paymentPlanMembershipOrder->nextContributionDate)) {
+      self::$paymentPlanMembershipOrder->nextContributionDate = self::$paymentPlanMembershipOrder->membershipStartDate;
     }
 
     return self::$paymentPlanMembershipOrder;
@@ -132,6 +138,14 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
     ];
 
     return RecurringContributionFabricator::fabricate($recurringContributionParams);
+  }
+
+  public static function updateNextContributionDate($recurringContributionId) {
+    $query = 'UPDATE civicrm_contribution_recur SET next_sched_contribution_date = %1 WHERE id = %2';
+    CRM_Core_DAO::executeQuery($query, [
+      1 => [self::$paymentPlanMembershipOrder->nextContributionDate, 'String'],
+      2 => [$recurringContributionId, 'Integer'],
+    ]);
   }
 
   /**
@@ -238,13 +252,17 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    *
    * @param array $recurringContribution
    * @param array $lineItems
+   * @param bool $createUpfrontContributions
    *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  private static function createInstalments($recurringContribution, $lineItems) {
+  private static function createInstalments($recurringContribution, $lineItems, $createUpfrontContributions) {
     self::createFirstInstalment($recurringContribution, $lineItems);
-    self::createRemainingInstalments($recurringContribution['id']);
+
+    if ($createUpfrontContributions) {
+      self::createRemainingInstalments($recurringContribution['id']);
+    }
   }
 
   /**
@@ -261,7 +279,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
       'skipCleanMoney' => TRUE,
-      'receive_date' => self::$paymentPlanMembershipOrder->paymentPlanStartDate,
+      'receive_date' => self::$paymentPlanMembershipOrder->nextContributionDate,
       'contribution_recur_id' => $recurringContribution['id'],
       'contact_id' => $recurringContribution['contact_id'],
       'fee_amount' => 0,

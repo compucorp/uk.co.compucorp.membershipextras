@@ -183,7 +183,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   static $isFirstPaymentPlanContribution = TRUE;
-  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanWithSchedule();
+  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanPayment();
   $isContributionCreation = ($objectName === 'Contribution' && $op === 'create');
   if ($isContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
@@ -368,6 +368,8 @@ function membershipextras_civicrm_pageRun($page) {
       'page-header'
     );
   }
+
+  _membershipextras_appendJSToModifyRecurringContributionPage($page);
 }
 
 /**
@@ -381,7 +383,7 @@ function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$f
 
   $formAction = $form->getAction();
   $isNewMembershipForm = ($formName === 'CRM_Member_Form_Membership' && ($formAction & CRM_Core_Action::ADD));
-  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanWithSchedule();
+  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanPayment();
   if ($isNewMembershipForm && $isPaymentPlanPayment) {
     $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
     $paymentPlanValidateHook->validate();
@@ -456,4 +458,23 @@ function membershipextras_civicrm_preProcess($formName, $form) {
 function membershipextras_civicrm_alterMailParams(&$params, $context) {
   $alterMailParamsHook = new CRM_MembershipExtras_Hook_Alter_MailParamsHandler($params);
   $alterMailParamsHook->handle();
+}
+
+function _membershipextras_appendJSToModifyRecurringContributionPage(&$page) {
+  if (!($page instanceof CRM_Contribute_Page_ContributionRecur)) {
+    return;
+  }
+
+  $contributionData = $page->get_template_vars('recur');
+  $frequency = CRM_Utils_Array::value('frequency_unit', $contributionData, '');
+
+  CRM_Core_Resources::singleton()->addScriptFile(
+    CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+    'js/modifyAnnualRecuringContributionPage.js',
+    1,
+    'page-header'
+  )->addVars(
+    CRM_MembershipExtras_ExtensionUtil::SHORT_NAME,
+    ['contribution_frequency' => $frequency]
+  );
 }
