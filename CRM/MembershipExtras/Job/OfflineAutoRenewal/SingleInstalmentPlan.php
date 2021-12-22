@@ -121,7 +121,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
 
-    $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->newRecurringContributionID);
+    $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->newRecurringContributionID, 'renewal');
     $nextContributionDateService->calculateAndUpdate();
   }
 
