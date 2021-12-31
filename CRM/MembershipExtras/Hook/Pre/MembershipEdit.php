@@ -298,14 +298,14 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
 
   /**
    *
-   * Extends the membership at renewal if the selected
-   * payment status is pending.
+   * Extends the payment plan membership
+   * for manual renewal.
    *
-   * When renewing a membership through civicrm and selecting
-   * the payment status as pending, then the membership will not
-   * get extended unless you marked the first payment as complete,
-   * So this method make sure it get extended without the need to
-   * complete the first payment.
+   * When renewing a payment plan membership manually
+   * through civicrm, the membership will not
+   * get extended unless you pay payment the first installment,
+   * So this method make sure it gets extended without the need to
+   * pay the first installment.
    */
   public function extendPendingPaymentPlanMembershipOnRenewal() {
     $pendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [
