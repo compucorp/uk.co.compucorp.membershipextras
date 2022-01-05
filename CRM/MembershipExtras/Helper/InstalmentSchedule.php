@@ -2,7 +2,7 @@
 
 use CRM_MembershipExtras_Service_MembershipInstalmentsSchedule as InstalmentsSchedule;
 
-class CRM_MembershipExtras_Utils_InstalmentSchedule {
+class CRM_MembershipExtras_Helper_InstalmentSchedule {
 
   /**
    * Gets Instalment Details by given $schedule and membership ID

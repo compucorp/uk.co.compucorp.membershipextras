@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
+use CRM_MembershipExtras_Helper_InstalmentSchedule as InstalmentScheduleHelper;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as InstalmentAmountCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
@@ -79,7 +79,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
    */
   protected function assignInstalmentDetails() {
     $this->paymentPlanSchedule = CRM_Utils_Request::retrieve('payment_plan_schedule', 'String');
-    $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($this->paymentPlanSchedule, self::$membership_id);
+    $instalmentDetails = InstalmentScheduleHelper::getInstalmentDetails($this->paymentPlanSchedule, self::$membership_id);
     $this->instalmentsCount = $instalmentDetails['instalments_count'];
     $this->instalmentsFrequency = $instalmentDetails['instalments_frequency'];
     $this->instalmentsFrequencyUnit = $instalmentDetails['instalments_frequency_unit'];

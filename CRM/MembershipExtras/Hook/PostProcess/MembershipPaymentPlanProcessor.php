@@ -1,7 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_RecurringContributionLineItemCreator as RecurringContributionLineItemCreator;
-use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
+use CRM_MembershipExtras_Helper_InstalmentSchedule as InstalmentScheduleHelper;
 
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
 
@@ -71,7 +71,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $paymentPlanActivationService->activateMembershipCurrentPaymentPlan($membershipId);
 
     $paymentPlanSchedule = $this->formSubmittedValues['payment_plan_schedule'];
-    $instalmentDetails = InstalmentScheduleUtils::getInstalmentDetails($paymentPlanSchedule, $this->form->_id);
+    $instalmentDetails = InstalmentScheduleHelper::getInstalmentDetails($paymentPlanSchedule, $this->form->_id);
     $instalmentsCount = $instalmentDetails['instalments_count'];
     if ($instalmentsCount == 1) {
       $this->updateNextScheduledContributionDate();
