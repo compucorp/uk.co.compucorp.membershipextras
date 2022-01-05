@@ -1,7 +1,5 @@
 <?php
 
-use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
-
 /**
  * 'Offline Recurring Contribution' payment processor.
  */
@@ -58,11 +56,9 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
     civicrm_api3('PaymentProcessor', 'create', $params);
   }
 
-
   private function getLiveVersion() {
     return $this->getPaymentProcessor(0);
   }
-
 
   private function getTestVersion() {
     return $this->getPaymentProcessor(1);
@@ -87,7 +83,7 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
       'domain_id' => CRM_Core_Config::domainID(),
       'sequential' => 1,
       'name' => self::NAME,
-      'payment_processor_type_id' => ManualRecurringPaymentProcessorType::NAME,
+      'payment_processor_type_id' => 'Manual_Recurring_Payment',
       'is_active' => '1',
       'is_default' => '0',
       'class_name' => 'Payment_Manual',
@@ -103,7 +99,7 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
       'is_test' => 0,
     ]);
 
-    civicrm_api3('setting', 'create',[
+    civicrm_api3('setting', 'create', [
       'membershipextras_paymentplan_default_processor' => $paymentProcessorId,
     ]);
   }
@@ -112,7 +108,7 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
    * Removes the payment processor.
    */
   public function remove() {
-    foreach([0, 1] as $isTest) {
+    foreach ([0, 1] as $isTest) {
       civicrm_api3('PaymentProcessor', 'get', [
         'name' => self::NAME,
         'is_test' => $isTest,
@@ -135,7 +131,8 @@ class CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution {
         'return' => 'id',
         'name' => self::NAME,
       ]);
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       return;
     }
 

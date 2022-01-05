@@ -1,7 +1,6 @@
 <?php
 
 use CRM_MembershipExtras_ExtensionUtil as E;
-use CRM_MembershipExtras_PaymentProcessorType_ManualRecurringPayment as ManualRecurringPaymentProcessorType;
 use CRM_MembershipExtras_PaymentProcessor_OfflineRecurringContribution as OfflineRecurringPaymentProcessor;
 
 /**
@@ -44,8 +43,28 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   private function createPaymentProcessorType() {
-    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
-    $paymentProcessorType->create();
+    $processorType = civicrm_api3('PaymentProcessorType', 'get', [
+      'name' => 'Manual_Recurring_Payment',
+      'sequential' => 1,
+    ]);
+    if (!empty($processorType['id'])) {
+      return;
+    }
+
+    civicrm_api3('PaymentProcessorType', 'create', [
+      'sequential' => 1,
+      'name' => 'Manual_Recurring_Payment',
+      'title' => 'Manual Recurring Payment',
+      'is_active' => '1',
+      'is_default' => '0',
+      'class_name' => 'Payment_Manual',
+      // This parameter is required for now but it's deprecated, so its value does not matter
+      'billing_mode' => CRM_Core_Payment::BILLING_MODE_NOTIFY,
+      'is_recur' => '1',
+      'payment_type' => CRM_Core_Payment::PAYMENT_TYPE_DIRECT_DEBIT,
+      'payment_instrument_id' => 'EFT',
+      'user_name_label' => 'User Name',
+    ]);
   }
 
   private function createPaymentProcessor() {
@@ -113,9 +132,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
     $paymentProcessor->toggle(TRUE);
 
-    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
-    $paymentProcessorType->toggle(TRUE);
-
+    $this->toggleManualRecurringPaymentProcessorType(TRUE);
     $this->toggleOfflineAutoRenewalScheduledJob(TRUE);
     $this->toggleFutureMembershipStatusRules(TRUE);
   }
@@ -124,11 +141,24 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
     $paymentProcessor->toggle(FALSE);
 
-    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
-    $paymentProcessorType->toggle(FALSE);
-
+    $this->toggleManualRecurringPaymentProcessorType(FALSE);
     $this->toggleOfflineAutoRenewalScheduledJob(FALSE);
     $this->toggleFutureMembershipStatusRules(FALSE);
+  }
+
+  /**
+   * Enables/Disables the manual payment
+   * processor type based on the passed
+   * status.
+   *
+   * @param $newStatus
+   *   True to enable, False to disable.
+   */
+  private function toggleManualRecurringPaymentProcessorType($newStatus) {
+    civicrm_api3('PaymentProcessorType', 'get', [
+      'name' => 'Manual_Recurring_Payment',
+      'api.PaymentProcessorType.create' => ['id' => '$value.id', 'is_active' => $newStatus],
+    ]);
   }
 
   /**
@@ -160,14 +190,22 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $paymentProcessor = new OfflineRecurringPaymentProcessor();
     $paymentProcessor->remove();
 
-    $paymentProcessorType = new ManualRecurringPaymentProcessorType();
-    $paymentProcessorType->remove();
-
+    $this->removeManualRecurringPaymentProcessorType();
     $this->removeOfflineAutoRenewalScheduledJob();
     $this->removeCustomExternalIDs();
     $this->removePaymentPlanExtraAttributesCustomGroupAndFields();
     $this->removeManageInstallmentActivityTypes();
     $this->removeFutureMembershipStatusRules();
+  }
+
+  /**
+   * Removes the manual payment processor type.
+   */
+  public function removeManualRecurringPaymentProcessorType() {
+    civicrm_api3('PaymentProcessorType', 'get', [
+      'name' => 'Manual_Recurring_Payment',
+      'api.PaymentProcessorType.delete' => ['id' => '$value.id'],
+    ]);
   }
 
   /**
