@@ -243,7 +243,8 @@ function membershipextras_civicrm_postProcess($formName, &$form) {
       return;
     }
 
-    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor($formName, $form);
+    $operation = $isAddAction ? 'creation' : 'renewal';
+    $paymentPlanProcessor = new CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor($formName, $form, $operation);
     $paymentPlanProcessor->postProcess();
 
     if ($formName == 'CRM_Member_Form_Membership') {

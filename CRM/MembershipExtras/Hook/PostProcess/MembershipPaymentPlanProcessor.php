@@ -30,15 +30,21 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
   private $membershipTypeId;
 
   /**
+   * @var string
+   */
+  private $operation;
+
+  /**
    * @var int
    */
   private $recurContributionID;
 
-  public function __construct($formName, &$form) {
+  public function __construct($formName, &$form, $operation) {
     $this->formName = $formName;
     $this->form = &$form;
     $this->formSubmittedValues = $this->form->exportValues();
     $this->membershipTypeId = $this->getMembershipTypeId();
+    $this->operation = $operation;
   }
 
   /**
@@ -152,7 +158,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
   }
 
   private function updateNextScheduledContributionDate() {
-    $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->recurContributionID);
+    $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->recurContributionID, $this->operation);
     $nextContributionDateService->calculateAndUpdate();
   }
 
