@@ -171,11 +171,6 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
     $contributionID = $id;
   }
 
-  if ($objectName === 'Membership' && $op == 'create') {
-    $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipCreate($params);
-    $membershipPreHook->preProcess();
-  }
-
   if ($objectName === 'Membership' && $op == 'edit') {
     $paymentType = Civi::$statics[E::LONG_NAME]['paymentType'] ?? '';
     $membershipPreHook = new CRM_MembershipExtras_Hook_Pre_MembershipEdit($id, $params, $contributionID, $paymentType);
