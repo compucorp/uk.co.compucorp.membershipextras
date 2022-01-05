@@ -178,7 +178,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   }
 
   static $isFirstPaymentPlanContribution = TRUE;
-  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanPayment();
+  $isPaymentPlanPayment = CRM_MembershipExtras_Helper_InstalmentSchedule::isPaymentPlanPayment();
   $isContributionCreation = ($objectName === 'Contribution' && $op === 'create');
   if ($isContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
@@ -365,7 +365,7 @@ function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$f
 
   $formAction = $form->getAction();
   $isNewMembershipForm = ($formName === 'CRM_Member_Form_Membership' && ($formAction & CRM_Core_Action::ADD));
-  $isPaymentPlanPayment = CRM_MembershipExtras_Utils_InstalmentSchedule::isPaymentPlanPayment();
+  $isPaymentPlanPayment = CRM_MembershipExtras_Helper_InstalmentSchedule::isPaymentPlanPayment();
   if ($isNewMembershipForm && $isPaymentPlanPayment) {
     $paymentPlanValidateHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($form, $fields, $errors);
     $paymentPlanValidateHook->validate();

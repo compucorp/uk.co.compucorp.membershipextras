@@ -5,7 +5,7 @@ use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as Instalm
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
 use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
-use CRM_MembershipExtras_Utils_InstalmentSchedule as InstalmentScheduleUtils;
+use CRM_MembershipExtras_Helper_InstalmentSchedule as InstalmentScheduleHelper;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule
@@ -116,8 +116,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
     }
 
     $firstInstalmentDate = $this->startDate->format('Y-m-d');
-    $instalmentFrequencyInterval = InstalmentScheduleUtils::getFrequencyInterval($this->schedule);
-    $instalmentFrequencyUnit = InstalmentScheduleUtils::getFrequencyUnit($this->schedule, $instalmentFrequencyInterval);
+    $instalmentFrequencyInterval = InstalmentScheduleHelper::getFrequencyInterval($this->schedule);
+    $instalmentFrequencyUnit = InstalmentScheduleHelper::getFrequencyUnit($this->schedule, $instalmentFrequencyInterval);
 
     $params = [
       'membership_id' => NULL,
