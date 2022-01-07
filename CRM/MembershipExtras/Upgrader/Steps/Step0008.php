@@ -1,6 +1,6 @@
 <?php
 
-class CRM_MyExtension_Upgrader_Steps_Step0008 {
+class CRM_MembershipExtras_Upgrader_Steps_Step0008 {
 
   public function apply() {
     $this->migratePaymentPlansToSupportNextContributionDateAutorenewal();

@@ -102,7 +102,7 @@ class CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules extends Abst
 
     // this ensures that the membership status rule will be on bottom and has
     // the lowest priority during status calculation.
-    $maxStatusWeight = civicrm_api3('MembershipStatus', 'getvalue', [
+    $maxStatusWeight = (int) civicrm_api3('MembershipStatus', 'getvalue', [
       'return' => 'weight',
       'options' => ['sort' => 'weight DESC', 'limit' => 1],
     ]);
@@ -121,7 +121,7 @@ class CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules extends Abst
       'end_event' => 'start_date',
       'is_current_member' => 0,
       'is_active' => 1,
-      'weight' => $maxStatusWeight + 1,
+      'weight' => ($maxStatusWeight + 1),
     ]);
   }
 
