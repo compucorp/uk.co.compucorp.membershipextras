@@ -36,6 +36,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
       new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
       new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_OfflineAutorenewOption(),
     ];
     foreach ($steps as $step) {
       $step->activate();
@@ -49,6 +51,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
       new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
       new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_OfflineAutorenewOption(),
     ];
     foreach ($steps as $step) {
       $step->deactivate();
@@ -62,6 +66,8 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
       new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
       new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_OfflineAutorenewOption(),
     ];
     foreach ($removalSteps as $step) {
       $step->remove();
