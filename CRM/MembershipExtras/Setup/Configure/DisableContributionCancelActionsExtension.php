@@ -12,7 +12,7 @@ class CRM_MembershipExtras_Setup_Configure_DisableContributionCancelActionsExten
 
   public function apply() {
     $extension = civicrm_api3('Extension', 'get', [
-      'keys' => "contributioncancelactions",
+      'full_name' => "contributioncancelactions",
     ]);
     if (!empty($extension['id'])) {
       civicrm_api3('Extension', 'disable', [
