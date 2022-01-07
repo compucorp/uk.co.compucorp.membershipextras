@@ -60,7 +60,7 @@ class CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor extends AbstractM
    */
   protected function toggle($status) {
     try {
-      $paymentProcessorRecords = civicrm_api3('PaymentProcessor', 'getvalue', [
+      $paymentProcessorRecords = civicrm_api3('PaymentProcessor', 'get  ', [
         'return' => 'id',
         'name' => 'Offline Recurring Contribution',
       ]);
