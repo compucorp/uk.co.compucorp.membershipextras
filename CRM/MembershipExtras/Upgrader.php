@@ -34,7 +34,6 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $steps = [
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType(),
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
-      new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
       new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
       new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
     ];
