@@ -24,8 +24,6 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     $configurationSteps = [
       new CRM_MembershipExtras_Setup_Configure_SetManualPaymentProcessorAsDefaultProcessor(),
       new CRM_MembershipExtras_Setup_Configure_DisableContributionCancelActionsExtension(),
-      new CRM_MembershipExtras_Setup_Configure_CreateLineItemExternalIDCustomField(),
-      new CRM_MembershipExtras_Setup_Configure_SetExternalIdFieldsToBeUnique(),
     ];
     foreach ($configurationSteps as $step) {
       $step->apply();
