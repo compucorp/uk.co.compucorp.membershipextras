@@ -1,725 +1,174 @@
 <?php
 
-use CRM_MembershipExtras_ExtensionUtil as E;
-
 /**
- * Collection of upgrade steps.
+ * Manages and configure entities during installation, uninstallation,
+ * enabling and disabling the extension. Also includes the code
+ * to run the upgrade steps defined in Upgrader/Steps/ directory.
  */
 class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
 
   public function postInstall() {
-    $this->createOfflineAutoRenewalScheduledJob();
-    $this->createManualPaymentProcessorType();
-    $this->createManualPaymentProcessor();
-    $this->setManualPaymentProcessorAsDefaultProcessor();
-    $this->createLineItemExternalIDCustomField();
-    $this->executeSqlFile('sql/set_unique_external_ids.sql');
-    $this->createManageInstallmentActivityTypes();
-    $this->createFutureMembershipStatusRules();
-    $this->disableContributionCancelActionsExtension();
-  }
-
-  /**
-   * Creates 'Renew offline auto-renewal memberships'
-   * Scheduled Job.
-   */
-  private function createOfflineAutoRenewalScheduledJob() {
-    $result = civicrm_api3('Job', 'get', [
-      'name' => 'Renew offline auto-renewal memberships',
-    ]);
-
-    if ($result['count'] > 0) {
-      return;
-    }
-
-    civicrm_api3('Job', 'create', [
-      'run_frequency' => 'Daily',
-      'name' => 'Renew offline auto-renewal memberships',
-      'description' => ts('Automatically renew any offline/paylater membership that is configured to be auto-renewed'),
-      'api_entity' => 'OfflineAutoRenewalJob',
-      'api_action' => 'run',
-      'is_active' => 0,
-    ]);
-  }
-
-  private function createManualPaymentProcessorType() {
-    $processorType = civicrm_api3('PaymentProcessorType', 'get', [
-      'name' => 'Manual_Recurring_Payment',
-      'sequential' => 1,
-    ]);
-    if (!empty($processorType['id'])) {
-      return;
-    }
-
-    civicrm_api3('PaymentProcessorType', 'create', [
-      'sequential' => 1,
-      'name' => 'Manual_Recurring_Payment',
-      'title' => 'Manual Recurring Payment',
-      'is_active' => '1',
-      'is_default' => '0',
-      'class_name' => 'Payment_Manual',
-      // This parameter is required for now but it's deprecated, so its value does not matter
-      'billing_mode' => CRM_Core_Payment::BILLING_MODE_NOTIFY,
-      'is_recur' => '1',
-      'payment_type' => CRM_Core_Payment::PAYMENT_TYPE_DIRECT_DEBIT,
-      'payment_instrument_id' => 'EFT',
-      'user_name_label' => 'User Name',
-    ]);
-  }
-
-  /**
-   * Creates 'Offline Recurring Contribution' payment processor if it does not
-   * exist.
-   *
-   */
-  private function createManualPaymentProcessor() {
-    $params = [
-      'is_test' => '0',
-      'user_name' => 'unused',
-      'url_site' => 'https://unused.org',
-      'url_recur' => 'https://unused.org',
-      'domain_id' => CRM_Core_Config::domainID(),
-      'sequential' => 1,
-      'name' => 'Offline Recurring Contribution',
-      'payment_processor_type_id' => 'Manual_Recurring_Payment',
-      'is_active' => '1',
-      'is_default' => '0',
-      'class_name' => 'Payment_Manual',
-      'is_recur' => '1',
-      'payment_instrument_id' => 'EFT',
+    // steps that create new entities.
+    $creationSteps = [
+      new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
+      new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType(),
+      new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
+      new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
+      new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
     ];
-
-    $paymentProcessor = $this->getManualPaymentProcessor(FALSE);
-    if (empty($paymentProcessor)) {
-      $params['is_test'] = 0;
-      civicrm_api3('PaymentProcessor', 'create', $params);
+    foreach ($creationSteps as $step) {
+      $step->create();
     }
 
-    $paymentProcessor = $this->getManualPaymentProcessor(TRUE);
-    if (empty($paymentProcessor)) {
-      $params['is_test'] = 1;
-      civicrm_api3('PaymentProcessor', 'create', $params);
-    }
-  }
-
-  private function getManualPaymentProcessor($isTestVersion) {
-    $processor = civicrm_api3('PaymentProcessor', 'get', [
-      'name' => 'Offline Recurring Contribution',
-      'sequential' => 1,
-      'is_test' => $isTestVersion,
-    ]);
-
-    if (empty($processor['id'])) {
-      return NULL;
-    }
-
-    return $processor['values'][0];
-  }
-
-  private function setManualPaymentProcessorAsDefaultProcessor() {
-    $paymentProcessorId = civicrm_api3('PaymentProcessor', 'getvalue', [
-      'return' => 'id',
-      'name' => 'Offline Recurring Contribution',
-      'is_test' => 0,
-    ]);
-
-    civicrm_api3('setting', 'create', [
-      'membershipextras_paymentplan_default_processor' => $paymentProcessorId,
-    ]);
-  }
-
-  /**
-   * Creates 'External ID' Custom Field for LineItem
-   */
-  private function createLineItemExternalIDCustomField() {
-    $optionValues = civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => 'cg_extend_objects',
-      'name' => 'civicrm_line_item',
-    ]);
-
-    if (!$optionValues['count']) {
-      civicrm_api3('OptionValue', 'create', [
-        'option_group_id' => 'cg_extend_objects',
-        'name' => 'civicrm_line_item',
-        'label' => ts('Line Item'),
-        'value' => 'LineItem',
-      ]);
-    }
-
-    $customGroups = civicrm_api3('CustomGroup', 'get', [
-      'extends' => 'LineItem',
-      'name' => 'line_item_external_id',
-    ]);
-
-    if (!$customGroups['count']) {
-      $customGroups = civicrm_api3('CustomGroup', 'create', [
-        'extends' => 'LineItem',
-        'name' => 'line_item_external_id',
-        'title' => E::ts('Line Item External ID'),
-        'table_name' => 'civicrm_value_line_item_ext_id',
-        'is_active' => 0,
-        'style' => 'Inline',
-        'is_multiple' => 0,
-      ]);
-    }
-
-    $customFields = civicrm_api3('CustomField', 'get', [
-      'custom_group_id' => $customGroups['id'],
-      'name' => 'external_id',
-    ]);
-    if (!$customFields['count']) {
-      $customField = civicrm_api3('CustomField', 'create', [
-        'custom_group_id' => $customGroups['id'],
-        'name' => 'external_id',
-        'label' => E::ts('External ID'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'required' => 0,
-        'is_active' => 0,
-        'is_searchable' => 1,
-        'column_name' => 'external_id',
-        'is_view' => 1,
-      ]);
+    // steps that configure existing entities or alter settings.
+    $configurationSteps = [
+      new CRM_MembershipExtras_Setup_Configure_SetManualPaymentProcessorAsDefaultProcessor(),
+      new CRM_MembershipExtras_Setup_Configure_DisableContributionCancelActionsExtension(),
+    ];
+    foreach ($configurationSteps as $step) {
+      $step->apply();
     }
   }
 
   public function enable() {
-    $this->toggleManualRecurringPaymentProcessor(TRUE);
-    $this->toggleManualRecurringPaymentProcessorType(TRUE);
-    $this->toggleOfflineAutoRenewalScheduledJob(TRUE);
-    $this->toggleFutureMembershipStatusRules(TRUE);
+    $steps = [
+      new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType(),
+      new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
+      new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
+      new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_OfflineAutorenewOption(),
+    ];
+    foreach ($steps as $step) {
+      $step->activate();
+    }
   }
 
   public function disable() {
-    $this->toggleManualRecurringPaymentProcessor(FALSE);
-    $this->toggleManualRecurringPaymentProcessorType(FALSE);
-    $this->toggleOfflineAutoRenewalScheduledJob(FALSE);
-    $this->toggleFutureMembershipStatusRules(FALSE);
-  }
-
-  /**
-   * Enables/Disables the manual payment
-   * processor based on the passed
-   * status.
-   *
-   * @param $newStatus
-   *   True to enable, False to disable.
-   */
-  private function toggleManualRecurringPaymentProcessor($newStatus) {
-    try {
-      $paymentProcessorRecords = civicrm_api3('PaymentProcessor', 'getvalue', [
-        'return' => 'id',
-        'name' => 'Offline Recurring Contribution',
-      ]);
+    $steps = [
+      new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
+      new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType(),
+      new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
+      new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
+      new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_OfflineAutorenewOption(),
+    ];
+    foreach ($steps as $step) {
+      $step->deactivate();
     }
-    catch (Exception $e) {
-      return;
-    }
-
-    foreach ($paymentProcessorRecords['values'] as $record) {
-      $paymentProcessor = new CRM_Financial_DAO_PaymentProcessor();
-      $paymentProcessor->id = $record['id'];
-      $paymentProcessor->find(TRUE);
-      $paymentProcessor->is_active = $newStatus;
-      $paymentProcessor->save();
-    }
-  }
-
-  /**
-   * Enables/Disables the manual payment
-   * processor type based on the passed
-   * status.
-   *
-   * @param $newStatus
-   *   True to enable, False to disable.
-   */
-  private function toggleManualRecurringPaymentProcessorType($newStatus) {
-    civicrm_api3('PaymentProcessorType', 'get', [
-      'name' => 'Manual_Recurring_Payment',
-      'api.PaymentProcessorType.create' => ['id' => '$value.id', 'is_active' => $newStatus],
-    ]);
-  }
-
-  /**
-   * Enables/Disables 'Renew offline auto-renewal memberships'
-   * Scheduled Job based on the passed status.
-   *
-   * @param int $newStatus
-   */
-  private function toggleOfflineAutoRenewalScheduledJob($newStatus) {
-    civicrm_api3('Job', 'get', [
-      'name' => 'Renew offline auto-renewal memberships',
-      'api.Job.create' => ['id' => '$value.id', 'is_active' => $newStatus],
-    ]);
-  }
-
-  private function toggleFutureMembershipStatusRules($newStatus) {
-    civicrm_api3('MembershipStatus', 'get', [
-      'name' => 'current_renewed',
-      'api.MembershipStatus.create' => ['id' => '$value.id', 'is_active' => $newStatus],
-    ]);
-
-    civicrm_api3('MembershipStatus', 'get', [
-      'name' => 'future_start',
-      'api.MembershipStatus.create' => ['id' => '$value.id', 'is_active' => $newStatus],
-    ]);
   }
 
   public function uninstall() {
-    $this->removeManualRecurringPaymentProcessor();
-    $this->removeManualRecurringPaymentProcessorType();
-    $this->removeOfflineAutoRenewalScheduledJob();
-    $this->removeCustomExternalIDs();
-    $this->removePaymentPlanExtraAttributesCustomGroupAndFields();
-    $this->removeManageInstallmentActivityTypes();
-    $this->removeFutureMembershipStatusRules();
-  }
-
-  /**
-   * Removes the manual payment processor.
-   */
-  public function removeManualRecurringPaymentProcessor() {
-    foreach ([0, 1] as $isTest) {
-      civicrm_api3('PaymentProcessor', 'get', [
-        'name' => 'Offline Recurring Contribution',
-        'is_test' => $isTest,
-        'api.PaymentProcessor.delete' => ['id' => '$value.id'],
-      ]);
+    $removalSteps = [
+      new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
+      new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType(),
+      new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
+      new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
+      new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes(),
+      new CRM_MembershipExtras_Setup_Manage_CustomGroup_OfflineAutorenewOption(),
+    ];
+    foreach ($removalSteps as $step) {
+      $step->remove();
     }
   }
 
-  /**
-   * Removes the manual payment processor type.
-   */
-  public function removeManualRecurringPaymentProcessorType() {
-    civicrm_api3('PaymentProcessorType', 'get', [
-      'name' => 'Manual_Recurring_Payment',
-      'api.PaymentProcessorType.delete' => ['id' => '$value.id'],
-    ]);
-  }
+  // To reduce the size of this Upgrader class we move upgraders to Upgrader/Steps folder.
+  // The functions below override the ones defined in CRM_MembershipExtras_Upgrader_Base file.
+  // These functions allow Civi to process the upgraders added in the Upgrader/Steps folder
+  // because without these functions Civi will not process them by default.
 
   /**
-   * Removes 'Renew offline auto-renewal memberships'
-   * Scheduled Job.
+   * @inheritdoc
    */
-  private function removeOfflineAutoRenewalScheduledJob() {
-    civicrm_api3('Job', 'get', [
-      'name' => 'Renew offline auto-renewal memberships',
-      'api.Job.delete' => ['id' => '$value.id'],
-    ]);
-  }
-
-  private function removeCustomExternalIDs() {
-    $customGroupsToDelete = [
-      'recurring_contribution_external_id',
-      'contribution_external_id',
-      'membership_external_id',
-      'line_item_external_id',
-    ];
-
-    foreach ($customGroupsToDelete as $customGroup) {
-      civicrm_api3('CustomGroup', 'get', [
-        'name' => $customGroup,
-        'api.CustomGroup.delete' => ['id' => '$value.id'],
-      ]);
+  public function hasPendingRevisions() {
+    $revisions = $this->getRevisions();
+    $currentRevisionNum = $this->getCurrentRevision();
+    if (empty($revisions)) {
+      return FALSE;
     }
+    if (empty($currentRevisionNum)) {
+      return TRUE;
+    }
+    return ($currentRevisionNum < max($revisions));
   }
 
   /**
-   * Remove 'Payment Plan extra attributes' Custom group and Fields
+   * @inheritdoc
    */
-  private function removePaymentPlanExtraAttributesCustomGroupAndFields() {
-    $customFields = [
-      'is_active',
-    ];
-    civicrm_api3('CustomField', 'get', [
-      'name' => ['IN' => $customFields],
-      'custom_group_id' => 'payment_plan_extra_attributes',
-      'api.CustomField.delete' => ['id' => '$value.id'],
-    ]);
-
-    civicrm_api3('CustomGroup', 'get', [
-      'name' => 'payment_plan_extra_attributes',
-      'api.CustomGroup.delete' => ['id' => '$value.id'],
-    ]);
-  }
-
-  private function createManageInstallmentActivityTypes() {
-    $optionValues = [
-      ['name' => 'update_payment_plan_next_period', 'label' => 'Update Payment Plan Next Period'],
-      ['name' => 'update_payment_plan_current_period', 'label' => 'Update Payment Plan Current Period'],
-    ];
-    foreach ($optionValues as $optionValue) {
-      $result = civicrm_api3('OptionValue', 'get', [
-        'sequential' => 1,
-        'option_group_id' => 'activity_type',
-        'name' => $optionValue['name'],
-      ]);
-
-      if ($result['count'] > 0) {
-        $updateParams = [
-          'id' => $result['id'],
-          'filter' => 1,
-          'is_reserved' => 1,
-        ];
-        civicrm_api3('OptionValue', 'create', $updateParams);
+  public function enqueuePendingRevisions(CRM_Queue_Queue $queue) {
+    $currentRevisionNum = (int) $this->getCurrentRevision();
+    foreach ($this->getRevisions() as $revisionClass => $revisionNum) {
+      if ($revisionNum <= $currentRevisionNum) {
+        continue;
       }
-      else {
-        $optionValue['option_group_id'] = 'activity_type';
-        $optionValue['filter'] = 1;
-        $optionValue['is_reserved'] = 1;
-        civicrm_api3('OptionValue', 'create', $optionValue);
-      }
+      $tsParams = [1 => $this->extensionName, 2 => $revisionNum];
+      $title = ts('Upgrade %1 to revision %2', $tsParams);
+      $upgradeTask = new CRM_Queue_Task(
+        [get_class($this), 'runStepUpgrade'],
+        [(new $revisionClass())],
+        $title
+      );
+      $queue->createItem($upgradeTask);
+      $setRevisionTask = new CRM_Queue_Task(
+        [get_class($this), '_queueAdapter'],
+        ['setCurrentRevision', $revisionNum],
+        $title
+      );
+      $queue->createItem($setRevisionTask);
     }
   }
 
   /**
-   * Creates membership status rule
-   * that handles cases when the start
-   * date of the membership is in the future.
-   */
-  private function createFutureMembershipStatusRules() {
-    $this->createCurrentRenewMembershipStatusRule();
-    $this->createFutureStartMembershipStatusRule();
-  }
-
-  /**
-   * Creates a membership status rule that
-   * applies when the membership join date
-   * is in the past, but the membership
-   * start date is in the future
-   */
-  private function createCurrentRenewMembershipStatusRule() {
-    $membershipStatusRule = civicrm_api3('MembershipStatus', 'get', [
-      'sequential' => 1,
-      'name' => 'current_renewed',
-    ]);
-
-    if ($membershipStatusRule['count'] > 0) {
-      return;
-    }
-
-    $minStatusWeight = civicrm_api3('MembershipStatus', 'getvalue', [
-      'return' => 'weight',
-      'options' => ['sort' => 'weight ASC', 'limit' => 1],
-    ]);
-
-    civicrm_api3('MembershipStatus', 'create', [
-      'name' => 'current_renewed',
-      'label' => 'Current Renewed',
-      'start_event' => 'join_date',
-      'start_event_adjust_unit' => 'day',
-      'start_event_adjust_interval' => 1,
-      'end_event' => 'start_date',
-      'end_event_adjust_unit' => 'day',
-      'end_event_adjust_interval' => -1,
-      'is_current_member' => 1,
-      'is_active' => 1,
-      'weight' => $minStatusWeight - 1,
-    ]);
-  }
-
-  /**
-   * Creates a membership status rule that
-   * applies when the membership join date
-   * and the  membership start date
-   * are in the future
-   */
-  private function createFutureStartMembershipStatusRule() {
-    $membershipStatusRule = civicrm_api3('MembershipStatus', 'get', [
-      'sequential' => 1,
-      'name' => 'future_start',
-    ]);
-
-    if ($membershipStatusRule['count'] > 0) {
-      return;
-    }
-
-    $maxStatusWeight = civicrm_api3('MembershipStatus', 'getvalue', [
-      'return' => 'weight',
-      'options' => ['sort' => 'weight DESC', 'limit' => 1],
-    ]);
-
-    civicrm_api3('MembershipStatus', 'create', [
-      'name' => 'future_start',
-      'label' => 'Future Start',
-      'start_event' => 'join_date',
-      'start_event_adjust_unit' => 'year',
-      'start_event_adjust_interval' => -1000,
-      'end_event' => 'start_date',
-      'is_current_member' => 0,
-      'is_active' => 1,
-      'weight' => $maxStatusWeight + 1,
-    ]);
-  }
-
-  private function removeManageInstallmentActivityTypes() {
-    civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => 'activity_type',
-      'name' => [
-        'IN' => ['update_payment_plan_next_period', 'update_payment_plan_current_period'],
-      ],
-      'api.OptionValue.delete' => ['id' => '$value.id'],
-    ]);
-  }
-
-  private function removeFutureMembershipStatusRules() {
-    civicrm_api3('MembershipStatus', 'get', [
-      'name' => 'current_renewed',
-      'api.MembershipStatus.delete' => ['id' => '$value.id'],
-    ]);
-
-    civicrm_api3('MembershipStatus', 'get', [
-      'name' => 'future_start',
-      'api.MembershipStatus.delete' => ['id' => '$value.id'],
-    ]);
-  }
-
-  /**
-   * Adds membershipextras_contribution_recur_line_item table to DB.
+   * This is a callback for running step upgraders from the queue
    *
-   * @return bool
-   */
-  public function upgrade_0001() {
-    $this->executeSqlFile('sql/auto_install.sql');
-    $this->createManageInstallmentActivityTypes();
-
-    return TRUE;
-  }
-
-  public function upgrade_0002() {
-    $this->createFutureMembershipStatusRules();
-
-    return TRUE;
-  }
-
-  /**
-   * Compuclient Database is already
-   * upgrader to upgrade_0002 which means
-   * that the old current_renew status
-   * is still on it. This upgrader is to provide
-   * support for Compuclient sites by removing
-   * the old status and force creating the new
-   * ones.
-   */
-  public function upgrade_0003() {
-    $this->removeOldCurrentRenewMembershipStatusRule();
-    $this->createFutureMembershipStatusRules();
-
-    return TRUE;
-  }
-
-  private function removeOldCurrentRenewMembershipStatusRule() {
-    civicrm_api3('MembershipStatus', 'get', [
-      'name' => 'current_renew',
-      'api.MembershipStatus.delete' => ['id' => '$value.id'],
-    ]);
-  }
-
-  /**
-   * We here recreate manage installment
-   * activity types if they do not exist,
-   * if they do then we update them to be
-   * reserved and hidden.
-   */
-  public function upgrade_0004() {
-    $this->createManageInstallmentActivityTypes();
-
-    return TRUE;
-  }
-
-  /**
-   * Adds membershipextras_auto_membership_upgrade_rule table to DB.
-   */
-  public function upgrade_0005() {
-    $this->executeSqlFile('sql/autoupgraderuletable_install.sql');
-
-    return TRUE;
-  }
-
-  public function upgrade_0006() {
-    $this->createPaymentPlanExtraAttributesCustomGroupAndFields();
-    $this->migrateRelatedPeriodsCustomGroupToIsActiveCustomField();
-
-    return TRUE;
-  }
-
-  /**
-   * Creates "Payment Plan extra attributes"
-   * custom group and its custom fields.
+   * @param CRM_Queue_TaskContext $context
+   * @param \object $step
    *
-   * @throws CiviCRM_API3_Exception
+   * @return true
+   *   The queue requires that true is returned on successful upgrade, but we
+   *   use exceptions to indicate an error instead.
    */
-  private function createPaymentPlanExtraAttributesCustomGroupAndFields() {
-    $customGroup = civicrm_api3('CustomGroup', 'get', [
-      'extends' => 'ContributionRecur',
-      'name' => 'payment_plan_extra_attributes',
-    ]);
+  public static function runStepUpgrade($context, $step) {
+    $step->apply();
+    return TRUE;
+  }
 
-    if (!$customGroup['count']) {
-      $customGroup = civicrm_api3('CustomGroup', 'create', [
-        'extends' => 'ContributionRecur',
-        'name' => 'payment_plan_extra_attributes',
-        'title' => E::ts('Payment Plan extra attributes'),
-        'table_name' => 'civicrm_value_payment_plan_extra_attributes',
-        'is_active' => 1,
-        'style' => 'Inline',
-        'is_multiple' => 0,
-      ]);
+  /**
+   * Get a list of revisions.
+   *
+   * @return array
+   *   An array of revisions sorted by the upgrader class as keys
+   */
+  public function getRevisions() {
+    $extensionRoot = __DIR__;
+    $stepClassFiles = glob($extensionRoot . '/Upgrader/Steps/Step*.php');
+    $sortedKeyedClasses = [];
+    foreach ($stepClassFiles as $file) {
+      $class = $this->getUpgraderClassnameFromFile($file);
+      $numberPrefix = 'Steps_Step';
+      $startPos = strpos($class, $numberPrefix) + strlen($numberPrefix);
+      $revisionNum = (int) substr($class, $startPos);
+      $sortedKeyedClasses[$class] = $revisionNum;
     }
+    asort($sortedKeyedClasses, SORT_NUMERIC);
 
-    $customField = civicrm_api3('CustomField', 'get', [
-      'custom_group_id' => $customGroup['id'],
-      'name' => 'is_active',
-    ]);
-    if (!$customField['count']) {
-      civicrm_api3('CustomField', 'create', [
-        'custom_group_id' => $customGroup['id'],
-        'name' => 'is_active',
-        'label' => E::ts('Is Active?'),
-        'data_type' => 'Boolean',
-        'html_type' => 'Radio',
-        'default_value' => 0,
-        'required' => 0,
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'column_name' => 'is_active',
-      ]);
-    }
+    return $sortedKeyedClasses;
   }
 
   /**
-   * Migrates the values from "Related Payment Plan Periods"
-   * to Payment Plan "Is active?" custom field.
+   * Gets the PEAR style classname from an upgrader file
    *
-   * This Is active?" custom field is added to simplify the
-   * data structure, and here we create a record
-   * for every recurring contribution where we
-   * set is_active field value to 1 if the
-   * recurring contribution does not have
-   * next_period set, which means there is
-   * not recurring contributions that comes
-   * after this one and thus it is the last one,
-   * and to set it to 0 otherwise.
+   * @param $file
    *
+   * @return string
    */
-  private function migrateRelatedPeriodsCustomGroupToIsActiveCustomField() {
-    $query = "INSERT INTO civicrm_value_payment_plan_extra_attributes (entity_id, is_active)
-               SELECT ccr.id as id, IF(rppp.next_period IS NULL, 1, 0) as is_active FROM civicrm_contribution_recur ccr
-               LEFT JOIN civicrm_value_payment_plan_periods rppp ON ccr.id = rppp.entity_id";
-    CRM_Core_DAO::executeQuery($query);
-  }
-
-  public function upgrade_0007() {
-    $this->disableContributionCancelActionsExtension();
-
-    return TRUE;
-  }
-
-  /**
-   * Disables "Contribution cancel actions" core extension.
-   * To prevent CiviCRM from canceling the membership if the user
-   * cancels any of its installments.
-   *
-   */
-  private function disableContributionCancelActionsExtension() {
-    $extension = civicrm_api3('Extension', 'get', [
-      'keys' => "contributioncancelactions",
-    ]);
-
-    if (!empty($extension['id'])) {
-      civicrm_api3('Extension', 'disable', [
-        'keys' => 'contributioncancelactions',
-      ]);
-    }
-  }
-
-  public function upgrade_0008() {
-    $this->migratePaymentPlansToSupportNextContributionDateAutorenewal();
-
-    return TRUE;
-  }
-
-  /**
-   * As of Membershipextras v5 we are using next_sched_contribution_date
-   * to calculate the installments receive dates after autorenewal
-   * instead of using the payment plan related memberships end dates.
-   * In this upgrader we update this field value for all offline payment plans
-   * so it equals:
-   * - For annual payment plans, take max contribution receive date and add 1 year to it.
-   * - For monthly payment plans, take max contribution receive date and add 1 month to it.
-   * - For quarterly payment plans, take max contribution receive date and add 3 months to it.
-   * - For any payment plans that are not any of the above, take min membership end date + 1 day
-   */
-  private function migratePaymentPlansToSupportNextContributionDateAutorenewal() {
-    CRM_Core_DAO::executeQuery('CREATE TABLE recur_conts_to_update (`recur_id` int(11), `next_cont_date` varchar(255))');
-
-    $payLaterProcessorID = 0;
-    $manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
-    $manualPaymentProcessorIDs = implode(',', $manualPaymentProcessorIDs);
-    $cancelledStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Cancelled');
-
-    // updating annual payment plans
-    $query = "
-              INSERT INTO recur_conts_to_update
-              SELECT ccr.id as recur_id, DATE_ADD(max(cc.receive_date), INTERVAL 1 YEAR) as next_cont_date FROM civicrm_contribution_recur ccr
-              INNER JOIN civicrm_contribution cc ON ccr.id = cc.contribution_recur_id
-              WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorIDs}))
-              AND ccr.auto_renew = 1
-              AND ccr.contribution_status_id != {$cancelledStatusID}
-              AND ccr.frequency_unit = 'year'
-              GROUP BY ccr.id";
-    CRM_Core_DAO::executeQuery($query);
-
-    // updating monthly payment plans
-    $query = "
-              INSERT INTO recur_conts_to_update
-              SELECT ccr.id as recur_id, DATE_ADD(max(cc.receive_date), INTERVAL 1 MONTH) as next_cont_date FROM civicrm_contribution_recur ccr
-              INNER JOIN civicrm_contribution cc ON ccr.id = cc.contribution_recur_id
-              WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorIDs}))
-              AND ccr.auto_renew = 1
-              AND ccr.contribution_status_id != {$cancelledStatusID}
-              AND ccr.frequency_unit = 'month' AND ccr.installments = 12
-              GROUP BY ccr.id";
-    CRM_Core_DAO::executeQuery($query);
-
-    // updating quarterly payment plans
-    $query = "
-              INSERT INTO recur_conts_to_update
-              SELECT ccr.id as recur_id, DATE_ADD(max(cc.receive_date), INTERVAL 3 MONTH) as next_cont_date FROM civicrm_contribution_recur ccr
-              INNER JOIN civicrm_contribution cc ON ccr.id = cc.contribution_recur_id
-              WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorIDs}))
-              AND ccr.auto_renew = 1
-              AND ccr.contribution_status_id != {$cancelledStatusID}
-              AND ccr.frequency_unit = 'month' AND ccr.installments = 4
-              GROUP BY ccr.id";
-    CRM_Core_DAO::executeQuery($query);
-
-    // updating payment plans that are not annual, monthly or quarterly
-    $query = "
-              INSERT INTO recur_conts_to_update
-              SELECT ccr.id as recur_id, DATE_ADD(min(cm.end_date), INTERVAL 1 DAY) as next_cont_date FROM civicrm_contribution_recur ccr
-              INNER JOIN civicrm_contribution cc ON ccr.id = cc.contribution_recur_id
-              INNER JOIN civicrm_membership_payment cmp ON cc.id = cmp.contribution_id
-              INNER JOIN civicrm_membership cm ON cmp.membership_id = cm.id
-              WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorIDs}))
-              AND ccr.auto_renew = 1
-              AND ccr.contribution_status_id != {$cancelledStatusID}
-              AND cm.contribution_recur_id IS NOT NULL
-              AND (
-               (ccr.frequency_unit = 'month' AND ccr.installments NOT IN (4, 12))
-               OR (ccr.frequency_unit = 'year' AND ccr.installments > 1)
-              )
-              GROUP BY ccr.id";
-    CRM_Core_DAO::executeQuery($query);
-
-    $query = "
-              UPDATE civicrm_contribution_recur ccr
-              INNER JOIN recur_conts_to_update ctu ON ccr.id = ctu.recur_id
-              SET ccr.next_sched_contribution_date = ctu.next_cont_date";
-    CRM_Core_DAO::executeQuery($query);
-
-    CRM_Core_DAO::executeQuery('DROP TABLE IF Exists recur_conts_to_update');
+  private function getUpgraderClassnameFromFile($file) {
+    $file = str_replace(realpath(__DIR__ . '/../../'), '', $file);
+    $file = str_replace('.php', '', $file);
+    $file = str_replace('/', '_', $file);
+    return ltrim($file, '_');
   }
 
 }
