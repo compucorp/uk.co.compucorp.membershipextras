@@ -265,7 +265,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
       'is_pay_later' => 1,
       'membership_id' => $membership['id'],
       'tax_amount' => $taxAmount,
-      'skipLineItem' => 0,
+      'skipLineItem' => 1,
       'contribution_recur_id' => NULL,
       'pan_truncation' => NULL,
       'card_type_id' => NULL,
