@@ -17,8 +17,8 @@
       <td><a class="schedule-row nowrap bold crm-expand-row" title="view subitem" href="#">&nbsp</a></td>
       <td>{$instalment.instalment_no}</td>
       <td>{$instalment.instalment_date|crmDate}</td>
-      <td>{$currency_symbol}{$instalment.instalment_tax_amount|crmNumberFormat:2}</td>
-      <td>{$currency_symbol}{$instalment.instalment_total_amount|crmNumberFormat:2}</td>
+      <td>{$currency_symbol}&nbsp;{$instalment.instalment_tax_amount|crmNumberFormat:2}</td>
+      <td>{$currency_symbol}&nbsp;{$instalment.instalment_total_amount|crmNumberFormat:2}</td>
       <td>
         {crmAPI var='contribution_status'
         entity='OptionValue'
@@ -52,11 +52,11 @@
                 {$result.name}
               </td>
               <td>{$lineitem.quantity}</td>
-              <td>{$currency_symbol}{$lineitem.unit_price|crmNumberFormat:2}</td>
-              <td>{$currency_symbol}{$lineitem.sub_total|crmNumberFormat:2}</td>
+              <td>{$currency_symbol}&nbsp;{$lineitem.unit_price|crmNumberFormat:2}</td>
+              <td>{$currency_symbol}&nbsp;{$lineitem.sub_total|crmNumberFormat:2}</td>
               <td>{$lineitem.tax_rate|crmNumberFormat:2}%</td>
-              <td>{$currency_symbol}{$lineitem.tax_amount|crmNumberFormat:2}</td>
-              <td>{$currency_symbol}{$lineitem.total_amount|crmNumberFormat:2}</td>
+              <td>{$currency_symbol}&nbsp;{$lineitem.tax_amount|crmNumberFormat:2}</td>
+              <td>{$currency_symbol}&nbsp;{$lineitem.total_amount|crmNumberFormat:2}</td>
             </tr>
           {/foreach}
           </tbody>
@@ -68,7 +68,7 @@
     <td colspan="3"></td>
     <td class="instalment-amount-text"><span>{ts}Sub Total Amount{/ts}</span></td>
     <td>
-      {$currency_symbol}{$sub_total|crmNumberFormat:2}
+      {$currency_symbol}&nbsp;{$sub_total|crmNumberFormat:2}
     </td>
     <td></td>
   </tr>
@@ -76,7 +76,7 @@
     <td colspan="3"></td>
     <td class="instalment-amount-text">{ts}Total{/ts} {$tax_term} {ts}Amount{/ts}</td>
     <td>
-      {$currency_symbol}{$tax_amount|crmNumberFormat:2}
+      {$currency_symbol}&nbsp;{$tax_amount|crmNumberFormat:2}
     </td>
     <td></td>
   </tr>
@@ -84,7 +84,7 @@
     <td colspan="3"></td>
     <td class="instalment-amount-text">{ts}Total Amount{/ts}</td>
     <td colspan="2">
-      <span>{$currency_symbol}<span id="instalment-total-amount">{$total_amount|crmNumberFormat:2}</span>
+      <span>{$currency_symbol}&nbsp;<span id="instalment-total-amount">{$total_amount|crmNumberFormat:2}</span>
       {if isset($prorated_number) && isset($prorated_unit)}
         <span class="instalment-prorated-text">({ts}Prorated for {/ts} {$prorated_number} {$prorated_unit})</span>
       {/if}
