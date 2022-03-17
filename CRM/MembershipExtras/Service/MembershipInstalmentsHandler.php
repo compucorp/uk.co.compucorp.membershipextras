@@ -243,7 +243,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    */
   private function dispatchReceiveDateCalculationHook($contributionNumber, &$params) {
     $receiveDate = $params['receive_date'];
-    $paymentPlanSchedule = CRM_MembershipExtras_Utils_InstalmentSchedule::getPaymentPlanSchedule(
+    $paymentPlanSchedule = CRM_MembershipExtras_Helper_InstalmentSchedule::getPaymentPlanSchedule(
       $this->currentRecurContribution['frequency_unit'],
       $this->currentRecurContribution['frequency_interval'],
       $this->currentRecurContribution['installments']
