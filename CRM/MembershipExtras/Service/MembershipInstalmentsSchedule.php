@@ -220,6 +220,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   private function validateMembershipTypeForInstalment() {
     $fixedPeriodStartDays = [];
     $periodTypes = [];
+    $durationUnits = [];
+
     foreach ($this->membershipTypes as $membershipType) {
       if ($membershipType->duration_interval != 1) {
         throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::DURATION_INTERVAL));
@@ -236,6 +238,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
         }
       }
       $periodTypes[] = $membershipType->period_type;
+      $durationUnits[] = $membershipType->duration_unit;
     }
 
     $hasFixedMembershipType = in_array('fixed', $periodTypes);
@@ -244,8 +247,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
       throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::QUARTERLY_NOT_SUPPORT));
     }
 
-    if ($hasFixedMembershipType && in_array('rolling', $periodTypes)) {
-      throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::PERIOD_TYPE));
+    if (count(array_unique($periodTypes)) != 1 || count(array_unique($durationUnits)) != 1) {
+      throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::SAME_PERIOD_AND_DURATION));
     }
 
     if ($hasFixedMembershipType) {
