@@ -72,18 +72,21 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
 
     $fixedPeriodStartDays = [];
     $periodTypes = [];
+    $durationUnits = [];
+
     foreach ($membershipTypes as $membershipType) {
       $periodTypes[] = $membershipType['period_type'];
+      $durationUnits[] = $membershipType['duration_unit'];
+
       if ($membershipType['period_type'] == 'fixed') {
         $fixedPeriodStartDays[] = $membershipType['fixed_period_start_day'];
       }
     }
 
     $periodTypes = array_unique($periodTypes);
-    if (!empty($periodTypes)) {
-      if (!empty($periodTypes) && count($periodTypes) != 1) {
-        $this->errors['price_set_id'] = InvalidMembershipTypeInstalment::PERIOD_TYPE;
-      }
+    $durationUnits = array_unique($durationUnits);
+    if (!empty($periodTypes) && (count($periodTypes) != 1 || count($durationUnits) != 1)) {
+      $this->errors['price_set_id'] = InvalidMembershipTypeInstalment::SAME_PERIOD_AND_DURATION;
     }
 
     $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
