@@ -10,6 +10,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       moveMembershipFormFields();
       setMembershipFormEvents();
       initializeMembershipForm();
+      hideOfflineAutorenewField();
     });
 
     /**
@@ -47,6 +48,20 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       $(tabSelector).addClass('ui-tabs-active');
       $('[name=contribution_type_toggle]').val(tabOptionId);
       updateContributionPaymentPlanView(tabOptionId);
+    }
+
+    /**
+     * Hides the auto renew option field when the contribution tab is opened.
+     */
+    function hideOfflineAutorenewField() {
+      const autoRenewSelector = '.custom-group-offline_autorenew_option';
+
+      waitForElement($, '#customData', 
+        element => isPaymentPlanTabActive()
+          ? $(autoRenewSelector).show()
+          : $(autoRenewSelector).hide()
+      );
+      $('a[href="#contribution-subtab"]').click( event => $(autoRenewSelector).hide());
     }
 
     /**
@@ -393,6 +408,21 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
     function isRenewMembershipForm() {
       return !!$('#MembershipRenewal').length;
     }
+
+    /**
+     * Triggers callback when element attribute changes.
+     * 
+     * @param {object} $ 
+     * @param {string} elementPath 
+     * @param {object} callBack 
+     */
+    function waitForElement($, elementPath, callBack) {
+      (new MutationObserver(function(mutations) {
+        callBack($(elementPath));
+      })).observe(document.querySelector(elementPath), {
+        attributes: true
+      });
+    };
   });
 
 }
