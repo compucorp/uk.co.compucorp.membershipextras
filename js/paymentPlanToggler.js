@@ -11,6 +11,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       setMembershipFormEvents();
       initializeMembershipForm();
       hideOfflineAutorenewField();
+      toggleNumOfTermsField();
     });
 
     /**
@@ -73,6 +74,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
         if (!isPaymentPlanTabActive()) {
           return;
         }
+
         let isPriceSet = isPriceSetSelected();
         if (isPriceSet) {
           let selectedPriceFieldValues = getSelectedPriceFieldValues();
@@ -407,6 +409,22 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      */
     function isRenewMembershipForm() {
       return !!$('#MembershipRenewal').length;
+    }
+
+    /**
+     * Disable the “Number of Terms" if payment tab is selected,
+     * otherwise enable.
+     */
+    function toggleNumOfTermsField() {
+      $('#num_terms').val(1);
+      $('#num_terms').prop("readonly", isPaymentPlanTabActive());
+
+      waitForElement($, 'input[name=contribution_type_toggle]', 
+        element => {
+          $('#num_terms').val(1);
+          $('#num_terms').prop("readonly", isPaymentPlanTabActive());
+        }
+      );
     }
 
     /**
