@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Helper_InstalmentValidator as InstalmentValidator;
+use CRM_MembershipExtras_Validate_PaymentPlan_MembershipType as membershipTypeValidator;
 
 /**
  * Form Validation on payment plan submission.
@@ -75,7 +75,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
       return;
     }
 
-    $validator = new InstalmentValidator($membershipTypes);
+    $validator = new membershipTypeValidator($membershipTypes);
 
     if (!$validator->passes()) {
       $this->errors[$errorField] = $validator->lastError();

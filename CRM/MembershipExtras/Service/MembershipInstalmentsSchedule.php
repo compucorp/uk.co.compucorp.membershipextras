@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Helper_InstalmentValidator as InstalmentValidator;
+use CRM_MembershipExtras_Validate_PaymentPlan_MembershipType as membershipTypeValidator;
 use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as InstalmentAmountCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
@@ -218,7 +218,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @throws InvalidMembershipTypeInstalment
    */
   private function validateMembershipTypeForInstalment() {
-    $validator = new InstalmentValidator($this->membershipTypes, $this->schedule);
+    $validator = new membershipTypeValidator($this->membershipTypes, $this->schedule);
     $validator->validateBail();
   }
 

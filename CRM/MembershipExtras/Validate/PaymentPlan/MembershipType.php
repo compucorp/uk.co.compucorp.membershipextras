@@ -5,7 +5,7 @@ use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMem
 /**
  * Validates the membership types passed in to ensure they meets the criteria for calculating installment.
  */
-class CRM_MembershipExtras_Helper_InstalmentValidator {
+class CRM_MembershipExtras_Validate_PaymentPlan_MembershipType {
 
   const MONTHLY = 'monthly';
   const QUARTERLY = 'quarterly';
@@ -34,7 +34,7 @@ class CRM_MembershipExtras_Helper_InstalmentValidator {
   private $schedule;
 
   /**
-   * CRM_MembershipExtras_Helper_InstalmentValidator constructor.
+   * CRM_MembershipExtras_Validate_PaymentPlan_MembershipType constructor.
    *
    * @param array $membershipTypes
    * @param string $schedule
@@ -44,7 +44,7 @@ class CRM_MembershipExtras_Helper_InstalmentValidator {
   public function __construct(array $membershipTypes, $schedule = NULL) {
     $this->membershipTypes = $membershipTypes;
     $this->schedule = $schedule;
-    $this->validateMembershipTypeForInstalment();
+    $this->validateMembershipTypeFields();
   }
 
   /**
@@ -103,7 +103,7 @@ class CRM_MembershipExtras_Helper_InstalmentValidator {
    *
    * @return self
    */
-  private function validateMembershipTypeForInstalment() {
+  private function validateMembershipTypeFields() {
     $periodTypes = [];
     $durationUnits = [];
     $fixedPeriodStartDays = [];
