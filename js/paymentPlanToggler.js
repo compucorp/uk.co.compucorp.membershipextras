@@ -69,7 +69,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      * Price set, or Payment Plan Schedule
      */
     function setScheduleEvents() {
-      $('#total_amount, #membership_type_id_1').change(() => {
+      $('#total_amount, #membership_type_id_1, #record_contribution').change(() => {
         if (!isPaymentPlanTabActive()) {
           return;
         }
