@@ -54,16 +54,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
-   * Tests getting instalment for life time duration unit for rolling membership type.
+   * Tests exception is thrown when membership type duration unit is one (1) lifetime
    */
-  public function testOneLifeTimeUnitRollingMembershipType() {
-    $rollingLifetimeType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+  public function testExceptionIsThrownIfMembershipTypeDurationUnitIsOneLifeTime() {
+    $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
       ['duration_unit' => 'lifetime', 'duration_interval' => 1, 'name' => 'xyz', 'period_type' => 'rolling']
     ));
-    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingLifetimeType['id']);
-    $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
-    //Expected instalment equals 1 for life time duration
-    $this->assertCount(1, $schedule['instalments']);
+
+    $membershipType = CRM_Member_BAO_MembershipType::findById($invalidMembershipType['id']);
+    $this->expectException(InvalidMembershipTypeInstalment::class);
+    $this->expectExceptionMessage(InvalidMembershipTypeInstalment::LIFETIME_DURATION);
+    $this->getMembershipInstalmentsSchedule([$membershipType], MembershipInstalmentsSchedule::ANNUAL);
   }
 
   /**
@@ -616,18 +617,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   public function testExceptionIsThrownIfMembershipTypeDurationUnitIsDay() {
     $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
       ['duration_unit' => 'day', 'duration_interval' => 1, 'name' => 'xyz', 'period_type' => 'rolling']
-    ));
-    $membershipType = CRM_Member_BAO_MembershipType::findById($invalidMembershipType['id']);
-    $this->expectException(InvalidMembershipTypeInstalment::class);
-    $this->getMembershipInstalmentsSchedule([$membershipType], MembershipInstalmentsSchedule::ANNUAL);
-  }
-
-  /**
-   * Tests exception is thrown when membership type duration is not one (1)
-   */
-  public function testExceptionIsThrownIfMembershipTypeDurationIntervalIsNotOne() {
-    $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
-      ['duration_unit' => 'year', 'duration_interval' => 2, 'name' => 'xyz', 'period_type' => 'rolling']
     ));
     $membershipType = CRM_Member_BAO_MembershipType::findById($invalidMembershipType['id']);
     $this->expectException(InvalidMembershipTypeInstalment::class);
