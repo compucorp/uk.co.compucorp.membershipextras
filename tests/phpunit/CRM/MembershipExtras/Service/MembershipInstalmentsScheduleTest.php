@@ -54,6 +54,23 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
+   * Tests getting instalment for one month duration unit for rolling membership type
+   */
+  public function testMultiMonthUnitRollingMembershipType() {
+    $interval = rand(1, 12);
+    $rollingOneMonthType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'month',
+      'duration_interval' => $interval,
+      'name' => 'xyz',
+      'period_type' => 'rolling',
+    ]));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingOneMonthType['id']);
+    $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
+    //Expected instalment equals membership type interval, e.g. 6 instalments for 6 month duration
+    $this->assertCount($interval, $schedule['instalments']);
+  }
+
+  /**
    * Tests getting instalment for life time duration unit for rolling membership type.
    */
   public function testOneLifeTimeUnitRollingMembershipType() {
