@@ -11,7 +11,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       setMembershipFormEvents();
       initializeMembershipForm();
       hideOfflineAutorenewField();
-      toggleNumOfTermsField();
+      togglePaymentPlanDisabledFields();
     });
 
     /**
@@ -412,17 +412,22 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
     }
 
     /**
-     * Disable the “Number of Terms" if payment tab is selected,
-     * otherwise enable.
+     * Disable the fields that shouldnt be editable for payment plan membership.
+     * 
+     * e.g. “Number of Terms", "End Date"
      */
-    function toggleNumOfTermsField() {
+    function togglePaymentPlanDisabledFields() {
+      var endDatePointerEvents = {true: "none", false: "all"};
+
       $('#num_terms').val(1);
       $('#num_terms').prop("readonly", isPaymentPlanTabActive());
+      $('#end-date-editable').css("pointer-events", endDatePointerEvents[isPaymentPlanTabActive()]);
 
       waitForElement($, 'input[name=contribution_type_toggle]', 
         element => {
           $('#num_terms').val(1);
           $('#num_terms').prop("readonly", isPaymentPlanTabActive());
+          $('#end-date-editable').css("pointer-events", endDatePointerEvents[isPaymentPlanTabActive()]);
         }
       );
     }
