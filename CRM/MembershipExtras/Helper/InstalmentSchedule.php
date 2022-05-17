@@ -30,7 +30,7 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
       $instalmentDetails['instalments_count'] = (int) $membershipType['duration_interval'];
     }
     else {
-      $instalmentDetails['instalments_count'] = self::getInstalmentCountBySchedule($schedule);
+      $instalmentDetails['instalments_count'] = self::getInstalmentCountBySchedule($schedule, (int) $membershipType['duration_interval']);
     }
 
     $instalmentDetails['instalments_frequency'] = self::getFrequencyInterval($schedule);
@@ -73,9 +73,11 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
    *
    * @param $schedule
    *
+   * @param $interval
+   *
    * @return int
    */
-  public static function getInstalmentCountBySchedule($schedule) {
+  public static function getInstalmentCountBySchedule($schedule, $interval) {
     switch ($schedule) {
       case InstalmentsSchedule::MONTHLY:
         $instalmentInterval = InstalmentsSchedule::MONTHLY_INSTALMENT_COUNT;
@@ -89,7 +91,7 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
         $instalmentInterval = InstalmentsSchedule::ANNUAL_INTERVAL_COUNT;
     }
 
-    return $instalmentInterval;
+    return $instalmentInterval * $interval;
   }
 
   /**

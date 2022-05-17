@@ -56,7 +56,7 @@ trait CRM_MembershipExtras_Helper_InstalmentHelperTrait {
       return (int) $membershipType->duration_interval;
     }
 
-    return CRM_MembershipExtras_Helper_InstalmentSchedule::getInstalmentCountBySchedule($schedule);
+    return CRM_MembershipExtras_Helper_InstalmentSchedule::getInstalmentCountBySchedule($schedule, (int) $membershipType->duration_interval);
   }
 
 }
