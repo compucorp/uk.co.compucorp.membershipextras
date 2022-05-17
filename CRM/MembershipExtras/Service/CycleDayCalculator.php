@@ -21,8 +21,12 @@ class CRM_MembershipExtras_Service_CycleDayCalculator {
    * @return int
    */
   public static function calculate($targetDate, $frequencyUnit) {
+    $recurContStartDate = new DateTime($targetDate);
+    if ($frequencyUnit == 'month' && in_array($recurContStartDate->format('j'), [29, 30, 31])) {
+      return 1;
+    }
+
     if ($frequencyUnit == 'month') {
-      $recurContStartDate = new DateTime($targetDate);
       return $recurContStartDate->format('j');
     }
 

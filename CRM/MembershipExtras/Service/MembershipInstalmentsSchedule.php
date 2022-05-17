@@ -149,7 +149,11 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
         $params['previous_instalment_date'] = $previousInstalmentDate;
 
         $instalmentDate = new DateTime($previousInstalmentDate);
+        if (in_array($instalmentDate->format('j'), [29, 30, 31])) {
+          $instalmentDate->modify('first day of next month');
+        }
         $instalmentDate->add(new DateInterval($intervalSpec));
+
         $instalmentDate = $instalmentDate->format('Y-m-d');
 
         $dispatchedInstalmentDate = $instalmentDate;
