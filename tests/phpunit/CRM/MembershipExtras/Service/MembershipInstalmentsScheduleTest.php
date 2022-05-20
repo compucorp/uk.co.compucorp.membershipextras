@@ -593,6 +593,27 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
+   * Tests exception when membership duration intervals are mixed
+   *
+   * @throws CiviCRM_API3_Exception
+   */
+  public function testExceptionIsThrownIfMembershipDurationIntervalsAreMixed() {
+    $fixedType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+      ['duration_unit' => 'year', 'duration_interval' => 2, 'name' => 'abc', 'period_type' => 'rolling']
+    ));
+    $rollingType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+      ['duration_unit' => 'year', 'duration_interval' => 1, 'name' => 'xyz', 'period_type' => 'rolling']
+    ));
+    $membershipType1 = CRM_Member_BAO_MembershipType::findById($fixedType['id']);
+    $membershipType2 = CRM_Member_BAO_MembershipType::findById($rollingType['id']);
+
+    $this->expectException(InvalidMembershipTypeInstalment::class);
+    $this->getMembershipInstalmentsSchedule(
+      [$membershipType1, $membershipType2], MembershipInstalmentsSchedule::ANNUAL
+    );
+  }
+
+  /**
    * Tests exception when membership type ts a fixed period
    * and schedule is quarterly
    *

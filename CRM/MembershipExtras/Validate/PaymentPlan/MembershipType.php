@@ -106,6 +106,7 @@ class CRM_MembershipExtras_Validate_PaymentPlan_MembershipType {
   private function validateMembershipTypeFields() {
     $periodTypes = [];
     $durationUnits = [];
+    $durationIntervals = [];
     $fixedPeriodStartDays = [];
 
     foreach ($this->membershipTypes as $membershipType) {
@@ -132,12 +133,13 @@ class CRM_MembershipExtras_Validate_PaymentPlan_MembershipType {
 
       $periodTypes[] = $membershipType['period_type'];
       $durationUnits[] = $membershipType['duration_unit'];
+      $durationIntervals[] = $membershipType['duration_interval'];
     }
 
     $hasFixedMembershipType = in_array('fixed', $periodTypes);
     $hasRollingMembershipType = in_array('rolling', $periodTypes);
 
-    if (count(array_unique($periodTypes)) != 1 || count(array_unique($durationUnits)) != 1) {
+    if (count(array_unique($periodTypes)) != 1 || count(array_unique($durationUnits)) != 1 || count(array_unique($durationIntervals)) != 1) {
       $this->errorBag[] = ts(InvalidMembershipTypeInstalment::SAME_PERIOD_AND_DURATION);
     }
 
