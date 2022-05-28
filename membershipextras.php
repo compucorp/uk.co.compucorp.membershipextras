@@ -455,6 +455,45 @@ function membershipextras_civicrm_permission(&$permissions) {
   ];
 }
 
+/**
+ * Implements hook_civicrm_alterAPIPermissions().
+ *
+ */
+function membershipextras_civicrm_alterAPIPermissions($entity, $action, &$params, &$permissions) {
+  // PaymentSchedule API end-point actions are not dangerous, so
+  // no need to check permissions.
+  if ($entity == 'payment_schedule') {
+    $params['check_permissions'] = FALSE;
+  }
+
+  if ($entity == 'contribution_recur_line_item') {
+    $permissions['contribution_recur_line_item'][$action] = ['edit contributions'];
+  }
+
+  // PriceFieldValue API automatically does a join on PrieField
+  // API, in which Civi does a permission check again without the context
+  // parameter being passed down,thus resulting in permission failure for any
+  // PriceFieldValue API call,thus we here store it in a static variable
+  // to make sure it is clear that this extra API join is actually coming from
+  // Membershipextras context.
+  static $isMembershipextrasContext = FALSE;
+  if (!empty($params['context']) && $params['context'] == 'Membershipextras') {
+    $isMembershipextrasContext = TRUE;
+  }
+
+  // These are the APIs that we call from the Manage installments page JS file, except
+  // 'PriceField' which is called from an automatic join that Civi does when you call 'PriceFieldValue' API.
+  // These entities have no default permissions, thus Civi forces 'administer CiviCRM' permission on them if called
+  // using AJAX, we here reduce their permissions to 'access CiviContribute' if they are called from Membershipextras context.
+  // 'access CiviContribute' is used instead of `edit contributions' because the actions we perform on them from the manage installment
+  // page are just 'get' operations, and not 'create' or 'delete'.
+  $isManageInstallmentAPIs = in_array($entity, ['entity_financial_account', 'financial_account', 'financial_type', 'price_field', 'price_field_value']);
+  $isManageInstallmentAPIsAllowedActions = in_array($action, ['get', 'getsingle']);
+  if ($isMembershipextrasContext && $isManageInstallmentAPIs && $isManageInstallmentAPIsAllowedActions) {
+    $permissions[$entity][$action] = ['access CiviContribute'];
+  }
+}
+
 function _membershipextras_appendJSToModifyRecurringContributionPage(&$page) {
   if (!($page instanceof CRM_Contribute_Page_ContributionRecur)) {
     return;

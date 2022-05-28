@@ -83,7 +83,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
       }
     }
 
-    if ($this->isLastRenewalOfManualPaymentPlan()) {
+    if ($this->isLastRenewalOfManualPaymentPlan() && $this->hasManageInstallmentPermissions()) {
       $this->links[] = [
         'name' => 'View/Modify Future Instalments',
         'url' => 'civicrm/recurring-contribution/edit-lineitems',
@@ -123,6 +123,20 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
     }
 
     return $this->isManualPaymentPlan();
+  }
+
+  /**
+   * Checks if the logged-in user has enough permissions
+   * to manage the installments.
+   *
+   * @return bool
+   */
+  private function hasManageInstallmentPermissions() {
+    if (CRM_Core_Permission::check(['edit contributions', 'edit memberships'])) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**
