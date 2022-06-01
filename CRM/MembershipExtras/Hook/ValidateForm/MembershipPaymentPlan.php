@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMembershipTypeInstalment;
+use CRM_MembershipExtras_Validate_PaymentPlan_MembershipType as membershipTypeValidator;
 
 /**
  * Form Validation on payment plan submission.
@@ -44,7 +44,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
    */
   public function validate() {
     $this->validateMembershipStartDate();
-    $this->validatePriceSet();
+    $this->validateMembershipTypes();
   }
 
   /**
@@ -57,40 +57,29 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan {
   }
 
   /**
-   * Validates selected fixed membermship types when using price set
-   * have that same period type and same period start day.
+   * Validates selected membermship types for payemnt plan.
    */
-  private function validatePriceSet() {
-    $fixedPeriodStartDays = [];
-    $periodTypes = [];
-    $priceSetID = $this->fields['price_set_id'];
-    if (empty($priceSetID)) {
+  public function validateMembershipTypes() {
+    $membershipTypes = [];
+
+    if (!empty($this->fields['membership_type_id']) && $this->fields['membership_type_id'][1]) {
+      $errorField = 'membership_type_id';
+      $membershipTypes = [CRM_Member_BAO_MembershipType::findById($this->fields['membership_type_id'][1])];
+    }
+    if (!empty($this->fields['price_set_id'])) {
+      $errorField = 'price_set_id';
+      $membershipTypes = $this->getMembershipTypesFromPriceFieldValueFields();
+    }
+
+    if (empty($membershipTypes)) {
       return;
     }
 
-    $membershipTypes = $this->getMembershipTypesFromPriceFieldValueFields();
+    $validator = new membershipTypeValidator($membershipTypes);
 
-    $fixedPeriodStartDays = [];
-    $periodTypes = [];
-    foreach ($membershipTypes as $membershipType) {
-      $periodTypes[] = $membershipType['period_type'];
-      if ($membershipType['period_type'] == 'fixed') {
-        $fixedPeriodStartDays[] = $membershipType['fixed_period_start_day'];
-      }
+    if (!$validator->passes()) {
+      $this->errors[$errorField] = $validator->lastError();
     }
-
-    $periodTypes = array_unique($periodTypes);
-    if (!empty($periodTypes)) {
-      if (!empty($periodTypes) && count($periodTypes) != 1) {
-        $this->errors['price_set_id'] = InvalidMembershipTypeInstalment::PERIOD_TYPE;
-      }
-    }
-
-    $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
-    if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
-      $this->errors['price_set_id'] = InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY;
-    }
-
   }
 
   /**

@@ -312,6 +312,11 @@ function membershipextras_civicrm_buildForm($formName, &$form) {
   if ($formName == 'CRM_Contribute_Form_AdditionalPayment') {
     Civi::$statics[E::LONG_NAME]['paymentType'] = $form->getVar('_paymentType');
   }
+
+  if ($formName === 'CRM_Price_Form_Option' || $formName === 'CRM_Price_Form_Field') {
+    $priceFieldHook = new CRM_MembershipExtras_Hook_BuildForm_PriceOptionEdit($form);
+    $priceFieldHook->buildForm();
+  }
 }
 
 /**

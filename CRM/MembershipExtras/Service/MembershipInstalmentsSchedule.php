@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment as InvalidMembershipTypeInstalment;
+use CRM_MembershipExtras_Validate_PaymentPlan_MembershipType as membershipTypeValidator;
 use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as InstalmentAmountCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
@@ -218,42 +218,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @throws InvalidMembershipTypeInstalment
    */
   private function validateMembershipTypeForInstalment() {
-    $fixedPeriodStartDays = [];
-    $periodTypes = [];
-    foreach ($this->membershipTypes as $membershipType) {
-      if ($membershipType->duration_interval != 1) {
-        throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::DURATION_INTERVAL));
-      }
-      if ($membershipType->period_type == 'fixed') {
-        if ($membershipType->duration_unit != 'year') {
-          throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::ONE_YEAR_DURATION));
-        }
-        $fixedPeriodStartDays[] = $membershipType->fixed_period_start_day;
-      }
-      else {
-        if ($membershipType->duration_unit == 'day') {
-          throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::DAY_DURATION));
-        }
-      }
-      $periodTypes[] = $membershipType->period_type;
-    }
-
-    $hasFixedMembershipType = in_array('fixed', $periodTypes);
-
-    if ($hasFixedMembershipType && $this->schedule == self::QUARTERLY) {
-      throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::QUARTERLY_NOT_SUPPORT));
-    }
-
-    if ($hasFixedMembershipType && in_array('rolling', $periodTypes)) {
-      throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::PERIOD_TYPE));
-    }
-
-    if ($hasFixedMembershipType) {
-      $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
-      if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
-        throw new InvalidMembershipTypeInstalment(ts(InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY));
-      }
-    }
+    $validator = new membershipTypeValidator($this->membershipTypes, $this->schedule);
+    $validator->validateBail();
   }
 
   /**

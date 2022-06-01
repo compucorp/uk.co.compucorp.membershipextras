@@ -42,7 +42,55 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlanTest extends B
     ];
     $paymentPlanValidation = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($this->form, $fields, $this->errors);
     $paymentPlanValidation->validate();
-    $this->assertEquals(InvalidMembershipTypeInstalment::PERIOD_TYPE, $this->errors['price_set_id']);
+    $this->assertEquals(InvalidMembershipTypeInstalment::SAME_PERIOD_AND_DURATION, $this->errors['price_set_id']);
+  }
+
+  /**
+   * Tests error when mixed period membership type price field values are submitted.
+   */
+  public function testErrorWhenMixedDurationUnitMembershipTypePriceFieldValuesAreSubmitted() {
+    $priceSet = $this->mockPriceSet();
+    $priceField = $this->mockPriceField($priceSet['id'], 'Test Field Set 1');
+    $memType1 = $this->mockMembershipType('rolling', 'year');
+    $memType2 = $this->mockMembershipType('rolling', 'month');
+    $priceFieldValue1 = $this->mockPriceFieldValue($priceField['id'], $memType1['id']);
+    $priceFieldValue2 = $this->mockPriceFieldValue($priceField['id'], $memType2['id']);
+
+    $fields = [];
+    $fields['price_set_id'] = $priceSet['id'];
+    $mockedPriceFieldKey = 'price_' . (string) $priceField['id'];
+    //Simulate check boxes with different period membership period type attach to price field values
+    $fields[$mockedPriceFieldKey] = [
+      $priceFieldValue1['id'] => 1,
+      $priceFieldValue2['id'] => 1,
+    ];
+    $paymentPlanValidation = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($this->form, $fields, $this->errors);
+    $paymentPlanValidation->validate();
+    $this->assertEquals(InvalidMembershipTypeInstalment::SAME_PERIOD_AND_DURATION, $this->errors['price_set_id']);
+  }
+
+  /**
+   * Tests error when mixed period membership type price field values are submitted.
+   */
+  public function testErrorWhenMixedDurationUnitAndPeriodMembershipTypePriceFieldValuesAreSubmitted() {
+    $priceSet = $this->mockPriceSet();
+    $priceField = $this->mockPriceField($priceSet['id'], 'Test Field Set 1');
+    $memType1 = $this->mockMembershipType('rolling', 'year');
+    $memType2 = $this->mockMembershipType('fixed', 'month');
+    $priceFieldValue1 = $this->mockPriceFieldValue($priceField['id'], $memType1['id']);
+    $priceFieldValue2 = $this->mockPriceFieldValue($priceField['id'], $memType2['id']);
+
+    $fields = [];
+    $fields['price_set_id'] = $priceSet['id'];
+    $mockedPriceFieldKey = 'price_' . (string) $priceField['id'];
+    //Simulate check boxes with different period membership period type attach to price field values
+    $fields[$mockedPriceFieldKey] = [
+      $priceFieldValue1['id'] => 1,
+      $priceFieldValue2['id'] => 1,
+    ];
+    $paymentPlanValidation = new CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlan($this->form, $fields, $this->errors);
+    $paymentPlanValidation->validate();
+    $this->assertEquals(InvalidMembershipTypeInstalment::SAME_PERIOD_AND_DURATION, $this->errors['price_set_id']);
   }
 
   /**
