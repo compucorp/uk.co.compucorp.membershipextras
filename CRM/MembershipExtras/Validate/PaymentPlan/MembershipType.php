@@ -106,17 +106,18 @@ class CRM_MembershipExtras_Validate_PaymentPlan_MembershipType {
   private function validateMembershipTypeFields() {
     $periodTypes = [];
     $durationUnits = [];
+    $durationIntervals = [];
     $fixedPeriodStartDays = [];
 
     foreach ($this->membershipTypes as $membershipType) {
       $membershipType = (array) $membershipType;
-      if ($membershipType['duration_interval'] != 1) {
-        $this->errorBag[] = ts(InvalidMembershipTypeInstalment::DURATION_INTERVAL);
-      }
 
       if ($membershipType['period_type'] == 'fixed') {
         if ($membershipType['duration_unit'] != 'year') {
           $this->errorBag[] = ts(InvalidMembershipTypeInstalment::ONE_YEAR_DURATION);
+        }
+        if ($membershipType['duration_interval'] != 1) {
+          $this->errorBag[] = ts(InvalidMembershipTypeInstalment::DURATION_INTERVAL);
         }
         $fixedPeriodStartDays[] = $membershipType['fixed_period_start_day'];
       }
@@ -126,19 +127,19 @@ class CRM_MembershipExtras_Validate_PaymentPlan_MembershipType {
         }
       }
 
+      if ($membershipType['duration_unit'] == 'lifetime') {
+        $this->errorBag[] = ts(InvalidMembershipTypeInstalment::LIFETIME_DURATION);
+      }
+
       $periodTypes[] = $membershipType['period_type'];
       $durationUnits[] = $membershipType['duration_unit'];
+      $durationIntervals[] = $membershipType['duration_interval'];
     }
 
     $hasFixedMembershipType = in_array('fixed', $periodTypes);
+    $hasRollingMembershipType = in_array('rolling', $periodTypes);
 
-    if (!empty($this->schedule)) {
-      if ($hasFixedMembershipType && $this->schedule == self::QUARTERLY) {
-        $this->errorBag[] = ts(InvalidMembershipTypeInstalment::QUARTERLY_NOT_SUPPORT);
-      }
-    }
-
-    if (count(array_unique($periodTypes)) != 1 || count(array_unique($durationUnits)) != 1) {
+    if (count(array_unique($periodTypes)) != 1 || count(array_unique($durationUnits)) != 1 || count(array_unique($durationIntervals)) != 1) {
       $this->errorBag[] = ts(InvalidMembershipTypeInstalment::SAME_PERIOD_AND_DURATION);
     }
 
@@ -146,6 +147,16 @@ class CRM_MembershipExtras_Validate_PaymentPlan_MembershipType {
       $fixedPeriodStartDays = array_unique($fixedPeriodStartDays);
       if (!empty($fixedPeriodStartDays) && count($fixedPeriodStartDays) != 1) {
         $this->errorBag[] = ts(InvalidMembershipTypeInstalment::SAME_PERIOD_START_DAY);
+      }
+    }
+
+    if (!empty($this->schedule)) {
+      if ($hasFixedMembershipType && $this->schedule == self::QUARTERLY) {
+        $this->errorBag[] = ts(InvalidMembershipTypeInstalment::QUARTERLY_NOT_SUPPORT);
+      }
+
+      if ($this->schedule != self::MONTHLY && $hasRollingMembershipType && $durationUnits[0] == 'month') {
+        $this->errorBag[] = ts(InvalidMembershipTypeInstalment::MONTHLY_INSTALMENT_FOR_MONTH_UNIT);
       }
     }
 
