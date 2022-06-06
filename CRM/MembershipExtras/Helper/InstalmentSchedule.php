@@ -68,7 +68,7 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
    * Gets Instalment interval number by given schedule
    *
    * @param $schedule
-   * 
+   *
    * @param $interval
    *
    * @return int
