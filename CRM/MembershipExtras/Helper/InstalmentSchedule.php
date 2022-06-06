@@ -107,15 +107,15 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
   }
 
   public static function getPaymentPlanSchedule($frequencyUnit, $frequencyInterval, $installmentsCount) {
-    if ($frequencyUnit == 'month' && $frequencyInterval == 1 && $installmentsCount == 12) {
+    if ($frequencyUnit == 'month' && $frequencyInterval == 1) {
       return InstalmentsSchedule::MONTHLY;
     }
 
-    if ($frequencyUnit == 'month' && $frequencyInterval == 3 && $installmentsCount == 4) {
+    if ($frequencyUnit == 'month' && $frequencyInterval == 3) {
       return InstalmentsSchedule::QUARTERLY;
     }
 
-    if ($frequencyUnit == 'year' && $frequencyInterval == 1 && $installmentsCount == 1) {
+    if ($frequencyUnit == 'year' && $frequencyInterval == 1) {
       return InstalmentsSchedule::ANNUAL;
     }
   }
