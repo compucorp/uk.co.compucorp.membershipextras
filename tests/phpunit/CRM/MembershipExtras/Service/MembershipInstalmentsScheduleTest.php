@@ -68,6 +68,40 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
+   * Tests getting instalment for multi year duration unit for rolling membership type with monthly schedule.
+   */
+  public function testMultiYearUnitRollingMembershipTypeMonthlySchedule() {
+    $interval = rand(1, 3);
+    $rollingOneMonthType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'year',
+      'duration_interval' => $interval,
+      'name' => 'xyz',
+      'period_type' => 'rolling',
+    ]));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingOneMonthType['id']);
+    $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
+    //Expected instalment equals membership type interval * schedule, e.g. 12 instalments for 1 year duration
+    $this->assertCount($interval * 12, $schedule['instalments']);
+  }
+
+  /**
+   * Tests getting instalment for multi year duration unit for rolling membership type with monthly schedule.
+   */
+  public function testMultiYearUnitRollingMembershipTypeQuarterlySchedule() {
+    $interval = rand(1, 3);
+    $rollingOneMonthType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'year',
+      'duration_interval' => $interval,
+      'name' => 'xyz',
+      'period_type' => 'rolling',
+    ]));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingOneMonthType['id']);
+    $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::QUARTERLY);
+    //Expected instalment equals membership type interval * schedule, e.g. 4 instalments for 1 year duration
+    $this->assertCount($interval * 4, $schedule['instalments']);
+  }
+
+  /**
    * Tests rolling membership type schedulesub sub total, total tax amount and total amount
    */
   public function testRollingMembershipTypeScheduleTotalAmounts() {
