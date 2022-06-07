@@ -48,8 +48,12 @@ trait CRM_MembershipExtras_Helper_InstalmentHelperTrait {
     }
 
     $durationUnit = $membershipType->duration_unit;
-    if ($membershipType->period_type == 'rolling' && ($durationUnit == 'month' || $durationUnit == 'lifetime')) {
+    if ($membershipType->period_type == 'rolling' && $durationUnit == 'lifetime') {
       return 1;
+    }
+
+    if ($membershipType->period_type == 'rolling' && $durationUnit == 'month') {
+      return (int) $membershipType->duration_interval;
     }
 
     return CRM_MembershipExtras_Helper_InstalmentSchedule::getInstalmentCountBySchedule($schedule, (int) $membershipType->duration_interval);

@@ -23,12 +23,16 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
     ])['values'][0]['api.MembershipType.get']['values'][0];
 
     $durationUnit = $membershipType['duration_unit'];
-    if ($membershipType['period_type'] == 'rolling' && ($durationUnit == 'lifetime' || $durationUnit == 'month')) {
+    if ($membershipType['period_type'] == 'rolling' && ($durationUnit == 'lifetime')) {
       $instalmentDetails['instalments_count'] = 1;
+    }
+    elseif ($membershipType['period_type'] == 'rolling' && $durationUnit == 'month') {
+      $instalmentDetails['instalments_count'] = (int) $membershipType['duration_interval'];
     }
     else {
       $instalmentDetails['instalments_count'] = self::getInstalmentCountBySchedule($schedule, (int) $membershipType['duration_interval']);
     }
+
     $instalmentDetails['instalments_frequency'] = self::getFrequencyInterval($schedule);
     $instalmentDetails['instalments_frequency_unit'] = self::getFrequencyUnit($schedule, $instalmentDetails['instalments_frequency']);
 
