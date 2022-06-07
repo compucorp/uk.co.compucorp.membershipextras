@@ -48,6 +48,20 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculatorTest extends BaseH
         'expected_next_end_date' => '20030531',
         'expected_previous_end_date' => '20010531',
       ],
+      'normal year 0/01 => 12/30' => [
+        'duration_interval' => 6,
+        'duration_unit' => 'month',
+        'start_date' => '2020-01-01',
+        'expected_next_end_date' => '20201230',
+        'expected_previous_end_date' => '20191230',
+      ],
+      'normal year 0/01 => 12/30' => [
+        'duration_interval' => 3,
+        'duration_unit' => 'year',
+        'start_date' => '2020-01-01',
+        'expected_next_end_date' => '20251231',
+        'expected_previous_end_date' => '20191231',
+      ],
       'current date' => [
         'duration_interval' => 12,
         'duration_unit' => 'month',
