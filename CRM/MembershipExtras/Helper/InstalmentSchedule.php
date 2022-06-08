@@ -110,7 +110,7 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
     return FALSE;
   }
 
-  public static function getPaymentPlanSchedule($frequencyUnit, $frequencyInterval, $installmentsCount) {
+  public static function getPaymentPlanSchedule($frequencyUnit, $frequencyInterval) {
     if ($frequencyUnit == 'month' && $frequencyInterval == 1) {
       return InstalmentsSchedule::MONTHLY;
     }
