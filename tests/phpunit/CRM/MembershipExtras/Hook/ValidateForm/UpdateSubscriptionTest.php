@@ -16,11 +16,11 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
    *
    * @var \CRM_Contribute_Form_UpdateSubscription
    */
-  private $form = null;
+  private $form = NULL;
 
   /**
    * Array of errors.
-   * 
+   *
    * @var array
    */
   private $errors;
@@ -64,12 +64,25 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
     $fields['next_sched_contribution_date'] = '2020-02-29';
     $fields['cycle_day'] = $recurringContribution['cycle_day'];
 
-
     $updateSubscriptionValidation = new UpdateSubscription($this->form, $fields, $this->errors);
     $updateSubscriptionValidation->validate();
 
     $this->assertArrayHasKey('next_sched_contribution_date', $this->errors);
     $this->assertEquals($this->errors['next_sched_contribution_date'], UpdateSubscription::INVALID_NEXT_CONTRIB_DATE_YEAR);
+  }
+
+  public function testErrorIsThrownWhenCycleDayIsAbove28ForMonthlyMembership() {
+    $fields = [];
+    $recurringContribution = $this->createRecurContribution(['frequency_unit' => 'month']);
+    $this->form->set('crid', $recurringContribution['id']);
+    $fields['next_sched_contribution_date'] = $recurringContribution['next_sched_contribution_date'];
+    $fields['cycle_day'] = 29;
+
+    $updateSubscriptionValidation = new UpdateSubscription($this->form, $fields, $this->errors);
+    $updateSubscriptionValidation->validate();
+
+    $this->assertArrayHasKey('cycle_day', $this->errors);
+    $this->assertEquals($this->errors['cycle_day'], UpdateSubscription::INVALID_NEXT_CONTRIB_DATE_MONTH);
   }
 
   public function setUpUpdateSubscriptionForm() {
@@ -103,7 +116,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
   }
 
   public function tearDown() {
-    $this->form = null;
+    $this->form = NULL;
     $this->errors = [];
   }
 
