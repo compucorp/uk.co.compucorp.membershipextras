@@ -41,7 +41,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
     $updateSubscriptionValidation->validate();
 
     $this->assertArrayHasKey('next_sched_contribution_date', $this->errors);
-    $this->assertEquals($this->errors['next_sched_contribution_date'], UpdateSubscription::INVALID_NEXT_CONTRIB_DATE_MONTH);
+    $this->assertEquals($this->errors['next_sched_contribution_date'], UpdateSubscription::INVALID_NEXT_CONTRIBUTION_DATE_MONTH);
   }
 
   public function testErrorIsNotThrownWhenNextContribDateDayIsBelow29ForMonthlyMembership() {
@@ -57,7 +57,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
     $this->assertArrayNotHasKey('next_sched_contribution_date', $this->errors);
   }
 
-  public function testErrorIsThrownWhenNextContribDateDayIsFeb29ForAnnualMembership() {
+  public function testErrorIsThrownWhenNextContribDateIsLeapDateForAnnualMembership() {
     $fields = [];
     $recurringContribution = $this->createRecurContribution(['frequency_unit' => 'year']);
     $this->form->set('crid', $recurringContribution['id']);
@@ -68,7 +68,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
     $updateSubscriptionValidation->validate();
 
     $this->assertArrayHasKey('next_sched_contribution_date', $this->errors);
-    $this->assertEquals($this->errors['next_sched_contribution_date'], UpdateSubscription::INVALID_NEXT_CONTRIB_DATE_YEAR);
+    $this->assertEquals($this->errors['next_sched_contribution_date'], UpdateSubscription::INVALID_NEXT_CONTRIBUTION_DATE_YEAR);
   }
 
   public function testErrorIsThrownWhenCycleDayIsAbove28ForMonthlyMembership() {
@@ -82,7 +82,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
     $updateSubscriptionValidation->validate();
 
     $this->assertArrayHasKey('cycle_day', $this->errors);
-    $this->assertEquals($this->errors['cycle_day'], UpdateSubscription::INVALID_NEXT_CONTRIB_DATE_MONTH);
+    $this->assertEquals($this->errors['cycle_day'], UpdateSubscription::INVALID_NEXT_CONTRIBUTION_DATE_MONTH);
   }
 
   public function setUpUpdateSubscriptionForm() {

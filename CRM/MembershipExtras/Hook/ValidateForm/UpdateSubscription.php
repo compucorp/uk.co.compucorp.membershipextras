@@ -33,8 +33,8 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscription {
    */
   private $recurringContribution;
 
-  const INVALID_NEXT_CONTRIB_DATE_MONTH = 'Not all months have more than 28 days. As such monthly or quarterly payment plans must renew on or before the 28th of the month. Please select another date on or before the 28th of the month.';
-  const INVALID_NEXT_CONTRIB_DATE_YEAR = 'Not all years have a 29th of Feb. As such annual payment plans must renew on any other day of the year!';
+  const INVALID_NEXT_CONTRIBUTION_DATE_MONTH = 'Not all months have more than 28 days. As such monthly or quarterly payment plans must renew on or before the 28th of the month. Please select another date on or before the 28th of the month.';
+  const INVALID_NEXT_CONTRIBUTION_DATE_YEAR = 'Not all years have a 29th of Feb. As such annual payment plans must renew on any other day of the year!';
 
   /**
    * CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscription constructor.
@@ -59,24 +59,36 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscription {
   }
 
   public function validateCycleDay() {
-    $frequency = $this->recurringContribution['frequency_unit'];
     $cycleDay = $this->fields['cycle_day'];
+    $frequency = $this->recurringContribution['frequency_unit'];
+
     if ($cycleDay > 28 && $frequency === 'month') {
-      $this->errors['cycle_day'] = ts(self::INVALID_NEXT_CONTRIB_DATE_MONTH);
+      $this->errors['cycle_day'] = ts(self::INVALID_NEXT_CONTRIBUTION_DATE_MONTH);
     }
   }
 
   private function validateNextContributionDate() {
     $frequency = $this->recurringContribution['frequency_unit'];
-    $nextContribDate = $this->fields['next_sched_contribution_date'];
-    $nextContribDay = date('j', strtotime($nextContribDate));
-    $nextContibMonth = date('n', strtotime($nextContribDate));
-    if ($nextContribDay > 28 && $frequency === 'month') {
-      $this->errors['next_sched_contribution_date'] = ts(self::INVALID_NEXT_CONTRIB_DATE_MONTH);
-    }
+    $nextContributionDate = $this->fields['next_sched_contribution_date'];
+
+    $this->validateNextContributionDateIsNotLeapYear($nextContributionDate, $frequency);
+    $this->validateNextContributionDateDayIsNotBeyond28($nextContributionDate, $frequency);
+  }
+
+  private function validateNextContributionDateIsNotLeapYear(string $nextContributionDate, string $frequency) {
+    $nextContribDay = date('j', strtotime($nextContributionDate));
+    $nextContibMonth = date('n', strtotime($nextContributionDate));
 
     if ($nextContribDay > 28 && $nextContibMonth == '2' && $frequency === 'year') {
-      $this->errors['next_sched_contribution_date'] = ts(self::INVALID_NEXT_CONTRIB_DATE_YEAR);
+      $this->errors['next_sched_contribution_date'] = ts(self::INVALID_NEXT_CONTRIBUTION_DATE_YEAR);
+    }
+  }
+
+  private function validateNextContributionDateDayIsNotBeyond28(string $nextContributionDate, string $frequency) {
+    $nextContribDay = date('j', strtotime($nextContributionDate));
+
+    if ($nextContribDay > 28 && $frequency === 'month') {
+      $this->errors['next_sched_contribution_date'] = ts(self::INVALID_NEXT_CONTRIBUTION_DATE_MONTH);
     }
   }
 
