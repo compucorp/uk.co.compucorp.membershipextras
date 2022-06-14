@@ -93,11 +93,11 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscription {
   }
 
   /**
-   * Loads data for recurring contribution identified by 'crid' parameter in
-   * http request.
+   * Loads data for the currently edited recurring contribution.
    */
   private function setRecurringContribution() {
-    $recurringContributionID = CRM_Utils_Request::retrieve('crid', 'Integer', $this->form, TRUE);
+    $recurringContributionID = $this->form->getVar('contributionRecurID');
+
     $this->recurringContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
       'id' => $recurringContributionID,

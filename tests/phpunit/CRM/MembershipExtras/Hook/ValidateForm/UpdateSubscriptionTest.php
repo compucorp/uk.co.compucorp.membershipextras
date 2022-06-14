@@ -33,7 +33,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
   public function testErrorIsThrownWhenNextContribDateDayIsAbove28ForMonthlyMembership() {
     $fields = [];
     $recurringContribution = $this->createRecurContribution();
-    $this->form->set('crid', $recurringContribution['id']);
+    $this->form->setVar('contributionRecurID', $recurringContribution['id']);
     $fields['next_sched_contribution_date'] = '2020-12-31';
     $fields['cycle_day'] = $recurringContribution['cycle_day'];
 
@@ -47,7 +47,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
   public function testErrorIsNotThrownWhenNextContribDateDayIsBelow29ForMonthlyMembership() {
     $fields = [];
     $recurringContribution = $this->createRecurContribution();
-    $this->form->set('crid', $recurringContribution['id']);
+    $this->form->setVar('contributionRecurID', $recurringContribution['id']);
     $fields['next_sched_contribution_date'] = '2020-12-28';
     $fields['cycle_day'] = $recurringContribution['cycle_day'];
 
@@ -60,7 +60,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
   public function testErrorIsThrownWhenNextContribDateIsLeapDateForAnnualMembership() {
     $fields = [];
     $recurringContribution = $this->createRecurContribution(['frequency_unit' => 'year']);
-    $this->form->set('crid', $recurringContribution['id']);
+    $this->form->setVar('contributionRecurID', $recurringContribution['id']);
     $fields['next_sched_contribution_date'] = '2020-02-29';
     $fields['cycle_day'] = $recurringContribution['cycle_day'];
 
@@ -74,7 +74,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
   public function testErrorIsThrownWhenCycleDayIsAbove28ForMonthlyMembership() {
     $fields = [];
     $recurringContribution = $this->createRecurContribution(['frequency_unit' => 'month']);
-    $this->form->set('crid', $recurringContribution['id']);
+    $this->form->setVar('contributionRecurID', $recurringContribution['id']);
     $fields['next_sched_contribution_date'] = $recurringContribution['next_sched_contribution_date'];
     $fields['cycle_day'] = 29;
 
