@@ -633,7 +633,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
-   * Tests exception is thorwn when membership type duration is day
+   * Tests exception is thrown when membership type duration is day
    */
   public function testExceptionIsThrownIfMembershipTypeDurationUnitIsDay() {
     $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
@@ -642,6 +642,66 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
     $membershipType = CRM_Member_BAO_MembershipType::findById($invalidMembershipType['id']);
     $this->expectException(InvalidMembershipTypeInstalment::class);
     $this->getMembershipInstalmentsSchedule([$membershipType], MembershipInstalmentsSchedule::ANNUAL);
+  }
+
+  /**
+   * Tests that monthly instalments date are calculated properly
+   * for membership start_date greater than 28 and months follows a sequential order.
+   */
+  public function testMonthlyRollingInstalmentDatesAreCalculatedProperlyWhenStartDateIsGreaterThan28() {
+    $startDate = new DateTime('2022-01-31');
+    $membershipTypes = $this->mockRollingMembershipTypes();
+    $schedule = $this->getMembershipSchedule(
+      $membershipTypes,
+      MembershipInstalmentsSchedule::MONTHLY,
+      $startDate
+    );
+
+    $expectedInstalmentDates = [
+      '2022-01-31',
+      '2022-02-28',
+      '2022-03-31',
+      '2022-04-30',
+      '2022-05-31',
+      '2022-06-30',
+      '2022-07-31',
+      '2022-08-31',
+      '2022-09-30',
+      '2022-10-31',
+      '2022-11-30',
+      '2022-12-31',
+    ];
+
+    foreach ($schedule['instalments'] as $index => $instalment) {
+      $instalmentDate = $instalment->getInstalmentDate();
+      $this->assertEquals($expectedInstalmentDates[$index], $instalmentDate->format('Y-m-d'));
+    }
+  }
+
+  /**
+   * Tests that quarterly instalments date are calculated properly
+   * for membership start_date greater than 28 and months follows a sequential order.
+   */
+  public function testQuarterlyRollingInstalmentDatesAreCalculatedProperlyWhenStartDateIsGreaterThan28() {
+    $startDate = new DateTime('2022-01-31');
+    $membershipTypes = $this->mockRollingMembershipTypes();
+    $schedule = $this->getMembershipSchedule(
+      $membershipTypes,
+      MembershipInstalmentsSchedule::QUARTERLY,
+      $startDate
+    );
+
+    $expectedInstalmentDates = [
+      '2022-01-31',
+      '2022-04-30',
+      '2022-07-31',
+      '2022-10-31',
+    ];
+
+    foreach ($schedule['instalments'] as $index => $instalment) {
+      $instalmentDate = $instalment->getInstalmentDate();
+      $this->assertEquals($expectedInstalmentDates[$index], $instalmentDate->format('Y-m-d'));
+    }
   }
 
   /**
