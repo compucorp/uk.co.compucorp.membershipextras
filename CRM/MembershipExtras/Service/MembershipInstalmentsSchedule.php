@@ -65,6 +65,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @var int
    */
   private $instalmentCount;
+  /**
+   * @var \CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator
+   */
+  private $installmentReceiveDateCalculator;
 
   /**
    * CRM_MembershipExtras_Service_MembershipTypeInstalment constructor.
@@ -76,6 +80,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    */
   public function __construct(array $membershipTypes, string $schedule) {
     $this->membershipInstalmentTaxAmountCalculator = new CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator();
+    $this->installmentReceiveDateCalculator = new CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator();
     $this->membershipTypes = $membershipTypes;
     $this->schedule = $schedule;
     $this->validateMembershipTypeForInstalment();
@@ -138,20 +143,23 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
 
     $instalments['instalments'][] = $instalment;
 
+    $intervalSpecSchedule = [
+      self::ANNUAL => 12,
+      self::MONTHLY => 1,
+      self::QUARTERLY => 3,
+    ];
+
     if ($this->instalmentCount > 1) {
       $previousInstalmentDate = $firstInstalmentDate;
+      $firstInstalmentDateTime = new DateTime($firstInstalmentDate);
+
       for ($instalmentNumber = 2; $instalmentNumber <= $this->instalmentCount; $instalmentNumber++) {
-        $intervalSpec = 'P1M';
-        if ($this->schedule == self::QUARTERLY) {
-          $intervalSpec = 'P3M';
-        }
+        $intervalSpec = CRM_Utils_Array::value($this->schedule, $intervalSpecSchedule, 1);
 
         $params['previous_instalment_date'] = $previousInstalmentDate;
 
-        $instalmentDate = new DateTime($previousInstalmentDate);
-        $instalmentDate->add(new DateInterval($intervalSpec));
+        $instalmentDate = $this->installmentReceiveDateCalculator->getSameDayNextMonth($firstInstalmentDateTime, $intervalSpec * ($instalmentNumber - 1));
         $instalmentDate = $instalmentDate->format('Y-m-d');
-
         $dispatchedInstalmentDate = $instalmentDate;
 
         $this->dispatchContributionReceiveDateCalculation($instalmentNumber, $dispatchedInstalmentDate, $params);
