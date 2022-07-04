@@ -245,8 +245,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
     $receiveDate = $params['receive_date'];
     $paymentPlanSchedule = CRM_MembershipExtras_Helper_InstalmentSchedule::getPaymentPlanSchedule(
       $this->currentRecurContribution['frequency_unit'],
-      $this->currentRecurContribution['frequency_interval'],
-      $this->currentRecurContribution['installments']
+      $this->currentRecurContribution['frequency_interval']
     );
 
     $contributionReceiveDateParams = [
