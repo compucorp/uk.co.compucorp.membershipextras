@@ -381,6 +381,12 @@ function membershipextras_civicrm_validateForm($formName, &$fields, &$files, &$f
     $membershipUpdateValidationHook = new CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate($form, $fields, $errors);
     $membershipUpdateValidationHook->validate();
   }
+
+  $isUpdateSubcriptionForm = $formName === 'CRM_Contribute_Form_UpdateSubscription' && ($formAction & CRM_Core_Action::UPDATE);
+  if ($isUpdateSubcriptionForm) {
+    $subscriptionUpdateValidationHook = new CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscription($form, $fields, $errors);
+    $subscriptionUpdateValidationHook->validate();
+  }
 }
 
 /**
