@@ -212,7 +212,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
     $this->assertEquals($expectedNextDate, $nextDate);
   }
 
-  public function testPaymentPlanNextContributionDateDayWillNotExceed28ForRollingMemberships() {
+  public function testPaymentPlanNextContributionDateDayWillNotExceed28ForMonthlyRollingMemberships() {
     $this->simulateMembershipSignupForm('monthly', 'rolling', date('2020-01-31'));
     $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form, 'creation');
     $processor->postProcess();
@@ -221,6 +221,46 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
       'return' => 'contribution_recur_id',
       'id' => $this->form->_id,
     ]);
+
+    $nextDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'next_sched_contribution_date',
+      'id' => $recurContributionId,
+    ]);
+
+    $this->assertEquals(28, date('d', strtotime((string) $nextDate)));
+  }
+
+  public function testPaymentPlanNextContributionDateDayWillUseMembershipEndDateForAnnualRollingMemberships() {
+    $this->simulateMembershipSignupForm('annual', 'rolling', date('2022-01-31'));
+
+    $recurContributionId = civicrm_api3('Membership', 'getvalue', [
+      'return' => 'contribution_recur_id',
+      'id' => $this->form->_id,
+    ]);
+    $this->updateLastContributionReceiveDate($recurContributionId, '2022-01-31');
+
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form, 'creation');
+    $processor->postProcess();
+
+    $nextDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'next_sched_contribution_date',
+      'id' => $recurContributionId,
+    ]);
+
+    $this->assertEquals(31, date('d', strtotime((string) $nextDate)));
+  }
+
+  public function testPaymentPlanNextContributionDateDayIsNotLeapDateForAnnualRollingMemberships() {
+    $this->simulateMembershipSignupForm('annual', 'rolling', date('2020-02-29'));
+
+    $recurContributionId = civicrm_api3('Membership', 'getvalue', [
+      'return' => 'contribution_recur_id',
+      'id' => $this->form->_id,
+    ]);
+    $this->updateLastContributionReceiveDate($recurContributionId, '2020-02-29');
+
+    $processor = new MembershipPaymentPlanProcessor(self::$NEW_MEMBERSHIP_FORM_NAME, $this->form, 'creation');
+    $processor->postProcess();
 
     $nextDate = civicrm_api3('ContributionRecur', 'getvalue', [
       'return' => 'next_sched_contribution_date',
@@ -364,6 +404,20 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
     return civicrm_api3('MembershipPayment', 'get', [
       'sequential' => 1,
       'membership_id' => $membershipId,
+    ]);
+  }
+
+  private function updateLastContributionReceiveDate($recurContributionId, $date) {
+    $lastContribution = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $recurContributionId,
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ]);
+
+    civicrm_api3('Contribution', 'create', [
+      'sequential' => 1,
+      'id' => $lastContribution['id'],
+      'receive_date' => $date,
     ]);
   }
 
