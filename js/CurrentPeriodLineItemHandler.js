@@ -659,7 +659,8 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
         'entity_table': {'IS NOT NULL': 1},
         'entity_id': {'IS NOT NULL': 1},
         'api.PriceFieldValue.getsingle': {
-          'id': '$value.price_field_value_id'
+          'id': '$value.price_field_value_id',
+          'context': 'Membershipextras'
         }
       }
     };
@@ -682,15 +683,18 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       'api.EntityFinancialAccount.getsingle': {
         'entity_id': '$value.financial_type_id',
         'entity_table': 'civicrm_financial_type',
+        'context': 'Membershipextras',
         'account_relationship': {
           'IN': ['Sales Tax Account is']
         },
         'api.FinancialAccount.getsingle': {
-          'id': '$value.financial_account_id'
+          'id': '$value.financial_account_id',
+          'context': 'Membershipextras'
         }
       },
       'api.FinancialType.getsingle': {
-        'id': '$value.financial_type_id'
+        'id': '$value.financial_type_id',
+        'context': 'Membershipextras'
       }
     };
 

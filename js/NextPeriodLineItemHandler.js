@@ -197,7 +197,8 @@ function showMembershipAddLineItemConfirmation() {
     CRM.api3('PriceFieldValue', 'get', {
       sequential: 1,
       membership_type_id: membershipTypeId,
-      'price_field_id.price_set_id.name': 'default_membership_type_amount'
+      'price_field_id.price_set_id.name': 'default_membership_type_amount',
+      'context': 'Membershipextras'
     }).done(function(priceFieldValueResult) {
       if (priceFieldValueResult.count > 0) {
         var priceFieldValue = priceFieldValueResult.values[0];

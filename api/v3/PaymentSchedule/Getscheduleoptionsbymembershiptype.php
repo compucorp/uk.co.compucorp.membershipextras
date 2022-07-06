@@ -1,8 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_ExtensionUtil as E;
-
-function _civicrm_api3_payment_schedule_etscheduleoptionsbymembershiptype_spec(&$spec) {
+function _civicrm_api3_payment_schedule_getscheduleoptionsbymembershiptype_spec(&$spec) {
   $spec['membership_type_id'] = [
     'name' => 'membership_type_id',
     'title' => 'Membership Type ID',
