@@ -75,8 +75,7 @@ class CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator {
         break;
 
       case 'year':
-        $interval = "P{$numberOfIntervals}Y";
-        $receiveDate->add(new DateInterval($interval));
+        $receiveDate = $this->getSameDayNextMonth($receiveDate, 12 * $numberOfIntervals);
         break;
     }
 
