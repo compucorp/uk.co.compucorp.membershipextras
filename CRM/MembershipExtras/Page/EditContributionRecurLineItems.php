@@ -446,6 +446,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       $membership = civicrm_api3('Membership', 'getsingle', [
         'sequential' => 1,
         'id' => $membershipID,
+        'return' => ['start_date', 'end_date', 'id'],
       ]);
       $membership['related_membership_type'] = $this->getMembershipTypeFromMembershipID($membershipID);
       $this->membershipsCache[$membershipID] = $membership;
