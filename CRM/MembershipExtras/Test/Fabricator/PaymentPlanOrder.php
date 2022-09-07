@@ -129,7 +129,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'contribution_status_id' => self::$paymentPlanMembershipOrder->paymentPlanStatus,
       'is_test' => 0,
       'auto_renew' => isset(self::$paymentPlanMembershipOrder->autoRenew) ? self::$paymentPlanMembershipOrder->autoRenew : 1,
-      'cycle_day' => 1,
+      'cycle_day' => CRM_MembershipExtras_Service_CycleDayCalculator::calculate(self::$paymentPlanMembershipOrder->paymentPlanStartDate, $frequencyUnit),
       'payment_processor_id' => self::$paymentPlanMembershipOrder->paymentProcessor,
       'financial_type_id' => self::$paymentPlanMembershipOrder->financialType,
       'payment_instrument_id' => self::$paymentPlanMembershipOrder->paymentMethod,

@@ -84,7 +84,15 @@ class CRM_MembershipExtras_Service_PaymentPlanNextContributionDate {
     else {
       $receiveDateCalculator = new CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator($this->recurContribution);
       $receiveDateCalculator->setStartDate($lastContribution['receive_date']);
-      return $receiveDateCalculator->calculate(2);
+      $nextScheduledDate = $receiveDateCalculator->calculate(2);
+      $nextScheduledDate = new DateTime($nextScheduledDate);
+      $frequencyUnit = $this->recurContribution['frequency_unit'];
+
+      if ($frequencyUnit != 'year' || $nextScheduledDate->format('n') == 2) {
+        $nextScheduledDate->setDate($nextScheduledDate->format('Y'), $nextScheduledDate->format('m'), min($nextScheduledDate->format('d'), 28));
+      }
+
+      return $nextScheduledDate->format('Y-m-d');
     }
   }
 

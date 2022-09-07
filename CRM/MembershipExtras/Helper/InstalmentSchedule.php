@@ -23,12 +23,16 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
     ])['values'][0]['api.MembershipType.get']['values'][0];
 
     $durationUnit = $membershipType['duration_unit'];
-    if ($membershipType['period_type'] == 'rolling' && ($durationUnit == 'lifetime' || $durationUnit == 'month')) {
+    if ($membershipType['period_type'] == 'rolling' && ($durationUnit == 'lifetime')) {
       $instalmentDetails['instalments_count'] = 1;
     }
-    else {
-      $instalmentDetails['instalments_count'] = self::getInstalmentCountBySchedule($schedule);
+    elseif ($membershipType['period_type'] == 'rolling' && $durationUnit == 'month') {
+      $instalmentDetails['instalments_count'] = (int) $membershipType['duration_interval'];
     }
+    else {
+      $instalmentDetails['instalments_count'] = self::getInstalmentCountBySchedule($schedule, (int) $membershipType['duration_interval']);
+    }
+
     $instalmentDetails['instalments_frequency'] = self::getFrequencyInterval($schedule);
     $instalmentDetails['instalments_frequency_unit'] = self::getFrequencyUnit($schedule, $instalmentDetails['instalments_frequency']);
 
@@ -69,9 +73,11 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
    *
    * @param $schedule
    *
+   * @param $interval
+   *
    * @return int
    */
-  public static function getInstalmentCountBySchedule($schedule) {
+  public static function getInstalmentCountBySchedule($schedule, $interval) {
     switch ($schedule) {
       case InstalmentsSchedule::MONTHLY:
         $instalmentInterval = InstalmentsSchedule::MONTHLY_INSTALMENT_COUNT;
@@ -85,7 +91,7 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
         $instalmentInterval = InstalmentsSchedule::ANNUAL_INTERVAL_COUNT;
     }
 
-    return $instalmentInterval;
+    return $instalmentInterval * $interval;
   }
 
   /**
@@ -104,16 +110,16 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
     return FALSE;
   }
 
-  public static function getPaymentPlanSchedule($frequencyUnit, $frequencyInterval, $installmentsCount) {
-    if ($frequencyUnit == 'month' && $frequencyInterval == 1 && $installmentsCount == 12) {
+  public static function getPaymentPlanSchedule($frequencyUnit, $frequencyInterval) {
+    if ($frequencyUnit == 'month' && $frequencyInterval == 1) {
       return InstalmentsSchedule::MONTHLY;
     }
 
-    if ($frequencyUnit == 'month' && $frequencyInterval == 3 && $installmentsCount == 4) {
+    if ($frequencyUnit == 'month' && $frequencyInterval == 3) {
       return InstalmentsSchedule::QUARTERLY;
     }
 
-    if ($frequencyUnit == 'year' && $frequencyInterval == 1 && $installmentsCount == 1) {
+    if ($frequencyUnit == 'year' && $frequencyInterval == 1) {
       return InstalmentsSchedule::ANNUAL;
     }
   }

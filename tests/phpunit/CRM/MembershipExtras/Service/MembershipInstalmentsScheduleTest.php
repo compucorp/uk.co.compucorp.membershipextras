@@ -54,16 +54,68 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
-   * Tests getting instalment for life time duration unit for rolling membership type.
+   * Tests exception is thrown when membership type duration unit is one (1) lifetime
    */
-  public function testOneLifeTimeUnitRollingMembershipType() {
-    $rollingLifetimeType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+  public function testExceptionIsThrownIfMembershipTypeDurationUnitIsOneLifeTime() {
+    $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
       ['duration_unit' => 'lifetime', 'duration_interval' => 1, 'name' => 'xyz', 'period_type' => 'rolling']
     ));
-    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingLifetimeType['id']);
+
+    $membershipType = CRM_Member_BAO_MembershipType::findById($invalidMembershipType['id']);
+    $this->expectException(InvalidMembershipTypeInstalment::class);
+    $this->expectExceptionMessage(InvalidMembershipTypeInstalment::LIFETIME_DURATION);
+    $this->getMembershipInstalmentsSchedule([$membershipType], MembershipInstalmentsSchedule::ANNUAL);
+  }
+
+  /**
+   * Tests getting instalment for multi year duration unit for rolling membership type with monthly schedule.
+   */
+  public function testMultiYearUnitRollingMembershipTypeMonthlySchedule() {
+    $interval = rand(1, 3);
+    $rollingOneMonthType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'year',
+      'duration_interval' => $interval,
+      'name' => 'xyz',
+      'period_type' => 'rolling',
+    ]));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingOneMonthType['id']);
     $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
-    //Expected instalment equals 1 for life time duration
-    $this->assertCount(1, $schedule['instalments']);
+    //Expected instalment equals membership type interval * schedule, e.g. 12 instalments for 1 year duration
+    $this->assertCount($interval * 12, $schedule['instalments']);
+  }
+
+  /**
+   * Tests getting instalment for multi year duration unit for rolling membership type with monthly schedule.
+   */
+  public function testMultiYearUnitRollingMembershipTypeQuarterlySchedule() {
+    $interval = rand(1, 3);
+    $rollingOneMonthType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'year',
+      'duration_interval' => $interval,
+      'name' => 'xyz',
+      'period_type' => 'rolling',
+    ]));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingOneMonthType['id']);
+    $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::QUARTERLY);
+    //Expected instalment equals membership type interval * schedule, e.g. 4 instalments for 1 year duration
+    $this->assertCount($interval * 4, $schedule['instalments']);
+  }
+
+  /**
+   * Tests getting instalment for multi month duration unit for rolling membership type
+   */
+  public function testMultiMonthUnitRollingMembershipType() {
+    $interval = rand(2, 12);
+    $rollingOneMonthType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams, [
+      'duration_unit' => 'month',
+      'duration_interval' => $interval,
+      'name' => 'xyz',
+      'period_type' => 'rolling',
+    ]));
+    $membershipType = CRM_Member_BAO_MembershipType::findById($rollingOneMonthType['id']);
+    $schedule = $this->getMembershipSchedule([$membershipType], MembershipInstalmentsSchedule::MONTHLY);
+    //Expected instalment equals membership type interval, e.g. 6 instalments for 6 month duration
+    $this->assertCount($interval, $schedule['instalments']);
   }
 
   /**
@@ -592,6 +644,27 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
+   * Tests exception when membership duration intervals are mixed
+   *
+   * @throws CiviCRM_API3_Exception
+   */
+  public function testExceptionIsThrownIfMembershipDurationIntervalsAreMixed() {
+    $fixedType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+      ['duration_unit' => 'year', 'duration_interval' => 2, 'name' => 'abc', 'period_type' => 'rolling']
+    ));
+    $rollingType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
+      ['duration_unit' => 'year', 'duration_interval' => 1, 'name' => 'xyz', 'period_type' => 'rolling']
+    ));
+    $membershipType1 = CRM_Member_BAO_MembershipType::findById($fixedType['id']);
+    $membershipType2 = CRM_Member_BAO_MembershipType::findById($rollingType['id']);
+
+    $this->expectException(InvalidMembershipTypeInstalment::class);
+    $this->getMembershipInstalmentsSchedule(
+      [$membershipType1, $membershipType2], MembershipInstalmentsSchedule::ANNUAL
+    );
+  }
+
+  /**
    * Tests exception when membership type ts a fixed period
    * and schedule is quarterly
    *
@@ -611,7 +684,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
-   * Tests exception is thorwn when membership type duration is day
+   * Tests exception is thrown when membership type duration is day
    */
   public function testExceptionIsThrownIfMembershipTypeDurationUnitIsDay() {
     $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
@@ -623,15 +696,63 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
-   * Tests exception is thrown when membership type duration is not one (1)
+   * Tests that monthly instalments date are calculated properly
+   * for membership start_date greater than 28 and months follows a sequential order.
    */
-  public function testExceptionIsThrownIfMembershipTypeDurationIntervalIsNotOne() {
-    $invalidMembershipType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
-      ['duration_unit' => 'year', 'duration_interval' => 2, 'name' => 'xyz', 'period_type' => 'rolling']
-    ));
-    $membershipType = CRM_Member_BAO_MembershipType::findById($invalidMembershipType['id']);
-    $this->expectException(InvalidMembershipTypeInstalment::class);
-    $this->getMembershipInstalmentsSchedule([$membershipType], MembershipInstalmentsSchedule::ANNUAL);
+  public function testMonthlyRollingInstalmentDatesAreCalculatedProperlyWhenStartDateIsGreaterThan28() {
+    $startDate = new DateTime('2022-01-31');
+    $membershipTypes = $this->mockRollingMembershipTypes();
+    $schedule = $this->getMembershipSchedule(
+      $membershipTypes,
+      MembershipInstalmentsSchedule::MONTHLY,
+      $startDate
+    );
+
+    $expectedInstalmentDates = [
+      '2022-01-31',
+      '2022-02-28',
+      '2022-03-31',
+      '2022-04-30',
+      '2022-05-31',
+      '2022-06-30',
+      '2022-07-31',
+      '2022-08-31',
+      '2022-09-30',
+      '2022-10-31',
+      '2022-11-30',
+      '2022-12-31',
+    ];
+
+    foreach ($schedule['instalments'] as $index => $instalment) {
+      $instalmentDate = $instalment->getInstalmentDate();
+      $this->assertEquals($expectedInstalmentDates[$index], $instalmentDate->format('Y-m-d'));
+    }
+  }
+
+  /**
+   * Tests that quarterly instalments date are calculated properly
+   * for membership start_date greater than 28 and months follows a sequential order.
+   */
+  public function testQuarterlyRollingInstalmentDatesAreCalculatedProperlyWhenStartDateIsGreaterThan28() {
+    $startDate = new DateTime('2022-01-31');
+    $membershipTypes = $this->mockRollingMembershipTypes();
+    $schedule = $this->getMembershipSchedule(
+      $membershipTypes,
+      MembershipInstalmentsSchedule::QUARTERLY,
+      $startDate
+    );
+
+    $expectedInstalmentDates = [
+      '2022-01-31',
+      '2022-04-30',
+      '2022-07-31',
+      '2022-10-31',
+    ];
+
+    foreach ($schedule['instalments'] as $index => $instalment) {
+      $instalmentDate = $instalment->getInstalmentDate();
+      $this->assertEquals($expectedInstalmentDates[$index], $instalmentDate->format('Y-m-d'));
+    }
   }
 
   /**
