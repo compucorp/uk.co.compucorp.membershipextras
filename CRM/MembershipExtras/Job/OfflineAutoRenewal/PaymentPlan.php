@@ -305,6 +305,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'sequential' => 1,
       'return' => ['contact_id', 'soft_credit_type_id'],
       'contribution_id' => $contribution['id'],
+      'options' => ['limit' => 1],
     ]);
     if (!empty($softContribution['values'][0])) {
       $softContribution = $softContribution['values'][0];
@@ -770,18 +771,10 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     }
 
     if (!empty($this->lastContribution['soft_credit'])) {
-      $params['soft_credit'] = $this->lastContribution['soft_credit'];
+      $params['soft_credit'][1] = $this->lastContribution['soft_credit'];
     }
 
     $contribution = CRM_Contribute_BAO_Contribution::create($params);
-
-    $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
-    if (!empty($contributionSoftParams)) {
-      $contributionSoftParams['contribution_id'] = $contribution->id;
-      $contributionSoftParams['currency'] = $contribution->currency;
-      $contributionSoftParams['amount'] = $contribution->total_amount;
-      CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
-    }
 
     CRM_MembershipExtras_Service_CustomFieldsCopier::copy(
       $this->lastContribution['id'],
