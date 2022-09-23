@@ -90,6 +90,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
       'sequential' => 1,
       'return' => ['contact_id', 'soft_credit_type_id'],
       'contribution_id' => $contribution['id'],
+      'options' => ['limit' => 1],
     ]);
     if (!empty($softContribution['values'][0])) {
       $softContribution = $softContribution['values'][0];
@@ -164,14 +165,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
 
     $contribution = CRM_Contribute_BAO_Contribution::create($params);
 
-    $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
-    if (!empty($contributionSoftParams)) {
-      $contributionSoftParams['contribution_id'] = $contribution->id;
-      $contributionSoftParams['currency'] = $contribution->currency;
-      $contributionSoftParams['amount'] = $contribution->total_amount;
-      CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
-    }
-
     $membershipPayments = civicrm_api3('MembershipPayment', 'get', [
       'return' => 'membership_id',
       'contribution_id' => $this->lastContribution['id'],
@@ -224,7 +217,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
     }
 
     if (!empty($this->lastContribution['soft_credit'])) {
-      $params['soft_credit'] = $this->lastContribution['soft_credit'];
+      $params['soft_credit'][1] = $this->lastContribution['soft_credit'];
     }
 
     return $params;
