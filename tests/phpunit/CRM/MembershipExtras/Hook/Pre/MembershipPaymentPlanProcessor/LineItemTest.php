@@ -29,12 +29,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    */
   private $membership;
 
-  public function setUp() {
-    //We mocked membership ID as the membership ID is always when
-    //Contribution pre_process hook is called.
-    MembershipPaymentPlanProcessor::$membership_id = $this->membership['id'];;
-  }
-
   /**
    * Tests pro rated price set contribution line item on calucation by month for fixed period membership type.
    *
@@ -156,11 +150,12 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
     $contact = ContactFabricator::fabricate();
     $membershipType = $this->mockMembershipType($membershipPeriodType, $membershipTypeDuration, $membershipTypeSetting);
     $this->membership = $this->mockMembership($contact['id'], $membershipType['id'], date('Y-m-d'));
+    MembershipPaymentPlanProcessor::$membership_id = $this->membership['id'];
     $contribution = $this->mockContribution($this->membership, $membershipType);
 
     if (is_null($priceSet)) {
       $this->priceSet = $this->mockPriceSet();
-      $priceField = $this->mockPriceField($this->priceSet['id'], 'price field for price set ' . $priceSet['id']);
+      $priceField = $this->mockPriceField($this->priceSet['id'], 'price field for price set ' . $this->priceSet['id']);
     }
     else {
       $priceField = $this->mockPriceField($priceSet['id']);
