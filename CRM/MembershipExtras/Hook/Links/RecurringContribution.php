@@ -72,7 +72,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    */
   public function alterLinks() {
     foreach ($this->links as &$actionLink) {
-      if ($actionLink['name'] == 'Cancel') {
+      if ($actionLink['name'] == 'Cancel' && $this->isManualPaymentPlan()) {
         unset($actionLink['ref']);
         $actionLink['url'] = 'civicrm/recurring-contribution/cancel';
         $actionLink['qs'] = 'reset=1&crid=%%crid%%&cid=%%cid%%&context=contribution';
