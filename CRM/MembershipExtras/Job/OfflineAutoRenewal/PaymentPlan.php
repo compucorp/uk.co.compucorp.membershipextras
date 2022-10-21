@@ -296,10 +296,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function setLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'return' => ['currency', 'contribution_source',
-        'contact_id', 'total_amount', 'payment_instrument_id',
-        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id',
-      ],
+      'return' => ['id'],
       'contribution_recur_id' => $this->currentRecurContributionID,
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];
@@ -308,6 +305,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       'sequential' => 1,
       'return' => ['contact_id', 'soft_credit_type_id'],
       'contribution_id' => $contribution['id'],
+      'options' => ['limit' => 1],
     ]);
     if (!empty($softContribution['values'][0])) {
       $softContribution = $softContribution['values'][0];
@@ -752,15 +750,15 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    */
   protected function recordPaymentPlanFirstContribution() {
     $params = [
-      'currency' => $this->lastContribution['currency'],
-      'source' => $this->lastContribution['contribution_source'],
-      'contact_id' => $this->lastContribution['contact_id'],
+      'currency' => $this->currentRecurringContribution['currency'],
+      'source' => 'Offline Autorenewal: ' . date('Y-m-d H:i:s'),
+      'contact_id' => $this->currentRecurringContribution['contact_id'],
       'net_amount' => $this->totalAmount,
       'total_amount' => $this->totalAmount,
       'receive_date' => $this->paymentPlanStartDate,
-      'payment_instrument_id' => $this->lastContribution['payment_instrument_id'],
-      'financial_type_id' => $this->lastContribution['financial_type_id'],
-      'is_test' => $this->lastContribution['is_test'],
+      'payment_instrument_id' => $this->currentRecurringContribution['payment_instrument_id'],
+      'financial_type_id' => $this->currentRecurringContribution['financial_type_id'],
+      'is_test' => $this->currentRecurringContribution['is_test'],
       'contribution_status_id' => $this->contributionPendingStatusValue,
       'is_pay_later' => TRUE,
       'skipLineItem' => 1,
@@ -773,18 +771,10 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     }
 
     if (!empty($this->lastContribution['soft_credit'])) {
-      $params['soft_credit'] = $this->lastContribution['soft_credit'];
+      $params['soft_credit'][1] = $this->lastContribution['soft_credit'];
     }
 
     $contribution = CRM_Contribute_BAO_Contribution::create($params);
-
-    $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
-    if (!empty($contributionSoftParams)) {
-      $contributionSoftParams['contribution_id'] = $contribution->id;
-      $contributionSoftParams['currency'] = $contribution->currency;
-      $contributionSoftParams['amount'] = $contribution->total_amount;
-      CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
-    }
 
     CRM_MembershipExtras_Service_CustomFieldsCopier::copy(
       $this->lastContribution['id'],

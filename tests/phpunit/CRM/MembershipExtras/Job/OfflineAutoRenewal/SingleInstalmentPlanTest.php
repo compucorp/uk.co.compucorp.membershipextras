@@ -1190,6 +1190,56 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     $this->assertEquals($expectedNextDate, $nextDate);
   }
 
+  public function testSecondTermContributionsAfterRenewalAreCreatedFromRecurringContributionDataInsteadOfLastTermContribution() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
+    $paymentPlanMembershipOrder->financialType = 'Member Dues';
+    $paymentPlanMembershipOrder->paymentMethod = 'EFT';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+
+    $firstTermLastContributionId = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['id'],
+      'contribution_recur_id' => $paymentPlan['id'],
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ])['values'][0]['id'];
+
+    // Update first-term last contribution data
+    civicrm_api3('Contribution', 'create', [
+      'id' => $firstTermLastContributionId,
+      'payment_instrument_id' => 'Cash',
+      'financial_type_id' => 'Donation',
+    ]);
+
+    $singleInstalmentRenewal = new SingleInstalmentRenewalJob();
+    $singleInstalmentRenewal->run();
+
+    $secondTermFirstContribution = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'return' => ['payment_instrument_id', 'financial_type_id'],
+      'contribution_recur_id' => $paymentPlan['id'],
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ])['values'][0];
+
+    $this->assertEquals('EFT', $secondTermFirstContribution['payment_instrument']);
+
+    $memberDuesFinancialTypeId = 2;
+    $this->assertEquals($memberDuesFinancialTypeId, $secondTermFirstContribution['financial_type_id']);
+  }
+
   /**
    * Obtains list of memberships set to auto-rnew with the payment plan.
    *
