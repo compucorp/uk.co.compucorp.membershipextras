@@ -91,9 +91,9 @@ function _membershipextras_civix_civicrm_config(&$config = NULL) {
   }
   $configured = TRUE;
 
-  $template =& CRM_Core_Smarty::singleton();
+  $template = CRM_Core_Smarty::singleton();
 
-  $extRoot = dirname(__FILE__) . DIRECTORY_SEPARATOR;
+  $extRoot = __DIR__ . DIRECTORY_SEPARATOR;
   $extDir = $extRoot . 'templates';
 
   if (is_array($template->template_dir)) {
@@ -221,7 +221,8 @@ function _membershipextras_civix_upgrader() {
  * Search directory tree for files which match a glob pattern.
  *
  * Note: Dot-directories (like "..", ".git", or ".svn") will be ignored.
- * Note: In Civi 4.3+, delegate to CRM_Utils_File::findFiles()
+ * Note: Delegate to CRM_Utils_File::findFiles(), this function kept only
+ * for backward compatibility of extension code that uses it.
  *
  * @param string $dir base dir
  * @param string $pattern , glob pattern, eg "*.txt"
@@ -229,32 +230,7 @@ function _membershipextras_civix_upgrader() {
  * @return array
  */
 function _membershipextras_civix_find_files($dir, $pattern) {
-  if (is_callable(['CRM_Utils_File', 'findFiles'])) {
-    return CRM_Utils_File::findFiles($dir, $pattern);
-  }
-
-  $todos = [$dir];
-  $result = [];
-  while (!empty($todos)) {
-    $subdir = array_shift($todos);
-    foreach (_membershipextras_civix_glob("$subdir/$pattern") as $match) {
-      if (!is_dir($match)) {
-        $result[] = $match;
-      }
-    }
-    if ($dh = opendir($subdir)) {
-      while (FALSE !== ($entry = readdir($dh))) {
-        $path = $subdir . DIRECTORY_SEPARATOR . $entry;
-        if ($entry[0] == '.') {
-        }
-        elseif (is_dir($path)) {
-          $todos[] = $path;
-        }
-      }
-      closedir($dh);
-    }
-  }
-  return $result;
+  return CRM_Utils_File::findFiles($dir, $pattern);
 }
 
 /**
@@ -483,6 +459,11 @@ function _membershipextras_civix_civicrm_entityTypes(&$entityTypes) {
       'name' => 'ContributionRecurLineItem',
       'class' => 'CRM_MembershipExtras_DAO_ContributionRecurLineItem',
       'table' => 'membershipextras_subscription_line',
+    ],
+    'CRM_MembershipExtras_DAO_PaymentScheme' => [
+      'name' => 'PaymentScheme',
+      'class' => 'CRM_MembershipExtras_DAO_PaymentScheme',
+      'table' => 'civicrm_payment_scheme',
     ],
   ]);
 }
