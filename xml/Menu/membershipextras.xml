@@ -66,4 +66,10 @@
     <title>InstalmentSchedule</title>
     <access_arguments>edit memberships</access_arguments>
   </item>
+  <item>
+    <path>civicrm/member/admin/payment-scheme</path>
+    <page_callback>CRM_MembershipExtras_Form_PaymentScheme</page_callback>
+    <title>Payment Scheme</title>
+    <access_arguments>administer MembershipExtras</access_arguments>
+  </item>
 </menu>
