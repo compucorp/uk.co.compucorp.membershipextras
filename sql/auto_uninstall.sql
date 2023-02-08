@@ -10,6 +10,7 @@ DELETE FROM civicrm_line_item WHERE `id` IN (
     SELECT membershipextras_subscription_line.line_item_id
     FROM membershipextras_subscription_line
 );
+DROP TABLE IF EXISTS `membershipextras_payment_scheme`;
 DROP TABLE IF EXISTS `membershipextras_subscription_line`;
 
 -- /*******************************************************
