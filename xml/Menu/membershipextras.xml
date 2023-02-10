@@ -72,4 +72,10 @@
     <title>Payment Scheme</title>
     <access_arguments>administer MembershipExtras</access_arguments>
   </item>
+  <item>
+    <path>civicrm/member/admin/payment-schemes</path>
+    <page_callback>CRM_MembershipExtras_Page_PaymentScheme</page_callback>
+    <title>Payments Schemes</title>
+    <access_arguments>administer MembershipExtras</access_arguments>
+  </item>
 </menu>
