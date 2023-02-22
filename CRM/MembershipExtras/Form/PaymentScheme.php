@@ -9,9 +9,18 @@ use CRM_MembershipExtras_ExtensionUtil as E;
  */
 class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
 
+  /**
+   * @var int
+   */
+  private $id;
+
+  /**
+   * @throws CRM_Core_Exception
+   */
   public function preProcess() {
     if ($this->_action == CRM_Core_Action::UPDATE) {
       CRM_Utils_System::setTitle(E::ts('Edit Payment Scheme'));
+      $this->id = CRM_Utils_Request::retrieve('id', 'Positive', $this, FALSE, 0);
     }
     else {
       CRM_Utils_System::setTitle(E::ts('Add Payment Scheme'));
@@ -58,10 +67,6 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
   public function postProcess() {
     $values = $this->exportValues();
 
-    if (!empty($this->id)) {
-      $params['id'] = $this->id;
-    }
-
     $params = [
       'name' => $values['name'],
       'admin_title' => $values['admin_title'],
@@ -73,10 +78,35 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       'parameters' => $values['parameters'],
     ];
 
+    if (!empty($this->id)) {
+      $params['id'] = $this->id;
+    }
+
     CRM_MembershipExtras_BAO_PaymentScheme::create($params);
     CRM_Core_Session::setStatus(ts('The payment scheme has been saved.'), ts('Saved'), 'success');
 
     parent::postProcess();
+  }
+
+  function setDefaultValues() {
+    if (!$this->id) {
+      return [];
+    }
+
+    $schemeObj = CRM_MembershipExtras_BAO_PaymentScheme::findById($this->id);
+    $scheme = (array) $schemeObj;
+
+    return [
+      'id' => $scheme['id'],
+      'name' => $scheme['name'],
+      'admin_title' => $scheme['admin_title'],
+      'admin_description' => $scheme['admin_title'],
+      'public_title' => $scheme['public_title'],
+      'public_description' => $scheme['public_description'],
+      'permission' => $scheme['permission'],
+      'enabled' => $scheme['enabled'],
+      'parameters' => $scheme['parameters'],
+      ];
   }
 
   /**
