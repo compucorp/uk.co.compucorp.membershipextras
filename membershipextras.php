@@ -93,6 +93,16 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
     'separator' => 2,
   ];
   _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviMember', $automatedMembershipUpgradeRulesMenuItem);
+
+  $paymentSchemeMenuItem = [
+    'name' => 'membership_payment_scheme',
+    'label' => ts('Payment Schemes'),
+    'url' => 'civicrm/member/admin/payment-schemes?reset=1',
+    'permission' => 'administer CiviCRM,administer MembershipExtras',
+    'operator' => 'OR',
+    'separator' => NULL,
+  ];
+  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviContribute', $paymentSchemeMenuItem);
 }
 
 /**
