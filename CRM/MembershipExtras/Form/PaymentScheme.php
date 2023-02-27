@@ -46,6 +46,7 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       TRUE
     );
     $this->add('checkbox', 'enabled', E::ts('Enabled'), NULL, FALSE);
+    $this->addPaymentProcessorField();
     $this->add('textarea', 'parameters', E::ts('Parameters'), NULL, TRUE);
 
     $this->addButtons([
@@ -123,6 +124,33 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       }
     }
     return $elementNames;
+  }
+
+  private function addPaymentProcessorField() {
+    $gocardlessProcessorType = civicrm_api3('PaymentProcessorType', 'get', [
+      'return' => ["id"],
+      'name' => "GoCardless",
+    ]);
+
+    if ($gocardlessProcessorType['count'] != 0) {
+      $gocardlessPaymentProcessors = civicrm_api3('PaymentProcessor', 'get', [
+        'sequential' => 1,
+        'is_active' => 1,
+        'is_test' => 0,
+        'payment_processor_type_id' => $gocardlessProcessorType['id'],
+      ]);
+    }
+
+    $paymentProcessors = [];
+    if (!empty($gocardlessPaymentProcessors['values'])) {
+      foreach ($gocardlessPaymentProcessors['values'] as $gocardlessPaymentProcessors) {
+        $paymentProcessors[$gocardlessPaymentProcessors['id']] = $gocardlessPaymentProcessors['name'];
+      }
+    }
+    $select = ['' => ts('- select -')] + $paymentProcessors;
+
+    $this->add('select', 'payment_processor', E::ts('Payment Processor'), $select, TRUE);
+
   }
 
 }
