@@ -8,6 +8,10 @@
 class CRM_MembershipExtras_BAO_PaymentSchemeTest extends BaseHeadlessTest {
 
   public function testCreatePaymentScheme() {
+    $paymentProcessor = civicrm_api3('PaymentProcessor', 'create', [
+      'payment_processor_type_id' => "Dummy",
+      'financial_account_id' => "Accounts Receivable",
+    ]);
     $params = [
       'name' => 'Test scheme',
       'admin_title' => 'Admin title',
@@ -17,6 +21,7 @@ class CRM_MembershipExtras_BAO_PaymentSchemeTest extends BaseHeadlessTest {
       'permission' => 'public',
       'enabled' => TRUE,
       'parameters' => '{"name":"John", "age":30, "car":null}',
+      'payment_processor' => $paymentProcessor["id"],
     ];
 
     $scheme = CRM_MembershipExtras_BAO_PaymentScheme::create($params);
@@ -27,6 +32,11 @@ class CRM_MembershipExtras_BAO_PaymentSchemeTest extends BaseHeadlessTest {
   }
 
   public function testGetAll() {
+    $paymentProcessor = civicrm_api3('PaymentProcessor', 'create', [
+      'payment_processor_type_id' => "Dummy",
+      'financial_account_id' => "Accounts Receivable",
+    ]);
+
     $param = [
       'admin_title' => 'Admin title',
       'admin_description' => 'Admin description',
@@ -35,16 +45,16 @@ class CRM_MembershipExtras_BAO_PaymentSchemeTest extends BaseHeadlessTest {
       'permission' => 'public',
       'enabled' => TRUE,
       'parameters' => '{"name":"John", "age":30, "car":null}',
+      'payment_processor' => $paymentProcessor["id"],
     ];
 
     for ($i = 0; $i < 5; $i++) {
-      $param['name'] = random_bytes(5);
+      $param['name'] = 'Test' . $i;
       CRM_MembershipExtras_BAO_PaymentScheme::create($param);
     }
 
     $schemes = CRM_MembershipExtras_BAO_PaymentScheme::getAll();
     $this->assertEquals(5, count($schemes));
-    $this->assertEqusls(5, $schemes[0]);
   }
 
 }

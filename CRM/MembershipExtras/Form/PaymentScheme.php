@@ -77,6 +77,7 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       'permission' => $values['permission'],
       'enabled' => CRM_Utils_Array::value('enabled', $values, FALSE),
       'parameters' => $values['parameters'],
+      'payment_processor' => $values['payment_processor'],
     ];
 
     if (!empty($this->id)) {
@@ -107,6 +108,7 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       'permission' => $scheme['permission'],
       'enabled' => $scheme['enabled'],
       'parameters' => $scheme['parameters'],
+      'payment_processor' => $scheme['payment_processor'],
     ];
   }
 
