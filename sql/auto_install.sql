@@ -43,6 +43,8 @@ CREATE TABLE `membershipextras_payment_scheme` (
   `permission` varchar(10) NOT NULL,
   `enabled` tinyint NOT NULL DEFAULT false,
   `parameters` text NOT NULL,
-  PRIMARY KEY (`id`)
+  `payment_processor` int unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT FK_membershipextras_payment_scheme_payment_processor FOREIGN KEY (`payment_processor`) REFERENCES `civicrm_payment_processor`(`id`) ON DELETE CASCADE
 )
   ENGINE=InnoDB;

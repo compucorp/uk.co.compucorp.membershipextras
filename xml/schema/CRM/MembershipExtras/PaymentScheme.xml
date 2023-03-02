@@ -82,4 +82,16 @@
     <required>true</required>
   </field>
 
+  <field>
+    <name>payment_processor</name>
+    <title>Payment Processor</title>
+    <type>int unsigned</type>
+    <required>true</required>
+  </field>
+  <foreignKey>
+    <name>payment_processor</name>
+    <table>civicrm_payment_processor</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
 </table>
