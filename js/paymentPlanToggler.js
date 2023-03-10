@@ -70,11 +70,12 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      * Price set, or Payment Plan Schedule
      */
     function setScheduleEvents() {
+      let totalAmount;
       $('#total_amount, #membership_type_id_1, #record_contribution').change(() => {
         if (!isPaymentPlanTabActive()) {
           return;
         }
-
+        totalAmount = parseFloat($('#total_amount').val().replace(",", ""));
         let isPriceSet = isPriceSetSelected();
         if (isPriceSet) {
           let selectedPriceFieldValues = getSelectedPriceFieldValues();
@@ -86,7 +87,13 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
           CRM.api3('PaymentSchedule', 'getscheduleoptionsbypricefieldvalues', params).then(function (result) {
             if (result.is_error === 0) {
               setPaymentPlanScheduleOption(result.values);
-              generateInstalmentSchedule(isPriceSet);
+              CRM.api3('MembershipType', 'get', {
+                "sequential": 1,
+                "return": ["minimum_fee"],
+                "id": parseInt($('#membership_type_id_1').val()),
+              }).then(function() {
+                generateInstalmentSchedule(isPriceSet);
+              });
             } else {
               CRM.alert(result.error_message, 'Error', 'error');
             }
@@ -97,7 +104,13 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
           }).then(function (result) {
             if (result.is_error === 0) {
               setPaymentPlanScheduleOption(result.values);
-              generateInstalmentSchedule(isPriceSet);
+              CRM.api3('MembershipType', 'get', {
+                "sequential": 1,
+                "return": ["minimum_fee"],
+                "id": parseInt($('#membership_type_id_1').val()),
+              }).then(function(anotherRes) {
+                generateInstalmentSchedule(isPriceSet, null, totalAmount);
+              });
             } else {
               CRM.alert(result.error_message, 'Error', 'error');
             }
@@ -110,7 +123,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
         if (!isPaymentPlanTabActive()) {
           return;
         }
-        generateInstalmentSchedule(isPriceSetSelected(), $('#start_date').val());
+        generateInstalmentSchedule(isPriceSetSelected(), $('#start_date').val(), totalAmount);
         assignFirstContributionReceiveDate();
       });
 
@@ -118,7 +131,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
         if (!isPaymentPlanTabActive()) {
           return;
         }
-        generateInstalmentSchedule(isPriceSetSelected(), $('#renewal_date').val());
+        generateInstalmentSchedule(isPriceSetSelected(), $('#renewal_date').val(), totalAmount);
         assignFirstContributionReceiveDate();
       });
     }
@@ -168,7 +181,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      * @param {boolean} isPriceSet
      * @param startDate
      */
-    function generateInstalmentSchedule(isPriceSet, startDate) {
+    function generateInstalmentSchedule(isPriceSet, startDate, totalAmount) {
       let schedule = $('#payment_plan_schedule').val();
       let params = {
         schedule: schedule,
@@ -185,17 +198,15 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       } else {
         params.membership_type_id = parseInt($('#membership_type_id_1').val());
       }
-      let url = CRM.url('civicrm/member/instalment-schedule', params, 'back');
-      CRM.loadPage(url, {
-        target: '#instalment_schedule_table',
-        dialog: false,
-      }).on('crmLoad', function (event, data) {
-        if (data.hasOwnProperty('is_error') && data.is_error == true) {
-          CRM.alert(data.error_message, 'Error', 'error');
-        } else {
-          updateTotalAmount($('#instalment-total-amount').html(), isPriceSet);
-          setMembershipDates($('#instalment-membership-start-date').html(), $('#instalment-membership-end-date').html());
-        }
+      params.snippet = "json";
+
+      $.post(CRM.url('civicrm/member/instalment-schedule', params, 'back'), {total_amount: totalAmount}, function(result) {
+        let instalmentScheduleTableContent = result['content'];
+        $("#instalment_schedule_table").html(instalmentScheduleTableContent);
+        updateTotalAmount($('#instalment-total-amount').html(), isPriceSet);
+        setMembershipDates($('#instalment-membership-start-date').html(), $('#instalment-membership-end-date').html());
+      }).fail(function(response) {
+        CRM.alert(response.responseText, 'Error', 'error');
       });
     }
 

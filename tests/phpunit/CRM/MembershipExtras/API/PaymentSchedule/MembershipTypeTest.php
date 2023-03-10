@@ -32,6 +32,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipTypeTest extends BaseHe
     $params['schedule'] = 'xyz';
     $params['membership_type_id'] = $membershipType['id'];
     $params['payment_method'] = $this->getPaymentMethodValue();
+    $params['total_amount'] = $membershipType['minimum_fee'];
     $schedule = new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);
     $schedule->getPaymentSchedule();
   }

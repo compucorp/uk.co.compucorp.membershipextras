@@ -49,7 +49,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
     $this->setMembershipId();
     $this->assignInstalmentDetails();
     $this->handleContributionLineItems();
-    $this->instalmentAmountCalculator = $this->getInstalmentAmountCalculator($this->membershipTypeLineItems, $this->periodType);
+
+    $proRatedCalculated = TRUE;
+    $this->instalmentAmountCalculator = $this->getInstalmentAmountCalculator($this->membershipTypeLineItems, $this->periodType, $this->params['total_amount'], $proRatedCalculated);
   }
 
   /**
@@ -290,7 +292,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
     if (!$this->isUsingPriceSet()) {
       return;
     }
-
     $membershipType->minimum_fee = $lineTotal;
   }
 

@@ -10,10 +10,15 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalcula
    * @var array
    */
   private $membershipTypes;
+  /**
+   * @var float|null
+   */
+  private $totalAmountAfterDiscount;
 
-  public function __construct(array $membershipTypes) {
+  public function __construct(array $membershipTypes, $totalAmountAfterDiscount = NULL) {
     $this->instalmentTaxAmountCalculator = new MembershipInstalmentTaxAmountCalculator();
     $this->membershipTypes = $membershipTypes;
+    $this->totalAmountAfterDiscount = $totalAmountAfterDiscount;
   }
 
   /**
@@ -23,8 +28,17 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalcula
    */
   public function calculate() {
     foreach ($this->membershipTypes as $membershipType) {
+      $discount = 1;
       $amount = $membershipType->minimum_fee;
-      $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipType->minimum_fee);
+      $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $amount);
+
+      // calculate the discount amount
+      if (!empty($this->totalAmountAfterDiscount)) {
+        $discount = $this->totalAmountAfterDiscount / ($amount + $taxAmount);
+      }
+
+      $amount = $amount * $discount;
+      $taxAmount = $taxAmount * $discount;
 
       $this->amount += $amount;
       $this->taxAmount += $taxAmount;

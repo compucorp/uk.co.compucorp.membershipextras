@@ -58,6 +58,10 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    */
   private $joinDate;
   /**
+   * @var float
+   */
+  private $totalAmount;
+  /**
    * @var \CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator
    */
   private $instalmentCalculator;
@@ -94,17 +98,19 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    * @param DateTime|null $startDate
    * @param DateTime|null $endDate
    * @param DateTime|null $joinDate
+   * @param float|null $totalAmount
    *
    * @return mixed
    * @throws Exception
    */
-  public function generate($paymentMethod, DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL) {
+  public function generate($paymentMethod, DateTime $startDate = NULL, DateTime $endDate = NULL, DateTime $joinDate = NULL, $totalAmount = NULL) {
     if (empty($startDate)) {
       $startDate = new DateTime($this->getMembershipStartDate($this->membershipTypes[0]->id, $startDate, $endDate, $joinDate));
     }
     $this->startDate = $startDate;
     $this->endDate = $endDate;
     $this->joinDate = $joinDate;
+    $this->totalAmount = $totalAmount;
     $this->instalmentCount = $this->getInstalmentsNumber(
       $this->membershipTypes[0], $this->schedule, $this->startDate, $this->endDate, $this->joinDate
     );
@@ -209,14 +215,14 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    */
   private function getInstalmentAmountCalculator() {
     if ($this->membershipTypes[0]->period_type == 'fixed') {
-      $fixedPeriodTypCalculator = new FixedPeriodTypeCalculator($this->membershipTypes);
+      $fixedPeriodTypCalculator = new FixedPeriodTypeCalculator($this->membershipTypes, $this->totalAmount);
       $fixedPeriodTypCalculator->setStartDate($this->startDate);
       $fixedPeriodTypCalculator->setEndDate($this->endDate);
       $fixedPeriodTypCalculator->setJoinDate($this->joinDate);
       $this->instalmentCalculator = new InstalmentAmountCalculator($fixedPeriodTypCalculator);
     }
     else {
-      $this->instalmentCalculator = new InstalmentAmountCalculator(new RollingPeriodCalculator($this->membershipTypes));
+      $this->instalmentCalculator = new InstalmentAmountCalculator(new RollingPeriodCalculator($this->membershipTypes, $this->totalAmount));
     }
   }
 
