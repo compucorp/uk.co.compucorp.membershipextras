@@ -21,6 +21,9 @@
   <civix>
     <namespace>CRM/MembershipExtras</namespace>
   </civix>
+  <classloader>
+    <psr4 prefix="Civi\" path="Civi" />
+  </classloader>
   <urls>
     <url desc="Documentation">https://github.com/compucorp/uk.co.compucorp.membershipextras/blob/master/readme.md</url>
   </urls>
