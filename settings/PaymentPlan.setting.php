@@ -15,6 +15,27 @@ return [
     'default' => FALSE,
     'is_required' => FALSE,
   ],
+  'membershipextras_paymentplan_supported_payment_processors' => [
+    'name' => 'membershipextras_paymentplan_supported_payment_processors',
+    'group_name' => 'MembershipExtras: Payment Plan',
+    'group' => 'membershipextras_paymentplan',
+    'type' => 'Integer',
+    'quick_form_type' => 'Element',
+    'add' => '4.7',
+    'pseudoconstant' => [
+      'name' => 'paymentProcessor',
+    ],
+    'title' => 'Supported Payment Processors',
+    'html_type' => 'select',
+    'is_required' => FALSE,
+    'extra_attributes' => [
+      'class' => 'crm-select2',
+      'multiple' => 'multiple',
+      'placeholder' => ts('- select -'),
+    ],
+    'description' => '',
+    'help_text' => 'Select the payment processors that can be used with payment plans',
+  ],
   'membershipextras_paymentplan_default_processor' => [
     'name' => 'membershipextras_paymentplan_default_processor',
     'group_name' => 'MembershipExtras: Payment Plan',

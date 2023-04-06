@@ -23,6 +23,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     // steps that configure existing entities or alter settings.
     $configurationSteps = [
       new CRM_MembershipExtras_Setup_Configure_SetManualPaymentProcessorAsDefaultProcessor(),
+      new CRM_MembershipExtras_Setup_Configure_SetDefaultSupportedPaymentProcessor(),
       new CRM_MembershipExtras_Setup_Configure_DisableContributionCancelActionsExtension(),
     ];
     foreach ($configurationSteps as $step) {

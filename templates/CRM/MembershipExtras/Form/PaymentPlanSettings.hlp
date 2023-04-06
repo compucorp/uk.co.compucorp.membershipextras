@@ -1,6 +1,11 @@
 {htxt id="membershipextras_paymentplan_default_processor-title"}
 {ts}Offline payment processor for back office{/ts}
 {/htxt}
+
+{htxt id="membershipextras_paymentplan_supported_payment_processors"}
+{ts}Select the payment processors that can be used with payment plans.{/ts}
+{/htxt}
+
 {htxt id="membershipextras_paymentplan_default_processor"}
 {ts}Select the payment processor that should be used when creating payment plans
   via CiviCRM admin interface such as new/ renew membership.{/ts}
@@ -26,7 +31,7 @@
 {ts}Custom groups to be excluded when auto-renew{/ts}
 {/htxt}
 {htxt id="membershipextras_customgroups_to_exclude_for_autorenew"}
-{ts}Information in selected custom groups will not be copied over to any new installments 
+{ts}Information in selected custom groups will not be copied over to any new installments
  of an existing payment plan when it auto-renews.{/ts}
 {/htxt}
 
@@ -34,6 +39,6 @@
 {ts}Update start date on renewal{/ts}
 {/htxt}
 {htxt id="membershipextras_paymentplan_update_start_date_renewal"}
-{ts}If the field is selected, on membership auto-renewed, 
+{ts}If the field is selected, on membership auto-renewed,
 the start date of the membership period is set as the end date of the last period + 1 day, so the start date increases each period{/ts}
 {/htxt}

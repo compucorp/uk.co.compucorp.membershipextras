@@ -1,5 +1,4 @@
 <?php
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
 
 /**
  * Payment Plan Settings form controller
@@ -26,14 +25,17 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     $settingFieldNames = [];
     $settingFields  = $this->getSettingFields();
 
-    foreach ($settingFields  as $name => $field) {
+    foreach ($settingFields as $name => $field) {
       switch ($name) {
+        case 'membershipextras_paymentplan_supported_payment_processors':
         case 'membershipextras_paymentplan_default_processor':
-          $this->addDefaultProcessorField($field);
+          $this->addPaymentProcessorField($field);
           break;
+
         case 'membershipextras_customgroups_to_exclude_for_autorenew':
           $this->addCustomGroupsToExcludeField($field);
           break;
+
         default:
           $this->addSettingField($field);
           break;
@@ -58,21 +60,41 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
   }
 
   /**
-   * Adds default processor field to the form.
+   * Adds payment processor select field to the form.
    *
-   * @param array $defaultProcessorField
+   * @param array $field
    */
-  private function addDefaultProcessorField($defaultProcessorField) {
-    $processorOptions = ['' => ts('- select -')] + ManualPaymentProcessors::getIDNameMap();
+  private function addPaymentProcessorField($field) {
+    $processorOptions = [];
+
+    if (empty($field['extra_attributes']['multiple'])) {
+      $processorOptions = ['' => ts('- select -')];
+    }
+
+    $processorOptions += $this->getAllPaymentProcessorOptions();
 
     $this->add(
-      $defaultProcessorField['html_type'],
-      $defaultProcessorField['name'],
-      ts($defaultProcessorField['title']),
+      $field['html_type'],
+      $field['name'],
+      ts($field['title']),
       $processorOptions,
-      $defaultProcessorField['is_required'],
-      ''
+      $field['is_required'],
+      $field['extra_attributes']
     );
+  }
+
+  private function getAllPaymentProcessorOptions() {
+    $paymentProcessors = \Civi\Api4\PaymentProcessor::get()
+      ->addWhere('is_test', 'IN', [FALSE, TRUE])
+      ->execute();
+
+    $paymentProcessorsOptions = [];
+    foreach ($paymentProcessors as $paymentProcessor) {
+      $testOrLive = $paymentProcessor['is_test'] ? 'Test - ' : 'Live - ';
+      $paymentProcessorsOptions[$paymentProcessor['id']] = $testOrLive . $paymentProcessor['name'];
+    }
+
+    return $paymentProcessorsOptions;
   }
 
   private function addCustomGroupsToExcludeField($field) {
@@ -100,7 +122,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     $customGroupsOptions = [];
     if (!empty($customGroups['values'])) {
       foreach ($customGroups['values'] as $customGroup) {
-        $customGroupsOptions[$customGroup['id']] =  $customGroup['extends'] . ' : ' . $customGroup['title'];
+        $customGroupsOptions[$customGroup['id']] = $customGroup['extends'] . ' : ' . $customGroup['title'];
       }
     }
 
@@ -150,7 +172,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
       if (array_key_exists($fieldName, $submittedValues)) {
         $valuesToSave[$fieldName] = $submittedValues[$fieldName];
       }
-      else if($fieldData['html_type'] === 'checkbox') {
+      elseif ($fieldData['html_type'] === 'checkbox') {
         $valuesToSave[$fieldName] = FALSE;
       }
     }
@@ -164,11 +186,11 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @return array
    */
   private function getSettingFields() {
-    if (!empty($this->settingFields )) {
+    if (!empty($this->settingFields)) {
       return $this->settingFields;
     }
 
-    $this->settingFields =  civicrm_api3('setting', 'getfields',[
+    $this->settingFields = civicrm_api3('setting', 'getfields', [
       'filters' => ['group' => 'membershipextras_paymentplan'],
     ])['values'];
 
