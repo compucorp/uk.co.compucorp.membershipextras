@@ -93,7 +93,7 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
       return;
     }
 
-    $this->recurContribution =  $recurContribution['values'][0];
+    $this->recurContribution = $recurContribution['values'][0];
   }
 
   /**

@@ -29,11 +29,6 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
    */
   private $errors;
 
-  /**
-   * CRM_MembershipExtras_Hook_BuildForm_Membership constructor.
-   *
-   * @param \CRM_Member_Form $form
-   */
   public function __construct(CRM_Member_Form &$form, &$fields, &$errors) {
     $this->form = $form;
     $this->fields = &$fields;

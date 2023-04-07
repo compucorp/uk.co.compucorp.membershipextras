@@ -49,7 +49,7 @@ class CRM_MembershipExtras_Service_SupportedPaymentProcessors {
   public static function getIDNameMap() {
     $supportedPaymentProcessorOptions = [];
     foreach (self::getSupportedPaymentProcessors() as $paymentProcessor) {
-      $testOrLive = $paymentProcessor['is_test'] ? 'Test - ': 'Live - ';
+      $testOrLive = $paymentProcessor['is_test'] ? 'Test - ' : 'Live - ';
       $supportedPaymentProcessorOptions[$paymentProcessor['id']] = $testOrLive . $paymentProcessor['name'];
     }
 
@@ -59,8 +59,7 @@ class CRM_MembershipExtras_Service_SupportedPaymentProcessors {
   private static function getSupportedPaymentProcessors() {
     $supportedPaymentProcessors = self::getManualPaymentProcessors();
 
-    // Allow extensions to opt in for Membershipextras
-    // Support.
+    // Allow extensions to opt in for Membershipextras Support.
     $null = CRM_Utils_Hook::$_nullObject;
     CRM_Utils_Hook::singleton()->invoke(
       ['supportedPaymentProcessor'],

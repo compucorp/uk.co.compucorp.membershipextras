@@ -68,7 +68,8 @@ class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
       return civicrm_api3('Contribution', 'getsingle', [
         'id' => $contributionID,
       ]);
-    } catch (CiviCRM_API3_Exception $exception) {
+    }
+    catch (CiviCRM_API3_Exception $exception) {
       return [];
     }
   }
@@ -83,7 +84,8 @@ class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
       return civicrm_api3('ContributionRecur', 'getsingle', [
         'id' => $recurringContributionID,
       ]);
-    } catch (CiviCRM_API3_Exception $exception) {
+    }
+    catch (CiviCRM_API3_Exception $exception) {
       return [];
     }
   }
@@ -100,10 +102,10 @@ class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
     ]);
 
     if ($lineItemsCount > 1) {
-      return true;
+      return TRUE;
     }
 
-    return false;
+    return FALSE;
   }
 
 }
