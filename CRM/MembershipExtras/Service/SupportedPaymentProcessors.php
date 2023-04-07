@@ -8,8 +8,10 @@ class CRM_MembershipExtras_Service_SupportedPaymentProcessors {
    *
    * Payment processors that implements
    * Payment_Manual class are considered
-   * supported.
-   *
+   * supported, also other extensions can opt in to get
+   * Membershipextra support by implementing:
+   * membershipextras_updateSupportedPaymentProcessors
+   * hook.
    * @param $processorID
    *
    * @return bool
@@ -32,7 +34,7 @@ class CRM_MembershipExtras_Service_SupportedPaymentProcessors {
    */
   public static function getIDs() {
     $supportedPaymentProcessorIDs = [];
-    foreach (self::getManualPaymentProcessors() as $paymentProcessor) {
+    foreach (self::getSupportedPaymentProcessors() as $paymentProcessor) {
       $supportedPaymentProcessorIDs[] = $paymentProcessor['id'];
     }
 
@@ -46,12 +48,27 @@ class CRM_MembershipExtras_Service_SupportedPaymentProcessors {
    */
   public static function getIDNameMap() {
     $supportedPaymentProcessorOptions = [];
-    foreach (self::getManualPaymentProcessors() as $paymentProcessor) {
+    foreach (self::getSupportedPaymentProcessors() as $paymentProcessor) {
       $testOrLive = $paymentProcessor['is_test'] ? 'Test - ': 'Live - ';
       $supportedPaymentProcessorOptions[$paymentProcessor['id']] = $testOrLive . $paymentProcessor['name'];
     }
 
     return $supportedPaymentProcessorOptions;
+  }
+
+  private static function getSupportedPaymentProcessors() {
+    $supportedPaymentProcessors = self::getManualPaymentProcessors();
+
+    // Allow extensions to opt in for Membershipextras
+    // Support.
+    $null = CRM_Utils_Hook::$_nullObject;
+    CRM_Utils_Hook::singleton()->invoke(
+      ['supportedPaymentProcessor'],
+      $supportedPaymentProcessors, $null, $null, $null, $null, $null,
+      'membershipextras_updateSupportedPaymentProcessors'
+    );
+
+    return $supportedPaymentProcessors;
   }
 
   /**
