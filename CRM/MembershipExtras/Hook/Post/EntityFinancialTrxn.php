@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 use CRM_MembershipExtras_Service_PaymentPlanStatusCalculator as PaymentPlanStatusCalculator;
 
 class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
@@ -38,8 +38,8 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
 
     $this->setRecurContribution();
-    $isManualPaymentPlanTransaction = ManualPaymentProcessors::isManualPaymentProcessor($this->recurContribution['payment_processor_id']);
-    if (empty($this->recurContribution) || !$isManualPaymentPlanTransaction) {
+    $isSupportedPaymentPlanTransaction = SupportedPaymentProcessors::isSupportedPaymentProcessor($this->recurContribution['payment_processor_id']);
+    if (empty($this->recurContribution) || !$isSupportedPaymentPlanTransaction) {
       return;
     }
 

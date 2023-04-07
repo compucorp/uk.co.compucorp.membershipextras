@@ -7,7 +7,7 @@
  */
 class CRM_MembershipExtras_Hook_Pre_ContributionRecurTest extends BaseHeadlessTest {
 
-  public function testPreventUpdatingNextScheduledContributionDateForManualRecurContribution() {
+  public function testPreventUpdatingNextScheduledContributionDateForSupportedRecurContribution() {
     $offlinePaymentProcessorId = civicrm_api3('PaymentProcessor', 'getvalue', [
       'return' => 'id',
       'name' => 'Offline Recurring Contribution',
@@ -33,7 +33,7 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecurTest extends BaseHeadlessTe
     $this->assertFalse(array_key_exists('next_sched_contribution_date', $paymentPlanParams));
   }
 
-  public function testKeepingNextScheduledContributionDateForNonManualRecurContribution() {
+  public function testKeepingNextScheduledContributionDateForNonSupportedRecurContribution() {
     $dummyPaymentProcessorId = civicrm_api3('PaymentProcessor', 'create', [
       'payment_processor_type_id' => 'Dummy',
       'financial_account_id' => 'Payment Processor Account',

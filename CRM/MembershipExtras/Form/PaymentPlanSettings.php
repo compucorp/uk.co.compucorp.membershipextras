@@ -1,5 +1,5 @@
 <?php
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 
 /**
  * Payment Plan Settings form controller
@@ -63,7 +63,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @param array $defaultProcessorField
    */
   private function addDefaultProcessorField($defaultProcessorField) {
-    $processorOptions = ['' => ts('- select -')] + ManualPaymentProcessors::getIDNameMap();
+    $processorOptions = ['' => ts('- select -')] + SupportedPaymentProcessors::getIDNameMap();
 
     $this->add(
       $defaultProcessorField['html_type'],

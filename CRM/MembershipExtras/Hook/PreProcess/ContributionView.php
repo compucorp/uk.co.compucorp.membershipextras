@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 
 class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
 
@@ -22,19 +22,19 @@ class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
    * Implements PreProcess hook on CRM_Contribute_Form_ContributionView form.
    */
   public function preProcess() {
-    if ($this->isManualPaymentPlan() && $this->isThereMoreThanOneLineItem()) {
+    if ($this->isSupportedPaymentPlan() && $this->isThereMoreThanOneLineItem()) {
       $this->form->assign('displayLineItems', TRUE);
     }
   }
 
   /**
-   * Checks if the contribution being viewed corresponds to a manual payment
-   * plan.
+   * Checks if the contribution being viewed is paid using
+   * a supported payment plan.
    *
    * @return bool
    * @throws \CRM_Extension_Exception
    */
-  public function isManualPaymentPlan() {
+  public function isSupportedPaymentPlan() {
     $contributionID = $this->form->get('id');
     $contribution = $this->getContribution($contributionID);
     if (empty(CRM_Utils_Array::value('id', $contribution, 0))) {
@@ -42,18 +42,18 @@ class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
     }
 
     if (empty($contribution['contribution_recur_id'])) {
-      return false;
+      return FALSE;
     }
 
     $recurringContribution = $this->getRecurringContribution($contribution['contribution_recur_id']);
     $processorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
-    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($processorID);
+    $isSupportedPaymentPlan = SupportedPaymentProcessors::isSupportedPaymentProcessor($processorID);
 
-    if ($isManualPaymentPlan) {
-      return true;
+    if ($isSupportedPaymentPlan) {
+      return TRUE;
     }
 
-    return false;
+    return FALSE;
   }
 
   /**

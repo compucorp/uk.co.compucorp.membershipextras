@@ -25,34 +25,28 @@ class CRM_MembershipExtras_Hook_Links_RecurringContributionTest extends BaseHead
       ['name' => 'Cancel', 'ref' => '', 'url' => ''],
     ];
 
-    $this->setupNonManualPaymentProcessor();
+    $this->setupNonSupportedPaymentProcessor();
   }
 
-  public function testCancelLinkNotAlteredForNonManualPaymentPlan() {
+  public function testCancelLinkNotAlteredForNonSupportedPaymentPlan() {
     $mask = CRM_Core_Action::UPDATE;
-    $recurringContribution = $this->createNonManualPaymentPlan();
+    $recurringContribution = $this->createNonSupportedPaymentPlan();
     $hook = new RecurringContributionHook($recurringContribution['id'], $this->links, $mask);
     $hook->alterLinks();
 
     $this->assertEquals('', $this->links[0]['url']);
   }
 
-  public function testCancelLinkAlteredForManualPaymentPlan() {
+  public function testCancelLinkAlteredForSupportedPaymentPlan() {
     $mask = CRM_Core_Action::UPDATE;
-    $recurringContribution = $this->createManualPaymentPlan();
+    $recurringContribution = $this->createSupportedPaymentPlan();
     $hook = new RecurringContributionHook($recurringContribution['id'], $this->links, $mask);
     $hook->alterLinks();
 
     $this->assertEquals('civicrm/recurring-contribution/cancel', $this->links[0]['url']);
   }
 
-  /**
-   * A helper funcitons that configures a non-manual payment plan.
-   *
-   * @return mixed
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function createNonManualPaymentPlan($params = []) {
+  private function createNonSupportedPaymentPlan($params = []) {
     $contact = ContactFabricator::fabricate();
     $params = array_merge([
       'sequential' => 1,
@@ -76,13 +70,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContributionTest extends BaseHead
     return $recurringContribution;
   }
 
-  /**
-   * A helper funcitons that configures a manual payment plan.
-   *
-   * @return mixed
-   * @throws \CiviCRM_API3_Exception
-   */
-  private function createManualPaymentPlan() {
+  private function createSupportedPaymentPlan() {
     $testMembershipType = MembershipTypeFabricator::fabricate(
       [
         'name' => 'Test Rolling Membership',
@@ -117,10 +105,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContributionTest extends BaseHead
     return PaymentPlanFabricator::fabricate($paymentPlanEntity);
   }
 
-  /**
-   * A helper funcitons that creates non-manual Payment processor.
-   */
-  private function setupNonManualPaymentProcessor() {
+  private function setupNonSupportedPaymentProcessor() {
     $params = [
       'name' => 'Not Manual',
       'payment_processor_type_id' => 'Dummy',

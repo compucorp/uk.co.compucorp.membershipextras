@@ -1,5 +1,5 @@
 <?php
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 
 /**
  * Class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate.
@@ -48,10 +48,10 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
   public function validate() {
     if ($this->isPaymentPlan() && $this->isMembershipTypeChanged()) {
       $this->errors['membership_type_id'] = ts(
-        'This membership is part of an ongoing payment plan and cannot be 
-        edited directly. To modify the active memberships in this payment plan 
-        please go to the manage future instalments screen which can be found as 
-        an action on the most recent recurring contribution record. There you 
+        'This membership is part of an ongoing payment plan and cannot be
+        edited directly. To modify the active memberships in this payment plan
+        please go to the manage future instalments screen which can be found as
+        an action on the most recent recurring contribution record. There you
         can add or remove memberships.'
       );
     }
@@ -74,9 +74,9 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
 
     $recurringContribution = $this->getRecurringContribution($contribution['contribution_id.contribution_recur_id']);
     $processorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
-    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($processorID);
+    $isSupportedPaymentPlan = SupportedPaymentProcessors::isSupportedPaymentProcessor($processorID);
 
-    if ($isManualPaymentPlan) {
+    if ($isSupportedPaymentPlan) {
       return TRUE;
     }
 

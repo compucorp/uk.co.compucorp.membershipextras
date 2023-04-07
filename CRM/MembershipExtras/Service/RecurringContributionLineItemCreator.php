@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 
 class CRM_MembershipExtras_Service_RecurringContributionLineItemCreator {
@@ -42,7 +42,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreator {
 
   public function create() {
     $processorID = CRM_Utils_Array::value('payment_processor_id', $this->recurContribution);
-    if (!ManualPaymentProcessors::isManualPaymentProcessor($processorID)) {
+    if (!SupportedPaymentProcessors::isSupportedPaymentProcessor($processorID)) {
       return;
     }
 
