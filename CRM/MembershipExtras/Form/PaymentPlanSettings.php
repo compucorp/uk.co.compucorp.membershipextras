@@ -147,17 +147,16 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     $settingFields = $this->getSettingFields();
     $submittedValues = $this->exportValues();
 
-    $valuesToSave = [];
     foreach ($settingFields as $fieldName => $fieldData) {
       if (array_key_exists($fieldName, $submittedValues)) {
-        $valuesToSave[$fieldName] = $submittedValues[$fieldName];
+        $newValue = $submittedValues[$fieldName];
       }
       elseif ($fieldData['html_type'] === 'checkbox') {
-        $valuesToSave[$fieldName] = FALSE;
+        $newValue = FALSE;
       }
-    }
 
-    civicrm_api3('setting', 'create', $valuesToSave);
+      Civi::settings()->set($fieldName, $newValue);
+    }
   }
 
   /**
