@@ -1,5 +1,6 @@
 SET FOREIGN_KEY_CHECKS=0;
 DROP TABLE IF EXISTS `membershipextras_subscription_line`;
+DROP TABLE IF EXISTS `membershipextras_payment_scheme`;
 SET FOREIGN_KEY_CHECKS=1;
 
 -- /*******************************************************
