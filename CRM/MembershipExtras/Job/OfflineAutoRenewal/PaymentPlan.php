@@ -110,11 +110,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $daysToRenewInAdvance;
 
   /**
-   * ID's for payment processors that are considered to be manual.
+   * ID's for payment processors that are supported by this extension.
    *
    * @var array
    */
-  protected $manualPaymentProcessorIDs;
+  protected $supportedPaymentProcessorIDs;
 
   /**
    * @var CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker
@@ -130,7 +130,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $this->setUseMembershipLatestPrice();
     $this->setContributionPendingStatusValue();
     $this->setRecurContributionStatusesNameMap();
-    $this->setManualPaymentProcessorIDs();
+    $this->setSupportedPaymentProcessorIDs();
     $this->setDaysToRenewInAdvance();
   }
 
@@ -200,12 +200,9 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $this->daysToRenewInAdvance = CRM_MembershipExtras_SettingsManager::getDaysToRenewInAdvance();
   }
 
-  /**
-   * Loads list of manual payment processors into an array as a class attribute.
-   */
-  private function setManualPaymentProcessorIDs() {
+  private function setSupportedPaymentProcessorIDs() {
     $payLaterProcessorID = 0;
-    $this->manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
+    $this->supportedPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_SupportedPaymentProcessors::getIDs());
   }
 
   /**

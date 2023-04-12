@@ -15,7 +15,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    * Obtains list of payment plans with a single instalment that are ready to
    * be renewed. This means:
    *
-   * - Recurring contribution is a manual payment plan
+   * - Recurring contribution is a supported by this extension.
    * - Recurring contribution is set to auto-renew.
    * - Recurring contribution has no end date.
    * - Recurring contribution is active
@@ -34,7 +34,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    * @return array
    */
   protected function getRecurringContributions() {
-    $manualPaymentProcessorsIDs = implode(',', $this->manualPaymentProcessorIDs);
+    $supportedPaymentProcessorsIDs = implode(',', $this->supportedPaymentProcessorIDs);
     $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
@@ -75,7 +75,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
    LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
    LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
-       WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
+       WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$supportedPaymentProcessorsIDs}))
          AND ccr.end_date IS NULL
          AND (
           ccr.installments <= 1

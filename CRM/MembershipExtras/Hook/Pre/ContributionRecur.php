@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 use CRM_MembershipExtras_Service_PaymentPlanStatusCalculator as PaymentPlanStatusCalculator;
 
 /**
@@ -71,13 +71,13 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     }
 
     $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $this->recurringContribution, 0);
-    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($paymentProcessorID);
+    $isSupportedPaymentPlan = SupportedPaymentProcessors::isSupportedPaymentProcessor($paymentProcessorID);
 
-    if ($isManualPaymentPlan) {
+    if ($isSupportedPaymentPlan) {
       $this->preventUpdatingNextScheduledContributionDate();
     }
 
-    if ($this->operation == 'edit' && $isManualPaymentPlan) {
+    if ($this->operation == 'edit' && $isSupportedPaymentPlan) {
       $this->rectifyPaymentPlanStatus();
     }
   }

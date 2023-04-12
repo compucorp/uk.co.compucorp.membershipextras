@@ -21,7 +21,7 @@ class CRM_MembershipExtras_Upgrader_Steps_Step0008 {
     $this->createTemporaryUpdateTable();
 
     $payLaterProcessorID = 0;
-    $manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_ManualPaymentProcessors::getIDs());
+    $manualPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_SupportedPaymentProcessors::getIDs());
     $manualPaymentProcessorIDs = implode(',', $manualPaymentProcessorIDs);
     $cancelledStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Cancelled');
 

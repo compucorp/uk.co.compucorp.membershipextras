@@ -37,13 +37,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
   }
 
   private function setDefaultPaymentPlanSettings() {
-    civicrm_api3('Setting', 'create', [
-      'membershipextras_paymentplan_days_to_renew_in_advance' => 0,
-    ]);
-
-    civicrm_api3('Setting', 'create', [
-      'membershipextras_paymentplan_update_start_date_renewal' => 0,
-    ]);
+    Civi::settings()->set('membershipextras_paymentplan_days_to_renew_in_advance', 0);
+    Civi::settings()->set('membershipextras_paymentplan_update_start_date_renewal', 0);
   }
 
   private function createTestRollingMembershipType() {
@@ -216,9 +211,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
   }
 
   public function testRenewalWithMembershipEndDateLargerThanDateToRenewInAdvanceWillRenew() {
-    civicrm_api3('Setting', 'create', [
-      'membershipextras_paymentplan_days_to_renew_in_advance' => 10,
-    ]);
+    Civi::settings()->set('membershipextras_paymentplan_days_to_renew_in_advance', 10);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +2 day'));
@@ -244,9 +237,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
   }
 
   public function testRenewalWithMembershipEndDateLessThanDateToRenewInAdvanceWillNotRenew() {
-    civicrm_api3('Setting', 'create', [
-      'membershipextras_paymentplan_days_to_renew_in_advance' => 5,
-    ]);
+    Civi::settings()->set('membershipextras_paymentplan_days_to_renew_in_advance', 5);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +15 day'));
@@ -272,9 +263,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
   }
 
   public function testRenewalWithUpdateStartDateOnRenewalSettingOffWillNotUpdateMembershipStartDate() {
-    civicrm_api3('Setting', 'create', [
-      'membershipextras_paymentplan_update_start_date_renewal' => 0,
-    ]);
+    Civi::settings()->set('membershipextras_paymentplan_update_start_date_renewal', 0);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
@@ -301,9 +290,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
   }
 
   public function testRenewalWithUpdateStartDateOnRenewalSettingOnWillUpdateMembershipStartDate() {
-    civicrm_api3('Setting', 'create', [
-      'membershipextras_paymentplan_update_start_date_renewal' => 1,
-    ]);
+    Civi::settings()->set('membershipextras_paymentplan_update_start_date_renewal', 1);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
