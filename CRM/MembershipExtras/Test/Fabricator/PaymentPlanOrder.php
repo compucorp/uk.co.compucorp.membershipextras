@@ -119,6 +119,12 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'name' => 'is_active',
     ])['id'];
 
+    $paymentSchemeFieldId = civicrm_api3('CustomField', 'get', [
+      'sequential' => 1,
+      'custom_group_id' => 'payment_plan_extra_attributes',
+      'name' => 'payment_scheme_id',
+    ])['id'];
+
     $recurringContributionParams = [
       'sequential' => 1,
       'contact_id' => self::$paymentPlanMembershipOrder->contactId,
@@ -136,6 +142,10 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'start_date' => self::$paymentPlanMembershipOrder->paymentPlanStartDate,
       'custom_' . $isActivePaymentPlanFieldId => 1,
     ];
+
+    if (!empty(self::$paymentPlanMembershipOrder->paymentSchemeId)) {
+      $recurringContributionParams['custom_' . $paymentSchemeFieldId] = self::$paymentPlanMembershipOrder->paymentSchemeId;
+    }
 
     return RecurringContributionFabricator::fabricate($recurringContributionParams);
   }
@@ -333,8 +343,8 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @param int $recurringContributionId
    */
   private static function createRemainingInstalments($recurringContributionId) {
-    $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($recurringContributionId);
-    $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
+    $instalmentsHandler = new CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreator($recurringContributionId);
+    $instalmentsHandler->createRemainingInstalments();
   }
 
   /**

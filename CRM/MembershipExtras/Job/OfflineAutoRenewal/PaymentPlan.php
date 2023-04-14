@@ -744,8 +744,11 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
    * Records the payment plan first contribution.
+   *
+   * @param array $overrideParams
+   *   Supply parameters to override the default one defined in this method.
    */
-  protected function recordPaymentPlanFirstContribution() {
+  protected function recordPaymentPlanFirstContribution($overrideParams = []) {
     $params = [
       'currency' => $this->currentRecurringContribution['currency'],
       'source' => 'Offline Autorenewal: ' . date('Y-m-d H:i:s'),
@@ -771,6 +774,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $params['soft_credit'][1] = $this->lastContribution['soft_credit'];
     }
 
+    $params = array_merge($params, $overrideParams);
     $contribution = CRM_Contribute_BAO_Contribution::create($params);
 
     CRM_MembershipExtras_Service_CustomFieldsCopier::copy(

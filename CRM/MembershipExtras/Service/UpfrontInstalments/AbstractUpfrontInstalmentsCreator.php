@@ -1,9 +1,8 @@
 <?php
 
-use CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator as InstalmentReceiveDateCalculator;
 use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
 
-class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
+abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontInstalmentsCreator {
 
   /**
    * The data of the current recurring
@@ -11,7 +10,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    *
    * @var array
    */
-  private $currentRecurContribution;
+  public $currentRecurContribution;
 
   /**
    * The data of the last contribution
@@ -34,11 +33,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
   private $contributionPendingStatusValue;
 
   /**
-   * @var \CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator
-   */
-  private $receiveDateCalculator;
-
-  /**
    * @var DateTime
    */
   private $previousInstalmentDate;
@@ -52,11 +46,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
     $this->setCurrentRecurContribution($currentRecurContributionId);
     $this->setLastContribution();
     $this->setPreviousInstalmentDate($this->lastContribution['receive_date']);
-
-    $this->receiveDateCalculator = new InstalmentReceiveDateCalculator($this->currentRecurContribution);
-
     $this->setContributionPendingStatusValue();
-
   }
 
   /**
@@ -118,7 +108,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
    * Creates the Remaining instalments contributions for
    * the membership new recurring contribution.
    */
-  public function createRemainingInstalmentContributionsUpfront() {
+  public function createRemainingInstalments() {
     if ($this->instalmentsCount == 0) {
       $this->instalmentsCount = (int) $this->currentRecurContribution['installments'];
     }
@@ -201,7 +191,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
       'fee_amount' => $this->lastContribution['fee_amount'],
       'net_amount' => $this->lastContribution['net_amount'],
       'total_amount' => $this->lastContribution['total_amount'],
-      'receive_date' => $this->receiveDateCalculator->calculate($contributionNumber),
+      'receive_date' => $this->calculateReceiveDate($contributionNumber),
       'payment_instrument_id' => $this->lastContribution['payment_instrument_id'],
       'financial_type_id' => $this->lastContribution['financial_type_id'],
       'is_test' => $this->lastContribution['is_test'],
@@ -222,6 +212,8 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandler {
 
     return $params;
   }
+
+  abstract protected function calculateReceiveDate($contributionNumber);
 
   public function setInstalmentsCount(int $instalmentsCount) {
     $this->instalmentsCount = $instalmentsCount;

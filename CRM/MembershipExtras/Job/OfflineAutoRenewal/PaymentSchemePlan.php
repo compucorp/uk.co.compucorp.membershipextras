@@ -1,23 +1,20 @@
 <?php
-use CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreator as StandardUpfrontInstalmentsCreator;
+use CRM_MembershipExtras_Service_UpfrontInstalments_PaymentSchemeUpfrontInstalmentsCreator as PaymentSchemeUpfrontInstalmentsCreator;
+use CRM_MembershipExtras_Service_PaymentScheme_PaymentPlanScheduleGenerator as PaymentPlanScheduleGenerator;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
- * Renews a payment plan with multiple instalments.
+ * Renews a payment plan with linked to a payment scheme.
  */
-class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
+class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
+
+  private $paymentPlanSchedule;
 
   /**
-   * Returns a list of payment plans with multiple instalments that have at
-   * least one line item ready to be renewed (ie. has an end date, is not
-   * removed and is set to auto renew), meeting these conditions:
-   *
-   * - recurring contribution is a supported by this extension
-   * - is set to auto-renew
-   * - is not in status cancelled
-   * - is active
-   * - has at least one autorenewal subscription line item
-   * - End date of at least one membership is equal to or smaller than today (with 'days to renew in advance' setting in mind)
+   * Returns a list of payment plans that are
+   * linked to payment schemes no matter how many
+   * instalments they have. The rest of the conditions
+   * are similar to the ones in MultipleInstalmentPlan class.
    *
    * @return array
    */
@@ -27,18 +24,17 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
     $query = "
-      SELECT ccr.id as contribution_recur_id, ccr.installments
+      SELECT ccr.id as contribution_recur_id, ccr.installments, ppea.payment_scheme_id
         FROM civicrm_contribution_recur ccr
    LEFT JOIN membershipextras_subscription_line msl ON msl.contribution_recur_id = ccr.id
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
    LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
-   LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
-       WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$supportedPaymentProcessorsIDs}))
-         AND ccr.installments > 1
+   INNER JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
+       WHERE ccr.payment_processor_id IN ({$supportedPaymentProcessorsIDs})
          AND ccr.auto_renew = 1
          AND ccr.contribution_status_id != {$cancelledStatusID}
          AND ppea.is_active = 1
-         AND ppea.payment_scheme_id IS NULL
+         AND ppea.payment_scheme_id IS NOT NULL
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
     GROUP BY ccr.id
@@ -54,6 +50,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     while ($recurContributions->fetch()) {
       $recurContribution['contribution_recur_id'] = $recurContributions->contribution_recur_id;
       $recurContribution['installments'] = $recurContributions->installments;
+      $recurContribution['payment_scheme_id'] = $recurContributions->payment_scheme_id;
       $recurContributionsList[] = $recurContribution;
     }
 
@@ -64,17 +61,30 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    * @inheritdoc
    */
   public function renew() {
+    $this->generatePaymentPlanSchedule();
+    $this->currentRecurringContribution['installments'] = count($this->paymentPlanSchedule['instalments']);
+
     $this->createRecurringContribution();
     $this->renewPaymentPlanMemberships($this->newRecurringContributionID);
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
-    $this->recordPaymentPlanFirstContribution();
 
-    $instalmentsHandler = new StandardUpfrontInstalmentsCreator($this->newRecurringContributionID);
-    $instalmentsHandler->createRemainingInstalments();
+    $overrideParams = [
+      'source' => 'Payment Scheme Autorenewal: ' . date('Y-m-d H:i:s'),
+      'receive_date' => $this->paymentPlanSchedule['instalments'][0]['charge_date'],
+    ];
+    $this->recordPaymentPlanFirstContribution($overrideParams);
 
-    $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->newRecurringContributionID, 'renewal');
-    $nextContributionDateService->calculateAndUpdate();
+    if ($this->currentRecurringContribution['installments'] > 1) {
+      $instalmentsHandler = new PaymentSchemeUpfrontInstalmentsCreator($this->newRecurringContributionID, $this->paymentPlanSchedule);
+      $instalmentsHandler->setInstalmentsCount($this->currentRecurringContribution['installments']);
+      $instalmentsHandler->createRemainingInstalments();
+    }
+  }
+
+  private function generatePaymentPlanSchedule() {
+    $paymentPlanScheduleGenerator = new PaymentPlanScheduleGenerator($this->currentRecurContributionID);
+    $this->paymentPlanSchedule = $paymentPlanScheduleGenerator->generateSchedule();
   }
 
   /**
@@ -88,10 +98,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    */
   private function createRecurringContribution() {
     $currentRecurContribution = $this->currentRecurringContribution;
-    $paymentProcessorID = !empty($currentRecurContribution['payment_processor_id']) ? $currentRecurContribution['payment_processor_id'] : NULL;
 
     $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
-    $this->paymentPlanStartDate = $this->currentRecurringContribution['next_sched_contribution_date'];
+    $this->paymentPlanStartDate = $this->paymentPlanSchedule['instalments'][0]['charge_date'];
     $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
 
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
@@ -99,14 +108,13 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
       'contact_id' => $currentRecurContribution['contact_id'],
       'amount' => 0,
       'currency' => $currentRecurContribution['currency'],
-      'frequency_unit' => $currentRecurContribution['frequency_unit'],
-      'frequency_interval' => $currentRecurContribution['frequency_interval'],
-      'installments' => $currentRecurContribution['installments'],
+      'frequency_interval' => 1,
+      'installments' => $this->currentRecurringContribution['installments'],
       'contribution_status_id' => 'Pending',
       'is_test' => $currentRecurContribution['is_test'],
       'auto_renew' => 1,
       'cycle_day' => $currentRecurContribution['cycle_day'],
-      'payment_processor_id' => $paymentProcessorID,
+      'payment_processor_id' => $currentRecurContribution['payment_processor_id'],
       'financial_type_id' => $currentRecurContribution['financial_type_id'],
       'payment_instrument_id' => $paymentInstrumentName,
       'start_date' => $this->paymentPlanStartDate,
