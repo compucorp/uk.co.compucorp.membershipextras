@@ -80,6 +80,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
       $instalmentsHandler->setInstalmentsCount($this->currentRecurringContribution['installments']);
       $instalmentsHandler->createRemainingInstalments();
     }
+
+    $this->dispatchPaymentSchemeRenewalHook();
   }
 
   private function generatePaymentPlanSchedule() {
@@ -325,6 +327,28 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
     }
 
     return MoneyUtilities::roundToCurrencyPrecision($totalAmount);
+  }
+
+  private function dispatchPaymentSchemeRenewalHook() {
+    $renewalContributions = $this->getPaymentPlanContributionsForPaymentSchemeHook();
+
+    $nullObject = CRM_Utils_Hook::$_nullObject;
+    CRM_Utils_Hook::singleton()->invoke(
+      ['paymentProcessorId', 'recurContributionId', 'renewalContributions'],
+      $this->newRecurringContribution['payment_processor_id'],
+      $this->newRecurringContributionID,
+      $renewalContributions,
+      $nullObject, $nullObject, $nullObject,
+      'membershipextras_postPaymentSchemeRenewalAutoRenewal'
+    );
+  }
+
+  private function getPaymentPlanContributionsForPaymentSchemeHook() {
+    return \Civi\Api4\Contribution::get()
+      ->addSelect('id', 'receive_date', 'total_amount', 'currency')
+      ->addWhere('contribution_recur_id', '=', $this->newRecurringContributionID)
+      ->execute()
+      ->getArrayCopy();
   }
 
 }
