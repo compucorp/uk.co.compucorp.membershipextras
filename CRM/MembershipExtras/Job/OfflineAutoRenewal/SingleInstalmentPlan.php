@@ -84,6 +84,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
          AND ccr.auto_renew = 1
          AND ccr.contribution_status_id != {$cancelledStatusID}
          AND ppea.is_active = 1
+         AND ppea.payment_scheme_id IS NULL
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
          AND msl.end_date IS NULL

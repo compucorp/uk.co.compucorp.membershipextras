@@ -11,6 +11,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
     // steps that create new entities.
     $creationSteps = [
       new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
+      new CRM_MembershipExtras_Setup_Manage_PaymentSchemeAutoRenewalScheduledJob(),
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType(),
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
       new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
@@ -49,6 +50,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType(),
       new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
+      new CRM_MembershipExtras_Setup_Manage_PaymentSchemeAutoRenewalScheduledJob(),
       new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
       new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
       new CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes(),
@@ -64,6 +66,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor(),
       new CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType(),
       new CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob(),
+      new CRM_MembershipExtras_Setup_Manage_PaymentSchemeAutoRenewalScheduledJob(),
       new CRM_MembershipExtras_Setup_Manage_PaymentPlanActivityTypes(),
       new CRM_MembershipExtras_Setup_Manage_FutureMembershipStatusRules(),
       new CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes(),
