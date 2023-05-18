@@ -20,7 +20,7 @@ class CRM_MembershipExtras_Service_PaymentPlanScheduleGeneratorTest extends Base
 
   private $paymentPlanOrder;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->createTestRollingMembershipType();
     $this->createPaymentPlanOrder();
     $this->createPaymentSchemeAndLinkToPaymentPlanOrder();

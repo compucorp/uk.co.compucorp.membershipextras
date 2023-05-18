@@ -27,7 +27,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
    */
   protected $testRollingMembershipTypePriceFieldValue;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->setDefaultPaymentPlanSettings();
     $this->createTestRollingMembershipType();
   }

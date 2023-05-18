@@ -16,7 +16,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->mockSalesTaxFinancialAccount();
   }
 

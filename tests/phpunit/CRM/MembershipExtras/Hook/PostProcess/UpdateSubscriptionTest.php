@@ -17,7 +17,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    */
   private $updateSubscriptionForm;
 
-  public function setUp() {
+  public function setUp(): void {
     Civi::settings()->set('membershipextras_paymentplan_days_to_renew_in_advance', 0);
     Civi::settings()->set('membershipextras_paymentplan_update_start_date_renewal', 0);
 
