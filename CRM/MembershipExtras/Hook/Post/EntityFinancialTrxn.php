@@ -2,6 +2,7 @@
 
 use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 use CRM_MembershipExtras_Service_PaymentPlanStatusCalculator as PaymentPlanStatusCalculator;
+use CRM_MembershipExtras_Helper_RecurringContributionHelper as RecurringContributionHelper;
 
 class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
 
@@ -38,8 +39,16 @@ class CRM_MembershipExtras_Hook_Post_EntityFinancialTrxn {
     }
 
     $this->setRecurContribution();
+    if (empty($this->recurContribution)) {
+      return;
+    }
+
     $isSupportedPaymentPlanTransaction = SupportedPaymentProcessors::isSupportedPaymentProcessor($this->recurContribution['payment_processor_id']);
-    if (empty($this->recurContribution) || !$isSupportedPaymentPlanTransaction) {
+    if (!$isSupportedPaymentPlanTransaction) {
+      return;
+    }
+
+    if (!RecurringContributionHelper::isRecurringContributionLinkToMembership($this->recurContribution['id'])) {
       return;
     }
 
