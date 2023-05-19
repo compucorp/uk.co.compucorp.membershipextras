@@ -49,4 +49,4 @@ jobs:
 
       - name: Run phpunit tests
         working-directory: ${{ env.CIVICRM_EXTENSIONS_DIR }}/uk.co.compucorp.membershipextras
-        run: phpunit5
+        run: phpunit9
