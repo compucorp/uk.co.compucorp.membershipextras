@@ -130,7 +130,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
     ]);
 
     $payLaterPaymentProcessorId = CRM_MembershipExtras_SettingsManager::getDefaultProcessorID();
-    $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->instalmentsFrequencyUnit);
 
     $contributionReceiveDateParam = [
       'membership_id' => $this->getMembership()['id'],
@@ -143,6 +142,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
       'frequency_unit' => $this->instalmentsFrequencyUnit,
     ];
     $this->dispatchReceiveDateCalculationHook($this->params['receive_date'], $contributionReceiveDateParam);
+    $cycleDay = CRM_MembershipExtras_Service_CycleDayCalculator::calculate($this->params['receive_date'], $this->instalmentsFrequencyUnit);
 
     $contributionRecurParams = [
       'sequential' => 1,

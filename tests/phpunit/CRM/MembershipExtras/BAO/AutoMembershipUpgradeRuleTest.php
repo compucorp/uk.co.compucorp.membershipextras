@@ -19,7 +19,7 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRuleTest extends BaseHeadles
 
   private $group;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->fromMembershipType = MembershipTypeFabricator::fabricate(
       [
         'name' => 'Test From Membership Type',

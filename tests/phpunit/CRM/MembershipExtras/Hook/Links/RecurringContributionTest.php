@@ -20,7 +20,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContributionTest extends BaseHead
    */
   private $links = [];
 
-  public function setUp() {
+  public function setUp(): void {
     $this->links = [
       ['name' => 'Cancel', 'ref' => '', 'url' => ''],
     ];

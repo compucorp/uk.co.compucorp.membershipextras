@@ -25,7 +25,7 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculatorTest extends BaseH
    */
   private $fixedMembershipScenarios = [];
 
-  public function setUp() {
+  public function setUp(): void {
     $this->rollingMembershipScenarios = [
       'normal year 01/01 => 12/31' => [
         'duration_interval' => 12,

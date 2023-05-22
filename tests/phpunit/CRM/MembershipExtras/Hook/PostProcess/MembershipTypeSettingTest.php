@@ -15,7 +15,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSettingTest extends Ba
    */
   private $membershipTypeForm;
 
-  public function setUp() {
+  public function setUp(): void {
     $formController = new CRM_Core_Controller();
     $this->membershipTypeForm = new CRM_Member_Form_MembershipType();
     $this->membershipTypeForm->controller = $formController;

@@ -36,7 +36,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
 
   private static $NEW_MEMBERSHIP_FORM_NAME = 'CRM_Member_Form_Membership';
 
-  public function setUp() {
+  public function setUp(): void {
     $this->setUpMembershipForm();
   }
 

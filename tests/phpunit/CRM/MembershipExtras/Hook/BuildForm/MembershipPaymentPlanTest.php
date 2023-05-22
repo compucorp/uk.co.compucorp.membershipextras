@@ -9,7 +9,7 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipPaymentPlanTest extends Base
 
   private $membershipCreationForm;
 
-  public function setUp() {
+  public function setUp(): void {
     $formController = new CRM_Core_Controller();
     $this->membershipCreationForm = new CRM_Member_Form_Membership();
     $this->membershipCreationForm->controller = $formController;

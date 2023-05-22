@@ -13,7 +13,7 @@ class CRM_MembershipExtras_Page_InstalmentScheduleTest extends BaseHeadlessTest 
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
   use CRM_MembershipExtras_Test_Helper_PaymentMethodTrait;
 
-  public function testRunRollingMembershipType() {
+  public function testRunRollingMembershipType(): void {
     $memType = $this->mockFixedMembershipType('rolling');
     $today = new DateTime('today');
     $_REQUEST['schedule'] = 'quarterly';
@@ -46,7 +46,7 @@ class CRM_MembershipExtras_Page_InstalmentScheduleTest extends BaseHeadlessTest 
     $this->assertNotNull($page->get_template_vars('prorated_unit'));
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     parent::tearDown();
     $_REQUEST['schedule'] = NULL;
     $_REQUEST['start_date'] = NULL;

@@ -25,7 +25,7 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
 
   private $testMonthlyToMembershipType;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->createTestContacT();
     $this->createTestMembershipTypes();
   }
