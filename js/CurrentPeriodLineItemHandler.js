@@ -289,7 +289,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       }
 
       if (that.validateNewMembership()) {
-        that.callNewLineConfirmationForm('civicrm/recurring-contribution/add-membership-lineitem', {
+        that.callNewLineConfirmationForm('membership', {
           reset: 1,
           contribution_recur_id: that.recurringContributionID,
           line_item: {
@@ -385,7 +385,7 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     // Adds line item to recurring contribution and all pending installments.
     CRM.$('#apply_add_donation_btn', this.currentTab).click(function () {
       if (that.validateNewDonation()) {
-        that.callNewLineConfirmationForm('civicrm/recurring-contribution/add-donation-lineitem', {
+        that.callNewLineConfirmationForm('donation', {
           reset: 1,
           contribution_recur_id: that.recurringContributionID,
           line_item: {
@@ -418,10 +418,10 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
    * Shows confimation dialog to add new donation line item if there are
    * sufficient pending installments.
    *
-   * @param path
+   * @param context
    * @param parameters
    */
-  CurrentPeriodLineItemHandler.prototype.callNewLineConfirmationForm = function (path, parameters) {
+  CurrentPeriodLineItemHandler.prototype.callNewLineConfirmationForm = function (context, parameters) {
     var that = this;
     var startDate = parameters.line_item.start_date;
 
@@ -434,20 +434,10 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }).done(function (result) {
       that.currentTab.unblock();
 
-      if (result.result < 1) {
-        CRM.alert(
-          'There are no instalments left for this period. Suggest to follow the steps below:' +
-          '<ul>' +
-          '<li>Add the the item to next period instead.</li>' +
-          '<li>(optional) Create the membership or contribution outside the recurring order.</li>' +
-          '</ul>',
-          null,
-          'alert',
-          {expires: NOTIFICATION_EXPIRE_TIME_IN_MS}
-        );
-
-        return;
-      }
+      var isTherePendingFutureInstalments = result.result >= 1;
+      const pathBase = 'civicrm/recurring-contribution/';
+      const pathSuffix = context == 'membership' ? 'membership-lineitem' : 'donation-lineitem';
+      var path = pathBase + (isTherePendingFutureInstalments ? 'add-' : 'add-noinstalments-') + pathSuffix;
 
       var formURL = CRM.url(path, parameters);
       CRM.loadForm(formURL, {
