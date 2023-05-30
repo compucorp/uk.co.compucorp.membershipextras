@@ -45,3 +45,41 @@ function civicrm_api3_contribution_recur_line_item_delete($params) {
 function civicrm_api3_contribution_recur_line_item_get($params) {
   return _civicrm_api3_basic_get(_civicrm_api3_get_BAO(__FUNCTION__), $params);
 }
+
+function _civicrm_api3_contribution_recur_line_item_calculatetaxamount_spec(&$spec) {
+  $spec['amount_exc_tax'] = [
+    'title' => ts('Amount Exc Tax'),
+    'api.required' => TRUE,
+    'type' => CRM_Utils_Type::T_INT,
+  ];
+
+  $spec['financial_type_id'] = [
+    'title' => ts('Financial Type Id'),
+    'api.required' => TRUE,
+    'type' => CRM_Utils_Type::T_INT,
+  ];
+}
+
+/**
+ * ContributionRecurLineItem.calculateTaxAmount API
+ *
+ * Calculates the tax amount for any given amount if the
+ * financial type is given.
+ */
+function civicrm_api3_contribution_recur_line_item_calculatetaxamount($params) {
+  $amountExcTax = $params['amount_exc_tax'];
+  $financialTypeId = $params['financial_type_id'];
+
+  $taxAmount = 0;
+  $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+  if (!empty($taxRates[$financialTypeId])) {
+    $taxRate = $taxRates[$financialTypeId];
+    $taxAmount = CRM_Contribute_BAO_Contribution_Utils::calculateTaxAmount($amountExcTax, $taxRate);
+    $taxAmount = CRM_MembershipExtras_Service_MoneyUtilities::roundToCurrencyPrecision($taxAmount['tax_amount']);
+  }
+
+  $totalAmount = $amountExcTax + $taxAmount;
+  $totalAmount = CRM_MembershipExtras_Service_MoneyUtilities::roundToCurrencyPrecision($totalAmount);
+
+  return ['total_amount' => $totalAmount, 'tax_amount' => $taxAmount];
+}
