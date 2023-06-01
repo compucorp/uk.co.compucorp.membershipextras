@@ -55,6 +55,12 @@
     <access_arguments>edit contributions,edit memberships</access_arguments>
   </item>
   <item>
+    <path>civicrm/recurring-contribution/add-noinstalments-membership-lineitem</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembershipLineItem</page_callback>
+    <title>Add Membership Line Item</title>
+    <access_arguments>edit contributions,edit memberships</access_arguments>
+  </item>
+  <item>
     <path>civicrm/contribution/duplicate-contribution</path>
     <page_callback>CRM_MembershipExtras_Form_Contribution_Action_Duplicate</page_callback>
     <title>Cancel Recurring Contribution</title>
