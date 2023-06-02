@@ -75,11 +75,11 @@ function civicrm_api3_contribution_recur_line_item_calculatetaxamount($params) {
   if (!empty($taxRates[$financialTypeId])) {
     $taxRate = $taxRates[$financialTypeId];
     $taxAmount = CRM_Contribute_BAO_Contribution_Utils::calculateTaxAmount($amountExcTax, $taxRate);
-    $taxAmount = CRM_MembershipExtras_Service_MoneyUtilities::roundToCurrencyPrecision($taxAmount['tax_amount']);
+    $taxAmount = CRM_MembershipExtras_Service_MoneyUtilities::roundToPrecision($taxAmount['tax_amount'], 2);
   }
 
   $totalAmount = $amountExcTax + $taxAmount;
-  $totalAmount = CRM_MembershipExtras_Service_MoneyUtilities::roundToCurrencyPrecision($totalAmount);
+  $totalAmount = CRM_MembershipExtras_Service_MoneyUtilities::roundToPrecision($totalAmount, 2);
 
   return ['total_amount' => $totalAmount, 'tax_amount' => $taxAmount];
 }

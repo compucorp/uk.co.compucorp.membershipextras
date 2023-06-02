@@ -153,7 +153,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembership
       'unit_price' => 0,
       'line_total' => 0,
       'price_field_value_id' => $priceFieldValue['id'],
-      'financial_type_id' => $priceFieldValue['financial_type_id'],
+      'financial_type_id' => $this->membershipType->financial_type_id,
     ];
     $data['line_item'] = $lineItemParams = array_merge($lineItemParams, $this->getOneOffPaymentLineItemParams());
     $lineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
@@ -251,7 +251,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembership
       'contribution_status_id' => 'Pending',
       'currency' => $this->recurringContribution['currency'],
       'payment_instrument_id' => $this->recurringContribution['payment_instrument_id'],
-      'source' => 'Manage Instalments form',
+      'source' => 'Manage Instalments form - One off payment',
       'contribution_recur_id' => $this->recurringContribution['id'],
       'is_pay_later' => TRUE,
     ]);
