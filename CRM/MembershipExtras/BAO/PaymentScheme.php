@@ -41,4 +41,27 @@ class CRM_MembershipExtras_BAO_PaymentScheme extends CRM_MembershipExtras_DAO_Pa
     return $schemes;
   }
 
+  /**
+   * Deletes payment scheme by ID.
+   *
+   * @throws CRM_Core_Exception
+   *   Function throws error if payment scheme ID
+   *   is linked to any recurring contribution.
+   */
+  public static function deleteByID($id) {
+    $contributionRecursCount = \Civi\Api4\ContributionRecur::get()
+      ->selectRowCount()
+      ->addWhere('payment_plan_extra_attributes.payment_scheme_id', '=', $id)
+      ->execute()->count();
+
+    if ($contributionRecursCount > 0) {
+      throw new CRM_Core_Exception('You are not able to delete this payment scheme as it’s linked with one or more recurring contributions.');
+    }
+
+    $param = [
+      'id' => $id,
+    ];
+    CRM_MembershipExtras_BAO_PaymentScheme::deleteRecord($param);
+  }
+
 }

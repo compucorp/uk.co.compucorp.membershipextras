@@ -1,7 +1,5 @@
 <?php
 
-use CRM_MembershipExtras_ExtensionUtil as E;
-
 /**
  * Form controller class
  *
@@ -18,36 +16,63 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
    * @throws CRM_Core_Exception
    */
   public function preProcess() {
-    if ($this->_action == CRM_Core_Action::UPDATE) {
-      CRM_Utils_System::setTitle(E::ts('Edit Payment Scheme'));
-      $this->id = CRM_Utils_Request::retrieve('id', 'Positive', $this, FALSE, 0);
-    }
-    else {
-      CRM_Utils_System::setTitle(E::ts('Add Payment Scheme'));
-    }
-
+    $this->id = CRM_Utils_Request::retrieve('id', 'Positive', $this, FALSE, 0);
+    $this->setFormTitle();
     parent::preProcess();
   }
 
+  public function setFormTitle() {
+    if ($this->_action == CRM_Core_Action::UPDATE) {
+      $this->setTitle(ts('Edit Payment Scheme'));
+
+      return;
+    }
+
+    if ($this->isDeleteContext()) {
+      $this->setTitle(ts('Delete Payment Scheme'));
+
+      return;
+    }
+
+    $this->setTitle(ts('Add Payment Scheme'));
+  }
+
   public function buildQuickForm() {
-    $this->add('text', 'name', E::ts('Name'), NULL, TRUE);
-    $this->add('text', 'admin_title', E::ts('Admin Title'), NULL, TRUE);
-    $this->add('textarea', 'admin_description', E::ts('Admin Description'));
-    $this->add('text', 'public_title', E::ts('Public Title'), NULL, TRUE);
-    $this->add('textarea', 'public_description', E::ts('Public Description'));
+    if ($this->isDeleteContext()) {
+
+      $this->addButtons([
+        [
+          'type' => 'submit',
+          'name' => ts('Delete'),
+          'isDefault' => TRUE,
+        ],
+        [
+          'type' => 'cancel',
+          'name' => ts('Cancel'),
+        ],
+      ]);
+
+      return;
+    }
+
+    $this->add('text', 'name', ts('Name'), NULL, TRUE);
+    $this->add('text', 'admin_title', ts('Admin Title'), NULL, TRUE);
+    $this->add('textarea', 'admin_description', ts('Admin Description'));
+    $this->add('text', 'public_title', ts('Public Title'), NULL, TRUE);
+    $this->add('textarea', 'public_description', ts('Public Description'));
     $this->add(
       'select',
       'permission',
       'permission',
       [
-        'public' => E::ts('Public'),
-        'admin' => E::ts('Admin'),
+        'public' => ts('Public'),
+        'admin' => ts('Admin'),
       ],
       TRUE
     );
-    $this->add('checkbox', 'enabled', E::ts('Enabled'), NULL, FALSE);
+    $this->add('checkbox', 'enabled', ts('Enabled'), NULL, FALSE);
     $this->addPaymentProcessorField();
-    $this->add('textarea', 'parameters', E::ts('Parameters'), NULL, TRUE);
+    $this->add('textarea', 'parameters', ts('Parameters'), NULL, TRUE);
 
     $this->addButtons([
       [
@@ -62,30 +87,18 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
     ]);
 
     $this->assign('elementNames', $this->getRenderableElementNames());
+
     parent::buildQuickForm();
   }
 
   public function postProcess() {
-    $values = $this->exportValues();
+    if ($this->isDeleteContext()) {
+      $this->postProcessDeletion();
 
-    $params = [
-      'name' => $values['name'],
-      'admin_title' => $values['admin_title'],
-      'admin_description' => $values['admin_description'],
-      'public_title' => $values['public_title'],
-      'public_description' => $values['public_description'],
-      'permission' => $values['permission'],
-      'enabled' => CRM_Utils_Array::value('enabled', $values, FALSE),
-      'parameters' => $values['parameters'],
-      'payment_processor' => $values['payment_processor'],
-    ];
-
-    if (!empty($this->id)) {
-      $params['id'] = $this->id;
+      return;
     }
 
-    CRM_MembershipExtras_BAO_PaymentScheme::create($params);
-    CRM_Core_Session::setStatus(ts('The payment scheme has been saved.'), ts('Saved'), 'success');
+    $this->postProcessFormSubmission();
 
     parent::postProcess();
   }
@@ -113,7 +126,7 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
   }
 
   /**
-   * Get the fields/elements defined in this form.
+   * Gets the fields/elements defined in this form.
    *
    * @return array (string)
    */
@@ -151,8 +164,46 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
     }
     $select = ['' => ts('- select -')] + $paymentProcessors;
 
-    $this->add('select', 'payment_processor', E::ts('Payment Processor'), $select, TRUE);
+    $this->add('select', 'payment_processor', ts('Payment Processor'), $select, TRUE);
 
+  }
+
+  private function isDeleteContext() {
+    return $this->_action == CRM_Core_Action::DELETE;
+  }
+
+  private function postProcessDeletion() {
+    try {
+      CRM_MembershipExtras_BAO_PaymentScheme::deleteByID($this->id);
+      CRM_Core_Session::setStatus(ts('Details removed successfully.'), ts('Delete'), "success");
+    }
+    catch (CRM_Core_Exception $exception) {
+      CRM_Core_Session::setStatus(ts($exception->getMessage()), ts("Payment Scheme cannot be deleted"), "error");
+    }
+
+  }
+
+  private function postProcessFormSubmission() {
+    $values = $this->exportValues();
+
+    $params = [
+      'name' => $values['name'],
+      'admin_title' => $values['admin_title'],
+      'admin_description' => $values['admin_description'],
+      'public_title' => $values['public_title'],
+      'public_description' => $values['public_description'],
+      'permission' => $values['permission'],
+      'enabled' => CRM_Utils_Array::value('enabled', $values, FALSE),
+      'parameters' => $values['parameters'],
+      'payment_processor' => $values['payment_processor'],
+    ];
+
+    if (!empty($this->id)) {
+      $params['id'] = $this->id;
+    }
+
+    CRM_MembershipExtras_BAO_PaymentScheme::create($params);
+    CRM_Core_Session::setStatus(ts('The payment scheme has been saved.'), ts('Saved'), 'success');
   }
 
 }
