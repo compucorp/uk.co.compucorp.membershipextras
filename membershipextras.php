@@ -309,7 +309,10 @@ function membershipextras_civicrm_pageRun($page) {
     );
   }
 
-  _membershipextras_appendJSToModifyRecurringContributionPage($page);
+  if ($page instanceof CRM_Contribute_Page_ContributionRecur) {
+    $recurViewPage = new CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage();
+    $recurViewPage->handle($page);
+  }
 }
 
 /**
@@ -456,25 +459,6 @@ function membershipextras_civicrm_alterAPIPermissions($entity, $action, &$params
   if ($isMembershipextrasContext && $isManageInstallmentAPIs && $isManageInstallmentAPIsAllowedActions) {
     $permissions[$entity][$action] = ['access CiviContribute'];
   }
-}
-
-function _membershipextras_appendJSToModifyRecurringContributionPage(&$page) {
-  if (!($page instanceof CRM_Contribute_Page_ContributionRecur)) {
-    return;
-  }
-
-  $contributionData = $page->get_template_vars('recur');
-  $frequency = CRM_Utils_Array::value('frequency_unit', $contributionData, '');
-
-  CRM_Core_Resources::singleton()->addScriptFile(
-    CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
-    'js/modifyAnnualRecuringContributionPage.js',
-    1,
-    'page-header'
-  )->addVars(
-    CRM_MembershipExtras_ExtensionUtil::SHORT_NAME,
-    ['contribution_frequency' => $frequency]
-  );
 }
 
 /**
