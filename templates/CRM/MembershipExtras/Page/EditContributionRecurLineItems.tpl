@@ -1,6 +1,8 @@
 <div id="periodsContainer" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
   <script type="text/javascript">
     {literal}
+    CRM.$('.crm-dialog-titlebar-resize:visible').click();
+
     var selectedTab = CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab') || 'current';
     CRM.$(function($) {
       $('#tab_current').click(function () {
