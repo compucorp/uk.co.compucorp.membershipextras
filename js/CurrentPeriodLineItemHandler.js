@@ -108,6 +108,16 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
       }
     });
 
+    // Switch membership line type.
+    CRM.$('.switch-membership-button', this.currentTab).each(function () {
+      CRM.$(this).click(function () {
+        var itemID = CRM.$(this).data('itemid');
+        that.switchMembershipTypeModal(itemID);
+
+        return false;
+      });
+    });
+
     // Remove line item.
     CRM.$('.remove-line-button', this.currentTab).each(function () {
       CRM.$(this).click(function () {
@@ -566,6 +576,30 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
     }
 
     return true;
+  };
+
+  /**
+   * Shows that modal that allows switching the membership type
+   *
+   * @param lineItemID
+   */
+  CurrentPeriodLineItemHandler.prototype.switchMembershipTypeModal = function (lineItemID) {
+    var that = this;
+
+    this.currentTab.block({message: null});
+
+    var formUrl = CRM.url('civicrm/recurring-contribution/switch-membership-type', {
+      reset: 1,
+      contribution_recur_id: that.recurringContributionID,
+      line_item_id: lineItemID
+    });
+
+    CRM.loadForm(formUrl, {
+      dialog: {width: 1040, height: 0}
+    }).on('crmFormSuccess', function () {
+      createActivity('Update Payment Plan Current Period', 'update_payment_plan_current_period');
+      CRM.refreshParent('#periodsContainer');
+    });
   };
 
   /**
