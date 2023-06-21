@@ -32,13 +32,18 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
    * item to its contribution.
    *
    * @param array $lineItem
+   * @param string $transactionDate
    */
-  public static function insertFinancialItemOnLineItemAddition($lineItem) {
+  public static function insertFinancialItemOnLineItemAddition($lineItem, $transactionDate = NULL) {
+    if (empty($transactionDate)) {
+      $transactionDate = date('YmdHis');
+    }
+
     $contribution = civicrm_api3('Contribution', 'getsingle', [
-      'id' => $lineItem['contribution_id']
+      'id' => $lineItem['contribution_id'],
     ]);
 
-    $trxnId = ['id' => self::createFinancialTrxnEntry($contribution['id'], $lineItem['line_total'])];
+    $trxnId = ['id' => self::createFinancialTrxnEntry($contribution['id'], $lineItem['line_total'], NULL, $transactionDate)];
     $accountRelName = self::getFinancialAccountRelationship($contribution['id'], $lineItem['id']);
     $revenueFinancialAccountID = CRM_Contribute_PseudoConstant::getRelationalFinancialAccount(
       $lineItem['financial_type_id'],
@@ -46,7 +51,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
     );
 
     $newFinancialItem = array(
-      'transaction_date' => date('YmdHis'),
+      'transaction_date' => $transactionDate,
       'contact_id' => $contribution['contact_id'],
       'description' => ($lineItem['qty'] != 1 ? $lineItem['qty'] . ' of ' : '') . $lineItem['label'],
       'amount' => $lineItem['line_total'],
@@ -96,12 +101,17 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
   }
 
   /**
-   * Inserts financial item to reflect change done on contribution on line item
+   * Inserts financial item to reflect change done on contribution line item
    * deletion.
    *
    * @param array $lineItemBefore
+   * @param string $transactionDate
    */
-  public static function insertFinancialItemOnLineItemDeletion($lineItemBefore) {
+  public static function insertFinancialItemOnLineItemDeletion($lineItemBefore, $transactionDate = NULL) {
+    if (empty($transactionDate)) {
+      $transactionDate = date('YmdHis');
+    }
+
     $lineItemAfter = civicrm_api3('LineItem', 'getsingle', [
       'id' => $lineItemBefore['id'],
     ]);
@@ -115,7 +125,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
     if ($deltaAmount != 0 || $deltaTaxAmount != 0) {
       $previousFinancialItem = CRM_Financial_BAO_FinancialItem::getPreviousFinancialItem($lineItemBefore['id']);
       $financialItem = [
-        'transaction_date' => date('YmdHis'),
+        'transaction_date' => $transactionDate,
         'contact_id' => $previousFinancialItem['contact_id'],
         'description' => ($lineItemAfter['qty'] > 1 ? $lineItemAfter['qty'] . ' of ' : '') . $lineItemAfter['label'],
         'currency' => $previousFinancialItem['currency'],
@@ -128,7 +138,8 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
         $lineItemAfter['contribution_id'],
         $financialItem,
         $deltaAmount,
-        $deltaTaxAmount
+        $deltaTaxAmount,
+        $transactionDate
       );
     }
   }
@@ -141,9 +152,10 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
    * @param array $financialItem
    * @param double $deltaAmount
    * @param double $deltaTaxAmount
+   * @param string $transactionDate
    */
-  public static function recordChangeInAmount($contributionId, $financialItem, $deltaAmount, $deltaTaxAmount) {
-    $trxnId = ['id' => self::createFinancialTrxnEntry($contributionId, $deltaAmount + $deltaTaxAmount)];
+  public static function recordChangeInAmount($contributionId, $financialItem, $deltaAmount, $deltaTaxAmount, $transactionDate) {
+    $trxnId = ['id' => self::createFinancialTrxnEntry($contributionId, $deltaAmount + $deltaTaxAmount, NULL, $transactionDate)];
     $accountRelName = self::getFinancialAccountRelationship($contributionId, $financialItem['entity_id']);
     $lineItem = civicrm_api3('LineItem', 'getsingle', ['id' => $financialItem['entity_id']]);
 
@@ -176,10 +188,15 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
    * @param int $contributionId
    * @param double $amount
    * @param int $toFinancialAccount
+   * @param string $transactionDate
    *
    * @return int
    */
-  public static function createFinancialTrxnEntry($contributionId, $amount, $toFinancialAccount = NULL) {
+  public static function createFinancialTrxnEntry($contributionId, $amount, $toFinancialAccount = NULL, $transactionDate = NULL) {
+    if (empty($transactionDate)) {
+      $transactionDate = date('YmdHis');
+    }
+
     $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $contributionId]);
     $isPayment = TRUE;
 
@@ -196,7 +213,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
       'status_id' => $contribution['contribution_status_id'],
       'payment_instrument_id' => $contribution['payment_instrument_id'],
       'contribution_id' => $contributionId,
-      'trxn_date' => date('YmdHis'),
+      'trxn_date' => $transactionDate,
       'currency' => $contribution['currency'],
       'is_payment' => $isPayment,
     ];
@@ -288,10 +305,10 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
    */
   public static function calculateTaxAmountTotalFromContributionID($contributionID) {
     $taxAmount = CRM_Core_DAO::singleValueQuery("
-      SELECT SUM(COALESCE(tax_amount,0)) 
-      FROM civicrm_line_item 
-      WHERE contribution_id = $contributionID 
-      AND qty > 0 
+      SELECT SUM(COALESCE(tax_amount,0))
+      FROM civicrm_line_item
+      WHERE contribution_id = $contributionID
+      AND qty > 0
     ");
 
     return MoneyUtilities::format($taxAmount, NULL, NULL, TRUE);

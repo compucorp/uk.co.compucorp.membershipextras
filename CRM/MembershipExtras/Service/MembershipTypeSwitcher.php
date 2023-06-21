@@ -189,7 +189,7 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
       'tax_amount' => 0.00,
     ]);
 
-    FinancialTransactionManager::insertFinancialItemOnLineItemDeletion($lineItemBefore);
+    FinancialTransactionManager::insertFinancialItemOnLineItemDeletion($lineItemBefore, $contribution['receive_date']);
 
     // Remove line item from contribution
     civicrm_api3('LineItem', 'create', [
@@ -258,7 +258,7 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
     $lineItemParams['contribution_id'] = $contribution['id'];
     $lineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
     $lineItem = array_shift($lineItem['values']);
-    FinancialTransactionManager::insertFinancialItemOnLineItemAddition($lineItem);
+    FinancialTransactionManager::insertFinancialItemOnLineItemAddition($lineItem, $contribution['receive_date']);
   }
 
   private function calculateLineAmountsPerRemainingInstalment() {
