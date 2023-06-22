@@ -83,3 +83,45 @@ function civicrm_api3_contribution_recur_line_item_calculatetaxamount($params) {
 
   return ['total_amount' => $totalAmount, 'tax_amount' => $taxAmount];
 }
+
+function _civicrm_api3_contribution_recur_line_item_calcmembershipprorata_spec(&$spec) {
+  $spec['recur_contribution_id'] = [
+    'title' => ts('Recurring Contribution Id'),
+    'api.required' => TRUE,
+    'type' => CRM_Utils_Type::T_INT,
+  ];
+
+  $spec['membership_type_id'] = [
+    'title' => ts('Membership Type Id'),
+    'api.required' => TRUE,
+    'type' => CRM_Utils_Type::T_INT,
+  ];
+
+  $spec['from_date'] = [
+    'title' => ts('From Date'),
+    'api.required' => TRUE,
+    'type' => CRM_Utils_Type::T_DATE,
+  ];
+
+  $spec['to_date'] = [
+    'title' => ts('To Date'),
+    'api.required' => FALSE,
+    'type' => CRM_Utils_Type::T_DATE,
+  ];
+
+  $spec['financial_type_id'] = [
+    'title' => ts('Financial Type Id'),
+    'api.required' => FALSE,
+    'type' => CRM_Utils_Type::T_INT,
+  ];
+}
+
+/**
+ * @param $params
+ * @return array
+ */
+function civicrm_api3_contribution_recur_line_item_calcmembershipprorata($params) {
+  $params['to_date'] = CRM_Utils_Array::value('to_date', $params);
+  $params['financial_type_id'] = CRM_Utils_Array::value('financial_type_id', $params);
+  return CRM_MembershipExtras_Service_MembershipLineProRataCalculator::calculateAmounts($params['recur_contribution_id'], $params['membership_type_id'], $params['from_date'], $params['to_date'], $params['financial_type_id']);
+}

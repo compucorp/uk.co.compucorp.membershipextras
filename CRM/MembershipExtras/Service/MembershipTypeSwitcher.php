@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_Service_FinancialTransactionManager as FinancialTransactionManager;
+use CRM_MembershipExtras_BAO_ContributionRecurLineItem as ContributionRecurLineItem;
 
 class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
 
@@ -26,14 +27,17 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
 
   private $numberOfRemainingInstalments;
 
-  public function __construct($recurLineItemId, $newMembershipTypeId, $switchDate, $paymentType) {
+  private $oneOffFeeParams;
+
+  public function __construct($recurLineItemId, $newMembershipTypeId, $switchDate, $paymentType, $oneOffFeeParams = NULL) {
     $this->recurLineItemId = $recurLineItemId;
     $this->recurLineItemData = $this->getRecurringLineItemData();
     $this->newMembershipTypeId = $newMembershipTypeId;
     $this->switchDate = $switchDate;
     $this->paymentType = $paymentType;
+    $this->oneOffFeeParams = $oneOffFeeParams;
     $this->newMembershipType = CRM_Member_BAO_MembershipType::findById($this->newMembershipTypeId);
-    $this->periodEndDate = $this->getPeriodEndDate();
+    $this->periodEndDate = ContributionRecurLineItem::getPeriodEndDate($this->recurLineItemData['contribution_recur_id']);
   }
 
   private function getRecurringLineItemData() {
@@ -59,22 +63,6 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
     return [];
   }
 
-  private function getPeriodEndDate() {
-    $query = "
-      SELECT MAX(m.end_date) FROM civicrm_membership m
-      INNER JOIN civicrm_line_item li ON m.id = li.entity_id and li.entity_table = 'civicrm_membership'
-      INNER JOIN membershipextras_subscription_line msl ON li.id = msl.line_item_id
-      WHERE msl.contribution_recur_id = %1
-        AND msl.is_removed = FALSE
-        AND msl.auto_renew = 1
-        AND msl.end_date IS NULL;
-    ";
-
-    return CRM_Core_DAO::singleValueQuery($query, [
-      1 => [$this->recurLineItemData['contribution_recur_id'], 'Integer'],
-    ]);
-  }
-
   /**
    * Switches the payment plan membership line from
    * one type to another.
@@ -85,10 +73,14 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
   public function switchType() {
     $tx = new CRM_Core_Transaction();
     try {
+      $this->endCurrentMembership();
+      $this->newMembership = $this->createNewMembershipRecord();
+
       if ($this->paymentType == self::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS) {
-        $this->endCurrentMembership();
-        $this->newMembership = $this->createNewMembershipRecord();
         $this->adjustFuturePendingContributions();
+      }
+      else {
+        $this->createOneOffPayment();
       }
     }
     catch (Exception $e) {
@@ -269,12 +261,9 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
     $membershipDurationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($this->newMembershipType, $membershipTypeDatesCalculator);
     $prorataDaysCount = $membershipDurationCalculator->calculateDaysBasedOnDates($newMembershipStartDate, $newMembershipEndDate, $newMembershipStartDate);
 
-    $proratedAmountExcTax = $this->newMembershipType->minimum_fee;
-    if ($prorataDaysCount > 1) {
-      $membershipTypeDurationInDays = $membershipDurationCalculator->calculateOriginalInDays();
-      $proratedAmount = ($this->newMembershipType->minimum_fee / $membershipTypeDurationInDays) * $prorataDaysCount;
-      $proratedAmountExcTax = CRM_MembershipExtras_Service_MoneyUtilities::roundToPrecision($proratedAmount, 2);
-    }
+    $membershipTypeDurationInDays = $membershipDurationCalculator->calculateOriginalInDays();
+    $proratedAmount = ($this->newMembershipType->minimum_fee / $membershipTypeDurationInDays) * $prorataDaysCount;
+    $proratedAmountExcTax = CRM_MembershipExtras_Service_MoneyUtilities::roundToPrecision($proratedAmount, 2);
 
     $calcAmountsResult = civicrm_api3('ContributionRecurLineItem', 'calculatetaxamount', [
       'amount_exc_tax' => $proratedAmountExcTax,
@@ -317,6 +306,74 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
         'id' => $this->recurLineItemData['contribution_recur_id'],
       ]);
     }
+  }
+
+  private function createOneOffPayment() {
+    $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $this->recurLineItemData['contribution_recur_id'],
+    ]);
+
+    $createdLineItemParams = $this->createOneOffFeeSubscriptionLineItem();
+    $totalIncTax = $this->oneOffFeeParams['amount_inc_tax'] ?? 0;
+
+    $contribution = civicrm_api3('Contribution', 'create', [
+      'financial_type_id' => $this->oneOffFeeParams['financial_type_id'],
+      'receive_date' => $this->oneOffFeeParams['scheduled_charge_date'],
+      'total_amount' => $totalIncTax,
+      'fee_amount' => 0,
+      'net_amount' => $totalIncTax,
+      'tax_amount' => $createdLineItemParams['tax_amount'],
+      'contact_id' => $recurringContribution['contact_id'],
+      'contribution_status_id' => 'Pending',
+      'currency' => $recurringContribution['currency'],
+      'payment_instrument_id' => $recurringContribution['payment_instrument_id'],
+      'source' => 'Manage Instalments form - Switch Membership - One off payment',
+      'contribution_recur_id' => $recurringContribution['id'],
+      'is_pay_later' => TRUE,
+    ]);
+
+    civicrm_api3('MembershipPayment', 'create', [
+      'membership_id' => $this->newMembership['id'],
+      'contribution_id' => $contribution['id'],
+    ]);
+
+    if (!empty($this->oneOffFeeParams['send_confirmation_email'])) {
+      civicrm_api3('Contribution', 'sendconfirmation', [
+        'id' => $contribution['id'],
+      ]);
+    }
+  }
+
+  private function createOneOffFeeSubscriptionLineItem() {
+    $amountExcTax = $this->oneOffFeeParams['amount_exc_tax'] ?? 0;
+    $amountIncTax = $this->oneOffFeeParams['amount_inc_tax'] ?? 0;
+    $taxAmount = $amountIncTax - $amountExcTax;
+    $priceFieldValue = $this->getDefaultPriceFieldValueForMembershipType($this->newMembershipTypeId);
+    $lineItemParams = [
+      'sequential' => 1,
+      'entity_table' => 'civicrm_membership',
+      'entity_id' => $this->newMembership['id'],
+      'price_field_id' => $priceFieldValue['price_field_id'],
+      'label' => $this->newMembershipType->name,
+      'qty' => 1,
+      'unit_price' => $amountExcTax,
+      'line_total' => $amountExcTax,
+      'price_field_value_id' => $priceFieldValue['id'],
+      'financial_type_id' => $this->newMembershipType->financial_type_id,
+      'tax_amount' => $taxAmount,
+    ];
+
+    $recurLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
+
+    $recurringSubscriptionLineParams = [
+      'contribution_recur_id' => $this->recurLineItemData['contribution_recur_id'],
+      'line_item_id' => $recurLineItem['id'],
+      'start_date' => $this->newMembership['start_date'],
+      'auto_renew' => 1,
+    ];
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create($recurringSubscriptionLineParams);
+
+    return $lineItemParams;
   }
 
 }
