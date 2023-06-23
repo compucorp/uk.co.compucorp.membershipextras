@@ -37,6 +37,12 @@
     <access_arguments>edit contributions,edit memberships</access_arguments>
   </item>
   <item>
+    <path>civicrm/recurring-contribution/switch-membership-type</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_SwitchMembershipType</page_callback>
+    <title>Switch Membership Type</title>
+    <access_arguments>edit contributions,edit memberships</access_arguments>
+  </item>
+  <item>
     <path>civicrm/recurring-contribution/remove-lineitems</path>
     <page_callback>CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems</page_callback>
     <title>RecurringContribution_RemoveLineItems</title>
