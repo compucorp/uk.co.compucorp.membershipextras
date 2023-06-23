@@ -31,7 +31,7 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
       $contributionStatusValueMap[$currentStatus['name']] = $currentStatus['value'];
     }
 
-    $this->contributionStatusValueMap =  $contributionStatusValueMap;
+    $this->contributionStatusValueMap = $contributionStatusValueMap;
   }
 
   private function setRecurContributionDetails() {
@@ -41,7 +41,7 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
       'id' => $this->recurContributionId,
     ])['values'][0];
 
-    $this->installmentsCount = CRM_Utils_Array::value('installments', $recurContribution, 0);
+    $this->installmentsCount = CRM_Utils_Array::value('installments', $recurContribution, 1);
     $this->currentStatusId = $recurContribution['contribution_status_id'];
   }
 
@@ -50,9 +50,6 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
    * plan (recuring contribution) based
    * on its current status and the related
    * contributions statuses.
-   *
-   * @param int $recurContributionId
-   *   DateTime acceptable format
    *
    * @return string
    */
@@ -79,12 +76,12 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
     $allPaid = $paidInstallmentsCount >= $this->installmentsCount;
     $moreThanOneInstallment = $this->installmentsCount > 1;
 
-    switch (true) {
+    switch (TRUE) {
       case $moreThanOneInstallment && $allPaid:
         $status = self::CONTRIBUTION_STATUS_COMPLETED;
         break;
 
-      case $paidInstallmentsCount >= 1 || $partiallyPaidInstallmentsCount >=  1:
+      case $paidInstallmentsCount >= 1 || $partiallyPaidInstallmentsCount >= 1:
         $status = self::CONTRIBUTION_STATUS_INPROGRESS;
         break;
 
@@ -94,4 +91,5 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
 
     return $status;
   }
+
 }
