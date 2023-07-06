@@ -24,4 +24,28 @@ class CRM_MembershipExtras_BAO_ContributionRecurLineItem extends CRM_MembershipE
     return $instance;
   }
 
+  /**
+   * Gets the payment plan period end date,
+   * which is the maximum end date among all
+   * membership recurring line items.
+   *
+   * @param int $recurContributionId
+   * @return string
+   */
+  public static function getPeriodEndDate($recurContributionId) {
+    $query = "
+      SELECT MAX(m.end_date) FROM civicrm_membership m
+      INNER JOIN civicrm_line_item li ON m.id = li.entity_id and li.entity_table = 'civicrm_membership'
+      INNER JOIN membershipextras_subscription_line msl ON li.id = msl.line_item_id
+      WHERE msl.contribution_recur_id = %1
+        AND msl.is_removed = FALSE
+        AND msl.auto_renew = 1
+        AND msl.end_date IS NULL;
+    ";
+
+    return CRM_Core_DAO::singleValueQuery($query, [
+      1 => [$recurContributionId, 'Integer'],
+    ]);
+  }
+
 }

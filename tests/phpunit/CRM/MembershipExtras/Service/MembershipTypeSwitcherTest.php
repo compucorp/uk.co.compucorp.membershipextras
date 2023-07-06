@@ -17,9 +17,18 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
   private $testSilverRollingMembershipType;
   private $testSilverRollingMembershipTypePriceFieldValue;
 
+  private $defaultOneOffFeeParams;
+
   public function setUp(): void {
     $this->createGoldRollingMembershipType();
     $this->createSilverRollingMembershipType();
+    $this->defaultOneOffFeeParams = [
+      'scheduled_charge_date' => '2022-08-01',
+      'amount_exc_tax' => 100,
+      'amount_inc_tax' => 100,
+      'financial_type_id' => 2,
+      'send_confirmation_email' => 0,
+    ];
   }
 
   private function createGoldRollingMembershipType() {
@@ -58,7 +67,19 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
 
   public function testSwitchWithUpdatePendingInstalmentsPaymentTypeWillSetCurrentMembershipEndDateToTheSwitchDate() {
     $switchDate = '2022-07-01';
-    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate);
+    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS);
+
+    $currentMembership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contact_id' => $paymentPlan['contact_id'],
+    ])['values'][0];
+
+    $this->assertEquals($switchDate, $currentMembership['end_date']);
+  }
+
+  public function testSwitchWithOneOffFeeWillSetCurrentMembershipEndDateToTheSwitchDate() {
+    $switchDate = '2022-07-01';
+    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_ONE_OFF_PAYMENT, $this->defaultOneOffFeeParams);
 
     $currentMembership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
@@ -70,7 +91,20 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
 
   public function testSwitchWithUpdatePendingInstalmentsPaymentTypeWillMarkTheSubscriptionLineItemAsRemovedAndNonRenewable() {
     $switchDate = '2022-07-01';
-    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate);
+    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS);
+
+    $currentMembershipSubscriptionLineItem = civicrm_api3('ContributionRecurLineItem', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlan['id'],
+    ])['values'][0];
+
+    $this->assertEquals(0, $currentMembershipSubscriptionLineItem['auto_renew']);
+    $this->assertEquals(1, $currentMembershipSubscriptionLineItem['is_removed']);
+  }
+
+  public function testSwitchWithOneOffFeeWillMarkTheSubscriptionLineItemAsRemovedAndNonRenewable() {
+    $switchDate = '2022-07-01';
+    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_ONE_OFF_PAYMENT, $this->defaultOneOffFeeParams);
 
     $currentMembershipSubscriptionLineItem = civicrm_api3('ContributionRecurLineItem', 'get', [
       'sequential' => 1,
@@ -83,7 +117,21 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
 
   public function testSwitchWithUpdatePendingInstalmentsPaymentTypeWillCreateNewMembershipWithStartEqualsSwitchDateAndEndDateEqualsPeriodEndDate() {
     $switchDate = '2022-07-01';
-    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate);
+    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS);
+
+    $newMembership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contact_id' => $paymentPlan['contact_id'],
+    ])['values'][1];
+
+    $this->assertEquals($this->testSilverRollingMembershipType['id'], $newMembership['membership_type_id']);
+    $this->assertEquals('2022-07-01', $newMembership['start_date']);
+    $this->assertEquals('2022-12-31', $newMembership['end_date']);
+  }
+
+  public function testSwitchWithOneOffFeeWillCreateNewMembershipWithStartEqualsSwitchDateAndEndDateEqualsPeriodEndDate() {
+    $switchDate = '2022-07-01';
+    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_ONE_OFF_PAYMENT, $this->defaultOneOffFeeParams);
 
     $newMembership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
@@ -97,7 +145,7 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
 
   public function testSwitchWithUpdatePendingInstalmentsPaymentTypeWillAdjustTheContributionsStartingFromTheSwitchDate() {
     $switchDate = '2022-07-01';
-    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate);
+    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS);
 
     $contributions = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
@@ -122,10 +170,24 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
     $this->expectException(CRM_Core_Exception::class);
 
     $switchDate = '2023-01-01';
-    $this->createPaymentPlanAndSwitchType($switchDate);
+    $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS);
   }
 
-  private function createPaymentPlanAndSwitchType($switchDate) {
+  public function testSwitchWithOneOffFeeWillCreateNewExtraContribution() {
+    $switchDate = '2022-07-01';
+    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_ONE_OFF_PAYMENT, $this->defaultOneOffFeeParams);
+
+    $oneOffContribution = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlan['id'],
+      'options' => ['limit' => 0],
+    ])['values'][12];
+
+    $this->assertEquals($this->defaultOneOffFeeParams['amount_inc_tax'], $oneOffContribution['total_amount']);
+    $this->assertEquals($this->defaultOneOffFeeParams['scheduled_charge_date'] . ' 00:00:00', $oneOffContribution['receive_date']);
+  }
+
+  private function createPaymentPlanAndSwitchType($switchDate, $paymentType, $oneOffFeeParams = NULL) {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = '2022-01-01';
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
@@ -152,7 +214,7 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
       'id' => $recurLineItem['line_item_id'],
     ])['values'][0]['id'];
 
-    $membershipTypeSwitcher = new MembershipTypeSwitcher($subscriptionLinkedLineItemId, $this->testSilverRollingMembershipType['id'], $switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS);
+    $membershipTypeSwitcher = new MembershipTypeSwitcher($subscriptionLinkedLineItemId, $this->testSilverRollingMembershipType['id'], $switchDate, $paymentType, $oneOffFeeParams);
     $membershipTypeSwitcher->switchType();
 
     return $paymentPlan;
