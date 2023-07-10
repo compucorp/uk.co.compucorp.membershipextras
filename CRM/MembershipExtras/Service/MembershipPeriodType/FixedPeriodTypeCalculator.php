@@ -68,37 +68,84 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
    */
   public function calculate() {
     foreach ($this->membershipTypes as $membershipType) {
-      $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
       $settings = CRM_MembershipExtras_SettingsManager::getMembershipTypeSettings($membershipType->id);
-      $annualProRataCalculation = $settings[SettingField::ANNUAL_PRORATA_CALCULATION_ELEMENT];
       $membershipAmount = $membershipType->minimum_fee;
       $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipAmount);
-      if ($annualProRataCalculation == self::BY_MONTHS) {
-        $this->proRatedUnit = self::BY_MONTHS;
-        $duration = self::TWELVE_MONTHS;
-        $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
-        if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
-          $this->reCalculateEndDate();
-          $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
-        }
+
+      $skipProRataUntilSetting = $settings[SettingField::ANNUAL_PRORATA_SKIP_ELEMENT] ?? NULL;
+      if (!empty($skipProRataUntilSetting) && $this->isWithinMembershipTypeProRataSkipPeriod($skipProRataUntilSetting)) {
+        $amount = $membershipAmount;
       }
       else {
-        $this->proRatedUnit = self::BY_DAYS;
-        $duration  = $membershipTypeDurationCalculator->calculateOriginalInDays();
-        $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
-        if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
-          $this->reCalculateEndDate();
-          $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
-        }
+        $proRataScheme = $settings[SettingField::ANNUAL_PRORATA_CALCULATION_ELEMENT];
+        $nonProRatedAmounts = ['amount' => $membershipAmount, 'tax_amount' => $taxAmount];
+        list($amount, $taxAmount) = $this->calculateProRataAmounts($membershipType, $proRataScheme, $nonProRatedAmounts);
       }
-      $amount = $this->calculateProRatedAmount($membershipAmount, $duration, $this->proRatedNumber);
-      $taxAmount = $this->calculateProRatedAmount($taxAmount, $duration, $this->proRatedNumber);
 
       $this->amount += $amount;
       $this->taxAmount += $taxAmount;
 
       $this->generateLineItem($membershipType->financial_type_id, $amount, $taxAmount);
     }
+  }
+
+  private function isWithinMembershipTypeProRataSkipPeriod($skipProRataUntilSetting) {
+    $membershipStartDate = $this->startDate->format('Y-m-d');
+
+    $skipMonth = $skipProRataUntilSetting['M'];
+    $skipDay = $skipProRataUntilSetting['d'];
+    $currentYear = date('Y');
+    $skipDateString = $currentYear . '-' . $skipMonth . '-' . $skipDay;
+    $skipUntilDate = DateTime::createFromFormat('Y-n-j', $skipDateString);
+    $skipUntilDate = $skipUntilDate->format('Y-m-d');
+
+    if ($membershipStartDate <= $skipUntilDate) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Calculates the pro rated amounts from the non
+   * pro-rated amounts for a given membership type.
+   *
+   * @param CRM_Member_BAO_MembershipType $membershipType
+   * @param int $proRataScheme
+   * @param array $nonProRatedAmounts
+   *
+   * @return array
+   *   The pro-rated amount at index 0, and the pro-rated tax amount at index 1
+   */
+  private function calculateProRataAmounts($membershipType, $proRataScheme, $nonProRatedAmounts) {
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
+
+    if ($proRataScheme == self::BY_MONTHS) {
+      $this->proRatedUnit = self::BY_MONTHS;
+      $duration = self::TWELVE_MONTHS;
+      $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
+      if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
+        $this->reCalculateEndDate();
+        $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
+      }
+    }
+    else {
+      $this->proRatedUnit = self::BY_DAYS;
+      $duration  = $membershipTypeDurationCalculator->calculateOriginalInDays();
+      $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
+      if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
+        $this->reCalculateEndDate();
+        $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
+      }
+    }
+
+    $membershipAmount = $nonProRatedAmounts['amount'];
+    $taxAmount = $nonProRatedAmounts['tax_amount'];
+
+    $amount = $this->calculateProRatedAmount($membershipAmount, $duration, $this->proRatedNumber);
+    $taxAmount = $this->calculateProRatedAmount($taxAmount, $duration, $this->proRatedNumber);
+
+    return [$amount, $taxAmount];
   }
 
   /**
