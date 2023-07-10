@@ -1,6 +1,7 @@
 <?php
 
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
+use CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting as MembershipTypeSettings;
 
 /**
  * Class CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSetting
@@ -49,9 +50,9 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSetting {
     }
 
     $membershipTypeId = $this->getMembershipTypeId();
-    $annualProRataCalculationValue = $this->form->_submitValues['membership_type_annual_pro_rata_calculation'];
     $this->settings[$membershipTypeId]  = [
-      'membership_type_annual_pro_rata_calculation' => $annualProRataCalculationValue,
+      MembershipTypeSettings::ANNUAL_PRORATA_CALCULATION_ELEMENT => $this->form->_submitValues[MembershipTypeSettings::ANNUAL_PRORATA_CALCULATION_ELEMENT],
+      MembershipTypeSettings::ANNUAL_PRORATA_SKIP_ELEMENT => $this->form->_submitValues[MembershipTypeSettings::ANNUAL_PRORATA_SKIP_ELEMENT],
     ];
     Civi::settings()->set(SettingsManager::MEMBERSHIP_TYPE_SETTINGS_KEY, $this->settings);
   }

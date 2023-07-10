@@ -25,6 +25,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSettingTest extends Ba
     $mockValue = 2;
     $fields = [
       'membership_type_annual_pro_rata_calculation' => $mockValue,
+      'membership_type_annual_pro_rata_skip' => $mockValue,
     ];
     $membershipType = MembershipTypeFabricator::fabricate([
       'name' => 'xyz',

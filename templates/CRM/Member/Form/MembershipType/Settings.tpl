@@ -13,6 +13,7 @@
      */
     function moveFields() {
       $('#membership_type_annual_pro_rata_calculation').insertAfter($('#month_fixed_rollover_day_row'));
+      $('#membership_type_annual_pro_rata_skip').insertAfter($('#membership_type_annual_pro_rata_calculation'));
       $('.crm-membership-type-form-block-period_type').insertBefore($('.crm-membership-type-form-block-duration_unit_interval'));
     }
 
@@ -51,6 +52,7 @@
     function handleFixedPeriod() {
       $('#month_fixed_rollover_day_row').hide();
       $('#membership_type_annual_pro_rata_calculation').show();
+      $('#membership_type_annual_pro_rata_skip').show();
       let durationInterval = $('#duration_interval');
       durationInterval.val(1);
       durationInterval.prop( 'readonly', true );
@@ -66,6 +68,7 @@
      */
     function handleRollingPeriod() {
       $('#membership_type_annual_pro_rata_calculation').hide();
+      $('#membership_type_annual_pro_rata_skip').show();
       $('#duration_interval').prop( 'readonly', false );
       $(`#duration_interval`).val('');
     }
@@ -134,6 +137,17 @@
       <span class="description">
         {ts}Define how the fee of the first year will be calculated for those paying annually.{/ts}
         {help id="membership_type_annual_pro_rata_calculation" file="CRM/Member/Form/MembershipType/Settings.hlp"}
+      </span>
+    </td>
+  </tr>
+  <tr id="membership_type_annual_pro_rata_skip" style="display: none;">
+    <td class="label">
+        {$form.membership_type_annual_pro_rata_skip.label}
+    </td>
+    <td>{$form.membership_type_annual_pro_rata_skip.html}
+      <br/>
+      <span class="description">
+          {help id="membership_type_annual_pro_rata_skip" file="CRM/Member/Form/MembershipType/Settings.hlp"}
       </span>
     </td>
   </tr>
