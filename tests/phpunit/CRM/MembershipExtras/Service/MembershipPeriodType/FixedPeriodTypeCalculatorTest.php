@@ -74,6 +74,63 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
     $this->assertEquals(FixedPeriodCalculator::BY_DAYS, $calculator->getProRatedUnit());
   }
 
+  public function testProRataWillBeSkippedWhenMembershipStartDateIsWithinSkipUntilDateConfiguration() {
+    $startDate = new DateTime('2023-06-01');
+    $membershipType = $this->fabricateMembeshipType(['name' => 'xyz']);
+    $this->mockSettings($membershipType->id, ['membership_type_annual_pro_rata_calculation' => FixedPeriodCalculator::BY_DAYS, 'membership_type_annual_pro_rata_skip' => ['M' => 6, 'd' => 2]]);
+
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
+    $membershipTypeDurationInDays = $membershipTypeDurationCalculator->calculateOriginalInDays();
+    $diffInDays = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($startDate);
+    $expectedAmount = ($membershipType->minimum_fee / $membershipTypeDurationInDays) * $diffInDays;
+    $expectedTaxAmount = $this->getTaxAmount($membershipType, $expectedAmount);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $calculator = new FixedPeriodCalculator([$membershipType]);
+    $calculator->setStartDate($startDate);
+    $calculator->calculate();
+    $this->assertEquals(120, $calculator->getAmount());
+    $this->assertEquals(24, $calculator->getTaxAmount());
+    $this->assertEquals(144, $calculator->getTotalAmount());
+  }
+
+  public function testProRataWillBeSkippedWhenMembershipStartDateIsOnSameDayAndMonthOfSkipUntilDateConfiguration() {
+    $startDate = new DateTime('2023-06-02');
+    $membershipType = $this->fabricateMembeshipType(['name' => 'xyz']);
+    $this->mockSettings($membershipType->id, ['membership_type_annual_pro_rata_calculation' => FixedPeriodCalculator::BY_DAYS, 'membership_type_annual_pro_rata_skip' => ['M' => 6, 'd' => 2]]);
+
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
+    $membershipTypeDurationInDays = $membershipTypeDurationCalculator->calculateOriginalInDays();
+    $diffInDays = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($startDate);
+    $expectedAmount = ($membershipType->minimum_fee / $membershipTypeDurationInDays) * $diffInDays;
+    $expectedTaxAmount = $this->getTaxAmount($membershipType, $expectedAmount);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $calculator = new FixedPeriodCalculator([$membershipType]);
+    $calculator->setStartDate($startDate);
+    $calculator->calculate();
+    $this->assertEquals(120, $calculator->getAmount());
+    $this->assertEquals(24, $calculator->getTaxAmount());
+    $this->assertEquals(144, $calculator->getTotalAmount());
+  }
+
+  public function testProRataWillNotBeSkippedWhenMembershipStartDateIsAfterSkipUntilDateConfiguration() {
+    $startDate = new DateTime('2023-06-03');
+    $membershipType = $this->fabricateMembeshipType(['name' => 'xyz']);
+    $this->mockSettings($membershipType->id, ['membership_type_annual_pro_rata_calculation' => FixedPeriodCalculator::BY_DAYS, 'membership_type_annual_pro_rata_skip' => ['M' => 6, 'd' => 2]]);
+
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
+    $membershipTypeDurationInDays = $membershipTypeDurationCalculator->calculateOriginalInDays();
+    $diffInDays = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($startDate);
+    $expectedAmount = ($membershipType->minimum_fee / $membershipTypeDurationInDays) * $diffInDays;
+    $expectedTaxAmount = $this->getTaxAmount($membershipType, $expectedAmount);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $calculator = new FixedPeriodCalculator([$membershipType]);
+    $calculator->setStartDate($startDate);
+    $calculator->calculate();
+    $this->assertEquals($expectedAmount, $calculator->getAmount());
+    $this->assertEquals($expectedTaxAmount, $calculator->getTaxAmount());
+    $this->assertEquals($expectedTotalAmount, $calculator->getTotalAmount());
+  }
+
   protected function fabricateMembeshipType($params = []) {
     $defaultMembershipTypeParams = [
       'duration_unit' => 'year',
