@@ -163,9 +163,15 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
         $paymentProcessors[$gocardlessPaymentProcessors['id']] = $gocardlessPaymentProcessors['name'];
       }
     }
-    $select = ['' => ts('- select -')] + $paymentProcessors;
 
-    $this->add('select', 'payment_processor', ts('Payment Processor'), $select, TRUE);
+    $select = ['' => ts('- select -')] + $paymentProcessors;
+    $required = TRUE;
+    $attributes = [];
+    if ($this->_action == CRM_Core_Action::UPDATE) {
+      $attributes = ['disabled' => TRUE];
+      $required = FALSE;
+    }
+    $this->add('select', 'payment_processor', ts('Payment Processor'), $select, $required, $attributes);
   }
 
   private function isDeleteContext() {
