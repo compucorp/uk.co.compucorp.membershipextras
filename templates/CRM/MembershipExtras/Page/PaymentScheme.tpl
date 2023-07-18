@@ -7,7 +7,7 @@
       {strip}
         <table cellpadding="0" cellspacing="0" border="0"  class="selector row-highlight">
           <thead>
-            <th></th>
+            <th>{ts}ID{/ts}</th>
             <th>{ts}Name{/ts}</th>
             <th>{ts}Admin Title{/ts}</th>
             <th>{ts}Description{/ts}</th>
@@ -21,7 +21,7 @@
           <tbody>
             {foreach from=$rows item=row}
               <tr id="scheme-{$row.id}" class="crm-entity {cycle values="odd-row,even-row"}{if !empty($row.class)} {$row.class}{/if}{if NOT $row.enabled} disabled{/if}">
-                <td></td>
+                <td>{$row.id}</td>
                 <td class="crm-admin-member-payment-scheme-name">{$row.name}</td>
                 <td class="crm-admin-member-payment-scheme-admin-title">{$row.admin_title}</td>
                 <td class="crm-admin-member-payment-scheme-description">{$row.description}</td>
