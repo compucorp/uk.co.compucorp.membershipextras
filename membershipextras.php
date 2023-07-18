@@ -98,7 +98,7 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
     'name' => 'membership_payment_scheme',
     'label' => ts('Payment Schemes'),
     'url' => 'civicrm/member/admin/payment-schemes?reset=1',
-    'permission' => 'administer CiviCRM,administer MembershipExtras',
+    'permission' => 'administer CiviCRM',
     'operator' => 'OR',
     'separator' => NULL,
   ];
