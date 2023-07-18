@@ -27,7 +27,7 @@
                 <td class="crm-admin-member-payment-scheme-public-title">{$row.public_title}</td>
                 <td class="crm-admin-member-payment-scheme-public-description">{$row.public_description}</td>
                 <td class="crm-admin-member-payment-scheme-permission">{$row.payment_processor}</td>
-                <td class="crm-admin-member-payment-scheme-permission">{$row.permission}</td>
+                <td class="crm-admin-member-payment-scheme-permission">{$permissionLabels[$row.permission]}</td>
                 <td class="crm-admin-member-payment-scheme-permission-enabled" id="row_{$row.id}_status">{if $row.enabled eq 1} {ts}Yes{/ts} {else} {ts}No{/ts} {/if}</td>
                 <td>
                   <a href="{crmURL p="civicrm/member/admin/payment-scheme" q="id=`$row.id`&action=update&reset=1"}" class="action-item crm-hover-button" title="{ts}View and Edit Payment Scheme{/ts}">{ts}Edit{/ts}</a>
