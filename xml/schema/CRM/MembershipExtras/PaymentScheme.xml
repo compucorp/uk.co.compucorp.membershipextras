@@ -25,7 +25,7 @@
     <name>name</name>
     <title>Name</title>
     <type>varchar</type>
-    <length>255</length>
+    <length>250</length>
     <required>true</required>
   </field>
 
@@ -33,22 +33,21 @@
     <name>admin_title</name>
     <title>Admin title</title>
     <type>varchar</type>
-    <length>255</length>
-    <required>true</required>
+    <length>250</length>
   </field>
 
   <field>
-    <name>admin_description</name>
-    <title>Admin Description</title>
+    <name>description</name>
+    <title>Description</title>
     <type>varchar</type>
-    <length>255</length>
+    <length>500</length>
   </field>
 
   <field>
     <name>public_title</name>
     <title>Public title</title>
     <type>varchar</type>
-    <length>255</length>
+    <length>250</length>
     <required>true</required>
   </field>
 
@@ -56,8 +55,22 @@
     <name>public_description</name>
     <title>Public description</title>
     <type>varchar</type>
-    <length>255</length>
+    <length>500</length>
+    <required>true</required>
   </field>
+
+  <field>
+    <name>payment_processor</name>
+    <title>Payment Processor</title>
+    <type>int unsigned</type>
+    <required>true</required>
+  </field>
+  <foreignKey>
+    <name>payment_processor</name>
+    <table>civicrm_payment_processor</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
 
   <field>
     <name>permission</name>
@@ -82,16 +95,4 @@
     <required>true</required>
   </field>
 
-  <field>
-    <name>payment_processor</name>
-    <title>Payment Processor</title>
-    <type>int unsigned</type>
-    <required>true</required>
-  </field>
-  <foreignKey>
-    <name>payment_processor</name>
-    <table>civicrm_payment_processor</table>
-    <key>id</key>
-    <onDelete>CASCADE</onDelete>
-  </foreignKey>
 </table>
