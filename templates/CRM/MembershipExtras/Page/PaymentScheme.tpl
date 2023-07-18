@@ -6,7 +6,7 @@
       </div>
       {strip}
         <table cellpadding="0" cellspacing="0" border="0"  class="selector row-highlight">
-          <tr class="columnheader">
+          <thead>
             <th></th>
             <th>{ts}Name{/ts}</th>
             <th>{ts}Admin Title{/ts}</th>
@@ -17,7 +17,8 @@
             <th>{ts}Permission{/ts}</th>
             <th>{ts}Enabled?{/ts}</th>
             <th></th>
-          </tr>
+          </thead>
+          <tbody>
             {foreach from=$rows item=row}
               <tr id="scheme-{$row.id}" class="crm-entity {cycle values="odd-row,even-row"}{if !empty($row.class)} {$row.class}{/if}{if NOT $row.enabled} disabled{/if}">
                 <td></td>
@@ -35,6 +36,7 @@
                 </td>
               </tr>
             {/foreach}
+          </tbody>
         </table>
       {/strip}
 
