@@ -15,7 +15,7 @@ class CRM_MembershipExtras_BAO_PaymentSchemeTest extends BaseHeadlessTest {
     $params = [
       'name' => 'Test scheme',
       'admin_title' => 'Admin title',
-      'admin_description' => 'Admin description',
+      'description' => 'description',
       'public_title' => 'Public value',
       'public_description' => 'Public description',
       'permission' => 'public',
@@ -39,7 +39,7 @@ class CRM_MembershipExtras_BAO_PaymentSchemeTest extends BaseHeadlessTest {
 
     $param = [
       'admin_title' => 'Admin title',
-      'admin_description' => 'Admin description',
+      'description' => 'description',
       'public_title' => 'Public value',
       'public_description' => 'Public description',
       'permission' => 'public',
