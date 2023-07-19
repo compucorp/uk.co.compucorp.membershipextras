@@ -66,7 +66,7 @@ class CRM_MembershipExtras_Service_PaymentPlanScheduleGeneratorTest extends Base
     $params = [
       'name' => 'Test scheme',
       'admin_title' => 'Admin title',
-      'admin_description' => 'Admin description',
+      'description' => 'description',
       'public_title' => 'Public value',
       'public_description' => 'Public description',
       'permission' => 'public',

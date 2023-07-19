@@ -55,15 +55,16 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       return;
     }
 
-    $this->add('text', 'name', ts('Name'), NULL, TRUE);
-    $this->add('text', 'admin_title', ts('Admin Title'), NULL, TRUE);
-    $this->add('textarea', 'admin_description', ts('Admin Description'));
-    $this->add('text', 'public_title', ts('Public Title'), NULL, TRUE);
-    $this->add('textarea', 'public_description', ts('Public Description'));
+    $this->add('text', 'name', ts('Name'), ['maxlength' => 250, 'size' => 50], TRUE);
+    $this->add('text', 'admin_title', ts('Admin Title'), ['maxlength' => 250, 'size' => 50]);
+    $this->add('textarea', 'description', ts('Description'), ['maxlength' => 500, 'cols' => 49]);
+    $this->add('text', 'public_title', ts('Public Title'), ['maxlength' => 250, 'size' => 50], TRUE);
+    $this->add('textarea', 'public_description', ts('Public Description'), ['maxlength' => 500, 'cols' => 49], TRUE);
+    $this->addPaymentProcessorField();
     $this->add(
       'select',
       'permission',
-      'permission',
+      ts('Permission'),
       [
         'public' => ts('Public'),
         'admin' => ts('Admin'),
@@ -71,8 +72,7 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       TRUE
     );
     $this->add('checkbox', 'enabled', ts('Enabled'), NULL, FALSE);
-    $this->addPaymentProcessorField();
-    $this->add('textarea', 'parameters', ts('Parameters'), NULL, TRUE);
+    $this->add('textarea', 'parameters', ts('Parameters'), ['cols' => 49], TRUE);
 
     $this->addButtons([
       [
@@ -115,13 +115,13 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       'id' => $scheme['id'],
       'name' => $scheme['name'],
       'admin_title' => $scheme['admin_title'],
-      'admin_description' => $scheme['admin_title'],
+      'description' => $scheme['description'],
       'public_title' => $scheme['public_title'],
       'public_description' => $scheme['public_description'],
+      'payment_processor' => $scheme['payment_processor'],
       'permission' => $scheme['permission'],
       'enabled' => $scheme['enabled'],
       'parameters' => $scheme['parameters'],
-      'payment_processor' => $scheme['payment_processor'],
     ];
   }
 
@@ -138,6 +138,7 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
         $elementNames[] = $element->getName();
       }
     }
+
     return $elementNames;
   }
 
@@ -165,7 +166,6 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
     $select = ['' => ts('- select -')] + $paymentProcessors;
 
     $this->add('select', 'payment_processor', ts('Payment Processor'), $select, TRUE);
-
   }
 
   private function isDeleteContext() {
@@ -189,13 +189,13 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
     $params = [
       'name' => $values['name'],
       'admin_title' => $values['admin_title'],
-      'admin_description' => $values['admin_description'],
+      'description' => $values['description'],
       'public_title' => $values['public_title'],
       'public_description' => $values['public_description'],
+      'payment_processor' => $values['payment_processor'],
       'permission' => $values['permission'],
       'enabled' => CRM_Utils_Array::value('enabled', $values, FALSE),
       'parameters' => $values['parameters'],
-      'payment_processor' => $values['payment_processor'],
     ];
 
     if (!empty($this->id)) {

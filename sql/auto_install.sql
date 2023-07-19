@@ -4,7 +4,6 @@ DROP TABLE IF EXISTS `membershipextras_payment_scheme`;
 SET FOREIGN_KEY_CHECKS=1;
 
 -- /*******************************************************
--- * Create recurring contribution line items table
 -- *******************************************************/
 CREATE TABLE `membershipextras_subscription_line` (
   `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Discount Item ID',
@@ -32,20 +31,24 @@ CREATE TABLE `membershipextras_subscription_line` (
 );
 
 -- /*******************************************************
--- * Creates membershipextras_payment_scheme
+-- *
+-- * membershipextras_payment_scheme
+-- *
+-- * A table that store payment scheme that will be used for creating a payment plan
+-- *
 -- *******************************************************/
 CREATE TABLE `membershipextras_payment_scheme` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique PaymentScheme ID',
-  `name` varchar(255) NOT NULL,
-  `admin_title` varchar(255) NOT NULL,
-  `admin_description` varchar(255),
-  `public_title` varchar(255) NOT NULL,
-  `public_description` varchar(255),
+  `name` varchar(250) NOT NULL,
+  `admin_title` varchar(250),
+  `description` varchar(500),
+  `public_title` varchar(250) NOT NULL,
+  `public_description` varchar(500) NOT NULL,
+  `payment_processor` int unsigned NOT NULL,
   `permission` varchar(10) NOT NULL,
   `enabled` tinyint NOT NULL DEFAULT false,
   `parameters` text NOT NULL,
-  `payment_processor` int unsigned NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT FK_membershipextras_payment_scheme_payment_processor FOREIGN KEY (`payment_processor`) REFERENCES `civicrm_payment_processor`(`id`) ON DELETE CASCADE
 )
-  ENGINE=InnoDB;
+ENGINE=InnoDB;
