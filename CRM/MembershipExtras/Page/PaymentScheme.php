@@ -16,6 +16,13 @@ class CRM_MembershipExtras_Page_PaymentScheme extends CRM_Core_Page {
       $schemes[$key]["payment_processor"] = $paymentProcessors[$value["payment_processor"]]['name'];
     }
     $this->assign('rows', $schemes);
+
+    $permissionLabels = [
+      'public' => ts('Public'),
+      'admin' => ts('Admin'),
+    ];
+    $this->assign('permissionLabels', $permissionLabels);
+
     parent::run();
   }
 
