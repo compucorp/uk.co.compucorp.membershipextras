@@ -1,9 +1,13 @@
+{if $rows}
+<div class="crm-form-block">
+  <div class="crm-submit-buttons">
+    {crmButton p="civicrm/member/admin/payment-scheme" q='action=add&reset=1' class="new-option" icon="plus-circle"}{ts}Add Payment Scheme{/ts}{/crmButton}
+    {crmButton p="civicrm/admin" q="reset=1" class="cancel" icon="times"}{ts}Done{/ts}{/crmButton}
+  </div>
+</div>
+{/if}
 <div class="crm-content-block crm-block">
     {if $rows}
-      <div class="action-link">
-          {crmButton p="civicrm/member/admin/payment-scheme" q='action=add&reset=1' class="new-option" icon="plus-circle"}{ts}Add Payment Scheme{/ts}{/crmButton}
-          {crmButton p="civicrm/admin" q="reset=1" class="cancel" icon="times"}{ts}Done{/ts}{/crmButton}
-      </div>
       {strip}
         <table cellpadding="0" cellspacing="0" border="0"  class="selector row-highlight">
           <thead>
