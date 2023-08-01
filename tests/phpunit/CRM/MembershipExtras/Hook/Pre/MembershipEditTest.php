@@ -176,6 +176,34 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     CRM_Utils_GlobalStack::singleton()->pop();
   }
 
+  public function testPreventExtendingPaymentPlanMembershipWhenCallingPaymentCreateAPI() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 1,
+      'duration_unit' => 'year',
+    ]);
+
+    $paymentPlan = $this->createPaymentPlan($mainMembershipType);
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $firstContributionId = $contributions[0]['id'];
+    $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
+    $membershipParams = array_shift($memberships);
+    $membershipParams['end_date'] = date('Y-m-d');
+
+    civicrm_api3('Payment', 'create', [
+      'contribution_id' => $firstContributionId,
+      'total_amount' => 60,
+      'trxn_date' => date('Y-m-d'),
+    ]);
+
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL, NULL);
+    $hook->preProcess();
+
+    $this->assertFalse(array_key_exists('end_date', $membershipParams));
+  }
+
   public function testMembershipNotInPaymentPlanIsNotPreventedFromExtending() {
     $mainMembershipType = $this->createMembershipType([
       'name' => 'Main Rolling Membership',

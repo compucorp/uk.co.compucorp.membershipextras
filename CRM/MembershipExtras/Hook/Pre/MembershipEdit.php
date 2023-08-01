@@ -2,6 +2,7 @@
 
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
+use CRM_MembershipExtras_ExtensionUtil as ExtensionUti;
 
 /**
  * Implements hook to be run before a membership is created/edited.
@@ -61,7 +62,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    if ($this->paymentContributionID || $this->isRecordingPayment() || $this->isBulkStatusUpdate()) {
+    $dateExtendingPreventionContexts = $this->paymentContributionID || $this->isRecordingPayment() || $this->isBulkStatusUpdate() || $this->editedFromPaymentAPIContext();
+    if ($dateExtendingPreventionContexts) {
       $this->preventExtendingPaymentPlanMembership();
     }
 
@@ -137,6 +139,28 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     }
 
     return [];
+  }
+
+  /**
+   * Is this membership is being edited from
+   * Payment.create API context ?
+   *
+   * This method works with this class
+   * CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI
+   * that sets `paymentApiCalled` flag if Payment.Create is being
+   * called, and if it is the case then we prevent extending
+   * the membership.
+   *
+   * @return bool
+   */
+  private function editedFromPaymentAPIContext() {
+    if (!empty(Civi::$statics[ExtensionUti::LONG_NAME]['paymentApiCalled'])) {
+      unset(Civi::$statics[ExtensionUti::LONG_NAME]['paymentApiCalled']);
+
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**
