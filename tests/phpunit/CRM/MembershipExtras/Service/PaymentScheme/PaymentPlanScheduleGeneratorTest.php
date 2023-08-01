@@ -140,6 +140,8 @@ class CRM_MembershipExtras_Service_PaymentPlanScheduleGeneratorTest extends Base
   }
 
   public function providerTest() {
+    $nextPeriodYear = date('Y', strtotime('+1 year'));
+
     return [
       [
         // with membership token
@@ -155,6 +157,11 @@ class CRM_MembershipExtras_Service_PaymentPlanScheduleGeneratorTest extends Base
         // with relative date and no added time
         [['charge_date' => date('Y-m-d', strtotime('10 March')), 'amount' => 120], ['charge_date' => date('Y-m-d', strtotime('13 June')), 'amount' => 120]],
         '{"instalments_count": 2,"instalments": [{"charge_date": "10 March"},{"charge_date": "13 June"}]}',
+      ],
+      [
+        // with "next period year" token
+        [['charge_date' => date('Y-m-d', strtotime("1 December {$nextPeriodYear}")), 'amount' => 120], ['charge_date' => date('Y-m-d', strtotime("1 December {$nextPeriodYear} +1 month")), 'amount' => 120]],
+        '{"instalments_count": 2,"instalments": [{"charge_date": "1 December {next_period_year}"},{"charge_date": "1 December {next_period_year}, + 1 month"}]}',
       ],
     ];
   }
