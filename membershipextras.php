@@ -11,6 +11,8 @@ use CRM_MembershipExtras_ExtensionUtil as E;
  */
 function membershipextras_civicrm_config(&$config) {
   _membershipextras_civix_civicrm_config($config);
+
+  Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI', 'preApiCall']);
 }
 
 /**
