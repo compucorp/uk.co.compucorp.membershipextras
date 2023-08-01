@@ -146,6 +146,12 @@ class CRM_MembershipExtras_Service_PaymentScheme_PaymentPlanScheduleGenerator {
       $baseChargeDate->modify('+1 day');
       $baseChargeDate = $baseChargeDate->format('Y-m-d');
     }
+    elseif (stripos($baseTime, '{next_period_year}') !== FALSE) {
+      $membershipEndDate = new DateTime($this->scheduleGenerationRawData['max_membership_end_date']);
+      $membershipEndDateYear = $membershipEndDate->format('Y');
+
+      $baseChargeDate = str_replace('{next_period_year}', $membershipEndDateYear, $baseTime);
+    }
     else {
       $baseChargeDate = $baseTime;
     }
