@@ -11,6 +11,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       setMembershipFormEvents();
       initializeMembershipForm();
       hideOfflineAutorenewField();
+      preventPaymentTabLinkAction();
       toggleNumOfTermsField();
     });
 
@@ -425,6 +426,17 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
           $('#num_terms').prop("readonly", isPaymentPlanTabActive());
         }
       );
+    }
+
+    /**
+     * Prevent the payment tab link from appending hash to the URL
+     * 
+     * This resolves the issue with the activity tab not opening after signing up for a membership.
+     */
+    function preventPaymentTabLinkAction() {
+      $('#payment_plan_fields_tabs .ui-tabs a').on('click', (e) => {
+        e.preventDefault()
+      })
     }
 
     /**
