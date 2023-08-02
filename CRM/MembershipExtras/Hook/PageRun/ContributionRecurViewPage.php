@@ -32,7 +32,12 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
   private function getFuturePaymentSchemeScheduleIfExist($recurId) {
     try {
       $paymentPlanScheduleGenerator = new CRM_MembershipExtras_Service_PaymentScheme_PaymentPlanScheduleGenerator($recurId);
-      return $paymentPlanScheduleGenerator->generateSchedule();
+      $paymentsSchedule = $paymentPlanScheduleGenerator->generateSchedule();
+      array_walk($paymentsSchedule['instalments'], function (&$value) {
+        $value['charge_date'] = CRM_Utils_Date::customFormat($value['charge_date']);
+      });
+
+      return $paymentsSchedule;
     }
     catch (CRM_Extension_Exception $e) {
       return NULL;
