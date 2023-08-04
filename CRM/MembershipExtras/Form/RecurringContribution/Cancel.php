@@ -13,11 +13,22 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
   private $id;
 
   /**
-   * ID of contact from where contributions is being cancellsd.
+   * The recurring contribution to be cancelled data.
+   * @var array
+   */
+  private $recurContribution;
+
+  /**
+   * ID of contact from where contributions is being cancelled.
    *
    * @var int
    */
   private $contactID;
+
+  /**
+   * @var bool
+   */
+  private $isOfflinePaymentProcessor;
 
   /**
    * @inheritdoc
@@ -25,6 +36,17 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
   public function preProcess() {
     $this->id = CRM_Utils_Request::retrieve('crid', 'Positive', $this);
     $this->contactID = CRM_Utils_Request::retrieve('cid', 'Positive', $this);
+
+    $this->recurContribution = \Civi\Api4\ContributionRecur::get()
+      ->addSelect('payment_processor_id', 'payment_processor_id:name', 'custom.*')
+      ->addWhere('id', '=', $this->id)
+      ->addOrderBy('id', 'DESC')
+      ->execute()
+      ->first();
+
+    // These two payment processors are special case given they are both are not external payment processors.
+    $isOfflinePaymentProcessor = in_array($this->recurContribution['payment_processor_id:name'], ['Offline Recurring Contribution', 'Direct Debit']);
+    $this->assign('isOfflinePaymentProcessor', $isOfflinePaymentProcessor);
   }
 
   /**
@@ -68,15 +90,45 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
   public function postProcess() {
     $submittedValues = $this->controller->exportValues($this->_name);
 
-    if ($submittedValues['cancel_memberships']) {
-      $this->cancelMemberships();
+    if (!$this->isOfflinePaymentProcessor) {
+      $isProcessedExternallySuccessfully = $this->invokePreRecurContributionCancellationHook();
+      if ($isProcessedExternallySuccessfully === FALSE) {
+        CRM_Core_Session::setStatus(ts('An error occurred while trying to cancel this recurring contribution.'), ts('Cancellation Failed'), 'error');
+        return;
+      }
     }
 
-    if ($submittedValues['cancel_pending_installments']) {
-      $this->cancelPendingInstallments();
-    }
+    $transaction = new CRM_Core_Transaction();
+    try {
+      if ($submittedValues['cancel_memberships']) {
+        $this->cancelMemberships();
+      }
 
-    $this->cancelRecurringContribution();
+      if ($submittedValues['cancel_pending_installments']) {
+        $this->cancelPendingInstallments();
+      }
+
+      $this->cancelRecurringContribution();
+
+      $transaction->commit();
+    }
+    catch (Exception $e) {
+      $transaction->rollback();
+      CRM_Core_Session::setStatus(ts('An error occurred while trying to cancel this recurring contribution: ') . ':' . $e->getMessage(), ts('Cancellation Failed'), 'error');
+    }
+  }
+
+  private function invokePreRecurContributionCancellationHook() {
+    $nullObject = CRM_Utils_Hook::$_nullObject;
+    $isProcessedExternallySuccessfully = FALSE;
+    CRM_Utils_Hook::singleton()->invoke(
+      ['recurContribution', 'isProcessedExternallySuccessfully'],
+      $this->recurContribution, $isProcessedExternallySuccessfully,
+      $nullObject, $nullObject, $nullObject, $nullObject,
+      'membershipextras_preRecurContributionCancellation'
+    );
+
+    return $isProcessedExternallySuccessfully;
   }
 
   /**
