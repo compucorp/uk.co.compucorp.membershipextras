@@ -31,6 +31,11 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
   private $isOfflinePaymentProcessor;
 
   /**
+   * @var bool
+   */
+  private $isMembershipextrasPaymentPlan;
+
+  /**
    * @inheritdoc
    */
   public function preProcess() {
@@ -45,8 +50,13 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
       ->first();
 
     // These two payment processors are special case given they are both are not external payment processors.
-    $isOfflinePaymentProcessor = in_array($this->recurContribution['payment_processor_id:name'], ['Offline Recurring Contribution', 'Direct Debit']);
-    $this->assign('isOfflinePaymentProcessor', $isOfflinePaymentProcessor);
+    $this->isOfflinePaymentProcessor = in_array($this->recurContribution['payment_processor_id:name'], ['Offline Recurring Contribution', 'Direct Debit']);
+    $this->assign('isOfflinePaymentProcessor', $this->isOfflinePaymentProcessor);
+
+    // If the is_active field is not set, it means this recurring contribution was not created using Membershipextras
+    // and might have been created using different method such as using Contribution Pages.
+    $this->isMembershipextrasPaymentPlan = $this->recurContribution['payment_plan_extra_attributes.is_active'] !== NULL;
+    $this->assign('isMembershipextrasPaymentPlan', $this->isMembershipextrasPaymentPlan);
   }
 
   /**
@@ -55,21 +65,23 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
   public function buildQuickForm() {
     CRM_Utils_System::setTitle(ts('Payment Plan Settings'));
 
-    $this->add(
-      'checkbox',
-      'cancel_pending_installments',
-      ts('Do you wish to cancel any pending instalment contribution?'),
-      '',
-      FALSE
-    );
+    if ($this->isMembershipextrasPaymentPlan) {
+      $this->add(
+        'checkbox',
+        'cancel_pending_installments',
+        ts('Do you wish to cancel any pending instalment contribution?'),
+        '',
+        FALSE
+      );
 
-    $this->add(
-      'checkbox',
-      'cancel_memberships',
-      ts('Do you wish to cancel any linked membership?'),
-      '',
-      FALSE
-    );
+      $this->add(
+        'checkbox',
+        'cancel_memberships',
+        ts('Do you wish to cancel any linked membership?'),
+        '',
+        FALSE
+      );
+    }
 
     $this->addButtons([
       [
@@ -100,11 +112,11 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
 
     $transaction = new CRM_Core_Transaction();
     try {
-      if ($submittedValues['cancel_memberships']) {
+      if (!empty($submittedValues['cancel_memberships'])) {
         $this->cancelMemberships();
       }
 
-      if ($submittedValues['cancel_pending_installments']) {
+      if (!empty($submittedValues['cancel_pending_installments'])) {
         $this->cancelPendingInstallments();
       }
 
@@ -122,9 +134,9 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
     $nullObject = CRM_Utils_Hook::$_nullObject;
     $isProcessedExternallySuccessfully = FALSE;
     CRM_Utils_Hook::singleton()->invoke(
-      ['recurContribution', 'isProcessedExternallySuccessfully'],
-      $this->recurContribution, $isProcessedExternallySuccessfully,
-      $nullObject, $nullObject, $nullObject, $nullObject,
+      ['recurContribution', 'isMembershipextrasPaymentPlan', 'isProcessedExternallySuccessfully'],
+      $this->recurContribution, $this->isMembershipextrasPaymentPlan, $isProcessedExternallySuccessfully,
+      $nullObject, $nullObject, $nullObject,
       'membershipextras_preRecurContributionCancellation'
     );
 

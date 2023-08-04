@@ -12,6 +12,7 @@
   <p>
     <strong> Are you sure you want to mark this recurring contribution as cancelled? </strong>
   </p>
+  {if $isMembershipextrasPaymentPlan}
   <table class="form-layout-compressed">
     <tbody>
       <tr>
@@ -32,6 +33,7 @@
       </tr>
     </tbody>
   </table>
+  {/if}
   <div class="crm-submit-buttons">
     {include file="CRM/common/formButtons.tpl" location="bottom"}
   </div>
