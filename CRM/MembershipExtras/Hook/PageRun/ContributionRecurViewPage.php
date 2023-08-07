@@ -31,6 +31,10 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
 
   private function getFuturePaymentSchemeScheduleIfExist($recurId) {
     try {
+      if (!$this->isActivePaymentPlan($recurId)) {
+        return NULL;
+      }
+
       $paymentPlanScheduleGenerator = new CRM_MembershipExtras_Service_PaymentScheme_PaymentPlanScheduleGenerator($recurId);
       $paymentsSchedule = $paymentPlanScheduleGenerator->generateSchedule();
       array_walk($paymentsSchedule['instalments'], function (&$value) {
@@ -42,6 +46,14 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
     catch (CRM_Extension_Exception $e) {
       return NULL;
     }
+  }
+
+  private function isActivePaymentPlan($recurId) {
+    return \Civi\Api4\ContributionRecur::get()
+      ->addSelect('payment_plan_extra_attributes.is_active')
+      ->addWhere('id', '=', $recurId)
+      ->execute()
+      ->column('payment_plan_extra_attributes.is_active')[0];
   }
 
 }
