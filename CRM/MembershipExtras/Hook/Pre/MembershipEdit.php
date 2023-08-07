@@ -155,8 +155,6 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private function editedFromPaymentAPIContext() {
     if (!empty(Civi::$statics[ExtensionUti::LONG_NAME]['paymentApiCalled'])) {
-      unset(Civi::$statics[ExtensionUti::LONG_NAME]['paymentApiCalled']);
-
       return TRUE;
     }
 
