@@ -72,6 +72,7 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
         'fee_amount', 'total_amount', 'payment_instrument_id', 'is_test',
         'tax_amount', 'contribution_recur_id', 'financial_type_id', 'receive_date',
       ],
+      'is_test' => $this->currentRecurContribution['is_test'] ?? 0,
       'contribution_recur_id' => $this->currentRecurContribution['id'],
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];

@@ -43,6 +43,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @throws CiviCRM_API3_Exception
    */
   private static function updatePaymentPlanMissingParams() {
+    self::$paymentPlanMembershipOrder->isTest = self::$paymentPlanMembershipOrder->isTest ?? 0;
     if (empty(self::$paymentPlanMembershipOrder->contactId)) {
       self::$paymentPlanMembershipOrder->contactId = CRM_MembershipExtras_Test_Fabricator_Contact::fabricate()['id'];
     }
@@ -133,7 +134,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'frequency_interval' => $frequencyInterval,
       'installments' => $instalments,
       'contribution_status_id' => self::$paymentPlanMembershipOrder->paymentPlanStatus,
-      'is_test' => 0,
+      'is_test' => self::$paymentPlanMembershipOrder->isTest,
       'auto_renew' => isset(self::$paymentPlanMembershipOrder->autoRenew) ? self::$paymentPlanMembershipOrder->autoRenew : 1,
       'cycle_day' => CRM_MembershipExtras_Service_CycleDayCalculator::calculate(self::$paymentPlanMembershipOrder->paymentPlanStartDate, $frequencyUnit),
       'payment_processor_id' => self::$paymentPlanMembershipOrder->paymentProcessor,
@@ -298,6 +299,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
       'payment_instrument_id' => self::$paymentPlanMembershipOrder->paymentMethod,
       'financial_type_id' => self::$paymentPlanMembershipOrder->financialType,
       'contribution_status_id' => self::$paymentPlanMembershipOrder->paymentPlanStatus,
+      'is_test' => self::$paymentPlanMembershipOrder->isTest,
     ];
     $contribution = ContributionFabricator::fabricate($params);
 

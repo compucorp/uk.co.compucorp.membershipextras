@@ -45,4 +45,6 @@ class CRM_MembershipExtras_Test_Entity_PaymentPlanMembershipOrder {
 
   public $paymentSchemeId;
 
+  public $isTest;
+
 }
