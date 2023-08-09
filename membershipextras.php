@@ -315,6 +315,11 @@ function membershipextras_civicrm_pageRun($page) {
     $recurViewPage = new CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage();
     $recurViewPage->handle($page);
   }
+
+  if ($page instanceof CRM_Contribute_Page_Tab) {
+    $hook = new CRM_MembershipExtras_Hook_PageRun_ContributionTab();
+    $hook->handle($page);
+  }
 }
 
 /**
