@@ -306,6 +306,69 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     CRM_Utils_GlobalStack::singleton()->pop();
   }
 
+  public function testPreventCreatingRenewalActivityForPaymentPlanMembershipOnRecordingPayment() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 12,
+      'duration_unit' => 'month',
+    ]);
+
+    $paymentPlan = $this->createPaymentPlan($mainMembershipType);
+    $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
+    $membershipParams = array_shift($memberships);
+    $membershipParams['end_date'] = date('Y-m-d');
+    $paymentType = 'owed';
+
+    $tmpGlobals = [];
+    $tmpGlobals['_REQUEST']['q'] = 'civicrm/contribute/search';
+    $tmpGlobals['_REQUEST']['_qf_Status_next'] = 'Update Pending Status';
+    $tmpGlobals['_REQUEST']['contribution_status_id'] = '1';
+    CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
+
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL, $paymentType);
+    $hook->preProcess();
+
+    $this->assertTrue(!isset($membership['membership_activity_status']));
+    CRM_Utils_GlobalStack::singleton()->pop();
+  }
+
+  public function testCreateRenewalActivityPaymentPlanMembershipOnRenewal() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 12,
+      'duration_unit' => 'month',
+    ]);
+
+    $paymentPlan = $this->createPaymentPlan($mainMembershipType);
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
+    $membershipParams = array_shift($memberships);
+    $membershipParams['membership_activity_status'] = 'Completed';
+    $paymentType = 'owed';
+
+    $tmpGlobals = [];
+    $tmpGlobals['_REQUEST']['action'] = CRM_Core_Action::RENEW;
+    $tmpGlobals['_REQUEST']['contribution_status_id'] = civicrm_api3('OptionValue', 'getvalue', [
+      'return' => 'value',
+      'option_group_id' => 'contribution_status',
+      'name' => 'Pending',
+    ]);
+    $tmpGlobals['_REQUEST']['installments'] = $paymentPlan['installments'];
+    $tmpGlobals['_REQUEST']['record_contribution'] = 1;
+    $tmpGlobals['_REQUEST']['contribution_type_toggle'] = 'payment_plan';
+    CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
+
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id'], $paymentType);
+    $hook->preProcess();
+
+    $this->assertTrue(isset($membershipParams['membership_activity_status']));
+    CRM_Utils_GlobalStack::singleton()->pop();
+  }
+
   public function testVerifyMembershipStartDate() {
     $mainMembershipType = $this->createMembershipType([
       'name' => 'Main Rolling Membership',

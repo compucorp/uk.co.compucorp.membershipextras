@@ -50,6 +50,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private static $extendedMemberships = [];
 
+  /**
+   * The membership activity status
+   *
+   * @var string
+   */
+  private $membershipActivityStatus;
+
   public function __construct($id, &$params, $contributionID, $paymentType) {
     $this->id = $id;
     $this->params = &$params;
@@ -154,7 +161,23 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   public function preventExtendingPaymentPlanMembership() {
     if ($this->isOfflinePaymentPlanMembership()) {
       unset($this->params['end_date']);
+      $this->preventCreatingRenewalActivity();
     }
+  }
+
+  /**
+   * Prevents creating membership renew activity.
+   *
+   * If we are not extending the payment plan membership
+   * we should also prevent CiviCRM from
+   * creating renewal activity.
+   */
+  public function preventCreatingRenewalActivity() {
+    if (isset($this->params['membership_activity_status'])) {
+      $this->membershipActivityStatus = $this->params['membership_activity_status'];
+      unset($this->params['membership_activity_status']);
+    }
+
   }
 
   /**
@@ -319,6 +342,9 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     }
 
     $this->params['end_date'] = MembershipEndDateCalculator::calculate($this->id);
+    if ($this->membershipActivityStatus) {
+      $this->params['membership_activity_status'] = $this->membershipActivityStatus;
+    }
   }
 
   /**
