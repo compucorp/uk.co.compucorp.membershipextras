@@ -22,7 +22,11 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionTab implements CRM_Membershi
    * @return void
    */
   private function improveFrequencyColumnWordingForPaymentSchemeRecurringContributions() {
-    $rowTypes = ['activeRecurRows', 'inactiveRecurRows'];
+    // `activeRecurRows` and `inactiveRecurRows` are the template variable names that
+    // contain the list of recurring contributions on the recurring contribution tab.
+    // while `recurRows` contains the list of recurring contributions on the membership
+    // view page under the recurring contribution section.
+    $rowTypes = ['activeRecurRows', 'inactiveRecurRows', 'recurRows'];
     foreach ($rowTypes as $rowType) {
       $tplVarName = $rowType . 'PaymentSchemeField';
 

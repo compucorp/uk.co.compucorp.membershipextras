@@ -316,7 +316,7 @@ function membershipextras_civicrm_pageRun($page) {
     $recurViewPage->handle($page);
   }
 
-  if ($page instanceof CRM_Contribute_Page_Tab) {
+  if ($page instanceof CRM_Contribute_Page_Tab || $page instanceof CRM_Member_Page_RecurringContributions) {
     $hook = new CRM_MembershipExtras_Hook_PageRun_ContributionTab();
     $hook->handle($page);
   }
