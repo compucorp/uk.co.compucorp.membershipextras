@@ -354,25 +354,42 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
       'is_removed' => 0,
     ];
 
-    $installments = CRM_Utils_Array::value('installments', $this->contribRecur, 0);
-    if ($installments <= 1) {
-      $conditions['end_date'] = ['IS NULL' => 1];
+    // If the payment plan is linked to a payment scheme, then next period
+    // line items amounts should be divided on the number of instalments
+    // configured on the linked payment scheme.
+    $paymentPlanLinkedScheme = $this->getPaymentPlanLinkedSchemeIfExists();
+    if (!empty($paymentPlanLinkedScheme)) {
+      $installments = count($paymentPlanLinkedScheme['instalments']);
+    }
+    else {
+      $installments = CRM_Utils_Array::value('installments', $this->contribRecur, 0);
+      if ($installments <= 1) {
+        $conditions['end_date'] = ['IS NULL' => 1];
+      }
     }
 
-    $nextLineItems = $this->getLineItems($conditions);
+    $useLatestMembershipPrice = Civi::settings()->get('membershipextras_paymentplan_use_membership_latest_price');
 
+    $nextLineItems = $this->getLineItems($conditions);
     foreach ($nextLineItems as &$nextLineItem) {
       if (!empty($nextLineItem['related_membership']['id'])) {
         $relatedMembershipId = $nextLineItem['related_membership']['id'];
 
         $autoUpgradableMembershipChecker = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
-        $upgradedMembershipTypeId = $autoUpgradableMembershipChecker->calculateMembershipTypeToUpgradeTo($relatedMembershipId);
+        $nextPeriodMembershipTypeId = $autoUpgradableMembershipChecker->calculateMembershipTypeToUpgradeTo($relatedMembershipId);
 
-        if (!empty($upgradedMembershipTypeId)) {
+        if (empty($nextPeriodMembershipTypeId) && $useLatestMembershipPrice) {
+          $nextPeriodMembershipTypeId = $nextLineItem['related_membership']['related_membership_type']['id'];
+        }
+
+        // If the membership will be upgraded in the next period, or if
+        // "use latest membership price" setting is used, then we need
+        // to calculate the line item amount since it will be different.
+        if (!empty($nextPeriodMembershipTypeId)) {
           $membershipType = civicrm_api3('MembershipType', 'get', [
             'sequential' => 1,
             'return' => ['name', 'minimum_fee', 'financial_type_id'],
-            'id' => $upgradedMembershipTypeId,
+            'id' => $nextPeriodMembershipTypeId,
           ]);
 
           if (!empty($membershipType['values'][0])) {
@@ -390,6 +407,16 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
     }
 
     return $nextLineItems;
+  }
+
+  private function getPaymentPlanLinkedSchemeIfExists() {
+    try {
+      $paymentPlanScheduleGenerator = new CRM_MembershipExtras_Service_PaymentScheme_PaymentPlanScheduleGenerator($this->contribRecur['id']);
+      return $paymentPlanScheduleGenerator->generateSchedule();
+    }
+    catch (CRM_Extension_Exception $e) {
+      return NULL;
+    }
   }
 
   /**
