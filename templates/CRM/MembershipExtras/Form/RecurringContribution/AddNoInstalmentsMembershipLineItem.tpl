@@ -1,6 +1,10 @@
 <script type="text/javascript">
   {literal}
   CRM.$(function () {
+    CRM.$('form').submit(function() {
+      CRM.$(".ui-dialog-buttonset button, .crm-submit-buttons button").prop('disabled',true);
+    });
+
     CRM.$('#payment_details_form_container').css('display', 'none');
 
     var amountExcTax = CRM.$('input[name=amount_exc_tax]').val();

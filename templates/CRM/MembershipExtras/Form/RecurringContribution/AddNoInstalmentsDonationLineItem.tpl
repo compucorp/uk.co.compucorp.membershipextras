@@ -2,6 +2,16 @@
   {ts}As there are no future instalments in this period, you can create a single one off future payment.{/ts}
 </p>
 
+<script type="text/javascript">
+{literal}
+  CRM.$(function () {
+    CRM.$('form').submit(function() {
+      CRM.$(".ui-dialog-buttonset button, .crm-submit-buttons button").prop('disabled',true);
+    });
+  });
+{/literal}
+</script>
+
 <div class="crm-section">
   <table id="payment_details_form_container" class="form-layout-compressed">
     <tbody>
