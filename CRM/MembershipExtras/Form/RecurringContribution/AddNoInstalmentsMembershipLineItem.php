@@ -279,8 +279,13 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembership
   }
 
   private function showOnSuccessNotifications() {
+    $message = 'The membership has been added to payment plan and a payment has been created successfully.';
+    if ($this->submittedValues['payment_type'] == self::PAYMENT_TYPE_NO_PAYMENT) {
+      $message = 'The membership has been added to payment plan but no payment has been created.';
+    }
+
     CRM_Core_Session::setStatus(
-      $this->membershipType->name . ' ' . ts('has been added.'),
+      ts($message),
       ts('Add') . ' ' . $this->membershipType->name,
       'success'
     );
@@ -288,7 +293,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembership
 
   private function showErrorNotification(Exception $e) {
     CRM_Core_Session::setStatus(
-      ts('An error occurred while trying to add') . ' ' . $this->membershipType->name . ':' . $e->getMessage(),
+      ts('The membership could not be added to the payment plan. Error reason:') . $e->getMessage(),
       ts('Error Adding') . $this->membershipType->name,
       'error'
     );
