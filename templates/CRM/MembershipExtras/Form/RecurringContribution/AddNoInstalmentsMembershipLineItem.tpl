@@ -5,7 +5,10 @@
       CRM.$(".ui-dialog-buttonset button, .crm-submit-buttons button").prop('disabled',true);
     });
 
-    CRM.$('#payment_details_form_container').css('display', 'none');
+    var checkedVal = CRM.$('input[type=radio][name=payment_type]:checked').val()
+    if (checkedVal != 2) {
+      CRM.$('#payment_details_form_container').css('display', 'none');
+    }
 
     var amountExcTax = CRM.$('input[name=amount_exc_tax]').val();
     var financialTypeId = CRM.$('select[name=noinstalmentline_financial_type_id]').val();
