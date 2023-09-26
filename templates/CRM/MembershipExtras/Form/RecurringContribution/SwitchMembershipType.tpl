@@ -2,7 +2,11 @@
     {literal}
     CRM.$(function () {
       var currentMembershipTypeId = {/literal}{$current_membership_type_id}{literal};
-      CRM.$('#payment_details_form_container').css('display', 'none');
+
+      var checkedVal = CRM.$('input[type=radio][name=payment_type]:checked').val()
+      if (checkedVal != 2) {
+        CRM.$('#payment_details_form_container').css('display', 'none');
+      }
 
       CRM.$('input[type=radio][name=payment_type]').change(function() {
         if (this.value == 1) {

@@ -1,6 +1,10 @@
 <script type="text/javascript">
   {literal}
   CRM.$(function () {
+    CRM.$('form').submit(function() {
+      CRM.$(".ui-dialog-buttonset button, .crm-submit-buttons button").prop('disabled',true);
+    });
+
     CRM.$('#adjust_first_amount').click(function() {
       if(this.checked) {
         CRM.$('#amount_container').css('display', 'inline');
