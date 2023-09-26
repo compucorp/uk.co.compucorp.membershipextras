@@ -174,7 +174,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsDonationLi
 
   private function showOnSuccessNotifications() {
     CRM_Core_Session::setStatus(
-      ts('The line item has been added.'),
+      ts('The line item has been added to payment plan and a payment has been created successfully.'),
       ts('Adding line item'),
       'success'
     );
@@ -182,7 +182,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsDonationLi
 
   private function showErrorNotification(Exception $e) {
     CRM_Core_Session::setStatus(
-      ts('An error occurred while trying to add the line item') . ':' . $e->getMessage(),
+      ts('The line item could not be added to the payment plan. Error reason:') . $e->getMessage(),
       ts('Error Adding Line item'),
       'error'
     );
