@@ -115,11 +115,12 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @param array $field
    */
   private function addSettingField($field) {
+    $attributes = $field['attributes'] ?? '';
     $this->add(
       $field['html_type'],
       $field['name'],
       ts($field['title']),
-      '',
+      $attributes,
       $field['is_required']
     );
   }
