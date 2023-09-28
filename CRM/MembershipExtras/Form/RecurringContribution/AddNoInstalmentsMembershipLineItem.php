@@ -292,11 +292,27 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembership
   }
 
   private function showErrorNotification(Exception $e) {
+    $errorMessage = $e->getMessage();
+    $this->replaceExceptionMessagesWithHumanReadableContent($errorMessage);
     CRM_Core_Session::setStatus(
-      ts('The membership could not be added to the payment plan. Error reason:') . $e->getMessage(),
+      ts('The membership could not be added to the payment plan. Error reason: ') . $errorMessage,
       ts('Error Adding') . $this->membershipType->name,
       'error'
     );
+  }
+
+  /**
+   * Replaces some of the exception messages thrown
+   * when submitting this form with more readable
+   * content.
+   *
+   * @param string $errorMessage
+   * @return void
+   */
+  private function replaceExceptionMessagesWithHumanReadableContent(&$errorMessage) {
+    if (strpos($errorMessage, 'The membership cannot be saved because the status cannot be calculated') !== FALSE) {
+      $errorMessage = 'There is no valid membership status available for the given membership dates.';
+    }
   }
 
 }
