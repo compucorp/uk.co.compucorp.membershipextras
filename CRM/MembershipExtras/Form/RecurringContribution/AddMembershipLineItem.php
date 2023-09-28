@@ -51,7 +51,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
    */
   protected function showOnSuccessNotifications() {
     CRM_Core_Session::setStatus(
-      "{$this->membershipType['name']} has been added to the active order.",
+      "The membership has been added to payment plan successfully.",
       "Add {$this->membershipType['name']}",
       'success'
     );
@@ -69,11 +69,27 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
    * @inheritdoc
    */
   protected function showErrorNotification(Exception $e) {
+    $errorMessage = $e->getMessage();
+    $this->replaceExceptionMessagesWithHumanReadableContent($errorMessage);
     CRM_Core_Session::setStatus(
-      "An error ocurred trying to add {$this->membershipType['name']} to the current recurring contribution: " . $e->getMessage(),
+      ts('The membership could not be added to the payment plan. Error reason: ') . $errorMessage,
       "Error Adding {$this->membershipType['name']}",
       'error'
     );
+  }
+
+  /**
+   * Replaces some of the exception messages thrown
+   * when submitting this form with more readable
+   * content.
+   *
+   * @param string $errorMessage
+   * @return void
+   */
+  private function replaceExceptionMessagesWithHumanReadableContent(&$errorMessage) {
+    if (strpos($errorMessage, 'The membership cannot be saved because the status cannot be calculated') !== FALSE) {
+      $errorMessage = 'There is no valid membership status available for the given membership dates.';
+    }
   }
 
   /**
