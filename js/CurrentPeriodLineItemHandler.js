@@ -596,7 +596,11 @@ CRM.RecurringContribution.CurrentPeriodLineItemHandler = (function($) {
 
     CRM.loadForm(formUrl, {
       dialog: {width: 1040, height: 0}
-    }).on('crmFormSuccess', function () {
+    })
+      .on('crmBeforeLoad', function () {
+        that.currentTab.unblock();
+      })
+      .on('crmFormSuccess', function () {
       createActivity('Update Payment Plan Current Period', 'update_payment_plan_current_period');
       CRM.refreshParent('#periodsContainer');
     });
