@@ -39,7 +39,7 @@ return [
     'quick_form_type' => 'Element',
     'add' => '4.7',
     'title' => 'Days to renew in advance',
-    'html_type' => 'text',
+    'html_type' => 'number',
     'is_required' => FALSE,
     'description' => 'Number of days in advance of membership end date should an offline auto-renew membership get renewed.',
     'help_text' => 'Number of days in advance of membership end date should an offline auto-renew membership get renewed.',
