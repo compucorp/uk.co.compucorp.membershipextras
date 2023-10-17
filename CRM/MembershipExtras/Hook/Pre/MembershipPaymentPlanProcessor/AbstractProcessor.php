@@ -85,15 +85,15 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
     $this->instalmentsFrequencyUnit = $instalmentDetails['instalments_frequency_unit'];
   }
 
-  protected function getInstalmentAmountCalculator(array $membershipTypes, $periodType = 'rolling') {
+  protected function getInstalmentAmountCalculator(array $membershipTypes, $periodType = 'rolling', $totalAmount = NULL, $proRatedCalculated = TRUE) {
     if ($periodType == 'fixed') {
-      $calculator = new FixedPeriodTypeCalculator($membershipTypes);
+      $calculator = new FixedPeriodTypeCalculator($membershipTypes, $totalAmount, $proRatedCalculated);
       $calculator->setStartDate(new DateTime($this->getMembership()['start_date']));
       $calculator->setEndDate(new DateTime($this->getMembership()['end_date']));
       $calculator->setJoinDate(new DateTime($this->getMembership()['join_date']));
     }
     else {
-      $calculator = new RollingPeriodTypeCalculator($membershipTypes);
+      $calculator = new RollingPeriodTypeCalculator($membershipTypes, $totalAmount, $proRatedCalculated);
     }
 
     $instalmentAmountCalculator = new InstalmentAmountCalculator($calculator);

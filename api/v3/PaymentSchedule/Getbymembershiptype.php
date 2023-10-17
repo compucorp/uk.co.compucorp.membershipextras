@@ -45,6 +45,13 @@ function _civicrm_api3_payment_schedule_getbymembershiptype_spec(&$spec) {
     'type' => CRM_Utils_Type::T_DATE,
     'api.required' => 0,
   ];
+
+  $spec['total_amount'] = [
+    'name' => 'total_amount',
+    'title' => 'Total Amount',
+    'type' => CRM_Utils_Type::T_FLOAT,
+    'api.required' => 0,
+  ];
 }
 
 /**

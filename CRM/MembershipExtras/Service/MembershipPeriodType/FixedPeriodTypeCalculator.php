@@ -44,10 +44,20 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
    * @var array
    */
   private $membershipTypes;
+  /**
+   * @var float|null
+   */
+  private $totalAmount;
+  /**
+   * @var bool
+   */
+  private $proRatedCalculated;
 
-  public function __construct(array $membershipTypes) {
+  public function __construct(array $membershipTypes, $totalAmount = NULL, $proRatedCalculated = FALSE) {
     $this->instalmentTaxAmountCalculator = new MembershipInstalmentTaxAmountCalculator();
     $this->membershipTypes = $membershipTypes;
+    $this->totalAmount = $totalAmount;
+    $this->proRatedCalculated = $proRatedCalculated;
   }
 
   /**
@@ -68,6 +78,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
    */
   public function calculate() {
     foreach ($this->membershipTypes as $membershipType) {
+      $discount = 1;
       $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
       $settings = CRM_MembershipExtras_SettingsManager::getMembershipTypeSettings($membershipType->id);
       $annualProRataCalculation = $settings[SettingField::ANNUAL_PRORATA_CALCULATION_ELEMENT];
@@ -91,8 +102,20 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
           $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
         }
       }
+
+      if (!empty($this->totalAmount) && !$this->proRatedCalculated) {
+        $discount = $this->totalAmount / ($membershipAmount + $taxAmount);
+      }
+
       $amount = $this->calculateProRatedAmount($membershipAmount, $duration, $this->proRatedNumber);
       $taxAmount = $this->calculateProRatedAmount($taxAmount, $duration, $this->proRatedNumber);
+
+      if (!empty($this->totalAmount) && $this->proRatedCalculated) {
+        $discount = $this->totalAmount / ($amount + $taxAmount);
+      }
+
+      $amount = $amount * $discount;
+      $taxAmount = $taxAmount * $discount;
 
       $this->amount += $amount;
       $this->taxAmount += $taxAmount;

@@ -33,12 +33,14 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem exte
    */
   private function handleMembershipTypeLineItem() {
     $lineItemMembershipType = CRM_Member_BAO_MembershipType::findById($this->params['membership_type_id']);
+    $totalAmount = $this->params['line_total'] + $this->params['tax_amount'];
     if ($this->isUsingPriceSet()) {
       //Since line item amount can be different from membership type amount
       //Make sure we are using line item total amount when using PriceSet
       $lineItemMembershipType->minimum_fee = $this->params['line_total'];
+      $totalAmount = NULL;
     }
-    $instalmentAmountCalculator = $this->getInstalmentAmountCalculator([$lineItemMembershipType], $lineItemMembershipType->period_type);
+    $instalmentAmountCalculator = $this->getInstalmentAmountCalculator([$lineItemMembershipType], $lineItemMembershipType->period_type, $totalAmount, TRUE);
     $instalmentAmount = $instalmentAmountCalculator->calculateInstalmentAmount($this->getLineItemInstalmentCount($lineItemMembershipType));
     $this->params['line_total'] = $instalmentAmount->getAmount();
     $this->params['unit_price'] = $instalmentAmount->getAmount();

@@ -39,6 +39,7 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
     $joinDate = !empty($this->params['join_date']) ? new DateTime($this->params['join_date']) : NULL;
     $startDate = !empty($this->params['start_date']) ? new DateTime($this->params['start_date']) : NULL;
     $endDate = !empty($this->params['end_date']) ? new DateTime($this->params['end_date']) : NULL;
+    $totalAmount = !empty($this->params['total_amount']) ? $this->params['total_amount'] : NULL;
     $membershipInstalmentsSchedule = new CRM_MembershipExtras_Service_MembershipInstalmentsSchedule(
       $membershipTypes,
       $this->params['schedule']
@@ -63,7 +64,8 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
       $paymentMethod,
       $membershipTypeDates['start_date'],
       $membershipTypeDates['end_date'],
-      $membershipTypeDates['join_date']
+      $membershipTypeDates['join_date'],
+      $totalAmount
     );
   }
 
