@@ -104,6 +104,16 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
       $this->lineItemEndDate = $this->getElementValue('end_date');
     }
 
+    if ($this->isLineItemLinkedToOneOffPayment()) {
+      CRM_Core_Session::setStatus(
+        'This line item cannot be deleted as it is the last line item linked to a one-off contribution.',
+        "Error Removing {$this->recurringLineItemData['label']}",
+        'error'
+      );
+
+      return;
+    }
+
     $tx = new CRM_Core_Transaction();
     try {
       if ($this->isLineItemAMembership()) {
@@ -135,6 +145,26 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
         'error'
       );
     }
+  }
+
+  private function isLineItemLinkedToOneOffPayment() {
+    $pendingStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
+    $lineToDeleteFullAmount = $this->recurringLineItemData['line_total'] + $this->recurringLineItemData['tax_amount'];
+    $query = "SELECT count(li.contribution_id) as lines_count FROM civicrm_contribution c
+              INNER JOIN civicrm_line_item li ON c.id = li.contribution_id
+              WHERE c.contribution_status_id = {$pendingStatusId}
+              AND c.contribution_recur_id = {$this->recurringContributionID}
+              AND c.total_amount = {$lineToDeleteFullAmount}
+              AND c.source = 'Manage Instalments form - One off payment'
+              GROUP BY li.contribution_id
+              HAVING lines_count = 1";
+    $lineItemsCount = CRM_Core_DAO::singleValueQuery($query);
+
+    if ($lineItemsCount == 1) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   /**

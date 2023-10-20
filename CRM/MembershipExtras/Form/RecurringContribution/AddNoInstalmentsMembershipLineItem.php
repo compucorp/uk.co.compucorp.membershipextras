@@ -239,6 +239,12 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembership
    */
   private function createOneOffPayment($createdLineItemData) {
     $totalIncTax = $this->submittedValues['amount_inc_tax'] ?? 0;
+    $priceSetId = $this->getPriceFieldParentSet($createdLineItemData['line_item']['price_field_id']);
+    $lineItem = [
+      $priceSetId => [
+        $createdLineItemData['line_item']['price_field_id'] => $createdLineItemData['line_item'],
+      ],
+    ];
 
     $contribution = civicrm_api3('Contribution', 'create', [
       'financial_type_id' => $createdLineItemData['line_item']['financial_type_id'],
@@ -254,14 +260,17 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembership
       'source' => 'Manage Instalments form - One off payment',
       'contribution_recur_id' => $this->recurringContribution['id'],
       'is_pay_later' => TRUE,
-    ]);
-
-    civicrm_api3('MembershipPayment', 'create', [
-      'membership_id' => $createdLineItemData['membership']['id'],
-      'contribution_id' => $contribution['id'],
+      'line_item' => $lineItem,
     ]);
 
     return array_shift($contribution['values']);
+  }
+
+  private function getPriceFieldParentSet($priceFieldId) {
+    return civicrm_api3('PriceField', 'getvalue', [
+      'return' => 'price_set_id',
+      'id' => $priceFieldId,
+    ]);
   }
 
   /**
