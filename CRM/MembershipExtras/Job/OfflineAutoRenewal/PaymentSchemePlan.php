@@ -344,7 +344,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
   }
 
   private function getPaymentPlanContributionsForPaymentSchemeHook() {
-    return \Civi\Api4\Contribution::get()
+    return \Civi\Api4\Contribution::get(FALSE)
       ->addSelect('id', 'receive_date', 'total_amount', 'currency')
       ->addWhere('contribution_recur_id', '=', $this->newRecurringContributionID)
       ->execute()

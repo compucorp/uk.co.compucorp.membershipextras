@@ -47,7 +47,7 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionTab implements CRM_Membershi
   }
 
   private function getRecurringContributionsPaymentSchemeFieldInSameInputOrder($recurIds) {
-    $paymentSchemeValues = \Civi\Api4\ContributionRecur::get()
+    $paymentSchemeValues = \Civi\Api4\ContributionRecur::get(FALSE)
       ->addSelect('payment_plan_extra_attributes.payment_scheme_id')
       ->addWhere('id', 'IN', $recurIds)
       ->execute()
