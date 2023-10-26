@@ -73,7 +73,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
       $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipAmount);
 
       $skipProRataUntilSetting = $settings[SettingField::ANNUAL_PRORATA_SKIP_ELEMENT] ?? NULL;
-      if (!empty($skipProRataUntilSetting) && $this->isWithinMembershipTypeProRataSkipPeriod($skipProRataUntilSetting)) {
+      if (!empty($skipProRataUntilSetting) && !empty($skipProRataUntilSetting['M']) && $this->isWithinMembershipTypeProRataSkipPeriod($skipProRataUntilSetting)) {
         $amount = $membershipAmount;
       }
       else {
@@ -124,16 +124,16 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
       $this->proRatedUnit = self::BY_MONTHS;
       $duration = self::TWELVE_MONTHS;
       $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
-      if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
+      if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber) && !empty($this->endDate)) {
         $this->reCalculateEndDate();
         $this->proRatedNumber = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
       }
     }
     else {
       $this->proRatedUnit = self::BY_DAYS;
-      $duration  = $membershipTypeDurationCalculator->calculateOriginalInDays();
+      $duration = $membershipTypeDurationCalculator->calculateOriginalInDays();
       $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
-      if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber)) {
+      if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber) && !empty($this->endDate)) {
         $this->reCalculateEndDate();
         $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
       }
