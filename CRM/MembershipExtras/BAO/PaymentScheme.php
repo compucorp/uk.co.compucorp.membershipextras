@@ -49,7 +49,7 @@ class CRM_MembershipExtras_BAO_PaymentScheme extends CRM_MembershipExtras_DAO_Pa
    *   is linked to any recurring contribution.
    */
   public static function deleteByID($id) {
-    $contributionRecursCount = \Civi\Api4\ContributionRecur::get()
+    $contributionRecursCount = \Civi\Api4\ContributionRecur::get(FALSE)
       ->selectRowCount()
       ->addWhere('payment_plan_extra_attributes.payment_scheme_id', '=', $id)
       ->execute()->count();

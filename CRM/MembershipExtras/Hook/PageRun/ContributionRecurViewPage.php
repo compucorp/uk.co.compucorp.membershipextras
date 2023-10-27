@@ -49,7 +49,7 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
   }
 
   private function isActivePaymentPlan($recurId) {
-    return \Civi\Api4\ContributionRecur::get()
+    return \Civi\Api4\ContributionRecur::get(FALSE)
       ->addSelect('payment_plan_extra_attributes.is_active')
       ->addWhere('id', '=', $recurId)
       ->execute()

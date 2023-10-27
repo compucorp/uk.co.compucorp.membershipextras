@@ -42,7 +42,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
     $this->id = CRM_Utils_Request::retrieve('crid', 'Positive', $this);
     $this->contactID = CRM_Utils_Request::retrieve('cid', 'Positive', $this);
 
-    $this->recurContribution = \Civi\Api4\ContributionRecur::get()
+    $this->recurContribution = \Civi\Api4\ContributionRecur::get(FALSE)
       ->addSelect('payment_processor_id', 'payment_processor_id:name', 'custom.*')
       ->addWhere('id', '=', $this->id)
       ->addOrderBy('id', 'DESC')
