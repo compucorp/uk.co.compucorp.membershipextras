@@ -117,8 +117,10 @@ class CRM_MembershipExtras_Form_RecurringContribution_SwitchMembershipType exten
       );
     }
     catch (Exception $e) {
+      $errorMessage = $e->getMessage();
+      $this->replaceExceptionMessagesWithHumanReadableContent($errorMessage);
       CRM_Core_Session::setStatus(
-        ts('The membership type could not be changed: ') . $e->getMessage(),
+        ts('The membership type could not be changed. Error reason: ') . $errorMessage,
         ts('Changing Membership Type'),
         'error'
       );
@@ -138,6 +140,20 @@ class CRM_MembershipExtras_Form_RecurringContribution_SwitchMembershipType exten
       'financial_type_id' => $submittedValues['switchmembership_financial_type_id'],
       'send_confirmation_email' => $sendConfirmation,
     ];
+  }
+
+  /**
+   * Replaces some of the exception messages thrown
+   * when submitting this form with more readable
+   * content.
+   *
+   * @param string $errorMessage
+   * @return void
+   */
+  private function replaceExceptionMessagesWithHumanReadableContent(&$errorMessage) {
+    if (strpos($errorMessage, 'The membership cannot be saved because the status cannot be calculated') !== FALSE) {
+      $errorMessage = 'There is no valid membership status available for the given membership dates.';
+    }
   }
 
 }
