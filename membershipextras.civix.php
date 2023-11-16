@@ -305,5 +305,15 @@ function _membershipextras_civix_civicrm_entityTypes(&$entityTypes) {
       'class' => 'CRM_MembershipExtras_DAO_ContributionRecurLineItem',
       'table' => 'membershipextras_subscription_line',
     ],
+    'CRM_MembershipExtras_DAO_MembershipRate' => [
+      'name' => 'MembershipRate',
+      'class' => 'CRM_MembershipExtras_DAO_MembershipRate',
+      'table' => 'civicrm_membership_rate',
+    ],
+    'CRM_MembershipExtras_DAO_MembershipRateMembershipType' => [
+      'name' => 'MembershipRateMembershipType',
+      'class' => 'CRM_MembershipExtras_DAO_MembershipRateMembershipType',
+      'table' => 'civicrm_membership_rate_membership_type',
+    ],
   ]);
 }

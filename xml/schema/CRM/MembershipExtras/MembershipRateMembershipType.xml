@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/MembershipExtras</base>
+  <class>MembershipRateMembershipType</class>
+  <name>membershipextras_membership_rate_membership_type</name>
+  <comment>One to Many Membership Rate - Membership Type Relationship </comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique MembershipRateMembershipType ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>membership_rate_id</name>
+    <type>int unsigned</type>
+    <comment>FK to MembershipRate</comment>
+  </field>
+  <foreignKey>
+    <name>membership_rate_id</name>
+    <table>membershipextras_membership_rate</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>membership_type_id</name>
+    <type>int unsigned</type>
+    <comment>FK to MembershipType</comment>
+  </field>
+  <foreignKey>
+    <name>membership_type_id</name>
+    <table>civicrm_membership_type</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+</table>

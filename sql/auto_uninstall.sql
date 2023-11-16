@@ -17,4 +17,7 @@ DROP TABLE IF EXISTS `membershipextras_subscription_line`;
 -- *******************************************************/
 DROP TABLE IF EXISTS `membershipextras_auto_membership_upgrade_rule`;
 
+DROP TABLE IF EXISTS `membershipextras_membership_rate_membership_type`;
+DROP TABLE IF EXISTS `membershipextras_membership_rate`;
+
 SET FOREIGN_KEY_CHECKS=1;
