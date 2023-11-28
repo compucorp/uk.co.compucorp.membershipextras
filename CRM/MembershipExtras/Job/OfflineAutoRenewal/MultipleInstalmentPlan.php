@@ -1,5 +1,5 @@
 <?php
-use CRM_MembershipExtras_Service_MembershipInstalmentsHandler as MembershipInstalmentsHandler;
+use CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreator as StandardUpfrontInstalmentsCreator;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 /**
@@ -12,7 +12,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    * least one line item ready to be renewed (ie. has an end date, is not
    * removed and is set to auto renew), meeting these conditions:
    *
-   * - is using an offline payment processor (payment manual class).
+   * - recurring contribution is a supported by this extension
    * - is set to auto-renew
    * - is not in status cancelled
    * - is active
@@ -22,7 +22,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    * @return array
    */
   protected function getRecurringContributions() {
-    $manualPaymentProcessorsIDs = implode(',', $this->manualPaymentProcessorIDs);
+    $supportedPaymentProcessorsIDs = implode(',', $this->supportedPaymentProcessorIDs);
     $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
 
@@ -33,11 +33,12 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
    LEFT JOIN civicrm_line_item cli ON msl.line_item_id = cli.id
    LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
    LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
-       WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$manualPaymentProcessorsIDs}))
+       WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$supportedPaymentProcessorsIDs}))
          AND ccr.installments > 1
          AND ccr.auto_renew = 1
          AND ccr.contribution_status_id != {$cancelledStatusID}
          AND ppea.is_active = 1
+         AND ppea.payment_scheme_id IS NULL
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
     GROUP BY ccr.id
@@ -69,8 +70,8 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $this->setTotalAndTaxAmount();
     $this->recordPaymentPlanFirstContribution();
 
-    $instalmentsHandler = new MembershipInstalmentsHandler($this->newRecurringContributionID);
-    $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
+    $instalmentsHandler = new StandardUpfrontInstalmentsCreator($this->newRecurringContributionID);
+    $instalmentsHandler->createRemainingInstalments();
 
     $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($this->newRecurringContributionID, 'renewal');
     $nextContributionDateService->calculateAndUpdate();

@@ -10,10 +10,16 @@ trait CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait {
    * @param $setting
    */
   protected function mockSettings($membershipTypeId, $setting) {
-    $settings[$membershipTypeId]  = [
-      'membership_type_annual_pro_rata_calculation' => $setting,
-    ];
-    $currentSettings  = Civi::settings()->get(CRM_MembershipExtras_SettingsManager::MEMBERSHIP_TYPE_SETTINGS_KEY);
+    if (!is_array($setting)) {
+      $settings[$membershipTypeId] = [
+        'membership_type_annual_pro_rata_calculation' => $setting,
+      ];
+    }
+    else {
+      $settings[$membershipTypeId] = $setting;
+    }
+
+    $currentSettings = Civi::settings()->get(CRM_MembershipExtras_SettingsManager::MEMBERSHIP_TYPE_SETTINGS_KEY);
     if (is_null($currentSettings)) {
       $membershipTypeSettings = $settings;
     }

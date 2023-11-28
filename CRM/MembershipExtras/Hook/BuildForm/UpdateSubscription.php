@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 
 /**
  * Alters UpdateSubscription form.
@@ -50,8 +50,8 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
    * Implements modifications to UpdateSubscription form.
    */
   public function buildForm() {
-    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($this->recurringContribution['payment_processor_id']);
-    if (!$isManualPaymentPlan) {
+    $isSupportedPaymentPlan = SupportedPaymentProcessors::isSupportedPaymentProcessor($this->recurringContribution['payment_processor_id']);
+    if (!$isSupportedPaymentPlan) {
       return;
     }
     $this->addElements();

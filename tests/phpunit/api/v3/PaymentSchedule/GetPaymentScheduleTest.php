@@ -91,13 +91,13 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $endDate = new DateTime(date('2021-09-30'));
     $interval = $endDate->diff($startDate);
     $durationInDays = (int) $interval->format("%a") + 1;
-    //Calculate expected amount by days.
-    //Membership fee is 120
-    //Membership roll over day is 30 Sep
-    //No of days between start date 01 Jan 2021 to membership rollover day is 274 days
-    //No of months between start date 01 Jan to membership rollover day is 9 months
-    //2021 has 365 days
-    $expectedAmount = round(((120 / 365) * $durationInDays) / 9, 2);
+
+    $membershipTypeObj = CRM_Member_BAO_MembershipType::findById($membershipType['id']);
+    $membershipTypeDates = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
+    $durationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($membershipTypeObj, $membershipTypeDates);
+    $membershipDuration = $durationCalculator->calculateOriginalInDays();
+
+    $expectedAmount = round(((120 / $membershipDuration) * $durationInDays) / 9, 2);
     $expectedTaxAmount = 0;
     $instalments = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly', $formattedStartDate);
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id'], $formattedStartDate));

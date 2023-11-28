@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/MembershipExtras</base>
+  <class>PaymentScheme</class>
+  <name>membershipextras_payment_scheme</name>
+  <comment>A table that store payment scheme that will be used for creating a payment plan</comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique PaymentScheme ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>name</name>
+    <title>Name</title>
+    <type>varchar</type>
+    <length>250</length>
+    <required>true</required>
+  </field>
+
+  <field>
+    <name>admin_title</name>
+    <title>Admin title</title>
+    <type>varchar</type>
+    <length>250</length>
+  </field>
+
+  <field>
+    <name>description</name>
+    <title>Description</title>
+    <type>varchar</type>
+    <length>500</length>
+  </field>
+
+  <field>
+    <name>public_title</name>
+    <title>Public title</title>
+    <type>varchar</type>
+    <length>250</length>
+    <required>true</required>
+  </field>
+
+  <field>
+    <name>public_description</name>
+    <title>Public description</title>
+    <type>varchar</type>
+    <length>500</length>
+    <required>true</required>
+  </field>
+
+  <field>
+    <name>payment_processor</name>
+    <title>Payment Processor</title>
+    <type>int unsigned</type>
+    <required>true</required>
+  </field>
+  <foreignKey>
+    <name>payment_processor</name>
+    <table>civicrm_payment_processor</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>permission</name>
+    <title>Permission</title>
+    <type>varchar</type>
+    <length>10</length>
+    <required>true</required>
+  </field>
+
+  <field>
+    <name>enabled</name>
+    <title>Enabled</title>
+    <type>boolean</type>
+    <required>true</required>
+    <default>false</default>
+  </field>
+
+  <field>
+    <name>parameters</name>
+    <title>Parameters</title>
+    <type>text</type>
+    <required>true</required>
+  </field>
+
+</table>

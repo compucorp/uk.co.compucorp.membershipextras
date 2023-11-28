@@ -118,7 +118,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id'], $paymentType);
     $hook->preProcess();
 
-    $this->assertTrue(!isset($membership['end_date']));
+    $this->assertFalse(array_key_exists('end_date', $membershipParams));
   }
 
   public function testPreventExtendingPaymentPlanMembershipOnRecordingPayment() {
@@ -138,13 +138,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $paymentType = 'owed';
 
     $tmpGlobals = [];
-    $tmpGlobals['_REQUEST']['entryURL'] = 'action=add&id=' . $contributions[0]['id'];
+    $tmpGlobals['_REQUEST']['entryURL'] = '?action=add&id=' . $contributions[0]['id'];
     CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
 
     $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL, $paymentType);
     $hook->preProcess();
 
-    $this->assertTrue(!isset($membership['end_date']));
+    $this->assertFalse(array_key_exists('end_date', $membershipParams));
     CRM_Utils_GlobalStack::singleton()->pop();
   }
 
@@ -164,7 +164,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $paymentType = 'owed';
 
     $tmpGlobals = [];
-    $tmpGlobals['_REQUEST']['q'] = 'civicrm/contribute/search';
+    $tmpGlobals['_GET']['q'] = 'civicrm/contribute/search';
     $tmpGlobals['_REQUEST']['_qf_Status_next'] = 'Update Pending Status';
     $tmpGlobals['_REQUEST']['contribution_status_id'] = '1';
     CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
@@ -172,8 +172,36 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL, $paymentType);
     $hook->preProcess();
 
-    $this->assertTrue(!isset($membership['end_date']));
+    $this->assertFalse(array_key_exists('end_date', $membershipParams));
     CRM_Utils_GlobalStack::singleton()->pop();
+  }
+
+  public function testPreventExtendingPaymentPlanMembershipWhenCallingPaymentCreateAPI() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 1,
+      'duration_unit' => 'year',
+    ]);
+
+    $paymentPlan = $this->createPaymentPlan($mainMembershipType);
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $firstContributionId = $contributions[0]['id'];
+    $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
+    $membershipParams = array_shift($memberships);
+    $membershipParams['end_date'] = date('Y-m-d');
+
+    civicrm_api3('Payment', 'create', [
+      'contribution_id' => $firstContributionId,
+      'total_amount' => 60,
+      'trxn_date' => date('Y-m-d'),
+    ]);
+
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL, NULL);
+    $hook->preProcess();
+
+    $this->assertFalse(array_key_exists('end_date', $membershipParams));
   }
 
   public function testMembershipNotInPaymentPlanIsNotPreventedFromExtending() {

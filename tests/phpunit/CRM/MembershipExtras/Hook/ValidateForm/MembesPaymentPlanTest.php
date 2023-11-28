@@ -16,7 +16,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlanTest extends B
   private $form;
   private $errors;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->form = new CRM_Member_Form();
     $this->errors = ['price_set_id' => NULL];
   }

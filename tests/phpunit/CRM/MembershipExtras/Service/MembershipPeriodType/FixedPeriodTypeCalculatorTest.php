@@ -5,6 +5,7 @@ use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipType
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodCalculator;
 use CRM_MembershipExtras_Test_Fabricator_MembershipType as MembershipTypeFabricator;
 use CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator as MembershipInstalmentTaxAmountCalculator;
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtil;
 
 /**
  * Class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculatorTest
@@ -16,7 +17,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
   use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->mockSalesTaxFinancialAccount();
   }
 
@@ -39,9 +40,9 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
     $calculator = new FixedPeriodCalculator([$membershipType]);
     $calculator->setStartDate($startDate);
     $calculator->calculate();
-    $this->assertEquals($expectedAmount, $calculator->getAmount());
-    $this->assertEquals($expectedTaxAmount, $calculator->getTaxAmount());
-    $this->assertEquals($expectedTotalAmount, $calculator->getTotalAmount());
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedAmount, 2), MoneyUtil::roundToPrecision($calculator->getAmount(), 2));
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedTaxAmount, 2), MoneyUtil::roundToPrecision($calculator->getTaxAmount(), 2));
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedTotalAmount, 2), MoneyUtil::roundToPrecision($calculator->getTotalAmount(), 2));
     $this->assertNotEmpty($calculator->getLineItems());
     $this->assertEquals($diffInMonths, $calculator->getProRatedNumber());
     $this->assertEquals(FixedPeriodCalculator::BY_MONTHS, $calculator->getProRatedUnit());
@@ -66,12 +67,58 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
     $calculator = new FixedPeriodCalculator([$membershipType]);
     $calculator->setStartDate($startDate);
     $calculator->calculate();
-    $this->assertEquals($expectedAmount, $calculator->getAmount());
-    $this->assertEquals($expectedTaxAmount, $calculator->getTaxAmount());
-    $this->assertEquals($expectedTotalAmount, $calculator->getTotalAmount());
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedAmount, 2), MoneyUtil::roundToPrecision($calculator->getAmount(), 2));
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedTaxAmount, 2), MoneyUtil::roundToPrecision($calculator->getTaxAmount(), 2));
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedTotalAmount, 2), MoneyUtil::roundToPrecision($calculator->getTotalAmount(), 2));
     $this->assertNotEmpty($calculator->getLineItems());
     $this->assertEquals($diffInDays, $calculator->getProRatedNumber());
     $this->assertEquals(FixedPeriodCalculator::BY_DAYS, $calculator->getProRatedUnit());
+  }
+
+  public function testProRataWillBeSkippedWhenMembershipStartDateIsWithinSkipUntilDateConfiguration() {
+    $startDate = new DateTime('2023-06-01');
+    $membershipType = $this->fabricateMembeshipType(['name' => 'xyz']);
+    $this->mockSettings($membershipType->id, ['membership_type_annual_pro_rata_calculation' => FixedPeriodCalculator::BY_DAYS, 'membership_type_annual_pro_rata_skip' => ['M' => 6, 'd' => 2]]);
+
+    $calculator = new FixedPeriodCalculator([$membershipType]);
+    $calculator->setStartDate($startDate);
+    $calculator->calculate();
+    $this->assertEquals(120, $calculator->getAmount());
+    $this->assertEquals(24, $calculator->getTaxAmount());
+    $this->assertEquals(144, $calculator->getTotalAmount());
+  }
+
+  public function testProRataWillBeSkippedWhenMembershipStartDateIsOnSameDayAndMonthOfSkipUntilDateConfiguration() {
+    $startDate = new DateTime('2023-06-02');
+    $membershipType = $this->fabricateMembeshipType(['name' => 'xyz']);
+    $this->mockSettings($membershipType->id, ['membership_type_annual_pro_rata_calculation' => FixedPeriodCalculator::BY_DAYS, 'membership_type_annual_pro_rata_skip' => ['M' => 6, 'd' => 2]]);
+
+    $calculator = new FixedPeriodCalculator([$membershipType]);
+    $calculator->setStartDate($startDate);
+    $calculator->calculate();
+    $this->assertEquals(120, $calculator->getAmount());
+    $this->assertEquals(24, $calculator->getTaxAmount());
+    $this->assertEquals(144, $calculator->getTotalAmount());
+  }
+
+  public function testProRataWillNotBeSkippedWhenMembershipStartDateIsAfterSkipUntilDateConfiguration() {
+    $startDate = new DateTime('2023-06-03');
+    $membershipType = $this->fabricateMembeshipType(['name' => 'xyz']);
+    $this->mockSettings($membershipType->id, ['membership_type_annual_pro_rata_calculation' => FixedPeriodCalculator::BY_DAYS, 'membership_type_annual_pro_rata_skip' => ['M' => 6, 'd' => 2]]);
+
+    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($membershipType, new MembershipTypeDatesCalculator());
+    $membershipTypeDurationInDays = $membershipTypeDurationCalculator->calculateOriginalInDays();
+    $diffInDays = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($startDate);
+    $expectedAmount = ($membershipType->minimum_fee / $membershipTypeDurationInDays) * $diffInDays;
+    $expectedTaxAmount = $this->getTaxAmount($membershipType, $expectedAmount);
+    $expectedTotalAmount = $expectedAmount + $expectedTaxAmount;
+    $calculator = new FixedPeriodCalculator([$membershipType]);
+    $calculator->setStartDate($startDate);
+    $calculator->calculate();
+
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedAmount, 2), MoneyUtil::roundToPrecision($calculator->getAmount(), 2));
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedTaxAmount, 2), MoneyUtil::roundToPrecision($calculator->getTaxAmount(), 2));
+    $this->assertEquals(MoneyUtil::roundToPrecision($expectedTotalAmount, 2), MoneyUtil::roundToPrecision($calculator->getTotalAmount(), 2));
   }
 
   protected function fabricateMembeshipType($params = []) {

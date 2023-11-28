@@ -18,7 +18,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodCalculatorT
    *
    * @throws Exception
    */
-  public function testRollingPeriodAmounts() {
+  public function testRollingPeriodAmounts(): void {
     $this->mockSalesTaxFinancialAccount();
 
     $membershipTypeAbc = $this->fabricateMembeshipType([

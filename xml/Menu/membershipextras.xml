@@ -37,6 +37,12 @@
     <access_arguments>edit contributions,edit memberships</access_arguments>
   </item>
   <item>
+    <path>civicrm/recurring-contribution/switch-membership-type</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_SwitchMembershipType</page_callback>
+    <title>Switch Membership Type</title>
+    <access_arguments>edit contributions,edit memberships</access_arguments>
+  </item>
+  <item>
     <path>civicrm/recurring-contribution/remove-lineitems</path>
     <page_callback>CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems</page_callback>
     <title>RecurringContribution_RemoveLineItems</title>
@@ -55,6 +61,18 @@
     <access_arguments>edit contributions,edit memberships</access_arguments>
   </item>
   <item>
+    <path>civicrm/recurring-contribution/add-noinstalments-membership-lineitem</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsMembershipLineItem</page_callback>
+    <title>Add Membership Line Item</title>
+    <access_arguments>edit contributions,edit memberships</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/recurring-contribution/add-noinstalments-donation-lineitem</path>
+    <page_callback>CRM_MembershipExtras_Form_RecurringContribution_AddNoInstalmentsDonationLineItem</page_callback>
+    <title>Add Donation Line Item</title>
+    <access_arguments>edit contributions,edit memberships</access_arguments>
+  </item>
+  <item>
     <path>civicrm/contribution/duplicate-contribution</path>
     <page_callback>CRM_MembershipExtras_Form_Contribution_Action_Duplicate</page_callback>
     <title>Cancel Recurring Contribution</title>
@@ -65,5 +83,17 @@
     <page_callback>CRM_MembershipExtras_Page_InstalmentSchedule</page_callback>
     <title>InstalmentSchedule</title>
     <access_arguments>edit memberships</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/member/admin/payment-scheme</path>
+    <page_callback>CRM_MembershipExtras_Form_PaymentScheme</page_callback>
+    <title>Payment Scheme</title>
+    <access_arguments>administer MembershipExtras</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/member/admin/payment-schemes</path>
+    <page_callback>CRM_MembershipExtras_Page_PaymentScheme</page_callback>
+    <title>Payments Schemes</title>
+    <access_arguments>administer MembershipExtras</access_arguments>
   </item>
 </menu>

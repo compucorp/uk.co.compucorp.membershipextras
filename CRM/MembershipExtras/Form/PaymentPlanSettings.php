@@ -1,5 +1,5 @@
 <?php
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 
 /**
  * Payment Plan Settings form controller
@@ -26,14 +26,16 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     $settingFieldNames = [];
     $settingFields  = $this->getSettingFields();
 
-    foreach ($settingFields  as $name => $field) {
+    foreach ($settingFields as $name => $field) {
       switch ($name) {
         case 'membershipextras_paymentplan_default_processor':
           $this->addDefaultProcessorField($field);
           break;
+
         case 'membershipextras_customgroups_to_exclude_for_autorenew':
           $this->addCustomGroupsToExcludeField($field);
           break;
+
         default:
           $this->addSettingField($field);
           break;
@@ -63,7 +65,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @param array $defaultProcessorField
    */
   private function addDefaultProcessorField($defaultProcessorField) {
-    $processorOptions = ['' => ts('- select -')] + ManualPaymentProcessors::getIDNameMap();
+    $processorOptions = ['' => ts('- select -')] + SupportedPaymentProcessors::getIDNameMap();
 
     $this->add(
       $defaultProcessorField['html_type'],
@@ -100,7 +102,7 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     $customGroupsOptions = [];
     if (!empty($customGroups['values'])) {
       foreach ($customGroups['values'] as $customGroup) {
-        $customGroupsOptions[$customGroup['id']] =  $customGroup['extends'] . ' : ' . $customGroup['title'];
+        $customGroupsOptions[$customGroup['id']] = $customGroup['extends'] . ' : ' . $customGroup['title'];
       }
     }
 
@@ -113,11 +115,12 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @param array $field
    */
   private function addSettingField($field) {
+    $attributes = $field['attributes'] ?? '';
     $this->add(
       $field['html_type'],
       $field['name'],
       ts($field['title']),
-      '',
+      $attributes,
       $field['is_required']
     );
   }
@@ -145,17 +148,16 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     $settingFields = $this->getSettingFields();
     $submittedValues = $this->exportValues();
 
-    $valuesToSave = [];
     foreach ($settingFields as $fieldName => $fieldData) {
       if (array_key_exists($fieldName, $submittedValues)) {
-        $valuesToSave[$fieldName] = $submittedValues[$fieldName];
+        $newValue = $submittedValues[$fieldName];
       }
-      else if($fieldData['html_type'] === 'checkbox') {
-        $valuesToSave[$fieldName] = FALSE;
+      elseif ($fieldData['html_type'] === 'checkbox') {
+        $newValue = FALSE;
       }
-    }
 
-    civicrm_api3('setting', 'create', $valuesToSave);
+      Civi::settings()->set($fieldName, $newValue);
+    }
   }
 
   /**
@@ -164,11 +166,11 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    * @return array
    */
   private function getSettingFields() {
-    if (!empty($this->settingFields )) {
+    if (!empty($this->settingFields)) {
       return $this->settingFields;
     }
 
-    $this->settingFields =  civicrm_api3('setting', 'getfields',[
+    $this->settingFields = civicrm_api3('setting', 'getfields', [
       'filters' => ['group' => 'membershipextras_paymentplan'],
     ])['values'];
 

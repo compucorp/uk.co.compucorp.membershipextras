@@ -81,9 +81,9 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $membershipTypeObj = CRM_Member_BAO_MembershipType::findById($this->membershipTypeId);
     $startDate = $this->getStartDate();
     $actualInstalmentCount = $this->getInstalmentsNumber($membershipTypeObj, $paymentPlanSchedule, $startDate);
-    $instalmentsHandler = new CRM_MembershipExtras_Service_MembershipInstalmentsHandler($this->recurContributionID);
+    $instalmentsHandler = new CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreator($this->recurContributionID);
     $instalmentsHandler->setInstalmentsCount($actualInstalmentCount);
-    $instalmentsHandler->createRemainingInstalmentContributionsUpfront();
+    $instalmentsHandler->createRemainingInstalments();
 
     $this->updateNextScheduledContributionDate();
   }

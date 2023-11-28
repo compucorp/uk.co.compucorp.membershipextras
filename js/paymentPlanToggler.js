@@ -13,6 +13,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       hideOfflineAutorenewField();
       preventPaymentTabLinkAction();
       toggleNumOfTermsField();
+      preventMultiFormSubmission();
     });
 
     /**
@@ -58,7 +59,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
     function hideOfflineAutorenewField() {
       const autoRenewSelector = '.custom-group-offline_autorenew_option';
 
-      waitForElement($, '#customData', 
+      waitForElement($, '#customData',
         element => isPaymentPlanTabActive()
           ? $(autoRenewSelector).show()
           : $(autoRenewSelector).hide()
@@ -420,7 +421,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       $('#num_terms').val(1);
       $('#num_terms').prop("readonly", isPaymentPlanTabActive());
 
-      waitForElement($, 'input[name=contribution_type_toggle]', 
+      waitForElement($, 'input[name=contribution_type_toggle]',
         element => {
           $('#num_terms').val(1);
           $('#num_terms').prop("readonly", isPaymentPlanTabActive());
@@ -441,10 +442,10 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
 
     /**
      * Triggers callback when element attribute changes.
-     * 
-     * @param {object} $ 
-     * @param {string} elementPath 
-     * @param {object} callBack 
+     *
+     * @param {object} $
+     * @param {string} elementPath
+     * @param {object} callBack
      */
     function waitForElement($, elementPath, callBack) {
       (new MutationObserver(function(mutations) {
@@ -452,7 +453,21 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       })).observe(document.querySelector(elementPath), {
         attributes: true
       });
-    };
+    }
+
+    /**
+     * Prevents submitting the membership form multiple times.
+     *
+     * The two selectors used are for handling both
+     * opening the membership form a modal or in
+     * a new tab, given the submit buttons markup are
+     * different in each case.
+     */
+    function preventMultiFormSubmission() {
+      $('form').submit(function() {
+        $(".ui-dialog-buttonset button, .crm-submit-buttons button").prop('disabled',true);
+      });
+    }
   });
 
 }

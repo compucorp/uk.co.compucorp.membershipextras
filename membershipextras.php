@@ -11,15 +11,8 @@ use CRM_MembershipExtras_ExtensionUtil as E;
  */
 function membershipextras_civicrm_config(&$config) {
   _membershipextras_civix_civicrm_config($config);
-}
 
-/**
- * Implements hook_civicrm_xmlMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
- */
-function membershipextras_civicrm_xmlMenu(&$files) {
-  _membershipextras_civix_civicrm_xmlMenu($files);
+  Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI', 'preApiCall']);
 }
 
 /**
@@ -77,54 +70,6 @@ function membershipextras_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
- */
-function membershipextras_civicrm_managed(&$entities) {
-  _membershipextras_civix_civicrm_managed($entities);
-}
-
-/**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types.
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
- */
-function membershipextras_civicrm_caseTypes(&$caseTypes) {
-  _membershipextras_civix_civicrm_caseTypes($caseTypes);
-}
-
-/**
- * Implements hook_civicrm_angularModules().
- *
- * Generate a list of Angular modules.
- *
- * Note: This hook only runs in CiviCRM 4.5+. It may
- * use features only available in v4.6+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
- */
-function membershipextras_civicrm_angularModules(&$angularModules) {
-  _membershipextras_civix_civicrm_angularModules($angularModules);
-}
-
-/**
- * Implements hook_civicrm_alterSettingsFolders().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
- */
-function membershipextras_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _membershipextras_civix_civicrm_alterSettingsFolders($metaDataFolders);
-}
-
-/**
  * Implements hook_civicrm_navigationMenu().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu/
@@ -150,6 +95,16 @@ function membershipextras_civicrm_navigationMenu(&$menu) {
     'separator' => 2,
   ];
   _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviMember', $automatedMembershipUpgradeRulesMenuItem);
+
+  $paymentSchemeMenuItem = [
+    'name' => 'membership_payment_scheme',
+    'label' => ts('Payment Schemes'),
+    'url' => 'civicrm/member/admin/payment-schemes?reset=1',
+    'permission' => 'administer CiviCRM,administer MembershipExtras',
+    'operator' => 'OR',
+    'separator' => NULL,
+  ];
+  _membershipextras_civix_insert_navigation_menu($menu, 'Administer/CiviContribute', $paymentSchemeMenuItem);
 }
 
 /**
@@ -356,7 +311,15 @@ function membershipextras_civicrm_pageRun($page) {
     );
   }
 
-  _membershipextras_appendJSToModifyRecurringContributionPage($page);
+  if ($page instanceof CRM_Contribute_Page_ContributionRecur) {
+    $recurViewPage = new CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage();
+    $recurViewPage->handle($page);
+  }
+
+  if ($page instanceof CRM_Contribute_Page_Tab || $page instanceof CRM_Member_Page_RecurringContributions) {
+    $hook = new CRM_MembershipExtras_Hook_PageRun_ContributionTab();
+    $hook->handle($page);
+  }
 }
 
 /**
@@ -415,6 +378,13 @@ function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$
         'title' => 'Duplicate As New Pending Contribution',
       ];
     }
+  }
+
+  // hide memberships 'Cancel Auto-renewal` action.
+  if (in_array($op, ['membership.tab.row', 'membership.selector.row']) && $objectName == 'Membership') {
+    $cancelAutorenewalActionName = ts('Cancel Auto-renewal');
+    $cancelAutoRenewActionIndex = array_search($cancelAutorenewalActionName, array_column($links, 'name'));
+    unset($links[$cancelAutoRenewActionIndex]);
   }
 }
 
@@ -503,25 +473,6 @@ function membershipextras_civicrm_alterAPIPermissions($entity, $action, &$params
   if ($isMembershipextrasContext && $isManageInstallmentAPIs && $isManageInstallmentAPIsAllowedActions) {
     $permissions[$entity][$action] = ['access CiviContribute'];
   }
-}
-
-function _membershipextras_appendJSToModifyRecurringContributionPage(&$page) {
-  if (!($page instanceof CRM_Contribute_Page_ContributionRecur)) {
-    return;
-  }
-
-  $contributionData = $page->get_template_vars('recur');
-  $frequency = CRM_Utils_Array::value('frequency_unit', $contributionData, '');
-
-  CRM_Core_Resources::singleton()->addScriptFile(
-    CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
-    'js/modifyAnnualRecuringContributionPage.js',
-    1,
-    'page-header'
-  )->addVars(
-    CRM_MembershipExtras_ExtensionUtil::SHORT_NAME,
-    ['contribution_frequency' => $frequency]
-  );
 }
 
 /**

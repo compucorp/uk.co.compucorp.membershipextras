@@ -21,6 +21,7 @@ class CRM_MembershipExtras_Setup_Manage_CustomGroup_PaymentPlanExtraAttributes e
   public function remove() {
     $customFields = [
       'is_active',
+      'payment_scheme_id',
     ];
     foreach ($customFields as $customFieldName) {
       civicrm_api3('CustomField', 'get', [

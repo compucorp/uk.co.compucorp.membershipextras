@@ -11,6 +11,8 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting extends Base {
 
   const ANNUAL_PRORATA_CALCULATION_ELEMENT = 'membership_type_annual_pro_rata_calculation';
 
+  const ANNUAL_PRORATA_SKIP_ELEMENT = 'membership_type_annual_pro_rata_skip';
+
   /**
    *
    * @param \CRM_Member_Form_MembershipType $form
@@ -32,7 +34,7 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting extends Base {
       $this->setDefaultValue();
     }
     else {
-      $fields = [self::ANNUAL_PRORATA_CALCULATION_ELEMENT];
+      $fields = [self::ANNUAL_PRORATA_CALCULATION_ELEMENT, self::ANNUAL_PRORATA_SKIP_ELEMENT];
       parent::setFieldsDefaultValue($settings, $fields);
     }
   }
@@ -59,6 +61,9 @@ class CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting extends Base {
     $this->form->add('select', self::ANNUAL_PRORATA_CALCULATION_ELEMENT, ts('Annual Pro-rata Calculation'),
       ['' => ts('- select -')] + $options, FALSE, ['class' => 'crm-select2']
     );
+
+    $this->form->add('date', self::ANNUAL_PRORATA_SKIP_ELEMENT, ts('Skip Pro-rata calculation until'),
+      CRM_Core_SelectValues::date(NULL, 'M d'), FALSE, ['class' => 'crm-select2']);
   }
 
   /**

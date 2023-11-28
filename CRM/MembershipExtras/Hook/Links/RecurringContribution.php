@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
 
 /**
  * Alters action links for recurring contributions.
@@ -72,18 +72,19 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    */
   public function alterLinks() {
     foreach ($this->links as &$actionLink) {
-      if ($actionLink['name'] == 'Cancel' && $this->isManualPaymentPlan()) {
+      $isSupportedPaymentPlan = $this->isSupportedPaymentPlan();
+      if ($actionLink['name'] == 'Cancel' && $isSupportedPaymentPlan) {
         unset($actionLink['ref']);
         $actionLink['url'] = 'civicrm/recurring-contribution/cancel';
         $actionLink['qs'] = 'reset=1&crid=%%crid%%&cid=%%cid%%&context=contribution';
       }
 
-      if ($actionLink['name'] == 'Edit' && $this->isManualPaymentPlan()) {
+      if ($actionLink['name'] == 'Edit' && $isSupportedPaymentPlan) {
         $this->mask |= CRM_Core_Action::UPDATE;
       }
     }
 
-    if ($this->isLastRenewalOfManualPaymentPlan() && $this->hasManageInstallmentPermissions()) {
+    if ($this->isLastRenewalOfPaymentPlan() && $this->hasManageInstallmentPermissions()) {
       $this->links[] = [
         'name' => 'View/Modify Future Instalments',
         'url' => 'civicrm/recurring-contribution/edit-lineitems',
@@ -94,14 +95,15 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
   }
 
   /**
-   * Checks if current recurring contribution is a manual payment plan.
+   * Checks if current recurring contribution paid using
+   * a supported payment processor.
    *
    * @return bool
    */
-  private function isManualPaymentPlan() {
+  private function isSupportedPaymentPlan() {
     $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $this->recurringContribution);
 
-    return ManualPaymentProcessors::isManualPaymentProcessor($paymentProcessorID);
+    return SupportedPaymentProcessors::isSupportedPaymentProcessor($paymentProcessorID);
   }
 
   /**
@@ -115,14 +117,14 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    *
    * @throws \Exception
    */
-  private function isLastRenewalOfManualPaymentPlan() {
+  private function isLastRenewalOfPaymentPlan() {
     $isActivePaymentPlanFieldId = $this->getCustomFieldID('payment_plan_extra_attributes', 'is_active');
 
     if (!CRM_Utils_Array::value('custom_' . $isActivePaymentPlanFieldId, $this->recurringContribution, FALSE)) {
       return FALSE;
     }
 
-    return $this->isManualPaymentPlan();
+    return $this->isSupportedPaymentPlan();
   }
 
   /**

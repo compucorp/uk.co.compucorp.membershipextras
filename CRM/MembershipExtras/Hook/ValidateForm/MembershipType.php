@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Hook_BuildForm_MembershipType_Setting as MembershipTypeSettings;
+
 /**
  * Class CRM_MembershipExtras_Hook_ValidateForm_MembershipType
  *
@@ -47,8 +49,8 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipType {
    * Validates if the annual pro rata calculation is required.
    */
   private function validateAnnualProRataCalculation() {
-    if (empty($this->fields['membership_type_annual_pro_rata_calculation'])) {
-      $this->errors['membership_type_annual_pro_rata_calculation'] = ts('This field is required.');
+    if (empty($this->fields[MembershipTypeSettings::ANNUAL_PRORATA_CALCULATION_ELEMENT])) {
+      $this->errors[MembershipTypeSettings::ANNUAL_PRORATA_CALCULATION_ELEMENT] = ts('This field is required.');
     }
   }
 

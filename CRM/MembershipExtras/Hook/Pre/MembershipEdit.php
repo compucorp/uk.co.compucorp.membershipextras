@@ -1,7 +1,8 @@
 <?php
 
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
+use CRM_MembershipExtras_ExtensionUtil as ExtensionUti;
 
 /**
  * Implements hook to be run before a membership is created/edited.
@@ -68,7 +69,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    if ($this->paymentContributionID || $this->isRecordingPayment() || $this->isBulkStatusUpdate()) {
+    $dateExtendingPreventionContexts = $this->paymentContributionID || $this->isRecordingPayment() || $this->isBulkStatusUpdate() || $this->editedFromPaymentAPIContext();
+    if ($dateExtendingPreventionContexts) {
       $this->preventExtendingPaymentPlanMembership();
     }
 
@@ -81,7 +83,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       }
     }
 
-    if ($this->isOfflinePaymentPlanMembership()) {
+    if ($this->isSupportedPaymentPlanMembership()) {
       $this->verifyMembershipStartDate();
     }
   }
@@ -147,7 +149,27 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
-   * Prevents extending offline payment plan Membership.
+   * Is this membership is being edited from
+   * Payment.create API context ?
+   *
+   * This method works with this class
+   * CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI
+   * that sets `paymentApiCalled` flag if Payment.Create is being
+   * called, and if it is the case then we prevent extending
+   * the membership.
+   *
+   * @return bool
+   */
+  private function editedFromPaymentAPIContext() {
+    if (!empty(Civi::$statics[ExtensionUti::LONG_NAME]['paymentApiCalled'])) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Prevents extending supported payment plan Membership.
    *
    * If a membership price will be paid using
    * payment plan then each time an installment get
@@ -159,7 +181,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * so the membership gets only extended once when you renew it.
    */
   public function preventExtendingPaymentPlanMembership() {
-    if ($this->isOfflinePaymentPlanMembership()) {
+    if ($this->isSupportedPaymentPlanMembership()) {
       unset($this->params['end_date']);
       $this->preventCreatingRenewalActivity();
     }
@@ -182,37 +204,25 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
 
   /**
    * Determines if the payment for a membership
-   * subscription is offline (pay later) and paid
-   * as payment plan.
+   * subscription is paid by a supported payment
+   * processor.
    *
    * @return bool
    */
-  private function isOfflinePaymentPlanMembership() {
+  private function isSupportedPaymentPlanMembership() {
     $recContributionID = $this->getMembershipRecurringContributionID();
 
     if ($recContributionID === NULL) {
       return FALSE;
     }
 
-    return $this->isOfflinePaymentPlanContribution($recContributionID);
-  }
-
-  /**
-   * Determines if the recurring contribution
-   * is offline (pay later) and is for
-   * a payment plan.
-   *
-   * @param $recurringContributionID
-   * @return bool
-   */
-  private function isOfflinePaymentPlanContribution($recurringContributionID) {
     $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
-      'id' => $recurringContributionID,
+      'id' => $recContributionID,
     ])['values'][0];
 
-    $isOfflineContribution = ManualPaymentProcessors::isManualPaymentProcessor($recurringContribution['payment_processor_id']);
-    if ($isOfflineContribution) {
+    $isSupportedPaymentProcessor = SupportedPaymentProcessors::isSupportedPaymentProcessor($recurringContribution['payment_processor_id']);
+    if ($isSupportedPaymentProcessor) {
       return TRUE;
     }
 
@@ -322,13 +332,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   /**
    *
    * Extends the payment plan membership
-   * for manual renewal.
+   * for renewal.
    *
-   * When renewing a payment plan membership manually
-   * through civicrm, the membership will not
-   * get extended unless you pay payment the first installment,
-   * So this method make sure it gets extended without the need to
-   * pay the first installment.
    */
   public function extendPendingPaymentPlanMembershipOnRenewal() {
     $pendingStatusValue = civicrm_api3('OptionValue', 'getvalue', [

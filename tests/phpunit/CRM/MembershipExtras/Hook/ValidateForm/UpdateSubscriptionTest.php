@@ -25,7 +25,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
    */
   private $errors;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->setupUpdateSubscriptionForm();
     $this->errors = [];
   }
@@ -115,7 +115,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscriptionTest extends Base
     return $recurringContribution;
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     $this->form = NULL;
     $this->errors = [];
   }

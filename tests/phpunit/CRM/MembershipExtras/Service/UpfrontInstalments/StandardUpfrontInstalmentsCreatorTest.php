@@ -1,6 +1,6 @@
 <?php
 
-use CRM_MembershipExtras_Service_MembershipInstalmentsHandler as MembershipInstalmentsHandler;
+use CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreator as MembershipInstalmentsHandler;
 use CRM_MembershipExtras_Test_Fabricator_RecurringContribution as RecurringContributionFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Contribution as ContributionFabricator;
 use CRM_MembershipExtras_Test_Fabricator_Membership as MembershipFabricator;
@@ -9,11 +9,11 @@ use CRM_MembershipExtras_Test_Fabricator_LineItem as LineItemFabricator;
 use CRM_MembershipExtras_Test_Fabricator_RecurringLineItem as RecurringLineItemFabricator;
 
 /**
- * CRM_MembershipExtras_Service_MembershipInstalmentsHandlerTest
+ * CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreatorTest
  *
  * @group headless
  */
-class CRM_MembershipExtras_Service_MembershipInstalmentsHandlerTest extends BaseHeadlessTest {
+class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreatorTest extends BaseHeadlessTest {
 
   /**
    * @var mixed
@@ -36,9 +36,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandlerTest extends Base
    */
   private $membershipType;
 
-  /**
-   * Tests create remaining instalment contributions
-   */
   public function testCreateRemainingInstalmentContributionsUpfront() {
     $this->mockPaymentPlanMembershipOrder('rolling');
     $mockedMembershipPayments = $this->getMembershipPayment();
@@ -49,7 +46,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandlerTest extends Base
     unset($expectedContribution['id']);
 
     $handler = new MembershipInstalmentsHandler($this->recurringContribution['id']);
-    $handler->createRemainingInstalmentContributionsUpfront();
+    $handler->createRemainingInstalments();
 
     $processesMembershipPayments = $this->getMembershipPayment();
     $this->assertEquals(12, $processesMembershipPayments['count']);
@@ -62,10 +59,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandlerTest extends Base
 
   }
 
-  /**
-   * Tests create remaining instalment contribution with setting instalment count
-   */
-  public function testCreateRemainingInstalmentContributionsUpfrontWithSettingInstalmentCount() {
+  public function testCreateRemainingInstalmentAccordingToOverriddenNumberOfInstalments() {
     $this->mockPaymentPlanMembershipOrder('fixed');
     $mockedMembershipPayments = $this->getMembershipPayment();
 
@@ -73,7 +67,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandlerTest extends Base
 
     $handler = new MembershipInstalmentsHandler($this->recurringContribution['id']);
     $handler->setInstalmentsCount(9);
-    $handler->createRemainingInstalmentContributionsUpfront();
+    $handler->createRemainingInstalments();
 
     $expectedContribution = $mockedMembershipPayments['values'][0]['api.Contribution.get']['values'][0];
     unset($expectedContribution['id']);
@@ -138,7 +132,6 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandlerTest extends Base
 
     $this->createRecurringContribution();
     $this->createdLineItems();
-
   }
 
   private function createRecurringContribution() {
@@ -146,7 +139,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsHandlerTest extends Base
     $recurringContributionParams = [
       'sequential' => 1,
       'contact_id' => $contact['id'],
-    //120 (Membership fee)  / 12 (instalments)
+      //120 (Membership fee)  / 12 (instalments)
       'amount' => 10,
       'frequency_unit' => 'year',
       'frequency_interval' => '1',

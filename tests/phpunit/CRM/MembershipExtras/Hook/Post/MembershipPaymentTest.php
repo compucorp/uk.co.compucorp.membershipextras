@@ -24,7 +24,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPaymentTest extends BaseHeadlessT
    *
    * @throws \CiviCRM_API3_Exception
    */
-  public function setUp() {
+  public function setUp(): void {
     $contact = ContactFabricator::fabricate();
     $membershipType = MembershipTypeFabricator::fabricate([
       'name' => 'Test Membership',

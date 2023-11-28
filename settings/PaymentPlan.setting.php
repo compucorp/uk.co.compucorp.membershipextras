@@ -25,7 +25,7 @@ return [
     'pseudoconstant' => [
       'name' => 'paymentProcessor',
     ],
-    'title' => 'Offline payment processor for back office',
+    'title' => 'Payment processor for back office',
     'html_type' => 'select',
     'is_required' => TRUE,
     'description' => 'Select the payment processor that should be used when creating payment plans via CiviCRM admin interface such as new/ renew membership.',
@@ -39,7 +39,7 @@ return [
     'quick_form_type' => 'Element',
     'add' => '4.7',
     'title' => 'Days to renew in advance',
-    'html_type' => 'text',
+    'html_type' => 'number',
     'is_required' => FALSE,
     'description' => 'Number of days in advance of membership end date should an offline auto-renew membership get renewed.',
     'help_text' => 'Number of days in advance of membership end date should an offline auto-renew membership get renewed.',

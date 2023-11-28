@@ -69,6 +69,11 @@
         <td>{if $currentItem.tax_rate == 0}N/A{else}{$currentItem.tax_rate}%{/if}</td>
         <td nowrap>{$currentItem.line_total|crmMoney}</td>
         <td>
+        {if $currentItem.related_membership}
+          <a class="switch-membership-button button clickable" href="" data-itemid="{$currentItem.line_item_id}">
+            <span><i class="crm-i fa-sync" title="Change Type..."></i> Change Type</span>
+          </a>
+        {/if}
           <a class="remove-line-button clickable" href="" data-itemid="{$currentItem.line_item_id}">
             <span><i class="crm-i fa-trash" title="Remove line item..."></i></span>
           </a>

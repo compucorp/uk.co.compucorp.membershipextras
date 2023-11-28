@@ -1,8 +1,18 @@
 <div id="periodsContainer" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
   <script type="text/javascript">
     {literal}
+    // expand the manage instalments modal to take the whole screen.
+    CRM.$('.crm-dialog-titlebar-resize:visible').click();
+
     var selectedTab = CRM.$('#periodsContainer').closest('.ui-dialog-content').data('selectedTab') || 'current';
     CRM.$(function($) {
+      // refresh the contribution and the membership tabs when closing the
+      // manage instalments form.
+      $('.ui-dialog-titlebar-close[title|="Close"]').click(function (e) {
+        CRM.tabHeader.resetTab('#tab_contribute');
+        CRM.tabHeader.resetTab('#tab_member');
+      });
+
       $('#tab_current').click(function () {
         window.CompucorpMembershipExtras_selectedTab = 'current';
       });

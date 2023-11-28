@@ -1,5 +1,6 @@
 <?php
-use CRM_MembershipExtras_Service_ManualPaymentProcessors as ManualPaymentProcessors;
+use CRM_MembershipExtras_Service_SupportedPaymentProcessors as SupportedPaymentProcessors;
+use CRM_MembershipExtras_Helper_RecurringContributionHelper as RecurringContributionHelper;
 
 /**
  * Implements post-process hooks on ContributionRecur entity.
@@ -26,10 +27,16 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
    * Post processes recurring contribution entity.
    */
   public function postProcess() {
-    $isManualPaymentPlan = ManualPaymentProcessors::isManualPaymentProcessor($this->contributionRecurBAO->payment_processor_id);
-    if ($isManualPaymentPlan) {
-      $this->updateLineItemEndDates();
+    $isSupportedPaymentPlan = SupportedPaymentProcessors::isSupportedPaymentProcessor($this->contributionRecurBAO->payment_processor_id);
+    if (!$isSupportedPaymentPlan) {
+      return;
     }
+
+    if (!RecurringContributionHelper::isRecurringContributionLinkedToMembership($this->contributionRecurBAO->id)) {
+      return;
+    }
+
+    $this->updateLineItemEndDates();
   }
 
   /**

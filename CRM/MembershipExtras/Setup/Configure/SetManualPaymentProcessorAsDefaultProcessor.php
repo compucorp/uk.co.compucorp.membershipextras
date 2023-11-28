@@ -18,9 +18,7 @@ class CRM_MembershipExtras_Setup_Configure_SetManualPaymentProcessorAsDefaultPro
         'is_test' => 0,
       ]);
 
-      civicrm_api3('setting', 'create', [
-        'membershipextras_paymentplan_default_processor' => $paymentProcessorId,
-      ]);
+      Civi::settings()->set('membershipextras_paymentplan_default_processor', $paymentProcessorId);
     }
     catch (Exception $exception) {
     }

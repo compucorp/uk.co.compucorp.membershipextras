@@ -54,6 +54,10 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscription {
    * Validates the subscription form submission
    */
   public function validate() {
+    if (empty($this->recurringContribution['frequency_unit'])) {
+      return;
+    }
+
     $this->validateCycleDay();
     $this->validateNextContributionDate();
   }
