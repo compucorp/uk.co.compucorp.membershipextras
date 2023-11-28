@@ -28,6 +28,7 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
     $params['payment_method'] = CRM_Utils_Request::retrieve('payment_method', 'Int');
     $params['start_date'] = CRM_Utils_Request::retrieve('start_date', 'String');
     $params['join_date'] = CRM_Utils_Request::retrieve('join_date', 'String');
+    $params['contact_id'] = CRM_Utils_Request::retrieve('contact_id', 'Int');
 
     try {
       $result = civicrm_api3('PaymentSchedule', $action, $params);

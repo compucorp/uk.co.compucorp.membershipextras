@@ -5,6 +5,7 @@ use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator 
 use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as InstalmentAmountCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDurationCalculator as MembershipTypeDurationCalculator;
 use CRM_MembershipExtras_Service_MembershipTypeDatesCalculator as MembershipTypeDatesCalculator;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateMembershipMinimumFee as CalculateMembershipMinimumFeeHook;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodTypeCalculator;
 
 class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProcessor {
@@ -86,6 +87,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
   }
 
   protected function getInstalmentAmountCalculator(array $membershipTypes, $periodType = 'rolling') {
+    (new CalculateMembershipMinimumFeeHook($membershipTypes, $this->params['contact_id']))->dispatch();
     if ($periodType == 'fixed') {
       $calculator = new FixedPeriodTypeCalculator($membershipTypes);
       $calculator->setStartDate(new DateTime($this->getMembership()['start_date']));
