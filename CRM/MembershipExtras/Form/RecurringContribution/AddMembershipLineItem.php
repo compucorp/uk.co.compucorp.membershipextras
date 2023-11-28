@@ -215,7 +215,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
       ],
     ];
 
-    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 0);
+    $installments = CRM_Utils_Array::value('installments', $this->recurringContribution, 1);
     if ($installments <= 1) {
       $params['end_date'] = ['IS NULL' => 1];
     }
