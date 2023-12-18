@@ -131,10 +131,11 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
     }
     else {
       $this->proRatedUnit = self::BY_DAYS;
-      $duration = $membershipTypeDurationCalculator->calculateOriginalInDays();
+      $duration = $membershipTypeDurationCalculator->calculateOriginalInDays($this->startDate, $this->endDate);
       $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
       if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber) && !empty($this->endDate)) {
         $this->reCalculateEndDate();
+        $duration = $membershipTypeDurationCalculator->calculateOriginalInDays($this->startDate, $this->endDate);
         $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
       }
     }
