@@ -78,6 +78,7 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       [
         'type' => 'submit',
         'name' => ts('Submit'),
+        'js' => ['onclick' => "document.querySelectorAll('label.crm-inline-error').forEach(function(item) { item.innerHTML = '';})"],
         'isDefault' => TRUE,
       ],
       [
