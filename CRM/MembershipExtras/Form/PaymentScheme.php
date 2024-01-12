@@ -72,7 +72,7 @@ class CRM_MembershipExtras_Form_PaymentScheme extends CRM_Core_Form {
       TRUE
     );
     $this->add('checkbox', 'enabled', ts('Enabled'), NULL, FALSE);
-    $this->add('textarea', 'parameters', ts('Parameters'), ['cols' => 49], FALSE);
+    $this->add('textarea', 'parameters', ts('Parameters'), ['cols' => 49], TRUE);
 
     $this->addButtons([
       [
