@@ -35,7 +35,7 @@ class CRM_MembershipExtras_Service_MembershipLineProRataCalculator {
     $membershipEndDate = new DateTime($toDate);
     $prorataDaysCount = $membershipDurationCalculator->calculateDaysBasedOnDates($membershipStartDate, $membershipEndDate);
 
-    $membershipTypeDurationInDays = $membershipDurationCalculator->calculateOriginalInDays();
+    $membershipTypeDurationInDays = $membershipDurationCalculator->calculateOriginalInDays($membershipStartDate, $membershipEndDate);
     $proratedAmount = ($membershipType->minimum_fee / $membershipTypeDurationInDays) * $prorataDaysCount;
     $proratedAmount = CRM_MembershipExtras_Service_MoneyUtilities::roundToPrecision($proratedAmount, 2);
 

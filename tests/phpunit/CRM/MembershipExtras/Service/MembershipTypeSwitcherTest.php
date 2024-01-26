@@ -156,10 +156,10 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
     $contributionsNumber = 1;
     foreach ($contributions as $contribution) {
       if ($contributionsNumber <= 6) {
-        $this->assertNotEquals(8.38, $contribution['total_amount']);
+        $this->assertNotEquals(8.40, $contribution['total_amount']);
       }
       else {
-        $this->assertEquals(8.38, $contribution['total_amount']);
+        $this->assertEquals(8.40, $contribution['total_amount']);
       }
 
       $contributionsNumber++;

@@ -95,7 +95,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $membershipTypeObj = CRM_Member_BAO_MembershipType::findById($membershipType['id']);
     $membershipTypeDates = new CRM_MembershipExtras_Service_MembershipTypeDatesCalculator();
     $durationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($membershipTypeObj, $membershipTypeDates);
-    $membershipDuration = $durationCalculator->calculateOriginalInDays();
+    $membershipDuration = $durationCalculator->calculateOriginalInDays($startDate, $endDate);
 
     $expectedAmount = round(((120 / $membershipDuration) * $durationInDays) / 9, 2);
     $expectedTaxAmount = 0;

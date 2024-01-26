@@ -261,7 +261,7 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
     $membershipDurationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($this->newMembershipType, $membershipTypeDatesCalculator);
     $prorataDaysCount = $membershipDurationCalculator->calculateDaysBasedOnDates($newMembershipStartDate, $newMembershipEndDate, $newMembershipStartDate);
 
-    $membershipTypeDurationInDays = $membershipDurationCalculator->calculateOriginalInDays();
+    $membershipTypeDurationInDays = $membershipDurationCalculator->calculateOriginalInDays($newMembershipStartDate, $newMembershipEndDate);
     $proratedAmount = ($this->newMembershipType->minimum_fee / $membershipTypeDurationInDays) * $prorataDaysCount;
     $proratedAmountExcTax = CRM_MembershipExtras_Service_MoneyUtilities::roundToPrecision($proratedAmount, 2);
 
