@@ -25,7 +25,7 @@ class CRM_MembershipExtras_Service_PaymentPlanNextContributionDate {
       'options' => ['limit' => 1],
     ])['values'][0];
 
-    $this->operation = $operation;
+    $this->operation = strtolower($operation);
   }
 
   /**

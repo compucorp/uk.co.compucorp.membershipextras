@@ -7,7 +7,7 @@ class CRM_MembershipExtras_WebformAPI_PaymentPlanNextContributionDateUpdater {
 
   public static function update($contributionRecurId) {
     // For offline payment plans memberships, we only offer create new ones through webforms, manual renewal is not supported.
-    $operation = 'Creation';
+    $operation = 'creation';
     $nextContributionDateService = new CRM_MembershipExtras_Service_PaymentPlanNextContributionDate($contributionRecurId, $operation);
     $nextContributionDateService->calculateAndUpdate();
   }
