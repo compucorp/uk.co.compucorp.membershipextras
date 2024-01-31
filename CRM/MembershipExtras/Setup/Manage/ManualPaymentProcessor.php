@@ -24,7 +24,7 @@ class CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessor extends AbstractM
       'is_default' => '0',
       'class_name' => 'Payment_Manual',
       'is_recur' => '1',
-      'payment_instrument_id' => 'EFT',
+      'payment_instrument_id' => (new CRM_MembershipExtras_Setup_Manage_OfflineRecurringPaymentMethod)->getPaymentMethod(),
     ];
 
     // creates the live version of the payment processor.
