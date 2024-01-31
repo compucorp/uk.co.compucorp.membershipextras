@@ -58,8 +58,10 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscription {
       return;
     }
 
-    $this->validateCycleDay();
-    $this->validateNextContributionDate();
+    if (empty($this->recurringContribution['payment_plan_extra_attributes.payment_scheme_id'])) {
+      $this->validateCycleDay();
+      $this->validateNextContributionDate();
+    }
   }
 
   public function validateCycleDay() {
@@ -102,10 +104,11 @@ class CRM_MembershipExtras_Hook_ValidateForm_UpdateSubscription {
   private function setRecurringContribution() {
     $recurringContributionID = $this->form->getVar('contributionRecurID');
 
-    $this->recurringContribution = civicrm_api3('ContributionRecur', 'get', [
-      'sequential' => 1,
-      'id' => $recurringContributionID,
-    ])['values'][0];
+    $this->recurringContribution = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('frequency_unit', 'payment_plan_extra_attributes.payment_scheme_id')
+      ->addWhere('id', '=', $recurringContributionID)
+      ->execute()
+      ->getArrayCopy()[0];
   }
 
 }
