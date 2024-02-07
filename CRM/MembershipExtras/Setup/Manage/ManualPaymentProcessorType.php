@@ -30,7 +30,7 @@ class CRM_MembershipExtras_Setup_Manage_ManualPaymentProcessorType extends Abstr
       'billing_mode' => CRM_Core_Payment::BILLING_MODE_NOTIFY,
       'is_recur' => '1',
       'payment_type' => CRM_Core_Payment::PAYMENT_TYPE_DIRECT_DEBIT,
-      'payment_instrument_id' => 'EFT',
+      'payment_instrument_id' => (new CRM_MembershipExtras_Setup_Manage_OfflineRecurringPaymentMethod)->getPaymentMethod(),
       'user_name_label' => 'User Name',
     ]);
   }
