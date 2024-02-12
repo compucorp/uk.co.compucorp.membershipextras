@@ -90,20 +90,51 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
   }
 
   private function isWithinMembershipTypeProRataSkipPeriod($skipProRataUntilSetting) {
-    $membershipStartDate = $this->startDate->format('Y-m-d');
+    $nearestSkipProRataDate = $this->getNearestSkipProRataDate($skipProRataUntilSetting);
+    $membershipStartDate = $this->startDate->format('Ymd');
 
-    $skipMonth = $skipProRataUntilSetting['M'];
-    $skipDay = $skipProRataUntilSetting['d'];
-    $currentYear = date('Y');
-    $skipDateString = $currentYear . '-' . $skipMonth . '-' . $skipDay;
-    $skipUntilDate = DateTime::createFromFormat('Y-n-j', $skipDateString);
-    $skipUntilDate = $skipUntilDate->format('Y-m-d');
+    if (empty($nearestSkipProRataDate)) {
+      return FALSE;
+    }
 
-    if ($membershipStartDate <= $skipUntilDate) {
+    if ($membershipStartDate <= $nearestSkipProRataDate) {
       return TRUE;
     }
 
     return FALSE;
+  }
+
+  /**
+   * Returns first "skip pro-rata" date that falls
+   * between the membership start and end dates, if any.
+   */
+  private function getNearestSkipProRataDate($skipProRataUntilSetting) {
+    $membershipStartYear = $this->startDate->format('Y');
+    $membershipEndYear = $this->endDate->format('Y');
+
+    $skipDateStringBasedOnStartYear = $membershipStartYear . '-' . $skipProRataUntilSetting['M'] . '-' . $skipProRataUntilSetting['d'];
+    $skipUntilDateBasedOnStartYear  = DateTime::createFromFormat('Y-n-j', $skipDateStringBasedOnStartYear);
+    $skipUntilDateBasedOnStartYear = $skipUntilDateBasedOnStartYear->format('Ymd');
+
+    $skipDateStringBasedOnEndYear = $membershipEndYear . '-' . $skipProRataUntilSetting['M'] . '-' . $skipProRataUntilSetting['d'];
+    $skipUntilDateBasedOnEndYear = DateTime::createFromFormat('Y-n-j', $skipDateStringBasedOnEndYear);
+    $skipUntilDateBasedOnEndYear = $skipUntilDateBasedOnEndYear->format('Ymd');
+
+    if ($skipUntilDateBasedOnStartYear >= $this->startDate->format('Ymd')
+      && $skipUntilDateBasedOnStartYear <= $this->endDate->format('Ymd')) {
+      return $skipUntilDateBasedOnStartYear;
+    }
+
+    if ($skipUntilDateBasedOnStartYear == $skipUntilDateBasedOnEndYear) {
+      return NULL;
+    }
+
+    if ($skipUntilDateBasedOnEndYear >= $this->startDate->format('Ymd')
+      && $skipUntilDateBasedOnEndYear <= $this->endDate->format('Ymd')) {
+      return $skipUntilDateBasedOnEndYear;
+    }
+
+    return NULL;
   }
 
   /**
@@ -131,10 +162,11 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
     }
     else {
       $this->proRatedUnit = self::BY_DAYS;
-      $duration = $membershipTypeDurationCalculator->calculateOriginalInDays();
+      $duration = $membershipTypeDurationCalculator->calculateOriginalInDays($this->startDate, $this->endDate);
       $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
       if ($this->isDurationWithInOneYearPeriod($duration, $this->proRatedNumber) && !empty($this->endDate)) {
         $this->reCalculateEndDate();
+        $duration = $membershipTypeDurationCalculator->calculateOriginalInDays($this->startDate, $this->endDate);
         $this->proRatedNumber = $membershipTypeDurationCalculator->calculateDaysBasedOnDates($this->startDate, $this->endDate, $this->joinDate);
       }
     }
