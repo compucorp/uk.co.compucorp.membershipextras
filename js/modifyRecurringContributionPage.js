@@ -1,4 +1,5 @@
 CRM.$(function () {
+  const isActiveRecurringContribution = CRM.vars.membershipextras.is_active_recurring_contribution;
   const paymentSchemeSchedule = CRM.vars.membershipextras.payment_scheme_schedule;
   hideUnnecessaryPaymentPlanFields();
   addFuturePaymentSchemeSchedule();
@@ -25,6 +26,11 @@ CRM.$(function () {
 
   function addFuturePaymentSchemeSchedule() {
     if (paymentSchemeSchedule === null) {
+      return;
+    }
+
+    // no point in showing future instalments for inactive payment plans
+    if (!isActiveRecurringContribution) {
       return;
     }
 
