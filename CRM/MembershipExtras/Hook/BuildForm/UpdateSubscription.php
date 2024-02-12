@@ -40,10 +40,11 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
    */
   private function setRecurringContribution() {
     $recurringContributionID = CRM_Utils_Request::retrieve('crid', 'Integer', $this->form, TRUE);
-    $this->recurringContribution = civicrm_api3('ContributionRecur', 'get', [
-      'sequential' => 1,
-      'id' => $recurringContributionID,
-    ])['values'][0];
+    $this->recurringContribution = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('payment_processor_id', 'frequency_unit', 'auto_renew', 'payment_instrument_id', 'cycle_day', 'next_sched_contribution_date', 'payment_plan_extra_attributes.payment_scheme_id')
+      ->addWhere('id', '=', $recurringContributionID)
+      ->execute()
+      ->getArrayCopy()[0];
   }
 
   /**
@@ -78,13 +79,17 @@ class CRM_MembershipExtras_Hook_BuildForm_UpdateSubscription {
     $this->form->setDefaults(['payment_instrument_id' => $this->recurringContribution['payment_instrument_id']]);
     $this->form->assign('isBackOffice', 1);
 
-    $this->form->add('text', 'cycle_day', ts('Cycle Day'), [], TRUE);
-    $this->form->setDefaults(['cycle_day' => $this->recurringContribution['cycle_day']]);
+    $this->form->assign('isPaymentSchemePlan', TRUE);
+    if (empty($this->recurringContribution['payment_plan_extra_attributes.payment_scheme_id'])) {
+      $this->form->assign('isPaymentSchemePlan', FALSE);
+      $this->form->add('text', 'cycle_day', ts('Cycle Day'), [], TRUE);
+      $this->form->setDefaults(['cycle_day' => $this->recurringContribution['cycle_day']]);
 
-    $this->form->add('datepicker', 'next_sched_contribution_date', ts('Next Scheduled Contribution Date'), [], FALSE, ['time' => FALSE]);
-    $nextScheduledDate = CRM_Utils_Array::value('next_sched_contribution_date', $this->recurringContribution);
-    if (!empty($nextScheduledDate)) {
-      $this->form->setDefaults(['next_sched_contribution_date' => $this->recurringContribution['next_sched_contribution_date']]);
+      $this->form->add('datepicker', 'next_sched_contribution_date', ts('Next Scheduled Contribution Date'), [], FALSE, ['time' => FALSE]);
+      $nextScheduledDate = CRM_Utils_Array::value('next_sched_contribution_date', $this->recurringContribution);
+      if (!empty($nextScheduledDate)) {
+        $this->form->setDefaults(['next_sched_contribution_date' => $this->recurringContribution['next_sched_contribution_date']]);
+      }
     }
 
     $this->form->addButtons([

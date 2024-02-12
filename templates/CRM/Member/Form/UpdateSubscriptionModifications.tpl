@@ -57,7 +57,7 @@
 </table>
 <div id="confirmInstallmentsUpdate" style="display: none;">
   <div class="messages status no-popup">
-    {if $paymentPlanFrequency == 'month'}
+    {if $paymentPlanFrequency == 'month' && !$isPaymentSchemePlan}
       <i aria-hidden="true" class="crm-i fa-info-circle"></i>{ts}Do you want to update any outstanding instalment
       contribution with the new Payment Method or Cycle Day? Hence that updating the cycle day will also update the next
       scheduled contribution date.{/ts}
@@ -67,3 +67,18 @@
     {/if}
   </div>
 </div>
+
+<script type="text/javascript">
+{literal}
+CRM.$(function($) {
+{/literal}
+  {if $isPaymentSchemePlan}
+   {literal}
+    CRM.$('#installments').closest('tr').css('display', 'none');
+    CRM.$('#amount')[0].nextSibling.remove();
+  {/literal}
+  {/if}
+  {literal}
+});
+{/literal}
+</script>
