@@ -4,6 +4,7 @@ use CRM_MembershipExtras_Validate_PaymentPlan_MembershipType as membershipTypeVa
 use CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator as InstalmentAmountCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
 use CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalculator as RollingPeriodCalculator;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateMembershipMinimumFee as CalculateMembershipMinimumFeeHook;
 use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
 use CRM_MembershipExtras_Helper_InstalmentSchedule as InstalmentScheduleHelper;
 
@@ -71,18 +72,25 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
   private $installmentReceiveDateCalculator;
 
   /**
+   * @var int|null
+   */
+  private $contactID;
+
+  /**
    * CRM_MembershipExtras_Service_MembershipTypeInstalment constructor.
    *
    * @param array $membershipTypes
    * @param string $schedule
+   * @param int|null $contactID
    *
    * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
    */
-  public function __construct(array $membershipTypes, string $schedule) {
+  public function __construct(array $membershipTypes, string $schedule, int|null $contactID = NULL) {
     $this->membershipInstalmentTaxAmountCalculator = new CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator();
     $this->installmentReceiveDateCalculator = new CRM_MembershipExtras_Service_InstalmentReceiveDateCalculator();
     $this->membershipTypes = $membershipTypes;
     $this->schedule = $schedule;
+    $this->contactID = $contactID;
     $this->validateMembershipTypeForInstalment();
   }
 
@@ -208,6 +216,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    *
    */
   private function getInstalmentAmountCalculator() {
+    (new CalculateMembershipMinimumFeeHook($this->membershipTypes, $this->contactID))->dispatch();
     if ($this->membershipTypes[0]->period_type == 'fixed') {
       $fixedPeriodTypCalculator = new FixedPeriodTypeCalculator($this->membershipTypes);
       $fixedPeriodTypCalculator->setStartDate($this->startDate);

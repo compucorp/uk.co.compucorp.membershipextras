@@ -41,7 +41,8 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
     $endDate = !empty($this->params['end_date']) ? new DateTime($this->params['end_date']) : NULL;
     $membershipInstalmentsSchedule = new CRM_MembershipExtras_Service_MembershipInstalmentsSchedule(
       $membershipTypes,
-      $this->params['schedule']
+      $this->params['schedule'],
+      $this->params['contact_id'] ?? NULL
     );
 
     if (!empty($nonMembershipPriceFieldValues)) {

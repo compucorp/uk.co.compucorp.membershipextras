@@ -183,6 +183,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
       'contribution_id' => $contribution['id'],
       'entity_table' => 'civicrm_membership',
       'entity_id' => $this->membership['id'],
+      'contact_id' => $contact['id'],
     ];
   }
 
