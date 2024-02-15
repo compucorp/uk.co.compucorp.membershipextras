@@ -14,6 +14,9 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       preventPaymentTabLinkAction();
       toggleNumOfTermsField();
       preventMultiFormSubmission();
+      window.isPaymentPlanTabActive = isPaymentPlanTabActive;
+      window.isPriceSetSelected = isPriceSetSelected;
+      window.getSelectedPriceFieldValues = getSelectedPriceFieldValues;
     });
 
     /**
@@ -108,7 +111,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
         assignFirstContributionReceiveDate();
       });
 
-      $('#payment_plan_schedule, #payment_instrument_id, #start_date, #end_date').change(() => {
+      $('#payment_plan_schedule, #payment_instrument_id, #start_date, #end_date, #contact_id').change(() => {
         if (!isPaymentPlanTabActive()) {
           return;
         }
@@ -172,11 +175,14 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      */
     function generateInstalmentSchedule(isPriceSet, startDate) {
       let schedule = $('#payment_plan_schedule').val();
+      const searchParams = new URLSearchParams(window.location.search);
+      const cid = $('#contact_id').val() ?? searchParams.get('cid');
       let params = {
         schedule: schedule,
         start_date: startDate,
         join_date: $('#join_date').val(),
         payment_method: $('#payment_instrument_id').val(),
+        contact_id: cid,
       };
       if (isPriceSet) {
         let selectedPriceFieldValues = getSelectedPriceFieldValues();

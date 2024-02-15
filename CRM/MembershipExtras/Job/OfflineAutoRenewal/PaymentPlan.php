@@ -3,6 +3,7 @@ use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
 use CRM_MembershipExtras_Hook_CustomDispatch_PostOfflineAutoRenewal as PostOfflineAutoRenewalDispatcher;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateMembershipMinimumFee as CalculateMembershipMinimumFeeHook;
 
 /**
  * Renews a payment plan.
@@ -416,11 +417,14 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $membershipTypeID = $priceFieldValue['membership_type_id'];
     }
 
-    $membershipType = civicrm_api3('MembershipType', 'getsingle', [
-      'id' => $membershipTypeID,
-    ]);
+    /**
+     * @var CRM_Member_DAO_MembershipType[]
+     */
+    $membershipTypes = [CRM_Member_BAO_MembershipType::findById($membershipTypeID)];
+    $contactId = $this->currentRecurringContribution['contact_id'];
+    (new CalculateMembershipMinimumFeeHook($membershipTypes, $contactId ?? NULL))->dispatch();
 
-    return $membershipType['minimum_fee'];
+    return $membershipTypes[0]->minimum_fee;
   }
 
   /**
