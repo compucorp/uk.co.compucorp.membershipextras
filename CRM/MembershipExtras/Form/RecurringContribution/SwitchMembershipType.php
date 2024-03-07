@@ -43,6 +43,12 @@ class CRM_MembershipExtras_Form_RecurringContribution_SwitchMembershipType exten
       'entity' => 'membership_type',
       'placeholder' => ts('- Select Membership Type -'),
       'select' => ['minimumInputLength' => 0],
+      'api' => [
+        'params' => [
+          'is_active' => TRUE,
+          'id' => ['!=' => $currentMembershipType['id']],
+        ],
+      ],
     ], TRUE);
 
     $this->add('datepicker', 'switch_date', ts('Switch Date'), [], TRUE, ['time' => FALSE]);
