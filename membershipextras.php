@@ -384,7 +384,9 @@ function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$
   if (in_array($op, ['membership.tab.row', 'membership.selector.row']) && $objectName == 'Membership') {
     $cancelAutorenewalActionName = ts('Cancel Auto-renewal');
     $cancelAutoRenewActionIndex = array_search($cancelAutorenewalActionName, array_column($links, 'name'));
-    unset($links[$cancelAutoRenewActionIndex]);
+    if ($cancelAutoRenewActionIndex !== FALSE) {
+      unset($links[$cancelAutoRenewActionIndex]);
+    }
   }
 }
 
