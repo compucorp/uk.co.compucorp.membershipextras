@@ -3,6 +3,8 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
 
   private $page;
 
+  const PAYMENT_PLAN_EXTRA_ATTRIBUTES_CUSTOM_GROUP_NAME = 'payment_plan_extra_attributes';
+
   /**
    * @param CRM_Core_Page $page
    */
@@ -29,6 +31,8 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
         'payment_scheme_schedule' => $paymentSchemeSchedule,
       ]
     );
+
+    $this->setPaymentSchemeTitle();
   }
 
   private function isActivePaymentPlan($recurId) {
@@ -52,6 +56,46 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
     catch (CRM_Extension_Exception $e) {
       return NULL;
     }
+  }
+
+  private function setPaymentSchemeTitle() {
+    $customData = $this->page->get_template_vars('viewCustomData');
+    $paymentSchemeGroup = civicrm_api3('CustomGroup', 'get', [
+      'sequential' => 1,
+      'name' => self::PAYMENT_PLAN_EXTRA_ATTRIBUTES_CUSTOM_GROUP_NAME,
+    ]);
+    $paymentSchemeField = civicrm_api3('CustomField', 'get', [
+      'sequential' => 1,
+      'custom_group_id' => self::PAYMENT_PLAN_EXTRA_ATTRIBUTES_CUSTOM_GROUP_NAME,
+      'name' => 'payment_scheme_id',
+    ]);
+
+    if (empty($paymentSchemeGroup['id']) || empty($paymentSchemeField['id']) || empty($customData[$paymentSchemeGroup['id']])) {
+      return;
+    }
+    $paymentSchemeGroupId = $paymentSchemeGroup['id'];
+    $paymentSchemeFieldId = $paymentSchemeField['id'];
+
+    foreach ($customData[$paymentSchemeGroupId] as $k => $group) {
+      if (!empty($group['fields'][$paymentSchemeFieldId])) {
+        $paymentScheme = \Civi\Api4\PaymentScheme::get(FALSE)
+          ->addSelect('admin_title')
+          ->addWhere('id', '=', $customData[$paymentSchemeGroupId][$k]['fields'][$paymentSchemeFieldId]['field_value'])
+          ->setLimit(1)
+          ->execute();
+
+        if (!empty($paymentScheme[0])) {
+          $paymentSchemeLink = CRM_Utils_System::url('civicrm/member/admin/payment-schemes');
+          $paymentSchemeTitle = $paymentScheme[0]['admin_title'];
+
+          $customData[$paymentSchemeGroupId][$k]['fields'][$paymentSchemeFieldId]['field_value'] =
+            "<a href='$paymentSchemeLink'>$paymentSchemeTitle</a>";
+        }
+        break;
+      }
+    }
+
+    $this->page->assign('viewCustomData', $customData);
   }
 
 }
