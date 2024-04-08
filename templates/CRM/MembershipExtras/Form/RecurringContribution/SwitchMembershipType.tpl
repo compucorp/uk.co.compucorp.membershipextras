@@ -95,8 +95,8 @@
   <table id="switch_membership_form_container" class="form-layout-compressed">
     <tbody>
     <tr>
-      <td>{ts}Current Membership Type{/ts}</td>
-      <td></td>
+      <td style="width: 50%;">{ts}Current Membership Type{/ts}</td>
+      <td style="width: 20%;"></td>
       <td style="font-weight: 600;color: #464354;">{$form.new_membership_type.label}</td>
     </tr>
     <tr>
