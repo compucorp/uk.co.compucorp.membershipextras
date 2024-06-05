@@ -66,14 +66,15 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculato
   /**
    * @throws Exception
    */
-  public function calculate() {
+  public function calculate(bool $calculateProRated = TRUE) {
     foreach ($this->membershipTypes as $membershipType) {
       $settings = CRM_MembershipExtras_SettingsManager::getMembershipTypeSettings($membershipType->id);
       $membershipAmount = $membershipType->minimum_fee;
       $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipAmount);
 
       $skipProRataUntilSetting = $settings[SettingField::ANNUAL_PRORATA_SKIP_ELEMENT] ?? NULL;
-      if (!empty($skipProRataUntilSetting) && !empty($skipProRataUntilSetting['M']) && $this->isWithinMembershipTypeProRataSkipPeriod($skipProRataUntilSetting)) {
+      if ((!empty($skipProRataUntilSetting) && !empty($skipProRataUntilSetting['M']) && $this->isWithinMembershipTypeProRataSkipPeriod($skipProRataUntilSetting))
+      || !$calculateProRated) {
         $amount = $membershipAmount;
       }
       else {

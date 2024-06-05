@@ -122,6 +122,7 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
    * options for now.
    */
   static $contributionID = NULL;
+  static $lineItemCount = [];
   if ($op === 'edit' && $objectName === 'Contribution') {
     $contributionID = $id;
   }
@@ -135,6 +136,10 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   static $isFirstPaymentPlanContribution = TRUE;
   $isPaymentPlanPayment = CRM_MembershipExtras_Helper_InstalmentSchedule::isPaymentPlanPayment();
   $isContributionCreation = ($objectName === 'Contribution' && $op === 'create');
+  if ($isContributionCreation) {
+    $lineItems = CRM_Utils_Array::value('line_item', $params, []);
+    $lineItemCount[] = !empty($lineItems) ? count(array_values($lineItems)[0]) : 1;
+  }
   if ($isContributionCreation && $isPaymentPlanPayment && $isFirstPaymentPlanContribution) {
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution($params);
     $paymentPlanProcessor->createPaymentPlan();
@@ -146,6 +151,9 @@ function membershipextras_civicrm_pre($op, $objectName, $id, &$params) {
   $lineItemContributionCreation = $objectName === 'LineItem' && $op === 'create' && !empty($params['contribution_id']);
   $firstPaymentPlanContributionLineItemCreation = ($lineItemContributionCreation && (empty($firstPaymentPlanContributionId) || $firstPaymentPlanContributionId == $params['contribution_id']));
   if ($firstPaymentPlanContributionLineItemCreation && $isPaymentPlanPayment) {
+    if (isset($lineItemCount[0])) {
+      $params['lineItemCount'] = $lineItemCount[0];
+    }
     $paymentPlanProcessor = new CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem($params);
     $paymentPlanProcessor->alterLineItemParameters();
     $firstPaymentPlanContributionId = $params['contribution_id'];

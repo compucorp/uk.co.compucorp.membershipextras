@@ -34,18 +34,14 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    *
    * @throws Exception
    */
-  public function testProRatedPriceSetContributionLineItemOnCalculationByMonthFixedMembershipType() {
+  public function testProRatedPriceSetContributionLineItemOnCalculationWithModifiedMembershipFee() {
     $params = $this->mockParams('fixed', 'year', FixedPeriodCalculator::BY_MONTHS);
     //Since we test price set, line item amount can be different
     //from membership type that attached to price field value
     //the line total is changed here to test if the hook
     //is working correct with different price.
     $params['line_total'] = 240;
-
-    $memTypeObj = CRM_Member_BAO_MembershipType::findById($params['membership_type_id']);
-    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($memTypeObj, new MembershipTypeDatesCalculator());
-    $diffInMonths = $membershipTypeDurationCalculator->calculateMonthsBasedOnDates(new DateTime($this->membership['start_date']));
-    $expectedLineToTal = MoneyUtilities::roundToPrecision($params['line_total'] / 12 * $diffInMonths, 2);
+    $expectedLineToTal = $params['line_total'];
     $expectedTaxAmount = MoneyUtilities::roundToPrecision(($params['tax_rate'] / 100) * $expectedLineToTal, 2);
 
     $_REQUEST['price_set_id'] = $this->priceSet['id'];
@@ -64,11 +60,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    */
   public function testProRatedPriceSetContributionLineItemOnCalculationByDaysFixedMembershipType() {
     $params = $this->mockParams('fixed', 'year', FixedPeriodCalculator::BY_DAYS);
-    $memTypeObj = CRM_Member_BAO_MembershipType::findById($params['membership_type_id']);
-    $membershipTypeDurationCalculator = new MembershipTypeDurationCalculator($memTypeObj, new MembershipTypeDatesCalculator());
-    $membershipTypeDurationInDays = $membershipTypeDurationCalculator->calculateOriginalInDays();
-    $diffInDays = $membershipTypeDurationCalculator->calculateDaysBasedOnDates(new DateTime($this->membership['start_date']));
-    $expectedLineToTal = MoneyUtilities::roundToPrecision(($params['line_total'] / $membershipTypeDurationInDays) * $diffInDays, 2);
+    $expectedLineToTal = $params['line_total'];
     $expectedTaxAmount = MoneyUtilities::roundToPrecision(($params['tax_rate'] / 100) * $expectedLineToTal, 2);
 
     $_REQUEST['price_set_id'] = $this->priceSet['id'];

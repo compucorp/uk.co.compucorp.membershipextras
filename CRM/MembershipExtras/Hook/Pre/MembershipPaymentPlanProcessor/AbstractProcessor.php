@@ -99,7 +99,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
     }
 
     $instalmentAmountCalculator = new InstalmentAmountCalculator($calculator);
-    $instalmentAmountCalculator->getCalculator()->calculate();
+    $isNotQuickConfig = $this->getLineItemCount() > 1;
+    $instalmentAmountCalculator->getCalculator()->calculate(!$this->isUsingPriceSet() || $isNotQuickConfig);
 
     return $instalmentAmountCalculator;
   }
