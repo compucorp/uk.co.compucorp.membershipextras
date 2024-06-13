@@ -21,7 +21,7 @@ class CRM_MembershipExtras_Service_MembershipPeriodType_RollingPeriodTypeCalcula
    *
    * @throws Exception
    */
-  public function calculate() {
+  public function calculate(bool $calculateProRated = TRUE) {
     foreach ($this->membershipTypes as $membershipType) {
       $amount = $membershipType->minimum_fee;
       $taxAmount = $this->instalmentTaxAmountCalculator->calculateByMembershipType($membershipType, $membershipType->minimum_fee);

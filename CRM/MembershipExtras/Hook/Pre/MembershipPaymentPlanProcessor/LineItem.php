@@ -69,4 +69,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem exte
     }
   }
 
+  protected function getLineItemCount(): int {
+    return CRM_Utils_Array::value('lineItemCount', $this->params, 1);
+  }
+
 }
