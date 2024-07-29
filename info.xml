@@ -20,10 +20,11 @@
   </comments>
   <civix>
     <namespace>CRM/MembershipExtras</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
+    <psr0 prefix="CRM_" path="."/>
   </classloader>
   <urls>
     <url desc="Documentation">https://github.com/compucorp/uk.co.compucorp.membershipextras/blob/master/readme.md</url>
@@ -31,5 +32,8 @@
   <mixins>
     <mixin>menu-xml@1.0.0</mixin>
     <mixin>setting-php@1.0.0</mixin>
+    <mixin>smarty-v2@1.0.1</mixin>
+    <mixin>entity-types-php@1.0.0</mixin>
   </mixins>
+  <upgrader>CRM_MembershipExtras_Upgrader</upgrader>
 </extension>
