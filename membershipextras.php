@@ -319,6 +319,14 @@ function membershipextras_civicrm_pageRun($page) {
     );
   }
 
+  if (get_class($page) === 'CRM_Member_Page_Tab' && CRM_Utils_System::currentPath() === 'civicrm/contact/view/membership') {
+    CRM_Core_Resources::singleton()->addStyleFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'css/membershipView.css',
+      1
+    );
+  }
+
   if ($page instanceof CRM_Contribute_Page_ContributionRecur) {
     $recurViewPage = new CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage();
     $recurViewPage->handle($page);
