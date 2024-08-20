@@ -5,7 +5,7 @@
  * enabling and disabling the extension. Also includes the code
  * to run the upgrade steps defined in Upgrader/Steps/ directory.
  */
-class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
+class CRM_MembershipExtras_Upgrader extends CRM_Extension_Upgrader_Base {
 
   public function postInstall() {
     // steps that create new entities.
@@ -78,7 +78,7 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   }
 
   // To reduce the size of this Upgrader class we move upgraders to Upgrader/Steps folder.
-  // The functions below override the ones defined in CRM_MembershipExtras_Upgrader_Base file.
+  // The functions below override the ones defined in CRM_Extension_Upgrader_Base file.
   // These functions allow Civi to process the upgraders added in the Upgrader/Steps folder
   // because without these functions Civi will not process them by default.
 
@@ -100,26 +100,23 @@ class CRM_MembershipExtras_Upgrader extends CRM_MembershipExtras_Upgrader_Base {
   /**
    * @inheritdoc
    */
-  public function enqueuePendingRevisions(CRM_Queue_Queue $queue) {
+  public function enqueuePendingRevisions() {
     $currentRevisionNum = (int) $this->getCurrentRevision();
     foreach ($this->getRevisions() as $revisionClass => $revisionNum) {
       if ($revisionNum <= $currentRevisionNum) {
         continue;
       }
-      $tsParams = [1 => $this->extensionName, 2 => $revisionNum];
-      $title = ts('Upgrade %1 to revision %2', $tsParams);
+      $title = ts('Upgrade %1 to revision %2', [
+        1 => $this->extensionName,
+        2 => $revisionNum,
+      ]);
       $upgradeTask = new CRM_Queue_Task(
         [get_class($this), 'runStepUpgrade'],
         [(new $revisionClass())],
         $title
       );
-      $queue->createItem($upgradeTask);
-      $setRevisionTask = new CRM_Queue_Task(
-        [get_class($this), '_queueAdapter'],
-        ['setCurrentRevision', $revisionNum],
-        $title
-      );
-      $queue->createItem($setRevisionTask);
+      $this->queue->createItem($upgradeTask);
+      $this->appendTask($title, 'setCurrentRevision', $revisionNum);
     }
   }
 

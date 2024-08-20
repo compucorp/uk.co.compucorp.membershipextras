@@ -62,7 +62,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
     function hideOfflineAutorenewField() {
       const autoRenewSelector = '.custom-group-offline_autorenew_option';
 
-      waitForElement($, '#customData',
+      waitForElement($, '#customData_Membership',
         element => isPaymentPlanTabActive()
           ? $(autoRenewSelector).show()
           : $(autoRenewSelector).hide()
@@ -437,7 +437,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
 
     /**
      * Prevent the payment tab link from appending hash to the URL
-     * 
+     *
      * This resolves the issue with the activity tab not opening after signing up for a membership.
      */
     function preventPaymentTabLinkAction() {
