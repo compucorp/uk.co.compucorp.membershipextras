@@ -8,6 +8,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem exte
 
   public function __construct(&$params) {
     $this->params = &$params;
+    $this->setContactID();
     $this->assignInstalmentDetails();
   }
 
@@ -71,6 +72,19 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItem exte
 
   protected function getLineItemCount(): int {
     return CRM_Utils_Array::value('lineItemCount', $this->params, 1);
+  }
+
+  private function setContactID() {
+    if (!empty($this->params['contact_id']) || empty($this->params['contribution_id'])) {
+      return;
+    }
+
+    $this->params['contact_id'] = \Civi\Api4\Contribution::get()
+      ->addSelect('contact_id')
+      ->addWhere('id', '=', $this->params['contribution_id'])
+      ->setLimit(1)
+      ->execute()
+      ->first()['contact_id'] ?? NULL;
   }
 
 }
