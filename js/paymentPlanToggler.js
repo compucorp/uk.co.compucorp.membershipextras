@@ -25,6 +25,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
      */
     function initializeMembershipForm() {
       selectPaymentPlanTab(togglerValue);
+      addContributionAmountHandler();
     }
 
     /**
@@ -91,7 +92,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
           CRM.api3('PaymentSchedule', 'getscheduleoptionsbypricefieldvalues', params).then(function (result) {
             if (result.is_error === 0) {
               setPaymentPlanScheduleOption(result.values);
-              generateInstalmentSchedule(isPriceSet);
+              generateInstalmentSchedule(isPriceSet, $('#start_date').val());
             } else {
               CRM.alert(result.error_message, 'Error', 'error');
             }
@@ -102,7 +103,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
           }).then(function (result) {
             if (result.is_error === 0) {
               setPaymentPlanScheduleOption(result.values);
-              generateInstalmentSchedule(isPriceSet);
+              generateInstalmentSchedule(isPriceSet, $('#start_date').val());
             } else {
               CRM.alert(result.error_message, 'Error', 'error');
             }
@@ -302,6 +303,7 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
     function setMembershipFormEvents() {
       setupPayPlanTogglingEvents();
       setScheduleEvents();
+      contributionAmountHandler();
     }
 
     /**
@@ -473,6 +475,53 @@ function paymentPlanToggler(togglerValue, currencySymbol) {
       $('form').submit(function() {
         $(".ui-dialog-buttonset button, .crm-submit-buttons button").prop('disabled',true);
       });
+    }
+
+    function contributionAmountHandler() {
+      let membershipTypeId = $('#membership_type_id_1').val();
+      let isPriceSet = isPriceSetSelected();
+      if (membershipTypeId > 0 || isPriceSet) {
+        if ($('#start_date').val() === '' && $('#join_date').length && $('#join_date').val() !== '') {
+          $('#start_date').val($('#join_date').val());
+          $('#start_date').next('.hasDatepicker').datepicker('setDate', new Date($('#join_date').val()));
+        }
+
+        CRM.api3('MembershipType', 'getSingle', { id: membershipTypeId }).then(function (result) {
+          if (result?.period_type === 'fixed' || isPriceSet) {
+            let params = {
+              start_date: $('#start_date').val(),
+              payment_method: $('#payment_instrument_id').val(),
+              schedule: 'monthly',
+            };
+            let action = 'getbymembershiptype';
+
+            if (isPriceSet) {
+              let selectedPriceFieldValues = getSelectedPriceFieldValues();
+              params.price_field_values = { 'IN': selectedPriceFieldValues };
+              action = 'getbypricefieldvalues';
+            } else {
+              params.membership_type_id = membershipTypeId;
+            }
+
+            CRM.api3('PaymentSchedule', action, params).then(function (result) {
+              if (result.is_error === 0) {
+                updateTotalAmount(result.values.total_amount, isPriceSet);
+                $('#end_date').val(result.values.membership_end_date);
+                $('#end_date').next('.hasDatepicker').datepicker('setDate', new Date(result.values.membership_end_date));
+              } else {
+                CRM.alert(result.error_message, 'Error', 'error');
+              }
+            });
+          }
+        });
+      }
+    }
+
+    function addContributionAmountHandler() {
+      if (($('#membership_type_id_1').length || $('#price_set_id').length) && $('#start_date').length) {
+        $(document).off( 'change', '#membership_type_id_1, #start_date, #priceset :input');
+        $(document).on( 'change', '#membership_type_id_1, #start_date, #priceset :input', contributionAmountHandler);
+      }
     }
   });
 
