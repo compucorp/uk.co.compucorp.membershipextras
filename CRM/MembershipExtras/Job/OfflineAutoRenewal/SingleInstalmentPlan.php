@@ -76,7 +76,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    LEFT JOIN civicrm_membership cm ON (cm.id = cli.entity_id AND cli.entity_table = 'civicrm_membership')
    LEFT JOIN civicrm_value_payment_plan_extra_attributes ppea ON ppea.entity_id = ccr.id
        WHERE (ccr.payment_processor_id IS NULL OR ccr.payment_processor_id IN ({$supportedPaymentProcessorsIDs}))
-         AND ccr.end_date IS NULL
          AND (
           ccr.installments <= 1
           OR ccr.installments IS NULL
