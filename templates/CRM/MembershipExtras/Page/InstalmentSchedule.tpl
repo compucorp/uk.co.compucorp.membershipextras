@@ -84,7 +84,7 @@
     <td colspan="3"></td>
     <td class="instalment-amount-text">{ts}Total Amount{/ts}</td>
     <td colspan="2">
-      <span>{$currency_symbol}&nbsp;<span id="instalment-total-amount">{$total_amount|crmNumberFormat:2}</span>
+      <span>{$currency_symbol}&nbsp;<span id="instalment-total-amount">{$total_amount}</span>
       {if isset($prorated_number) && isset($prorated_unit)}
         <span class="instalment-prorated-text">({ts}Prorated for {/ts} {$prorated_number} {$prorated_unit})</span>
       {/if}
