@@ -69,8 +69,23 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    $dateExtendingPreventionContexts = $this->paymentContributionID || $this->isRecordingPayment() || $this->isBulkStatusUpdate() || $this->editedFromPaymentAPIContext();
-    if ($dateExtendingPreventionContexts) {
+    $preventMembershipDateExtension = (
+        $this->paymentContributionID ||
+        $this->isRecordingPayment() ||
+        $this->isBulkStatusUpdate() ||
+        $this->editedFromPaymentAPIContext()
+      ) && $this->isSupportedPaymentPlanMembership();
+
+    $null = NULL;
+    $contributionId = (int) $this->paymentContributionID;
+
+    CRM_Utils_Hook::singleton()->invoke(
+      ['preventMembershipDateExtension', 'contributionId'],
+      $preventMembershipDateExtension, $contributionId, $null, $null, $null, $null,
+      'membershipextras_preventMembershipDateExtension'
+    );
+
+    if ($preventMembershipDateExtension) {
       $this->preventExtendingPaymentPlanMembership();
     }
 
@@ -181,10 +196,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * so the membership gets only extended once when you renew it.
    */
   public function preventExtendingPaymentPlanMembership() {
-    if ($this->isSupportedPaymentPlanMembership()) {
-      unset($this->params['end_date']);
-      $this->preventCreatingRenewalActivity();
-    }
+    unset($this->params['end_date']);
+    $this->preventCreatingRenewalActivity();
   }
 
   /**
