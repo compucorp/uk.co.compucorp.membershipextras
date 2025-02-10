@@ -1,5 +1,5 @@
 {include file="CRM/common/paymentBlock.tpl"}
-{crmScript ext=uk.co.compucorp.membershipextras file=js/UpdateSubscriptionModifications.js}
+{crmScript ext='uk.co.compucorp.membershipextras' file='js/UpdateSubscriptionModifications.js'}
 <table id="additional_fields">
   <tr id="payment_instrument_id_field">
     <td class="label">
