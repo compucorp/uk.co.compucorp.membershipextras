@@ -405,8 +405,8 @@ function membershipextras_civicrm_alterMailParams(&$params, $context) {
 function membershipextras_civicrm_permission(&$permissions) {
   $permissions += [
     'administer MembershipExtras' => [
-      E::ts('MembershipExtras: administer Membership Extras'),
-      E::ts('Perform all Membership Extras administration tasks in CiviCRM'),
+      'label' => E::ts('MembershipExtras: administer Membership Extras'),
+      'description' => E::ts('Perform all Membership Extras administration tasks in CiviCRM'),
     ],
   ];
 }
