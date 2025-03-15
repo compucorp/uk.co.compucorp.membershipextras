@@ -15,6 +15,8 @@ use CRM_MembershipExtras_Test_Fabricator_RecurringLineItem as RecurringLineItemF
  */
 class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreatorTest extends BaseHeadlessTest {
 
+  use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
+
   /**
    * @var mixed
    */
@@ -37,8 +39,10 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
   private $membershipType;
 
   public function testCreateRemainingInstalmentContributionsUpfront() {
+    $this->mockSalesTaxFinancialAccount();
     $this->mockPaymentPlanMembershipOrder('rolling');
     $mockedMembershipPayments = $this->getMembershipPayment();
+    $existingTaxFinancialItemsCount = civicrm_api3('FinancialItem', 'get', ['description' => Civi::settings()->get('tax_term')])['count'];
 
     $this->assertEquals(1, $mockedMembershipPayments['count']);
 
@@ -50,6 +54,9 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
 
     $processesMembershipPayments = $this->getMembershipPayment();
     $this->assertEquals(12, $processesMembershipPayments['count']);
+
+    $taxFinancialItemsCount = civicrm_api3('FinancialItem', 'get', ['description' => Civi::settings()->get('tax_term')])['count'];
+    $this->assertEquals($existingTaxFinancialItemsCount + 11, $taxFinancialItemsCount);
 
     $processedContributions = $processesMembershipPayments['values'][0]['api.Contribution.get']['values'];
     foreach ($processedContributions as $contribution) {
@@ -246,7 +253,7 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
     $newLineItem = CRM_Price_BAO_LineItem::create($line['line_item']);
     CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
 
-    if (!empty($contribution->tax_amount) && !empty($newLineItem->tax_amount)) {
+    if (!empty($newLineItem->tax_amount)) {
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
     }
     if ($line['line_item']['entity_table'] == 'civicrm_membership') {

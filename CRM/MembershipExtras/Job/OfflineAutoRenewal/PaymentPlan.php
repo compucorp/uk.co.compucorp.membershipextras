@@ -806,7 +806,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $newLineItem = CRM_Price_BAO_LineItem::create($lineItem);
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
 
-      if (!empty($contribution->tax_amount) && !empty($newLineItem->tax_amount)) {
+      if (!empty($newLineItem->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
       }
 

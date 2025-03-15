@@ -301,7 +301,7 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
 
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution);
 
-      if (!empty((float) $contribution->tax_amount) && !empty($newLineItem->tax_amount)) {
+      if (!empty($newLineItem->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
       }
     }
