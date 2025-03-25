@@ -79,20 +79,21 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
       'id' => $this->contributionId,
-      'return' => ['currency', 'contact_id',  'total_amount', 'receive_date',
+      'return' => ['currency', 'contact_id', 'total_amount', 'receive_date',
         'payment_instrument_id', 'financial_type_id', 'is_test',
         'contribution_recur_id', 'tax_amount',
-        'contribution_page_id', 'campaign_id'],
+        'contribution_page_id', 'campaign_id',
+      ],
     ])['values'][0];
 
-    $params =  [
+    $params = [
       'currency' => $contribution['currency'],
       'source' => 'Duplicate As Pending Contribution Action',
       'contact_id' => $contribution['contact_id'],
       'fee_amount' => 0,
       'net_amount' => $contribution['total_amount'],
       'total_amount' => $contribution['total_amount'],
-      'receive_date' =>$contribution['receive_date'],
+      'receive_date' => $contribution['receive_date'],
       'payment_instrument_id' => $contribution['payment_instrument_id'],
       'financial_type_id' => $contribution['financial_type_id'],
       'is_test' => $contribution['is_test'],
@@ -168,7 +169,7 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
       'contribution_id' => $this->contributionId,
     ])['values'];
 
-    foreach($lineItems as $lineItem) {
+    foreach ($lineItems as $lineItem) {
       $entityID = $lineItem['entity_id'];
       if ($lineItem['entity_table'] === 'civicrm_contribution') {
         $entityID = $this->duplicateContribution->id;
@@ -194,14 +195,14 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
 
       CRM_Financial_BAO_FinancialItem::add($newLineItem, $this->duplicateContribution);
 
-      if (!empty((float) $this->duplicateContribution->tax_amount) && !empty($newLineItem->tax_amount)) {
+      if (!empty($newLineItem->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $this->duplicateContribution, TRUE);
       }
     }
   }
 
   private function updateRecurContributionStatus() {
-    if(empty($this->duplicateContribution->contribution_recur_id)) {
+    if (empty($this->duplicateContribution->contribution_recur_id)) {
       return;
     }
     $recurContributionId = $this->duplicateContribution->contribution_recur_id;
@@ -228,10 +229,12 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
     if (empty($this->duplicateContribution)) {
       $message = ts('Something went wrong! no duplicate contribution is created.');
       $type = 'error';
-    } elseif(!empty($this->duplicateContribution->contribution_recur_id)) {
+    }
+    elseif (!empty($this->duplicateContribution->contribution_recur_id)) {
       $message = ts('Duplicate contribution created successfully and attached to recurring contribution');
       $type = 'success';
-    } else {
+    }
+    else {
       $message = ts('Duplicate contribution created successfully');
       $type = 'success';
     }
