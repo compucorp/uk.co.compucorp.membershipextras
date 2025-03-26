@@ -43,7 +43,14 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
       'id' => $lineItem['contribution_id'],
     ]);
 
-    $trxnId = ['id' => self::createFinancialTrxnEntry($contribution['id'], $lineItem['line_total'], NULL, $transactionDate)];
+    $trxnId = [
+      'id' => self::createFinancialTrxnEntry(
+      $contribution['id'],
+      $lineItem['line_total'] + ($lineItem['tax_amount'] ?? 0),
+      NULL,
+      $transactionDate
+      ),
+    ];
     $accountRelName = self::getFinancialAccountRelationship($contribution['id'], $lineItem['id']);
     $revenueFinancialAccountID = CRM_Contribute_PseudoConstant::getRelationalFinancialAccount(
       $lineItem['financial_type_id'],
