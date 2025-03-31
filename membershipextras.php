@@ -300,6 +300,15 @@ function membershipextras_civicrm_pageRun($page) {
     $hook = new CRM_MembershipExtras_Hook_PageRun_ContributionTab();
     $hook->handle($page);
   }
+
+  if ($page instanceof CRM_Contact_Page_View_Summary) {
+    CRM_Core_Resources::singleton()->addScriptFile(
+      CRM_MembershipExtras_ExtensionUtil::LONG_NAME,
+      'js/RefreshMembershipCount.js',
+      1,
+      'page-header'
+    );
+  }
 }
 
 /**
