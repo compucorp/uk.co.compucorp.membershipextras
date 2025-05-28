@@ -69,7 +69,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
     $this->membership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
       'id' => $this->membershipPayment->membership_id,
-      'return' => ['membership_type_id', 'is_override', 'status_override_end_date'],
+      'return' => ['membership_type_id', 'is_override', 'status_override_end_date', 'status_id.name'],
     ])['values'][0];
   }
 
@@ -103,7 +103,8 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
       'membership_id' => $this->membershipPayment->membership_id,
     ]);
 
-    if (!empty($newMembershipStatus['id'])) {
+    if (!empty($newMembershipStatus['id']) &&
+      (stripos($newMembershipStatus['name'], 'arrears') !== FALSE || stripos((string) CRM_Utils_Array::value('status_id.name', $this->membership), 'arrears') !== FALSE)) {
       $mem = new CRM_Member_DAO_Membership();
       $mem->id = $this->membershipPayment->membership_id;
       $mem->find(TRUE);
