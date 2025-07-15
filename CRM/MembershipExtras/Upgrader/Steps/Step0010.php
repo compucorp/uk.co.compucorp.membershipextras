@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_ExtensionUtil as E;
+
 class CRM_MembershipExtras_Upgrader_Steps_Step0010 {
 
   /**
@@ -8,8 +10,8 @@ class CRM_MembershipExtras_Upgrader_Steps_Step0010 {
    * @return void
    */
   public function apply() {
-    $base = CRM_MembershipExtras_Upgrader_Base::instance();
-    $base->executeSqlFile('sql/upgrade/Step0010.sql');
+    $base = new CRM_MembershipExtras_Upgrader();
+    $base->executeSqlFile(E::path('sql/upgrade/Step0010.sql'));
 
     CRM_Utils_System::flushCache();
   }
