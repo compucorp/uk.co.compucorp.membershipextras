@@ -77,7 +77,10 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
       $this->preventUpdatingNextScheduledContributionDate();
     }
 
-    if ($this->operation == 'edit' && $isSupportedPaymentPlan && RecurringContributionHelper::isRecurringContributionLinkedToMembership($this->recurringContribution['id'])) {
+    $forceCancellation = (bool) CRM_Utils_Request::retrieve('force_cancellation', 'String');
+    if ($this->operation == 'edit' && $isSupportedPaymentPlan
+      && RecurringContributionHelper::isRecurringContributionLinkedToMembership($this->recurringContribution['id']) && !$forceCancellation
+    ) {
       $this->rectifyPaymentPlanStatus();
     }
   }
