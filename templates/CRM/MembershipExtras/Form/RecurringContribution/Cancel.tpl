@@ -12,6 +12,7 @@
   <p>
     <strong> Are you sure you want to mark this recurring contribution as cancelled? </strong>
   </p>
+  <input type="hidden" name="force_cancellation" value="1">
   {if $isMembershipextrasPaymentPlan}
   <table class="form-layout-compressed">
     <tbody>
