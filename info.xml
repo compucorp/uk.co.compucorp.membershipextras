@@ -34,6 +34,7 @@
     <mixin>setting-php@1.0.0</mixin>
     <mixin>smarty-v2@1.0.1</mixin>
     <mixin>entity-types-php@1.0.0</mixin>
+    <mixin>mgd-php@1.0.0</mixin>
   </mixins>
   <upgrader>CRM_MembershipExtras_Upgrader</upgrader>
 </extension>
