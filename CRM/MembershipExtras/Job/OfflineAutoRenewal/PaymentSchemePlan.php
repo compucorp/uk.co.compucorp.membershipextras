@@ -11,6 +11,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
   private $paymentPlanSchedule;
 
   /**
+   * Constructor - sets specific queue name for payment scheme renewals
+   */
+  public function __construct() {
+    parent::__construct();
+    $this->queueName = 'membershipextras_paymentscheme_renewal';
+  }
+
+  /**
    * Returns a list of payment plans that are
    * linked to payment schemes no matter how many
    * instalments they have. The rest of the conditions
