@@ -8,47 +8,65 @@ use CRM_MembershipExtras_Setup_Manage_AbstractManager as AbstractManager;
 class CRM_MembershipExtras_Setup_Manage_OfflineAutoRenewalScheduledJob extends AbstractManager {
 
   /**
+   * @var array
+   */
+  protected $jobs = [
+    'Renew offline single instalment auto-renewal memberships' => [
+      'name' => 'Renew offline single instalment auto-renewal memberships',
+      'description' => 'Automatically renew single instalment offline/paylater',
+      'method' => 'runsingle',
+    ],
+    'Renew offline multiple instalments auto-renewal memberships' => [
+      'name' => 'Renew offline multiple instalments auto-renewal memberships',
+      'description' => 'Automatically renew multiple instalments offline/paylater',
+      'method' => 'runmultiple',
+    ],
+  ];
+
+  /**
    * @inheritDoc
    */
   public function create() {
-    $result = civicrm_api3('Job', 'get', [
-      'name' => 'Renew offline auto-renewal memberships',
-    ]);
-    if (!empty($result['id'])) {
-      return;
+
+    foreach ($this->jobs as $job) {
+      $result = civicrm_api3('Job', 'get', [
+        'name' => $job['name'],
+      ]);
+      if (empty($result['id'])) {
+        civicrm_api3('Job', 'create', [
+          'run_frequency' => 'Daily',
+          'name' => $job['name'],
+          'description' => ts($job['description'] . ' membership that is configured to be auto-renewed'),
+          'api_entity' => 'OfflineAutoRenewalJob',
+          'api_action' => $job['method'],
+          // inactive by default to prevent it from running at wrong time
+          // but should be activated once the site is ready, for example
+          // after data migration is done.
+          'is_active' => 0,
+        ]);
+      }
     }
 
-    civicrm_api3('Job', 'create', [
-      'run_frequency' => 'Daily',
-      'name' => 'Renew offline auto-renewal memberships',
-      'description' => ts('Automatically renew any offline/paylater membership that is configured to be auto-renewed'),
-      'api_entity' => 'OfflineAutoRenewalJob',
-      'api_action' => 'run',
-      // inactive by default to prevent it from running at wrong time
-      // but should be activated once the site is ready, for example
-      // after data migration is done.
-      'is_active' => 0,
-    ]);
+    return;
   }
 
   /**
    * @inheritDoc
    */
   public function remove() {
-    civicrm_api3('Job', 'get', [
-      'name' => 'Renew offline auto-renewal memberships',
-      'api.Job.delete' => ['id' => '$value.id'],
-    ]);
+    \Civi\Api4\Job::delete(FALSE)
+      ->addWhere('name', 'IN', array_column($this->jobs, 'name'))
+      ->execute();
   }
 
   /**
    * @inheritDoc
    */
   protected function toggle($status) {
-    civicrm_api3('Job', 'get', [
-      'name' => 'Renew offline auto-renewal memberships',
-      'api.Job.create' => ['id' => '$value.id', 'is_active' => $status],
-    ]);
+    \Civi\Api4\Job::update(FALSE)
+      ->addValue('is_active', $status)
+      ->addWhere('name', 'IN', array_column($this->jobs, 'name'))
+      ->execute();
   }
 
 }
