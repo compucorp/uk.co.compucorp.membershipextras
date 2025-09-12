@@ -644,6 +644,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $membership = new CRM_Member_DAO_Membership();
       $membership->id = $relatedMembershipID;
       $membership->end_date = $endDate;
+      $membership->contribution_recur_id = $this->newRecurringContributionID;
 
       if ($isUpdateStartDateRenewal) {
         $membership->start_date = $this->membershipsStartDate;
