@@ -84,6 +84,7 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
     $currentMembership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
       'contact_id' => $paymentPlan['contact_id'],
+      'options' => ['sort' => "id ASC"],
     ])['values'][0];
 
     $this->assertEquals($switchDate, $currentMembership['end_date']);
