@@ -91,6 +91,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
       'financial_account_id' => 'Payment Processor Account',
       'title' => 'Dummy Processor',
       'name' => 'Dummy Processor',
+      'domain_id' => 1,
     ]);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
