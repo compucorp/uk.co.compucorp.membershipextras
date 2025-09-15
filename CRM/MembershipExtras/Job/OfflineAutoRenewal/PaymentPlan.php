@@ -131,9 +131,19 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $autoUpgradableMembershipCheckService;
 
   /**
-   * CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan constructor.
+   * Contact IDs to filter renewal processing by (optional)
+   *
+   * @var array|null
    */
-  public function __construct() {
+  protected $contactIds;
+
+  /**
+   * CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan constructor.
+   *
+   * @param array|null $contactIds Optional array of contact IDs to filter by
+   */
+  public function __construct($contactIds = NULL) {
+    $this->contactIds = $contactIds;
     $this->autoUpgradableMembershipCheckService = new CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker();
 
     $this->setUseMembershipLatestPrice();
@@ -212,6 +222,22 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   private function setSupportedPaymentProcessorIDs() {
     $payLaterProcessorID = 0;
     $this->supportedPaymentProcessorIDs = array_merge([$payLaterProcessorID], CRM_MembershipExtras_Service_SupportedPaymentProcessors::getIDs());
+  }
+
+  /**
+   * Generates SQL WHERE clause for contact ID filtering
+   *
+   * @return string Returns complete "AND (...)" clause or empty string
+   */
+  protected function getContactFilterClause() {
+    if (empty($this->contactIds) || !is_array($this->contactIds)) {
+      return '';
+    }
+
+    $contactIds = array_map('intval', $this->contactIds);
+    $contactIdList = implode(',', $contactIds);
+
+    return "AND ccr.contact_id IN ({$contactIdList})";
   }
 
   /**

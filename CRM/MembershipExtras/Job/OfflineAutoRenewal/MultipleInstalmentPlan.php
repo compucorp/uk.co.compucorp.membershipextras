@@ -9,9 +9,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
 
   /**
    * Constructor - sets specific queue name for multiple instalment renewals
+   *
+   * @param array|null $contactIds Optional array of contact IDs to filter by
    */
-  public function __construct() {
-    parent::__construct();
+  public function __construct($contactIds = NULL) {
+    parent::__construct($contactIds);
     $this->queueName = 'membershipextras_offline_renewal';
   }
 
@@ -33,6 +35,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $supportedPaymentProcessorsIDs = implode(',', $this->supportedPaymentProcessorIDs);
     $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
+    $contactFilter = $this->getContactFilterClause();
 
     $query = "
       SELECT ccr.id as contribution_recur_id, ccr.installments
@@ -49,6 +52,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
          AND ppea.payment_scheme_id IS NULL
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
+         {$contactFilter}
     GROUP BY ccr.id
       HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
           OR (

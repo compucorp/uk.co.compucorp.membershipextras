@@ -1106,4 +1106,42 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     }
   }
 
+  public function testRenewalWillRenewMultipleInstalmentForExpectedContact() {
+    $firstContact = CRM_MembershipExtras_Test_Fabricator_Contact::fabricate()['id'];
+    $secondContact = CRM_MembershipExtras_Test_Fabricator_Contact::fabricate()['id'];
+    $contacts = [$firstContact, $secondContact];
+    $paymentPlans = [];
+
+    foreach ($contacts as $contactId) {
+      $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+      $paymentPlanMembershipOrder->contactId = $contactId;
+      $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+      $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+      $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+      $paymentPlanMembershipOrder->lineItems[] = [
+        'entity_table' => 'civicrm_membership',
+        'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+        'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+        'label' => $this->testRollingMembershipType['name'],
+        'qty' => 1,
+        'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+        'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+        'financial_type_id' => 'Member Dues',
+        'non_deductible_amount' => 0,
+      ];
+
+      $paymentPlans[$contactId] = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder)['id'];
+    }
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob([$firstContact]);
+    $multipleInstalmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlans[$firstContact]);
+    $this->assertTrue(!is_null($nextPeriodID));
+    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlans[$firstContact], '-1 month -1 day'));
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlans[$secondContact]);
+    $this->assertTrue(is_null($nextPeriodID));
+  }
+
 }

@@ -1160,4 +1160,37 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
     return $lineItems;
   }
 
+  public function testRenewalWillRenewSingleInstalmentForExpectedContact() {
+    $firstContact = CRM_MembershipExtras_Test_Fabricator_Contact::fabricate()['id'];
+    $secondContact = CRM_MembershipExtras_Test_Fabricator_Contact::fabricate()['id'];
+    $contacts = [$firstContact, $secondContact];
+    $paymentPlans = [];
+
+    foreach ($contacts as $contactId) {
+      $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+      $paymentPlanMembershipOrder->contactId = $contactId;
+      $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+      $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
+      $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+      $paymentPlanMembershipOrder->lineItems[] = [
+        'entity_table' => 'civicrm_membership',
+        'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+        'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+        'label' => $this->testRollingMembershipType['name'],
+        'qty' => 1,
+        'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+        'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+        'financial_type_id' => 'Member Dues',
+        'non_deductible_amount' => 0,
+      ];
+      $paymentPlans[$contactId] = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder)['id'];
+    }
+
+    $singleInstalmentRenewal = new SingleInstalmentRenewalJob([$firstContact]);
+    $singleInstalmentRenewal->run();
+
+    $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlans[$firstContact], '-1 month -1 day'));
+    $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlans[$secondContact], '-1 month -1 day'));
+  }
+
 }

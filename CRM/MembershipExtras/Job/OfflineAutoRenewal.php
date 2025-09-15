@@ -6,15 +6,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    * Starts the scheduled job for renewing offline
    * multiple instalments auto-renewal memberships.
    *
+   * @param array|null $contactIds Optional array of contact IDs to filter by
    * @return True
    *
    * @throws \CRM_Core_Exception
    */
-  public function runMultiple() {
+  public function runMultiple($contactIds = NULL) {
     $exceptions = [];
 
     try {
-      $multipleInstalmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan();
+      $multipleInstalmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan($contactIds);
       $multipleInstalmentRenewal->run();
     }
     catch (CRM_Core_Exception $e) {
@@ -32,15 +33,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    * Starts the scheduled job for renewing offline
    * single instalments auto-renewal memberships.
    *
+   * @param array|null $contactIds Optional array of contact IDs to filter by
    * @return True
    *
    * @throws \CRM_Core_Exception
    */
-  public function runSingle() {
+  public function runSingle($contactIds = NULL) {
     $exceptions = [];
 
     try {
-      $singleInstalmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan();
+      $singleInstalmentRenewal = new CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan($contactIds);
       $singleInstalmentRenewal->run();
     }
     catch (CRM_Core_Exception $e) {
