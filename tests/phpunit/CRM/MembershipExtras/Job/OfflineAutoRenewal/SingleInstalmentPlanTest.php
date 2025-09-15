@@ -86,18 +86,20 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
   }
 
   public function testRenewalWithNonOfflinePaymentProcessorPaymentPlanWillNotRenew() {
+    $processorName = 'Dummy Processor ' . uniqid();
     civicrm_api3('PaymentProcessor', 'create', [
       'payment_processor_type_id' => 'Dummy',
       'financial_account_id' => 'Payment Processor Account',
-      'title' => 'Dummy Processor',
-      'name' => 'Dummy Processor',
+      'title' => $processorName,
+      'name' => $processorName,
+      'domain_id' => 1,
     ]);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
-    $paymentPlanMembershipOrder->paymentProcessor = 'Dummy Processor';
+    $paymentPlanMembershipOrder->paymentProcessor = $processorName;
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
       'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
