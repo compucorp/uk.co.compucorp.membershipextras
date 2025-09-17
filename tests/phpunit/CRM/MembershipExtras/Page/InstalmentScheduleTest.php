@@ -26,8 +26,8 @@ class CRM_MembershipExtras_Page_InstalmentScheduleTest extends BaseHeadlessTest 
     $this->disableReturnResult($page);
     $page->run();
     $this->assertPageRun($page);
-    $this->assertNull($page->get_template_vars('prorated_number'));
-    $this->assertNull($page->get_template_vars('prorated_unit'));
+    $this->assertNull($page->getTemplateVars('prorated_number'));
+    $this->assertNull($page->getTemplateVars('prorated_unit'));
   }
 
   public function testRunFixedMembershipType() {
@@ -42,8 +42,8 @@ class CRM_MembershipExtras_Page_InstalmentScheduleTest extends BaseHeadlessTest 
     $this->disableReturnResult($page);
     $page->run();
     $this->assertPageRun($page);
-    $this->assertNotNull($page->get_template_vars('prorated_number'));
-    $this->assertNotNull($page->get_template_vars('prorated_unit'));
+    $this->assertNotNull($page->getTemplateVars('prorated_number'));
+    $this->assertNotNull($page->getTemplateVars('prorated_unit'));
   }
 
   public function tearDown(): void {
@@ -56,12 +56,12 @@ class CRM_MembershipExtras_Page_InstalmentScheduleTest extends BaseHeadlessTest 
   }
 
   private function assertPageRun($page) {
-    $this->assertNotNull($page->get_template_vars('instalments'));
-    $this->assertNotNull($page->get_template_vars('sub_total'));
-    $this->assertNotNull($page->get_template_vars('tax_amount'));
-    $this->assertNotNull($page->get_template_vars('total_amount'));
-    $this->assertNotNull($page->get_template_vars('membership_start_date'));
-    $this->assertNotNull($page->get_template_vars('membership_end_date'));
+    $this->assertNotNull($page->getTemplateVars('instalments'));
+    $this->assertNotNull($page->getTemplateVars('sub_total'));
+    $this->assertNotNull($page->getTemplateVars('tax_amount'));
+    $this->assertNotNull($page->getTemplateVars('total_amount'));
+    $this->assertNotNull($page->getTemplateVars('membership_start_date'));
+    $this->assertNotNull($page->getTemplateVars('membership_end_date'));
   }
 
   private function disableReturnResult($page) {

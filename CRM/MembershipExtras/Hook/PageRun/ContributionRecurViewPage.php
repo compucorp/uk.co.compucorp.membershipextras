@@ -14,7 +14,7 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
   }
 
   private function modifyPageElements() {
-    $contributionData = $this->page->get_template_vars('recur');
+    $contributionData = $this->page->getTemplateVars('recur');
     $isActiveRecurringContribution = $this->isActivePaymentPlan($contributionData['id']);
     $paymentSchemeSchedule = $this->getFuturePaymentSchemeScheduleIfExist($contributionData['id']);
 
@@ -59,7 +59,7 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionRecurViewPage implements CRM
   }
 
   private function setPaymentSchemeTitle() {
-    $customData = $this->page->get_template_vars('viewCustomData');
+    $customData = $this->page->getTemplateVars('viewCustomData');
     $paymentSchemeGroup = civicrm_api3('CustomGroup', 'get', [
       'sequential' => 1,
       'name' => self::PAYMENT_PLAN_EXTRA_ATTRIBUTES_CUSTOM_GROUP_NAME,

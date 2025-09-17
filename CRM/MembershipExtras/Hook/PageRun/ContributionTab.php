@@ -30,7 +30,7 @@ class CRM_MembershipExtras_Hook_PageRun_ContributionTab implements CRM_Membershi
     foreach ($rowTypes as $rowType) {
       $tplVarName = $rowType . 'PaymentSchemeField';
 
-      $recurRows = $this->page->get_template_vars($rowType);
+      $recurRows = $this->page->getTemplateVars($rowType);
       $recurIds = [];
       foreach ($recurRows as $recurRow) {
         $recurIds[] = $recurRow['id'];
