@@ -356,6 +356,7 @@ function membershipextras_civicrm_links($op, $objectName, $objectId, &$links, &$
         'url' => 'civicrm/contribution/duplicate-contribution',
         'qs' => 'reset=1&crid=%%id%%',
         'title' => 'Duplicate As New Pending Contribution',
+        'weight' => 0,
       ];
     }
   }
