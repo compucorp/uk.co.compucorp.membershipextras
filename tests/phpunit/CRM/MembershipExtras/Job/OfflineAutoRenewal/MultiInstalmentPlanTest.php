@@ -885,7 +885,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
 
   public function testRenewalWillUpdateNextScheduledContributionDateToOneMonthAfterLastContributionDate() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->membershipStartDate = '2022-08-01';
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [
