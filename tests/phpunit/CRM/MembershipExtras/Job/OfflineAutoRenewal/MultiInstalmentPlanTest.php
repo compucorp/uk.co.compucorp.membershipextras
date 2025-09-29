@@ -91,6 +91,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
       'financial_account_id' => 'Payment Processor Account',
       'title' => 'Dummy Processor',
       'name' => 'Dummy Processor',
+      'domain_id' => 1,
     ]);
 
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
@@ -240,9 +241,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
     $multipleInstalmentRenewal->run();
 
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+
     $membership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
+      'contribution_recur_id' => $nextPeriodId,
     ])['values'][0];
     $this->assertEquals($paymentPlanMembershipOrder->membershipStartDate, $membership['start_date']);
   }
@@ -270,9 +273,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
     $multipleInstalmentRenewal->run();
 
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+
     $membership = civicrm_api3('Membership', 'get', [
       'sequential' => 1,
-      'contribution_recur_id' => $paymentPlan['id'],
+      'contribution_recur_id' => $nextPeriodId,
     ])['values'][0];
     $expectedNewMembershipStartDate = date('Y-m-d', strtotime($paymentPlanMembershipOrder->membershipStartDate . ' +1 year'));
     $this->assertEquals($expectedNewMembershipStartDate, $membership['start_date']);
@@ -299,9 +304,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
     $multipleInstalmentRenewal->run();
 
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
       'return' => 'id',
-      'contribution_recur_id' => $paymentPlan['id'],
+      'contribution_recur_id' => $nextPeriodId,
     ]);
 
     $copyLineItemsCount = civicrm_api3('LineItem', 'getcount', [
@@ -349,7 +356,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
 
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
       'return' => 'id',
-      'contribution_recur_id' => $paymentPlan['id'],
+      'contribution_recur_id' => $nextPeriodId,
     ]);
     $expectedFirstLineItemValues = [
       'start_date' => $paymentPlanMembershipOrder->membershipStartDate . ' 00:00:00',
@@ -405,9 +412,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
     $multipleInstalmentRenewal->run();
 
+    $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+
     $membershipId = (int) civicrm_api3('Membership', 'getvalue', [
       'return' => 'id',
-      'contribution_recur_id' => $paymentPlan['id'],
+      'contribution_recur_id' => $nextPeriodId,
     ]);
     $membershipPaymentRecordsCount = civicrm_api3('MembershipPayment', 'getcount', [
       'membership_id' => $membershipId,
@@ -547,14 +556,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
   }
 
   private function isPaymentPlanMembershipRenewed($paymentPlanId, $expectedNewEndDateOffset) {
-    $membership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlanId,
-    ])['values'][0];
-
     $contributionCount = 0;
 
     $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlanId);
+
+    // Membership should be linked to the new recur contribution.
+    $membership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $nextPeriodId,
+    ])['values'][0];
+
     if (!empty($nextPeriodId)) {
       $contributionCount = civicrm_api3('Contribution', 'getcount', [
         'contribution_recur_id' => $nextPeriodId,
@@ -874,7 +885,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
 
   public function testRenewalWillUpdateNextScheduledContributionDateToOneMonthAfterLastContributionDate() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->membershipStartDate = '2022-08-01';
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
     $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
     $paymentPlanMembershipOrder->lineItems[] = [

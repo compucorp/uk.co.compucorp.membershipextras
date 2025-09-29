@@ -37,12 +37,13 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
   public function testGetByMonthlyRollingMembershipType() {
     $schedule = 'monthly';
     $membershipType = $this->mockRollingMembershipType();
-    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], $schedule);
+    $startDate = '2025-01-01';
+    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], $schedule, $startDate);
     $this->assertCount(12, $scheduleInstalment['instalments']);
 
     $expectedAmount = 10;
     $expectedTaxAmount = 0;
-    $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id']));
+    $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id'], $startDate));
     $this->assertInstalments($scheduleInstalment, $expectedAmount, $expectedTaxAmount, $expectedInstalmentDate, 'P1M');
   }
 
