@@ -794,9 +794,9 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    * @return array
    */
   private function mockMembershipDates() {
-    $startDate = new DateTime();
+    $startDate = new DateTime('2025-01-01');
     $joinDate = $startDate;
-    $endDate = new DateTime();
+    $endDate = new DateTime('2025-01-01');
     $endDate->add(new DateInterval('P1Y'));
     $endDate->modify("-1 day");
 
