@@ -2,8 +2,10 @@
 
 /**
  * Test class for MailParamsHandler memory optimization functionality.
+ *
+ * @group headless
  */
-class CRM_MembershipExtras_Hook_Alter_MailParamsHandlerMemoryTest extends CRM_MembershipExtras_BaseTest {
+class CRM_MembershipExtras_Hook_Alter_MailParamsHandlerMemoryTest extends BaseHeadlessTest {
 
   public function setUp(): void {
     parent::setUp();
