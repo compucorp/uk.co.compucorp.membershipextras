@@ -141,7 +141,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
     $this->mockSalesTaxFinancialAccount();
     $contact = ContactFabricator::fabricate();
     $membershipType = $this->mockMembershipType($membershipPeriodType, $membershipTypeDuration, $membershipTypeSetting);
-    $this->membership = $this->mockMembership($contact['id'], $membershipType['id'], date('Y-m-d'));
+    // Use fixed date to avoid calculation issues with different test run dates
+    $this->membership = $this->mockMembership($contact['id'], $membershipType['id'], '2024-01-01');
     MembershipPaymentPlanProcessor::$membership_id = $this->membership['id'];
     $contribution = $this->mockContribution($this->membership, $membershipType);
 
