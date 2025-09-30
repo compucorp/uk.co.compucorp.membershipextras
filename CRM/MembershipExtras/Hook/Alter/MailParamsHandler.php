@@ -19,7 +19,6 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
    * @var array
    */
   private static $contributionCache = [];
-  
   /**
    * LRU order tracking for contribution cache
    * @var array
@@ -31,7 +30,6 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
    * @var array
    */
   private static $batchProcessingIds = [];
-  
   /**
    * Maximum cache size for LRU eviction
    * @var int
@@ -59,7 +57,6 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
     }
 
     $contributionId = $this->params['tplParams']['id'];
-    
     // Use LRU cached contribution data to prevent N+1 queries
     $contribution = $this->getContributionFromLRUCache($contributionId);
     if (!$contribution) {
@@ -67,13 +64,13 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
         $contribution = civicrm_api3('Contribution', 'getsingle', [
           'id' => $contributionId,
         ]);
-        
+
         // Add to LRU cache
         $this->addToLRUCache($contributionId, $contribution);
-        
         // Track for batch processing detection
         self::$batchProcessingIds[] = $contributionId;
-      } catch (Exception $e) {
+      }
+      catch (Exception $e) {
         \Civi::log()->error('Failed to fetch contribution ' . $contributionId . ': ' . $e->getMessage());
         return;
       }
@@ -86,18 +83,15 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
    */
   private function performMemoryManagement() {
     $batchCount = count(self::$batchProcessingIds);
-    
     // Clean up batch tracking array to prevent unlimited growth
     if ($batchCount > 100) {
       // Keep only the most recent 50 batch IDs
       self::$batchProcessingIds = array_slice(self::$batchProcessingIds, -50);
       \Civi::log()->debug('MailParamsHandler: Batch tracking trimmed, LRU cache size: ' . count(self::$contributionCache));
     }
-    
     // Adaptive GC using iteration-count trigger for membership processing
     CRM_MembershipExtras_Common_GCManager::maybeCollectGarbage('membership_processing');
   }
-  
   /**
    * Gets contribution from LRU cache.
    */
@@ -109,7 +103,6 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
     }
     return FALSE;
   }
-  
   /**
    * Adds contribution to LRU cache, evicting least recently used if at capacity.
    */
@@ -120,18 +113,15 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
       $this->updateLRUOrder($contributionId);
       return;
     }
-    
     // If at capacity, remove least recently used item
     if (count(self::$contributionCache) >= self::$maxCacheSize) {
       $lruKey = array_shift(self::$contributionCacheOrder);
       unset(self::$contributionCache[$lruKey]);
     }
-    
     // Add new item
     self::$contributionCache[$contributionId] = $contribution;
     self::$contributionCacheOrder[] = $contributionId;
   }
-  
   /**
    * Updates LRU order by moving item to end (most recently used).
    */
@@ -139,7 +129,7 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
     $index = array_search($contributionId, self::$contributionCacheOrder);
     if ($index !== FALSE) {
       unset(self::$contributionCacheOrder[$index]);
-      self::$contributionCacheOrder = array_values(self::$contributionCacheOrder); // Re-index
+      self::$contributionCacheOrder = array_values(self::$contributionCacheOrder);
     }
     self::$contributionCacheOrder[] = $contributionId;
   }

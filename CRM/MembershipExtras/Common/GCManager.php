@@ -7,13 +7,16 @@
  */
 class CRM_MembershipExtras_Common_GCManager {
 
+  /**
+   * Static array to track garbage collection statistics.
+   *
+   * @var array
+   */
   private static $gcStats = [
     'calls' => 0,
     'effective_calls' => 0,
     'last_effective_call' => 0,
-  /**
- *Start conservative
- */
+    // Start conservative
     'interval' => 1000,
     'memory_threshold' => 0,
   ];
