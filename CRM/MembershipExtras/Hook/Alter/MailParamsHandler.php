@@ -92,6 +92,7 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
     // Adaptive GC using iteration-count trigger for membership processing
     CRM_MembershipExtras_Common_GCManager::maybeCollectGarbage('membership_processing');
   }
+
   /**
    * Gets contribution from LRU cache.
    */
@@ -103,6 +104,7 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
     }
     return FALSE;
   }
+
   /**
    * Adds contribution to LRU cache, evicting least recently used if at capacity.
    */
@@ -122,6 +124,7 @@ class CRM_MembershipExtras_Hook_Alter_MailParamsHandler {
     self::$contributionCache[$contributionId] = $contribution;
     self::$contributionCacheOrder[] = $contributionId;
   }
+
   /**
    * Updates LRU order by moving item to end (most recently used).
    */

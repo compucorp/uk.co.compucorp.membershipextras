@@ -21,6 +21,11 @@ class CRM_MembershipExtras_Common_GCManager {
     'memory_threshold' => 0,
   ];
 
+  /**
+   * Track whether GC manager has been initialized.
+   *
+   * @var bool
+   */
   private static $initialized = FALSE;
 
   /**
