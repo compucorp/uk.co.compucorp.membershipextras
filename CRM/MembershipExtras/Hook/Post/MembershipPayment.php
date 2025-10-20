@@ -109,6 +109,9 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
       $mem->find(TRUE);
       $mem->status_id = $newMembershipStatus['id'];
       $mem->save();
+
+      // Update Related Memberships Statuses
+      CRM_Member_BAO_Membership::updateRelatedMemberships($mem->id, ['status_id' => $mem->status_id]);
     }
   }
 
