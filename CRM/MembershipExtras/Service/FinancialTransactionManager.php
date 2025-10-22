@@ -104,7 +104,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
     $result = array();
     CRM_Financial_BAO_FinancialTypeAccount::retrieve($searchParams, $result);
 
-    return CRM_Utils_Array::value('financial_account_id', $result);
+    return $result['financial_account_id'] ?? NULL;
   }
 
   /**

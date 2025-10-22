@@ -128,7 +128,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
     }
 
     $todayDate = date('Y-m-d');
-    $overrideEndDate = CRM_Utils_Array::value('status_override_end_date', $this->membership);
+    $overrideEndDate = $this->membership['status_override_end_date'] ?? NULL;
     if (!empty($overrideEndDate) && $overrideEndDate > $todayDate) {
       return TRUE;
     }

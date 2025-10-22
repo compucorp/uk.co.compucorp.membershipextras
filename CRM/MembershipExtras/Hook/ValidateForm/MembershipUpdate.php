@@ -68,7 +68,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
     }
 
     $recurringContribution = $this->getRecurringContribution($contribution['contribution_id.contribution_recur_id']);
-    $processorID = CRM_Utils_Array::value('payment_processor_id', $recurringContribution);
+    $processorID = $recurringContribution['payment_processor_id'] ?? NULL;
     $isSupportedPaymentPlan = SupportedPaymentProcessors::isSupportedPaymentProcessor($processorID);
 
     if ($isSupportedPaymentPlan) {
