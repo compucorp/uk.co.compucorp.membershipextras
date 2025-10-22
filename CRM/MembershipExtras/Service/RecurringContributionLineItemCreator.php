@@ -41,7 +41,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreator {
   }
 
   public function create() {
-    $processorID = CRM_Utils_Array::value('payment_processor_id', $this->recurContribution);
+    $processorID = $this->recurContribution['payment_processor_id'] ?? NULL;
     if (!SupportedPaymentProcessors::isSupportedPaymentProcessor($processorID)) {
       return;
     }

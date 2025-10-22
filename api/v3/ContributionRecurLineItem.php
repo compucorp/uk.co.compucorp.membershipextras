@@ -121,7 +121,7 @@ function _civicrm_api3_contribution_recur_line_item_calcmembershipprorata_spec(&
  * @return array
  */
 function civicrm_api3_contribution_recur_line_item_calcmembershipprorata($params) {
-  $params['to_date'] = CRM_Utils_Array::value('to_date', $params);
-  $params['financial_type_id'] = CRM_Utils_Array::value('financial_type_id', $params);
+  $params['to_date'] = $params['to_date'] ?? NULL;
+  $params['financial_type_id'] = $params['financial_type_id'] ?? NULL;
   return CRM_MembershipExtras_Service_MembershipLineProRataCalculator::calculateAmounts($params['recur_contribution_id'], $params['membership_type_id'], $params['from_date'], $params['to_date'], $params['financial_type_id']);
 }

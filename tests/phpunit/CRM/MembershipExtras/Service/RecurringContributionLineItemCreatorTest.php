@@ -104,7 +104,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest exte
       'membership_type_id' => $priceFieldValue['membership_type_id'],
       'join_date' => CRM_Utils_Array::value('join_date', $lineItem, date('Y-m-d')),
       'start_date' => CRM_Utils_Array::value('start_date', $lineItem, date('Y-m-d')),
-      'end_date' => CRM_Utils_Array::value('end_date', $lineItem, NULL),
+      'end_date' => $lineItem['end_date'] ?? NULL,
       'contribution_recur_id' => $contribution['contribution_recur_id'],
       'financial_type_id' => $lineItem['financial_type_id'],
       'skipLineItem' => 1,
