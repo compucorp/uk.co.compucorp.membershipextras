@@ -94,7 +94,7 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcher {
    * marks it as non-renewable.
    *
    * @return void
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function endCurrentMembership() {
     $membershipId = $this->recurLineItemData['entity_id'];

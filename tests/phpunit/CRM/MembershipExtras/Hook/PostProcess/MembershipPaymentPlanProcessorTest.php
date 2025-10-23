@@ -302,7 +302,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
    * @param string $periodType
    * @param string $startDate
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws ReflectionException
    */
   private function simulateMembershipSignupForm($schedule, $periodType, $startDate) {
@@ -328,7 +328,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
    * @param string $schedule
    * @param string $periodType
    * @param string $startDate
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function createPaymentPlanMembershipOrder($schedule, $periodType, $startDate) {
     $this->membershipType = CRM_MembershipExtras_Test_Fabricator_MembershipType::fabricate([
@@ -387,7 +387,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessorTest e
   }
 
   /**
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws ReflectionException
    */
   private function setFormMembershipIDs() {
