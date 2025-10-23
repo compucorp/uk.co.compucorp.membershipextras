@@ -31,7 +31,7 @@ class CRM_MembershipExtras_Test_Fabricator_Contact extends BaseFabricator {
    * @param array $params
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function fabricate(array $params = []) {
     $params = array_merge(static::$defaultParams, $params);
@@ -47,7 +47,7 @@ class CRM_MembershipExtras_Test_Fabricator_Contact extends BaseFabricator {
    * @param string $email
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function fabricateWithEmail($params = [], $email = 'iamthe@batman.com') {
     $contact = self::fabricate($params);
@@ -67,7 +67,7 @@ class CRM_MembershipExtras_Test_Fabricator_Contact extends BaseFabricator {
    * @param $params
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function fabricateOrganization($params = []) {
     $params['contact_type'] = 'Organization';

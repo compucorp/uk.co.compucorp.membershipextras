@@ -873,7 +873,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
    *     'first_receive_date' => '2020-11-23',
    *   ]
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function assertPaymentPlanStructureIsOk($paymentPlanID, $expectedValues) {
     $recurringContribution = civicrm_api3('ContributionRecur', 'get', [
@@ -1126,7 +1126,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlanTest exten
    * @param int $paymentPlanID
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getPaymentPlanAutorenewableMemberships($paymentPlanID) {
     return civicrm_api3('Membership', 'get', [

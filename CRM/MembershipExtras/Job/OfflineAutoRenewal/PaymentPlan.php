@@ -528,7 +528,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param int $sourceRecurringContribution
    *   ID of the recurring contribution to be used to copy line items.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function renewPaymentPlanMemberships($sourceRecurringContribution) {
     $recurringLineItems = $this->getRecurringContributionLineItemsToBeRenewed($sourceRecurringContribution);
@@ -631,7 +631,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param int $membershipID
    *   ID of the membership to be extended.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function extendExistingMembership($membershipID) {
     $endDate = MembershipEndDateCalculator::calculate($membershipID);
@@ -659,7 +659,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @param int $membershipID
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function loadRelatedMembershipIDs($membershipID) {
     $result = civicrm_api3('Membership', 'get', [
@@ -833,7 +833,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    *   TRUE if it finds a line item with the same combination of fields, FALSE
    *   otherwise.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function isDuplicateLineItem($lineItem) {
     $priceFieldID = CRM_Utils_Array::value('price_field_id', $lineItem);

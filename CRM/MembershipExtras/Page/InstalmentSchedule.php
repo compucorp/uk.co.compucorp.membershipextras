@@ -50,7 +50,7 @@ class CRM_MembershipExtras_Page_InstalmentSchedule extends CRM_Core_Page {
         }
       }
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       $errorResponse = [
         'is_error' => TRUE,
         'error_message' => $e->getMessage(),

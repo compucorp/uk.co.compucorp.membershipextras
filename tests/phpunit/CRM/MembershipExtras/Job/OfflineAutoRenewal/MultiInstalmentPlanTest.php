@@ -1038,7 +1038,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
    *     'installments' => 12,
    *   ]
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function assertPaymentPlanStructureIsOk($nextPeriodID, $expectedValues) {
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'get', [

@@ -12,8 +12,8 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculator {
    * @param int $membershipID
    *
    * @return string
-   * @throws \CiviCRM_API3_Exception
-   * @throws \CiviCRM_API3_Exception|\Exception
+   * @throws \CRM_Core_Exception
+   * @throws \CRM_Core_Exception|\Exception
    */
   public static function calculate($membershipID) {
     $newEndDate = 'null';
@@ -34,7 +34,7 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculator {
    * @param int $membershipID
    *
    * @return string
-   * @throws \CiviCRM_API3_Exception|\Exception
+   * @throws \CRM_Core_Exception|\Exception
    */
   public static function calculatePreviousEndDate($membershipID) {
     $previousEndDate = 'null';
@@ -55,7 +55,7 @@ class CRM_MembershipExtras_Service_MembershipEndDateCalculator {
    * @param int $membershipID
    *
    * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function getMembership($membershipID) {
     return civicrm_api3('Membership', 'get', [

@@ -13,7 +13,7 @@ class CRM_MembershipExtras_Helper_InstalmentSchedule {
    * @param $membershipID
    *
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public static function getInstalmentDetails($schedule, $membershipID) {
     $membershipType = civicrm_api3('Membership', 'get', [

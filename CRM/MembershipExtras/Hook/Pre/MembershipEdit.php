@@ -264,7 +264,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * @param $membershipID
    *
    * @return mixed|null
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getRecurringContributionFromMembership($membershipID) {
     $membership = civicrm_api3('Membership', 'getsingle', [
@@ -309,7 +309,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * @param int $contributionID
    *
    * @return int|null
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getRecurringContributionIDFromContributionID($contributionID) {
     $paymentContribution = civicrm_api3('Contribution', 'get', [

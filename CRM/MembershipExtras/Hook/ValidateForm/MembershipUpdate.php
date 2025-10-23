@@ -38,7 +38,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
   /**
    * Validates the form.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function validate() {
     if ($this->isPaymentPlan() && $this->isMembershipTypeChanged()) {
@@ -58,7 +58,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
    * @return bool
    *   TRUE if membership is part of a payment plan, FALSE otherwise.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function isPaymentPlan() {
     $contribution = $this->getLastMembershipPayment();
@@ -83,7 +83,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
    *
    * @return array
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getLastMembershipPayment() {
     $contribution = civicrm_api3('MembershipPayment', 'get', [
@@ -115,7 +115,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
    * @return array
    *   Data for the recurring contribution.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getRecurringContribution($recurringContributionID) {
     if (empty($recurringContributionID)) {
@@ -133,7 +133,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipUpdate {
    * @return bool
    *   TRUE if the membershipt ype changed, FALSE otherwise.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function isMembershipTypeChanged() {
     $membership = civicrm_api3('Membership', 'getsingle', [

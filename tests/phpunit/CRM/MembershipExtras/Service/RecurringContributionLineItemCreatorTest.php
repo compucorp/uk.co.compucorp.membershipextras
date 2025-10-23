@@ -19,7 +19,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest exte
    * Creates a contact.
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createContact() {
     return ContactFabricator::fabricate();
@@ -31,7 +31,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest exte
    * @param array $params
    *
    * @return \stdClass
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createMembershipType($params) {
     $membershipType = MembershipTypeFabricator::fabricate($params);
@@ -54,7 +54,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest exte
    * @param array $params
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createRecurringContribution($params) {
     return RecurringContributionFabricator::fabricate($params);
@@ -66,7 +66,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest exte
    * @param array $contributionParams
    * @param array $lineItems
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createContribution($contributionParams, $lineItems) {
     $contribution = ContributionFabricator::fabricate($contributionParams);
@@ -94,7 +94,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest exte
    * @param array $contribution
    *
    * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createMembership($lineItem, $contribution) {
     $priceFieldValue = $this->getPriceFieldValue($lineItem['price_field_value_id']);
@@ -117,7 +117,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest exte
    * @param int $priceFieldValueID
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function getPriceFieldValue($priceFieldValueID) {
     return civicrm_api3('PriceFieldValue', 'getsingle', [
@@ -242,7 +242,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreatorTest exte
    * @param int $recurringContributionID
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getRecurringContributionLines($recurringContributionID) {
     $result = civicrm_api3('ContributionRecurLineItem', 'get', [

@@ -17,7 +17,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_PriceValues extends CRM_Membershi
    * CRM_MembershipExtras_API_PriceValues constructor.
    * @param $params
    *
-   * @throws API_Exception
+   * @throws CRM_Core_Exception
    */
   public function __construct($params) {
     $this->params = $params;
@@ -27,7 +27,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_PriceValues extends CRM_Membershi
    * @return array
    *
    * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws Exception
    */
   public function getPaymentSchedule() {
@@ -73,7 +73,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_PriceValues extends CRM_Membershi
     }
 
     if (empty($this->membershipTypes)) {
-      throw  new API_Exception(ts('At least one price field items must be of type membership'));
+      throw  new CRM_Core_Exception(ts('At least one price field items must be of type membership'));
     }
   }
 

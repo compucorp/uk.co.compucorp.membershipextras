@@ -14,7 +14,7 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
   /**
    * Validates the schedule param
    *
-   * @throws API_Exception
+   * @throws CRM_Core_Exception
    */
   protected function validateSchedule() {
     if (!in_array($this->params['schedule'], [
@@ -22,7 +22,7 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
       CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::QUARTERLY,
       CRM_MembershipExtras_Service_MembershipInstalmentsSchedule::ANNUAL,
     ])) {
-      throw new API_Exception('The selected schedule is not monthly, quarterly or annual');
+      throw new CRM_Core_Exception('The selected schedule is not monthly, quarterly or annual');
     }
   }
 
@@ -73,7 +73,7 @@ abstract class CRM_MembershipExtras_API_PaymentSchedule_Base {
    *
    * @param array $instalments
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function formatInstalments(array &$instalments) {
     $formattedInstalments = [];

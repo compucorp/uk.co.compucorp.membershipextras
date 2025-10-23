@@ -15,8 +15,8 @@ class CRM_MembershipExtras_API_PaymentSchedule_PriceValuesTest extends BaseHeadl
   use CRM_MembershipExtras_Test_Helper_PaymentMethodTrait;
 
   /**
-   * @throws CiviCRM_API3_Exception
-   * @throws API_Exception
+   * @throws CRM_Core_Exception
+   * @throws CRM_Core_Exception
    */
   public function testGetInstalmentsWithPriceFieldValues() {
     $priceFieldValues = $this->mockPriceFieldValues();
@@ -81,7 +81,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_PriceValuesTest extends BaseHeadl
 
   /**
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceFieldValues() {
     $priceFieldValues = [];
