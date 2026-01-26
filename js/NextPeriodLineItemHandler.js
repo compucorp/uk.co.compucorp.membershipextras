@@ -96,18 +96,11 @@ CRM.$(function () {
       return;
     }
 
-    if (!amount.length) {
-      CRM.alert(ts('Item amount is required'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
+    const errMsg = validateAmount(amount);
+    if(errMsg) {
+      CRM.alert(ts(errMsg), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
 
       return;
-    } else {
-      try {
-        amount = parseInt(amount);
-      } catch(error) {
-        CRM.alert(ts('Amount you entered is not valid'), null, 'error', {expires: NOTIFICATION_EXPIRE_TIME_IN_MS});
-
-        return;
-      }
     }
 
     showAddLineItemConfirmation(label, amount, financial_type_id);
@@ -381,4 +374,18 @@ function createActivity(subject, typeId, callback) {
 
     return;
   });
+}
+
+function validateAmount(amount) {
+  amount = (amount ?? '').toString().trim();
+  if (!amount) {
+    return 'Item amount is required';
+  }
+
+  amount = Number(amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return 'Amount you entered is not valid';
+  }
+
+  return null;
 }
