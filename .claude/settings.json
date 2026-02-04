@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Git status)",
+      "Bash(Git diff*)",
+      "Bash(Git log*)",
+      "Bash(Git branch*)",
+      "Bash(./scripts/run.sh *)",
+      "Bash(./scripts/lint.sh *)"
+    ],
+    "deny": [
+      "Bash(Git push*)",
+      "Bash(Git reset --hard*)",
+      "Bash(Rm -rf*)"
+    ]
+  }
+}
