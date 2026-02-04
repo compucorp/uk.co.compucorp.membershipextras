@@ -17,16 +17,24 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
   /**
    * CRM_MembershipExtras_Hook_Post_ContributionRecur constructor.
    *
-   * @param \CRM_Contribute_BAO_ContributionRecur $contributionBAO
+   * @param $contribution
    */
-  public function __construct(CRM_Contribute_BAO_ContributionRecur $contributionBAO) {
-    $this->contributionRecurBAO = CRM_Contribute_BAO_ContributionRecur::findById($contributionBAO->id);
+  public function __construct($contribution) {
+    try {
+      $this->contributionRecurBAO = CRM_Contribute_BAO_ContributionRecur::findById($contribution->id ?? $contribution['id']);
+    }
+    catch (Throwable $e) {
+    }
   }
 
   /**
    * Post processes recurring contribution entity.
    */
   public function postProcess() {
+    if (empty($this->contributionRecurBAO)) {
+      return;
+    }
+
     $isSupportedPaymentPlan = SupportedPaymentProcessors::isSupportedPaymentProcessor($this->contributionRecurBAO->payment_processor_id);
     if (!$isSupportedPaymentPlan) {
       return;
