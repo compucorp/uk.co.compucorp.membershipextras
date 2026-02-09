@@ -68,6 +68,42 @@ class CRM_MembershipExtras_Hook_Post_MembershipPaymentTest extends BaseHeadlessT
     $this->assertTrue(TRUE);
   }
 
+  public function testRecalculateMembershipStatusUpdatesRelatedMembershipStatuses() {
+    $primaryMembershipId = $this->membershipPayment->membership_id;
+    $primaryMembership = civicrm_api3('Membership', 'getsingle', [
+      'id' => $primaryMembershipId,
+    ]);
+
+    $relatedContact = ContactFabricator::fabricate();
+    $expectedStatus = civicrm_api3('MembershipStatus', 'calc', [
+      'membership_id' => $primaryMembershipId,
+    ])['id'];
+
+    $unmatchedStatusId = $this->getNonMatchingStatusId($expectedStatus);
+    $relatedMembership = MembershipFabricator::fabricate([
+      'contact_id' => $relatedContact['id'],
+      'membership_type_id' => $primaryMembership['membership_type_id'],
+      'join_date' => $primaryMembership['join_date'],
+      'start_date' => $primaryMembership['start_date'],
+      'owner_membership_id' => $primaryMembershipId,
+      'status_id' => $unmatchedStatusId,
+    ]);
+
+    $membershipPaymentPostHook = new CRM_MembershipExtras_Hook_Post_MembershipPayment(
+      'create',
+      $this->membershipPayment->id,
+      $this->membershipPayment
+    );
+    $membershipPaymentPostHook->recalculateMembershipStatus();
+
+    $updatedRelatedMembership = civicrm_api3('Membership', 'getsingle', [
+      'id' => $relatedMembership['id'],
+      'return' => ['status_id'],
+    ]);
+
+    $this->assertSame($expectedStatus, $updatedRelatedMembership['status_id']);
+  }
+
   /**
    * Obtains 'Membership Dues' financial type.
    *
@@ -86,6 +122,40 @@ class CRM_MembershipExtras_Hook_Post_MembershipPaymentTest extends BaseHeadlessT
     }
 
     return [];
+  }
+
+  /**
+   * Obtains a membership status ID that does not match the provided ID.
+   *
+   * @param int $excludedStatusId
+   *
+   * @return int
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function getNonMatchingStatusId($excludedStatusId) {
+    $candidateNames = ['Pending', 'New', 'Expired'];
+    foreach ($candidateNames as $candidateName) {
+      $status = civicrm_api3('MembershipStatus', 'get', [
+        'sequential' => 1,
+        'name' => $candidateName,
+        'options' => ['limit' => 1],
+      ]);
+
+      if (!empty($status['values'][0]['id']) && $status['values'][0]['id'] != $excludedStatusId) {
+        return (int) $status['values'][0]['id'];
+      }
+    }
+
+    $status = civicrm_api3('MembershipStatus', 'get', [
+      'sequential' => 1,
+      'options' => ['limit' => 1],
+    ]);
+
+    if (!empty($status['values'][0]['id']) && $status['values'][0]['id'] != $excludedStatusId) {
+      return (int) $status['values'][0]['id'];
+    }
+
+    return (int) $excludedStatusId;
   }
 
 }
