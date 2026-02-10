@@ -96,14 +96,13 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlanTest extends 
   }
 
   private function isPaymentPlanMembershipRenewed($paymentPlanId, $expectedNewEndDateOffset, $expectedInstalmentsCount) {
-    $membership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contribution_recur_id' => $paymentPlanId,
-    ])['values'][0];
-
     $contributionCount = 0;
 
     $nextPeriodId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlanId);
+    $membership = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $nextPeriodId,
+    ])['values'][0];
     if (!empty($nextPeriodId)) {
       $contributionCount = civicrm_api3('Contribution', 'getcount', [
         'contribution_recur_id' => $nextPeriodId,

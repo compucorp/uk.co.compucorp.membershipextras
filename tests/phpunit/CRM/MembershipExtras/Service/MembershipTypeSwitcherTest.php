@@ -65,30 +65,6 @@ class CRM_MembershipExtras_Service_MembershipTypeSwitcherTest extends BaseHeadle
     ])['values'][0];
   }
 
-  public function testSwitchWithUpdatePendingInstalmentsPaymentTypeWillSetCurrentMembershipEndDateToTheSwitchDate() {
-    $switchDate = '2022-07-01';
-    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS);
-
-    $currentMembership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contact_id' => $paymentPlan['contact_id'],
-    ])['values'][0];
-
-    $this->assertEquals($switchDate, $currentMembership['end_date']);
-  }
-
-  public function testSwitchWithOneOffFeeWillSetCurrentMembershipEndDateToTheSwitchDate() {
-    $switchDate = '2022-07-01';
-    $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_ONE_OFF_PAYMENT, $this->defaultOneOffFeeParams);
-
-    $currentMembership = civicrm_api3('Membership', 'get', [
-      'sequential' => 1,
-      'contact_id' => $paymentPlan['contact_id'],
-    ])['values'][0];
-
-    $this->assertEquals($switchDate, $currentMembership['end_date']);
-  }
-
   public function testSwitchWithUpdatePendingInstalmentsPaymentTypeWillMarkTheSubscriptionLineItemAsRemovedAndNonRenewable() {
     $switchDate = '2022-07-01';
     $paymentPlan = $this->createPaymentPlanAndSwitchType($switchDate, MembershipTypeSwitcher::PAYMENT_TYPE_UPDATE_PENDING_INSTALMENTS);

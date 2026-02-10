@@ -1,4 +1,6 @@
 <?php
+
+use Civi\Api4\UserJob;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 use CRM_MembershipExtras_Service_MembershipEndDateCalculator as MembershipEndDateCalculator;
 use CRM_MembershipExtras_SettingsManager as SettingsManager;
@@ -111,6 +113,12 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $daysToRenewInAdvance;
 
   /**
+   * Queue name for processing
+   * @var string
+   */
+  protected $queueName = 'membershipextras_renewal_processing';
+
+  /**
    * ID's for payment processors that are supported by this extension.
    *
    * @var array
@@ -215,25 +223,34 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $exceptions = [];
     $paymentPlans = $this->getRecurringContributions();
 
+    // Create timestamped queue
+    $queueName = $this->queueName;
+    $queue = \Civi::queue($queueName, [
+      'type'   => 'Sql',
+      'error'  => 'abort',
+      'reset'  => TRUE,
+    ]);
+
+    $queuedCount = 0;
+
+    // Queue each renewal as individual task
     foreach ($paymentPlans as $recurContribution) {
-      $transaction = new CRM_Core_Transaction();
-      try {
-        $this->setCurrentRecurringContribution($recurContribution['contribution_recur_id']);
-        $this->setLastContribution();
-        $this->renew();
-        $this->dispatchMembershipRenewalHook();
-      }
-      catch (Exception $e) {
-        $transaction->rollback();
-        $exceptions[] = "An error occurred renewing a payment plan with id ({$recurContribution['contribution_recur_id']}): " . $e->getMessage();
-      }
+      $task = new \CRM_Queue_Task(
+        [get_class($this), 'processRenewalTask'],
+        [$recurContribution],
+        'Processing renewal for recurring contribution ' . $recurContribution['contribution_recur_id']
+      );
 
-      $transaction->commit();
+      $queue->createItem($task);
+      $queuedCount++;
     }
 
-    if (count($exceptions)) {
-      throw new CRM_Core_Exception(implode(";\n", $exceptions));
+    if ($queuedCount > 0) {
+      \Civi::log()->info("Queued {$queuedCount} renewals for processing");
+      $this->executeQueue($queue);
     }
+
+    return TRUE;
   }
 
   /**
@@ -251,9 +268,72 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   /**
    * Dispatches postOfflineAutoRenewal hook for the recurring contribution.
    */
-  private function dispatchMembershipRenewalHook() {
+  protected function dispatchMembershipRenewalHook() {
     $dispatcher = new PostOfflineAutoRenewalDispatcher(NULL, $this->newRecurringContributionID, $this->currentRecurContributionID);
     $dispatcher->dispatch();
+  }
+
+  /**
+   * Queue task processor - processes individual renewal
+   * Static method required for queue task callbacks
+   */
+  public static function processRenewalTask(\CRM_Queue_TaskContext $ctx, $recurContribution) {
+    $startTime = microtime(TRUE);
+
+    try {
+      $ctx->log->info("Starting renewal for recurring contribution ID: {$recurContribution['contribution_recur_id']}");
+
+      // Create new instance of the calling class to handle renewal
+      $calledClass = get_called_class();
+      $processor = new $calledClass();
+
+      $transaction = new CRM_Core_Transaction();
+
+      try {
+        $processor->setCurrentRecurringContribution($recurContribution['contribution_recur_id']);
+        $processor->setLastContribution();
+        $processor->renew();
+        $processor->dispatchMembershipRenewalHook();
+
+        $transaction->commit();
+
+        $executionTime = (microtime(TRUE) - $startTime);
+        $ctx->log->info("Successfully renewed recurring contribution ID: {$recurContribution['contribution_recur_id']} in {$executionTime} seconds");
+
+        return TRUE;
+      }
+      catch (Exception $e) {
+        $transaction->rollback();
+        throw $e;
+      }
+    }
+    catch (Exception $e) {
+      $executionTime = (microtime(TRUE) - $startTime);
+      $errorMessage = "Failed to renew recurring contribution ID: {$recurContribution['contribution_recur_id']} after {$executionTime} seconds - Error: {$e->getMessage()}";
+      $ctx->log->err($errorMessage);
+
+      return FALSE;
+    }
+  }
+
+  /**
+   * Execute the queue - simplified without environment checks
+   */
+  protected function executeQueue(\CRM_Queue_Queue $queue) {
+    $runner = new \CRM_Queue_Runner([
+      'title' => 'Processing Membership Renewals',
+      'queue' => $queue,
+    ]);
+
+    if (!(CIVICRM_UF === 'UnitTests' || PHP_SAPI === 'cli')) {
+      UserJob::create(FALSE)
+        ->setValues(['job_type' => $this->queueName, 'status_id:name' => 'in_progress', 'queue_id.name' => $queue->getName()])
+        ->execute();
+      $runner->onEndUrl = \CRM_Utils_System::url('civicrm/admin/job', ['reset' => 1]);
+      return $runner->runAllViaWeb();
+    }
+
+    return $runner->runAll();
   }
 
   /**
@@ -644,6 +724,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $membership = new CRM_Member_DAO_Membership();
       $membership->id = $relatedMembershipID;
       $membership->end_date = $endDate;
+      $membership->contribution_recur_id = $this->newRecurringContributionID;
 
       if ($isUpdateStartDateRenewal) {
         $membership->start_date = $this->membershipsStartDate;

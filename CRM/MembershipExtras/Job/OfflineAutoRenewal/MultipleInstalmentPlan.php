@@ -8,6 +8,14 @@ use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
 
   /**
+   * Constructor - sets specific queue name for multiple instalment renewals
+   */
+  public function __construct() {
+    parent::__construct();
+    $this->queueName = 'membershipextras_offline_renewal';
+  }
+
+  /**
    * Returns a list of payment plans with multiple instalments that have at
    * least one line item ready to be renewed (ie. has an end date, is not
    * removed and is set to auto renew), meeting these conditions:
