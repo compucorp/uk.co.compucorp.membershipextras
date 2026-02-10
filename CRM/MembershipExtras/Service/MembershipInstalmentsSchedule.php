@@ -183,7 +183,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
 
     $instalments['sub_total'] = $this->instalmentCalculator->getInstalmentsSubTotalAmount($instalments['instalments']);
     $instalments['tax_amount'] = $this->instalmentCalculator->getInstalmentsTaxAmount($instalments['instalments']);
-    $instalments['total_amount'] = number_format($this->instalmentCalculator->getInstalmentsTotalAmount($instalments['instalments']), 2);
+    $instalments['total_amount'] = CRM_Utils_Money::format($this->instalmentCalculator->getInstalmentsTotalAmount($instalments['instalments']), NULL, NULL, TRUE);
 
     $instalments['membership_start_date'] = $this->startDate->format('Y-m-d');
     $instalments['membership_end_date'] = $this->endDate->format('Y-m-d');
