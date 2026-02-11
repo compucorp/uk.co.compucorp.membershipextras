@@ -1,6 +1,9 @@
 <?php
 
 use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
+use CRM_MembershipExtras_Service_MembershipInstalmentTaxAmountCalculator as InstalmentTaxAmountCalculator;
+use CRM_MembershipExtras_Service_MembershipPeriodType_FixedPeriodTypeCalculator as FixedPeriodTypeCalculator;
+use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
 
 abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontInstalmentsCreator {
 
@@ -130,7 +133,7 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
   private function createContribution($contributionNumber = 1) {
     $contribution = $this->recordMembershipContribution($contributionNumber);
     $this->setPreviousInstalmentDate($contribution->receive_date);
-    $this->createLineItems($contribution);
+    $this->createLineItems($contribution, $contributionNumber);
   }
 
   /**
@@ -185,13 +188,17 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
    * @return array
    */
   private function buildContributionParams($contributionNumber) {
+    $roundingAdjustment = $this->getRoundingAdjustmentForContribution($contributionNumber);
+    $reconciledTotalAmount = MoneyUtilities::roundToPrecision($this->lastContribution['total_amount'] + $roundingAdjustment['total_amount'], 2);
+    $reconciledFeeAmount = (float) $this->lastContribution['fee_amount'];
+
     $params = [
       'currency' => $this->lastContribution['currency'],
       'source' => $this->lastContribution['contribution_source'],
       'contact_id' => $this->lastContribution['contact_id'],
-      'fee_amount' => $this->lastContribution['fee_amount'],
-      'net_amount' => $this->lastContribution['net_amount'],
-      'total_amount' => $this->lastContribution['total_amount'],
+      'fee_amount' => $reconciledFeeAmount,
+      'net_amount' => MoneyUtilities::roundToPrecision($reconciledTotalAmount - $reconciledFeeAmount, 2),
+      'total_amount' => $reconciledTotalAmount,
       'receive_date' => $this->calculateReceiveDate($contributionNumber),
       'payment_instrument_id' => $this->lastContribution['payment_instrument_id'],
       'financial_type_id' => $this->lastContribution['financial_type_id'],
@@ -203,8 +210,8 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
       'contribution_recur_id' => $this->currentRecurContribution['id'],
     ];
 
-    if (!empty($this->lastContribution['tax_amount'])) {
-      $params['tax_amount'] = $this->lastContribution['tax_amount'];
+    if (!empty($this->lastContribution['tax_amount']) || $roundingAdjustment['tax_amount'] !== 0.0) {
+      $params['tax_amount'] = MoneyUtilities::roundToPrecision((float) ($this->lastContribution['tax_amount'] ?? 0) + $roundingAdjustment['tax_amount'], 2);
     }
 
     if (!empty($this->lastContribution['soft_credit'])) {
@@ -268,8 +275,11 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
    *
    * @param CRM_Contribute_BAO_Contribution $contribution
    *   The contribution that we need to build the line items for.
+   * @param int $contributionNumber
+   *   The contribution number is used to identify the last contribution to adjust amount.
    */
-  private function createLineItems(CRM_Contribute_BAO_Contribution $contribution) {
+  private function createLineItems(CRM_Contribute_BAO_Contribution $contribution, int $contributionNumber) {
+    $roundingAdjustments = $this->getLineItemRoundingAdjustments($contributionNumber);
     $lineItems = civicrm_api3('LineItem', 'get', [
       'sequential' => 1,
       'contribution_id' => $this->lastContribution['id'],
@@ -281,6 +291,10 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
         $entityID = $contribution->id;
       }
 
+      $lineRoundingAdjustment = $roundingAdjustments[$lineItem['id']] ?? ['line_total' => 0.0, 'tax_amount' => 0.0];
+      $quantity = (float) $lineItem['qty'];
+      $unitPriceAdjustment = $quantity > 0 ? MoneyUtilities::roundToPrecision($lineRoundingAdjustment['line_total'] / $quantity, 2) : 0.0;
+
       $lineItemParms = [
         'entity_table' => $lineItem['entity_table'],
         'entity_id' => $entityID,
@@ -288,14 +302,16 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
         'price_field_id' => CRM_Utils_Array::value('price_field_id', $lineItem),
         'label' => $lineItem['label'],
         'qty' => $lineItem['qty'],
-        'unit_price' => $lineItem['unit_price'],
-        'line_total' => $lineItem['line_total'],
+        'unit_price' => MoneyUtilities::roundToPrecision($lineItem['unit_price'] + $unitPriceAdjustment, 2),
+        'line_total' => MoneyUtilities::roundToPrecision($lineItem['line_total'] + $lineRoundingAdjustment['line_total'], 2),
         'price_field_value_id' => CRM_Utils_Array::value('price_field_value_id', $lineItem),
         'financial_type_id' => $lineItem['financial_type_id'],
         'non_deductible_amount' => $lineItem['non_deductible_amount'],
       ];
-      if (!empty($lineItem['tax_amount'])) {
-        $lineItemParms['tax_amount'] = $lineItem['tax_amount'];
+      $expectedTaxAmount = NULL;
+      if (!empty($lineItem['tax_amount']) || $lineRoundingAdjustment['tax_amount'] !== 0.0) {
+        $expectedTaxAmount = MoneyUtilities::roundToPrecision((float) ($lineItem['tax_amount'] ?? 0) + $lineRoundingAdjustment['tax_amount'], 2);
+        $lineItemParms['tax_amount'] = $expectedTaxAmount;
       }
       $newLineItem = CRM_Price_BAO_LineItem::create($lineItemParms);
 
@@ -304,7 +320,248 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
       if (!empty($newLineItem->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($newLineItem, $contribution, TRUE);
       }
+
+      $this->syncLineItemTaxAmount($newLineItem, $expectedTaxAmount);
     }
+  }
+
+  /**
+   * Ensures line item's tax amount value remains aligned with the expected
+   * reconciled amount after creation.
+   */
+  private function syncLineItemTaxAmount(CRM_Price_BAO_LineItem $lineItem, ?float $expectedTaxAmount): void {
+    if ($expectedTaxAmount === NULL) {
+      return;
+    }
+
+    $createdTaxAmount = MoneyUtilities::roundToPrecision((float) ($lineItem->tax_amount ?? 0), 2);
+    if ($createdTaxAmount === $expectedTaxAmount) {
+      return;
+    }
+
+    civicrm_api3('LineItem', 'create', [
+      'id' => $lineItem->id,
+      'tax_amount' => $expectedTaxAmount,
+    ]);
+  }
+
+  /**
+   * Gets rounding adjustments for line items on the final contribution.
+   */
+  private function getLineItemRoundingAdjustments(int $contributionNumber): array {
+    if ($contributionNumber !== $this->instalmentsCount) {
+      return [];
+    }
+
+    $lineItems = $this->getContributionLineItems();
+    $priceFieldValues = $this->getPriceFieldValuesById($lineItems);
+    $taxCalculator = new InstalmentTaxAmountCalculator();
+
+    $lineItemAdjustments = [];
+    foreach ($lineItems as $lineItem) {
+      $lineItemAdjustment = $this->buildLineItemRoundingAdjustment($lineItem, $priceFieldValues, $taxCalculator);
+      if ($lineItemAdjustment === NULL) {
+        continue;
+      }
+
+      $lineItemAdjustments[$lineItem['id']] = $lineItemAdjustment;
+    }
+
+    return $lineItemAdjustments;
+  }
+
+  /**
+   * Gets source contribution line items.
+   */
+  private function getContributionLineItems(): array {
+    return civicrm_api3('LineItem', 'get', [
+      'sequential' => 1,
+      'contribution_id' => $this->lastContribution['id'],
+      'options' => ['limit' => 0],
+    ])['values'];
+  }
+
+  /**
+   * Gets price field values indexed by ID for the given line items.
+   */
+  private function getPriceFieldValuesById(array $lineItems): array {
+    $priceFieldValueIDs = [];
+    foreach ($lineItems as $lineItem) {
+      if (!empty($lineItem['price_field_value_id'])) {
+        $priceFieldValueIDs[] = $lineItem['price_field_value_id'];
+      }
+    }
+
+    if (empty($priceFieldValueIDs)) {
+      return [];
+    }
+
+    $priceFieldValuesById = [];
+    $priceFieldValues = civicrm_api3('PriceFieldValue', 'get', [
+      'sequential' => 1,
+      'id' => ['IN' => array_values(array_unique($priceFieldValueIDs))],
+      'options' => ['limit' => 0],
+    ])['values'];
+
+    foreach ($priceFieldValues as $priceFieldValue) {
+      $priceFieldValuesById[$priceFieldValue['id']] = $priceFieldValue;
+    }
+
+    return $priceFieldValuesById;
+  }
+
+  /**
+   * Builds rounding adjustment for a single line item.
+   */
+  private function buildLineItemRoundingAdjustment(array $lineItem, array $priceFieldValues, InstalmentTaxAmountCalculator $taxCalculator): ?array {
+    $priceFieldValueID = CRM_Utils_Array::value('price_field_value_id', $lineItem);
+    if (empty($priceFieldValueID) || empty($priceFieldValues[$priceFieldValueID])) {
+      return NULL;
+    }
+
+    $originalAmounts = $this->getOriginalLineAndTaxAmounts($lineItem, $priceFieldValues[$priceFieldValueID], $taxCalculator);
+
+    $lastLineTotal = MoneyUtilities::roundToPrecision($originalAmounts['line_total'] - ((float) $lineItem['line_total'] * ($this->instalmentsCount - 1)), 2);
+    $lastTaxAmount = MoneyUtilities::roundToPrecision($originalAmounts['tax_amount'] - ((float) ($lineItem['tax_amount'] ?? 0) * ($this->instalmentsCount - 1)), 2);
+
+    return [
+      'line_total' => MoneyUtilities::roundToPrecision($lastLineTotal - (float) $lineItem['line_total'], 2),
+      'tax_amount' => MoneyUtilities::roundToPrecision($lastTaxAmount - (float) ($lineItem['tax_amount'] ?? 0), 2),
+    ];
+  }
+
+  /**
+   * Calculates the original line total and tax amount for a line item.
+   */
+  private function getOriginalLineAndTaxAmounts(array $lineItem, array $priceFieldValue, InstalmentTaxAmountCalculator $taxCalculator): array {
+    $quantity = (float) $lineItem['qty'];
+    $originalLineTotal = (float) $priceFieldValue['amount'] * $quantity;
+    $originalTaxAmount = (float) $taxCalculator->calculateByPriceFieldValue($priceFieldValue) * $quantity;
+
+    if ($this->isFixedMembershipLineItem($lineItem)) {
+      $proratedAmounts = $this->getFixedMembershipProratedLineAmounts($lineItem, $priceFieldValue);
+      if ($proratedAmounts) {
+        $originalLineTotal = $proratedAmounts['line_total'];
+        $originalTaxAmount = $proratedAmounts['tax_amount'];
+      }
+    }
+
+    return [
+      'line_total' => $originalLineTotal,
+      'tax_amount' => $originalTaxAmount,
+    ];
+  }
+
+  /**
+   * Detects whether given line item belongs to a fixed membership type.
+   */
+  private function isFixedMembershipLineItem(array $lineItem): bool {
+    if (($lineItem['entity_table'] ?? NULL) !== 'civicrm_membership' || empty($lineItem['entity_id'])) {
+      return FALSE;
+    }
+
+    $membershipTypeId = civicrm_api3('Membership', 'getvalue', [
+      'id' => $lineItem['entity_id'],
+      'return' => 'membership_type_id',
+    ]);
+
+    $membershipType = CRM_Member_BAO_MembershipType::findById($membershipTypeId);
+    if (!$membershipType) {
+      return FALSE;
+    }
+
+    return $membershipType->period_type === 'fixed';
+  }
+
+  /**
+   * Calculates prorated line and tax amounts for fixed membership line items.
+   */
+  private function getFixedMembershipProratedLineAmounts(array $lineItem, array $priceFieldValue): ?array {
+    if (($lineItem['entity_table'] ?? NULL) !== 'civicrm_membership' || empty($lineItem['entity_id'])) {
+      return NULL;
+    }
+
+    try {
+      $membership = \Civi\Api4\Membership::get()
+        ->addSelect(
+          'start_date',
+          'end_date',
+          'join_date',
+          'membership_type_id.id',
+          'membership_type_id.period_type',
+          'membership_type_id.duration_unit',
+          'membership_type_id.duration_interval',
+          'membership_type_id.fixed_period_start_day',
+          'membership_type_id.fixed_period_rollover_day'
+        )
+        ->addWhere('id', '=', $lineItem['entity_id'])
+        ->setLimit(1)
+        ->execute()
+        ->first();
+
+      if (empty($membership)) {
+        return NULL;
+      }
+
+      $membershipType = new CRM_Member_BAO_MembershipType();
+      $membershipType->id = $membership['membership_type_id.id'];
+      $membershipType->period_type = $membership['membership_type_id.period_type'];
+      $membershipType->duration_unit = $membership['membership_type_id.duration_unit'];
+      $membershipType->duration_interval = $membership['membership_type_id.duration_interval'];
+      $membershipType->fixed_period_start_day = $membership['membership_type_id.fixed_period_start_day'];
+      $membershipType->fixed_period_rollover_day = $membership['membership_type_id.fixed_period_rollover_day'];
+      $membershipType->minimum_fee = (float) $priceFieldValue['amount'];
+      $membershipType->financial_type_id = $priceFieldValue['financial_type_id'];
+
+      $calculator = new FixedPeriodTypeCalculator([$membershipType]);
+      $calculator->setStartDate(new DateTime($membership['start_date']));
+      $calculator->setEndDate(new DateTime($membership['end_date']));
+      if (!empty($membership['join_date'])) {
+        $calculator->setJoinDate(new DateTime($membership['join_date']));
+      }
+      $calculator->calculate();
+
+      $quantity = (float) $lineItem['qty'];
+      $proratedLineTotal = MoneyUtilities::roundToPrecision((float) $calculator->getAmount() * $quantity, 2);
+      $taxRate = (float) (new InstalmentTaxAmountCalculator())->getTaxRateByFinancialTypeId((int) $membershipType->financial_type_id);
+      $proratedTaxAmount = MoneyUtilities::roundToPrecision(($taxRate / 100) * $proratedLineTotal, 2);
+
+      return [
+        'line_total' => $proratedLineTotal,
+        'tax_amount' => $proratedTaxAmount,
+      ];
+    }
+    catch (Exception $exception) {
+      \Civi::log()->error('Failed to calculate prorated line amounts: ' . $exception->getMessage());
+      return NULL;
+    }
+  }
+
+  /**
+   * Gets contribution amount rounding adjustment for the final contribution.
+   */
+  private function getRoundingAdjustmentForContribution(int $contributionNumber): array {
+    $lineItemAdjustments = $this->getLineItemRoundingAdjustments($contributionNumber);
+    if (empty($lineItemAdjustments)) {
+      return [
+        'net_amount' => 0.0,
+        'tax_amount' => 0.0,
+        'total_amount' => 0.0,
+      ];
+    }
+
+    $netAdjustment = 0.0;
+    $taxAdjustment = 0.0;
+    foreach ($lineItemAdjustments as $lineItemAdjustment) {
+      $netAdjustment += $lineItemAdjustment['line_total'];
+      $taxAdjustment += $lineItemAdjustment['tax_amount'];
+    }
+
+    return [
+      'net_amount' => MoneyUtilities::roundToPrecision($netAdjustment, 2),
+      'tax_amount' => MoneyUtilities::roundToPrecision($taxAdjustment, 2),
+      'total_amount' => MoneyUtilities::roundToPrecision($netAdjustment + $taxAdjustment, 2),
+    ];
   }
 
 }
