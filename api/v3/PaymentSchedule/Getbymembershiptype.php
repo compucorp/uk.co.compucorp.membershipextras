@@ -53,8 +53,8 @@ function _civicrm_api3_payment_schedule_getbymembershiptype_spec(&$spec) {
  * @param array $params
  *
  * @return array API result descriptor
- * @throws API_Exception
- * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount|CiviCRM_API3_Exception
+ * @throws CRM_Core_Exception
+ * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalmentAmount|CRM_Core_Exception
  * @throws Exception
  */
 function civicrm_api3_payment_schedule_getbymembershiptype($params) {

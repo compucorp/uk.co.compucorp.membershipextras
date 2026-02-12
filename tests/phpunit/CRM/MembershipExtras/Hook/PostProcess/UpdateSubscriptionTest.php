@@ -46,7 +46,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * Obtains value for the 'Pending' contribution status option value.
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getPendingContributionStatusValue() {
     return civicrm_api3('OptionValue', 'getvalue', [
@@ -69,7 +69,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * Obtains value for EFT payment instrument option value.
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getEFTPaymentInstrumentID() {
     return civicrm_api3('OptionValue', 'getvalue', [
@@ -119,7 +119,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * @param $paymentPlan
    * @param $newCycleDay
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function simulateUpdateCycleDayWithForm($paymentPlan, $newCycleDay) {
     $this->updateSubscriptionForm->set('crid', $paymentPlan['id']);
@@ -212,7 +212,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    *
    * @param $installmentID
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function changeContributionStatusToCompleted($installmentID) {
     civicrm_api3('Contribution', 'create', [
@@ -229,7 +229,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * @param $recurringContributionID
    * @param $cycleDay
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function updateRecurringContributionCycleDay($recurringContributionID, $cycleDay) {
     civicrm_api3('ContributionRecur', 'create', [
@@ -246,7 +246,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * @param int $newCycleDay
    * @param int $nth
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function assertInstallmentReceiveDateIsOK($installmentBeforeUpdate, $newCycleDay, $nth) {
     $installmentAfterUpdate = civicrm_api3('Contribution', 'getsingle', [
@@ -279,7 +279,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscriptionTest extends BaseH
    * @param int $recurringContributionID
    *
    * @return array|mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getPaymentPlanInstallments($recurringContributionID) {
     $result = civicrm_api3('Contribution', 'get', [

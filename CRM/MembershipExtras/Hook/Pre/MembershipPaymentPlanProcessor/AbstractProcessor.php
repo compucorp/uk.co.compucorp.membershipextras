@@ -76,7 +76,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_AbstractProce
    * instalment frequency unit from payment plan schedule param
    *
    * @throws CRM_Core_Exception
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   protected function assignInstalmentDetails() {
     $this->paymentPlanSchedule = CRM_Utils_Request::retrieve('payment_plan_schedule', 'String');

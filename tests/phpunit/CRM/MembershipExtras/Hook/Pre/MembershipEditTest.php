@@ -22,7 +22,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
    * @param array $params
    *
    * @return \stdClass
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createMembershipType($params) {
     $membershipType = MembershipTypeFabricator::fabricate($params);
@@ -74,7 +74,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
    * @param int $paymentPlanID
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getPaymentPlanRenewableMemberships($paymentPlanID) {
     return civicrm_api3('Membership', 'get', [
@@ -89,7 +89,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
    * @param int $paymentPlanID
    *
    * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getPaymentPlanContributions($paymentPlanID) {
     return civicrm_api3('Contribution', 'get', [

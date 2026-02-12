@@ -18,10 +18,10 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
   /**
    * Test ExceptionIsThrownIfScheduleIsNotValid
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testExceptionIsThrownIfScheduleIsNotValid() {
-    $this->expectException(CiviCRM_API3_Exception::class);
+    $this->expectException(CRM_Core_Exception::class);
     civicrm_api3('PaymentSchedule', 'getByMembershipType', [
       'membership_type_id' => 1,
       'schedule' => 'xyz',
@@ -32,7 +32,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
   /**
    * Test Get Monthly Rolling MembershipType Schedule
    *
-   * @throws CiviCRM_API3_Exception|Exception
+   * @throws CRM_Core_Exception|Exception
    */
   public function testGetByMonthlyRollingMembershipType() {
     $schedule = 'monthly';
@@ -130,7 +130,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
    * Tests exception is thrown if membership type is fixed and schedule is quarterly
    */
   public function testExceptionIsThrownIfMembershipTypeIsFixedAndScheduleIsQuarterly() {
-    $this->expectException(CiviCRM_API3_Exception::class);
+    $this->expectException(CRM_Core_Exception::class);
     $membershipType = $this->mockFixedMembeshipType();
     $today = new DateTime('today');
     $startDate = $today->format('Y-m-d');
@@ -140,10 +140,10 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
   /**
    * Tests exception is thrown if operator is not IN
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testExceptionIsThrownIfOperatorIsNotIN() {
-    $this->expectException(CiviCRM_API3_Exception::class);
+    $this->expectException(CRM_Core_Exception::class);
     $priceFieldValues = $this->mockPriceFieldValues();
     $params = [
       'sequential' => 1,
@@ -166,7 +166,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
   /**
    * Tests in instalments by price field values.
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testGetByPriceFieldValues() {
     $mockNonMembershipPriceFieldInputQuantity = 10;
@@ -193,7 +193,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
 
   /**
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceFieldValues() {
     $priceFieldValues = [];

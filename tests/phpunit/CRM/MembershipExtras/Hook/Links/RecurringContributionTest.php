@@ -124,7 +124,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContributionTest extends BaseHead
       civicrm_api3('PaymentProcessor', 'create', $params);
       civicrm_api3('PaymentProcessor', 'create', $paramsTest);
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
     }
   }
 

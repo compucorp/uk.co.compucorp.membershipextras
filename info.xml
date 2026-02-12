@@ -12,12 +12,8 @@
   <version>7.0.0-alpha1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.51</ver>
+    <ver>5.75</ver>
   </compatibility>
-  <comments>
-    Supported CiviCRM versions  :
-    - A patched version of CiviCRM 5.51.3, which can be found here: https://github.com/compucorp/civicrm-core/releases
-  </comments>
   <civix>
     <namespace>CRM/MembershipExtras</namespace>
     <format>23.02.1</format>

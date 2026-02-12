@@ -89,7 +89,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPayment {
    * Recalculates the status of the related membership to check if payment plan
    * related events imply a status change (eg. In Arrears).
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function recalculateMembershipStatus() {
     if ($this->isMembershipStatusOverridden()) {
