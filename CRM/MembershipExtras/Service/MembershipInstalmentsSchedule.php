@@ -145,11 +145,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
 
     $this->dispatchContributionReceiveDateCalculation(1, $firstInstalmentDate, $params);
 
-    $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
-    $instalment->setInstalmentDate(new DateTime($firstInstalmentDate));
-    $instalment->setInstalmentAmount($instalmentAmount);
-
-    $instalments['instalments'][] = $instalment;
+    $instalments['instalments'][] = $this->createScheduleInstalment(new DateTime($firstInstalmentDate), $instalmentAmount);
 
     $intervalSpecSchedule = [
       self::ANNUAL => 12,
@@ -174,10 +170,12 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
 
         $previousInstalmentDate = $dispatchedInstalmentDate;
 
-        $followingInstalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
-        $followingInstalment->setInstalmentDate(new DateTime($dispatchedInstalmentDate));
-        $followingInstalment->setInstalmentAmount($instalmentAmount);
-        array_push($instalments['instalments'], $followingInstalment);
+        $instalmentAmountForCurrentContribution = $instalmentAmount;
+        if ($instalmentNumber === $this->instalmentCount && $this->instalmentCalculator->getLastInstalmentAmount()) {
+          $instalmentAmountForCurrentContribution = $this->instalmentCalculator->getLastInstalmentAmount();
+        }
+
+        $instalments['instalments'][] = $this->createScheduleInstalment(new DateTime($dispatchedInstalmentDate), $instalmentAmountForCurrentContribution);
       }
     }
 
@@ -246,6 +244,17 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsSchedule {
    */
   public function setNonMembershipPriceFieldValues(array $nonMembershipPriceFieldValues) {
     $this->nonMembershipPriceFieldValues = $nonMembershipPriceFieldValues;
+  }
+
+  /**
+   * Creates schedule instalment DTO and clones amount object to avoid object reference reuse.
+   */
+  private function createScheduleInstalment(DateTime $instalmentDate, CRM_MembershipExtras_DTO_ScheduleInstalmentAmount $instalmentAmount): CRM_MembershipExtras_DTO_ScheduleInstalment {
+    $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalment();
+    $instalment->setInstalmentDate($instalmentDate);
+    $instalment->setInstalmentAmount(clone $instalmentAmount);
+
+    return $instalment;
   }
 
   private function dispatchContributionReceiveDateCalculation($instalmentNumber, &$instalmentDate, $params) {
