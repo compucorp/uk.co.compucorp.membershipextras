@@ -1,0 +1,8 @@
+{htxt id="automateddirectdebit_paymentplan_payment_collection_retry_count-title"}
+{ts}Payment collection number of retry attempts{/ts}
+{/htxt}
+{htxt id="automateddirectdebit_paymentplan_payment_collection_retry_count"}
+{ts}Please configure the number of retry attempts that CiviCRM will make before marking the recurring contribution as failed.{/ts}
+{ts}Note however that your payment processor, for example GoCardless, may already attempt to retry your payment before CiviCRM attempts to retry.{/ts}
+{ts}In those situations you may wish to set this to 0 as GoCardless will already have retried the payment on your behalf.{/ts}
+{/htxt}
