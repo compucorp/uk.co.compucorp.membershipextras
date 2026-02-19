@@ -24,7 +24,7 @@ class CRM_MembershipExtras_Test_Fabricator_Contribution extends BaseFabricator {
   public static function fabricate(array $params = []) {
     $contribution = parent::fabricate($params);
 
-    $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
+    $contributionSoftParams = $params['soft_credit'] ?? NULL;
     if (!empty($contributionSoftParams)) {
       $contributionSoftParams['contribution_id'] = $contribution['id'];
       $contributionSoftParams['currency'] = $contribution['currency'];

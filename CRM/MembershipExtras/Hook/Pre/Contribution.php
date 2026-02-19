@@ -54,8 +54,8 @@ class CRM_MembershipExtras_Hook_Pre_Contribution {
    * Checks if total amount is ok vs sum of line items.
    */
   private function rectifyAmountsBasedOnLineItems() {
-    $givenTotalAmount = CRM_Utils_Array::value('total_amount', $this->params, NULL);
-    $givenTaxAmount = CRM_Utils_Array::value('tax_amount', $this->params, NULL);
+    $givenTotalAmount = $this->params['total_amount'] ?? NULL;
+    $givenTaxAmount = $this->params['tax_amount'] ?? NULL;
 
     /*
      * If amount is not being changed WE SHOULD NOT UPDATE AMOUNT! Doing so will

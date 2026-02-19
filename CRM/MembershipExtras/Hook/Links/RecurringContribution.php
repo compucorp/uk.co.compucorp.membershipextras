@@ -101,7 +101,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    * @return bool
    */
   private function isSupportedPaymentPlan() {
-    $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $this->recurringContribution);
+    $paymentProcessorID = $this->recurringContribution['payment_processor_id'] ?? NULL;
 
     return SupportedPaymentProcessors::isSupportedPaymentProcessor($paymentProcessorID);
   }

@@ -7,7 +7,7 @@ class CRM_MembershipExtras_BAO_AutoMembershipUpgradeRule extends CRM_MembershipE
     $entityName = 'AutoMembershipUpgradeRule';
 
     $hook = empty($params['id']) ? 'create' : 'edit';
-    CRM_Utils_Hook::pre($hook, $entityName, CRM_Utils_Array::value('id', $params), $params);
+    CRM_Utils_Hook::pre($hook, $entityName, $params['id'] ?? NULL, $params);
 
     $params['name'] = strtolower(str_replace(' ', '_', $params['label']));
     if ($hook == 'create') {

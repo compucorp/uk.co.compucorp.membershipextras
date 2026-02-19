@@ -272,7 +272,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       'id' => $membershipID,
       'options' => ['limit' => 0],
     ]);
-    $recurringContributionID = CRM_Utils_Array::value('contribution_recur_id', $membership, NULL);
+    $recurringContributionID = $membership['contribution_recur_id'] ?? NULL;
     if (!empty($recurringContributionID)) {
       return $recurringContributionID;
     }

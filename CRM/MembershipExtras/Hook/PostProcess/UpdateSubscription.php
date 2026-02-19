@@ -93,7 +93,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
   }
 
   private function updateNextScheduledContributionDate() {
-    $nextScheduledDate = CRM_Utils_Array::value('next_sched_contribution_date', $this->formValues);
+    $nextScheduledDate = $this->formValues['next_sched_contribution_date'] ?? NULL;
     if (empty($nextScheduledDate)) {
       return;
     }
