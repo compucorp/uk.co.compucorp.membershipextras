@@ -14,6 +14,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
 
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
   use CRM_MembershipExtras_Test_Helper_PaymentMethodTrait;
+  use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
 
   /**
    * Test ExceptionIsThrownIfScheduleIsNotValid
@@ -277,6 +278,100 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $this->assertEquals(4.17, $scheduleInstalments['instalments'][0]['instalment_lineitems'][1]['sub_total']);
     $this->assertEquals(8.37, $scheduleInstalments['instalments'][11]['instalment_lineitems'][0]['sub_total']);
     $this->assertEquals(4.13, $scheduleInstalments['instalments'][11]['instalment_lineitems'][1]['sub_total']);
+  }
+
+  /**
+   * Tests monthly rolling schedule with VAT adds rounding remainder to last instalment.
+   *
+   * £100 + 20% VAT = £120, 12 monthly instalments.
+   * Regular: sub=8.33, tax=1.67, total=10.00
+   * Last:    sub=8.37, tax=1.63, total=10.00
+   */
+  public function testMonthlyRollingScheduleWithVATAddsRoundingRemainderToLastInstalment() {
+    $this->mockSalesTaxFinancialAccount();
+
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling VAT Rounding Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 100,
+      'duration_interval' => 1,
+    ]);
+
+    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly');
+
+    $this->assertCount(12, $scheduleInstalment['instalments']);
+
+    // Regular instalment (first).
+    $this->assertEquals(8.33, $scheduleInstalment['instalments'][0]['instalment_amount']);
+    $this->assertEquals(1.67, $scheduleInstalment['instalments'][0]['instalment_tax_amount']);
+
+    // Last instalment carries the remainder.
+    $this->assertEquals(8.37, $scheduleInstalment['instalments'][11]['instalment_amount']);
+    $this->assertEquals(1.63, $scheduleInstalment['instalments'][11]['instalment_tax_amount']);
+
+    // Total reconstructs to original amount.
+    $this->assertEquals(120.00, round((float) $scheduleInstalment['total_amount'], 2));
+  }
+
+  /**
+   * Tests quarterly rolling schedule produces correct instalments.
+   *
+   * £100, 4 quarterly instalments (divides evenly: 25.00 each).
+   */
+  public function testQuarterlyRollingScheduleCalculatesCorrectInstalments() {
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling Quarterly Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 100,
+      'duration_interval' => 1,
+    ]);
+
+    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], 'quarterly');
+
+    $this->assertCount(4, $scheduleInstalment['instalments']);
+
+    // All instalments should be equal (100/4 = 25.00 exact).
+    foreach ($scheduleInstalment['instalments'] as $instalment) {
+      $this->assertEquals(25.00, round($instalment['instalment_amount'], 2));
+      $this->assertEquals(0.00, round($instalment['instalment_tax_amount'], 2));
+    }
+
+    $this->assertEquals(100.00, round((float) $scheduleInstalment['total_amount'], 2));
+  }
+
+  /**
+   * Tests £685 monthly rolling schedule total reconstructs exactly.
+   *
+   * £685 no tax, 12 monthly instalments.
+   * Regular: 57.08, Last: 57.12 (685 - 57.08×11 = 57.12)
+   * Total: 685.00
+   */
+  public function testMonthlyRollingSchedule685TotalReconstructsExactly() {
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling 685 Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 685,
+      'duration_interval' => 1,
+    ]);
+
+    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly');
+
+    $this->assertCount(12, $scheduleInstalment['instalments']);
+
+    // First 11 regular instalments.
+    for ($i = 0; $i < 11; $i++) {
+      $this->assertEquals(57.08, round($scheduleInstalment['instalments'][$i]['instalment_amount'], 2),
+        "Instalment $i should be 57.08");
+    }
+
+    // Last instalment carries the remainder.
+    $this->assertEquals(57.12, round($scheduleInstalment['instalments'][11]['instalment_amount'], 2));
+
+    // Total reconstructs exactly to £685.
+    $this->assertEquals(685.00, round((float) $scheduleInstalment['total_amount'], 2));
   }
 
   /**
