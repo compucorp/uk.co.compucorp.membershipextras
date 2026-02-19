@@ -87,7 +87,11 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
     $membershipPayments = $this->getMembershipPayment();
     $this->assertEquals($instalments, $membershipPayments['count']);
 
-    $contributions = $membershipPayments['values'][0]['api.Contribution.get']['values'];
+    $contributions = [];
+    foreach ($membershipPayments['values'] as $membershipPayment) {
+      $contributions[] = $membershipPayment['api.Contribution.get']['values'][0];
+    }
+
     // Sort by id to ensure order.
     usort($contributions, function ($a, $b) {
       return $a['id'] - $b['id'];
@@ -139,7 +143,11 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
     $membershipPayments = $this->getMembershipPayment();
     $this->assertEquals($instalments, $membershipPayments['count']);
 
-    $contributions = $membershipPayments['values'][0]['api.Contribution.get']['values'];
+    $contributions = [];
+    foreach ($membershipPayments['values'] as $membershipPayment) {
+      $contributions[] = $membershipPayment['api.Contribution.get']['values'][0];
+    }
+
     usort($contributions, function ($a, $b) {
       return $a['id'] - $b['id'];
     });
@@ -299,7 +307,8 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
       'contribution_status_id' => 'Pending',
     ]);
 
-    $contributionLineItemData = $lineItemData;
+    $contributionLineItemData = $newLineItem;
+    unset($contributionLineItemData['id']);
     $contributionLineItemData['contribution_id'] = $contribution['id'];
     $this->createLineItemForContribution(['line_item' => $contributionLineItemData]);
 
@@ -310,7 +319,11 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
     $membershipPayments = $this->getMembershipPayment();
     $this->assertEquals($instalments, $membershipPayments['count']);
 
-    $contributions = $membershipPayments['values'][0]['api.Contribution.get']['values'];
+    $contributions = [];
+    foreach ($membershipPayments['values'] as $membershipPayment) {
+      $contributions[] = $membershipPayment['api.Contribution.get']['values'][0];
+    }
+
     usort($contributions, function ($a, $b) {
       return $a['id'] - $b['id'];
     });
@@ -654,9 +667,10 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
 
     $contribution = ContributionFabricator::fabricate($contributionParams);
 
-    $contributionLineItemData = $lineItemData;
-    unset($contributionLineItemData['entity_id']);
-    $contributionLineItemData['entity_id'] = $this->membership['id'];
+    // Use the fabricated result (which has resolved numeric IDs) for the
+    // contribution line item — matching the pattern in createdLineItems().
+    $contributionLineItemData = $newLineItem;
+    unset($contributionLineItemData['id']);
     $contributionLineItemData['contribution_id'] = $contribution['id'];
 
     $this->createLineItemForContribution(['line_item' => $contributionLineItemData]);
