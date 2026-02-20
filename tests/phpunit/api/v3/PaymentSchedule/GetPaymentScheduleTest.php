@@ -14,6 +14,7 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
 
   use CRM_MembershipExtras_Test_Helper_FixedPeriodMembershipTypeSettingsTrait;
   use CRM_MembershipExtras_Test_Helper_PaymentMethodTrait;
+  use CRM_MembershipExtras_Test_Helper_FinancialAccountTrait;
 
   /**
    * Test ExceptionIsThrownIfScheduleIsNotValid
@@ -98,11 +99,20 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $durationCalculator = new CRM_MembershipExtras_Service_MembershipTypeDurationCalculator($membershipTypeObj, $membershipTypeDates);
     $membershipDuration = $durationCalculator->calculateOriginalInDays($startDate, $endDate);
 
-    $expectedAmount = round(((120 / $membershipDuration) * $durationInDays) / 9, 2);
+    $proratedTotalAmount = round((120 / $membershipDuration) * $durationInDays, 2);
+    $expectedAmount = round($proratedTotalAmount / 9, 2);
+    $expectedLastAmount = round($proratedTotalAmount - ($expectedAmount * 8), 2);
     $expectedTaxAmount = 0;
     $instalments = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly', $formattedStartDate);
     $expectedInstalmentDate = new DateTime($this->getMembershipStartDate($membershipType['id'], $formattedStartDate));
-    $this->assertInstalments($instalments, $expectedAmount, $expectedTaxAmount, $expectedInstalmentDate, 'P1M');
+    foreach ($instalments['instalments'] as $index => $instalment) {
+      $expectedInstalmentAmount = $index === 8 ? $expectedLastAmount : $expectedAmount;
+      $this->assertEquals($expectedInstalmentAmount, round($instalment['instalment_amount'], 2));
+      $this->assertEquals(round($expectedTaxAmount, 2), round($instalment['instalment_tax_amount'], 2));
+      $this->assertEquals($expectedInstalmentDate->format('Y-m-d'), $instalment['instalment_date']);
+      $expectedInstalmentDate->add(new DateInterval('P1M'));
+    }
+    $this->assertEquals($proratedTotalAmount, round((float) $instalments['total_amount'], 2));
   }
 
   /**
@@ -189,6 +199,180 @@ class api_v3_PaymentSchedule_GetPaymentScheduleTest extends BaseHeadlessTest {
     $scheduleInstalments = civicrm_api3('PaymentSchedule', 'getByPriceFieldValues', $params);
 
     $this->assertCount(12, $scheduleInstalments['values']['instalments']);
+  }
+
+  /**
+   * Tests monthly rolling schedule adds rounding remainder to final instalment.
+   */
+  public function testMonthlyRollingScheduleAddsRoundingRemainderToLastInstalment() {
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rounding Membership Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 100,
+      'duration_interval' => 1,
+    ]);
+
+    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly');
+
+    $this->assertEquals(8.33, $scheduleInstalment['instalments'][0]['instalment_amount']);
+    $this->assertEquals(8.37, $scheduleInstalment['instalments'][11]['instalment_amount']);
+    $this->assertEquals(100.00, round((float) $scheduleInstalment['total_amount'], 2));
+  }
+
+  /**
+   * Tests price set schedule adds remainders on each final line item independently.
+   */
+  public function testPriceSetScheduleAddsRoundingRemainderToLastInstalmentLineItems() {
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rounding Price Set Membership Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 120,
+      'duration_interval' => 1,
+    ]);
+
+    $priceSet = PriceSetFabricator::fabricate([
+      'name' => 'rounding_price_set',
+      'extends' => 'CiviMember',
+      'financial_type_id' => 'Member Dues',
+      'is_active' => 1,
+    ]);
+
+    $mainMembershipField = PriceFieldFabricator::fabricate([
+      'price_set_id' => $priceSet['id'],
+      'label' => 'Gold',
+      'name' => 'gold_membership_field',
+      'html_type' => 'Radio',
+    ]);
+
+    $addonMembershipField = PriceFieldFabricator::fabricate([
+      'price_set_id' => $priceSet['id'],
+      'label' => 'Magazine',
+      'name' => 'magazine_membership_field',
+      'html_type' => 'Radio',
+    ]);
+
+    $gold = PriceFieldValueFabricator::fabricate([
+      'price_field_id' => $mainMembershipField['id'],
+      'label' => 'Gold Membership',
+      'amount' => 100,
+      'membership_type_id' => $membershipType['id'],
+      'financial_type_id' => 'Member Dues',
+    ]);
+
+    $magazine = PriceFieldValueFabricator::fabricate([
+      'price_field_id' => $addonMembershipField['id'],
+      'label' => 'Magazine Subscription',
+      'amount' => 50,
+      'membership_type_id' => $membershipType['id'],
+      'financial_type_id' => 'Member Dues',
+    ]);
+
+    $scheduleInstalments = civicrm_api3('PaymentSchedule', 'getByPriceFieldValues', [
+      'schedule' => 'monthly',
+      'payment_method' => $this->getPaymentMethodValue(),
+      'price_field_values' => ['IN' => [$gold['id'] => 1, $magazine['id'] => 1]],
+    ])['values'];
+
+    $this->assertEquals(8.33, $scheduleInstalments['instalments'][0]['instalment_lineitems'][0]['sub_total']);
+    $this->assertEquals(4.17, $scheduleInstalments['instalments'][0]['instalment_lineitems'][1]['sub_total']);
+    $this->assertEquals(8.37, $scheduleInstalments['instalments'][11]['instalment_lineitems'][0]['sub_total']);
+    $this->assertEquals(4.13, $scheduleInstalments['instalments'][11]['instalment_lineitems'][1]['sub_total']);
+  }
+
+  /**
+   * Tests monthly rolling schedule with VAT adds rounding remainder to last instalment.
+   *
+   * £100 + 20% VAT = £120, 12 monthly instalments.
+   * Regular: sub=8.33, tax=1.67, total=10.00
+   * Last:    sub=8.37, tax=1.63, total=10.00
+   */
+  public function testMonthlyRollingScheduleWithVATAddsRoundingRemainderToLastInstalment() {
+    $this->mockSalesTaxFinancialAccount();
+
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling VAT Rounding Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 100,
+      'duration_interval' => 1,
+    ]);
+
+    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly');
+
+    $this->assertCount(12, $scheduleInstalment['instalments']);
+
+    // Regular instalment (first).
+    $this->assertEquals(8.33, $scheduleInstalment['instalments'][0]['instalment_amount']);
+    $this->assertEquals(1.67, $scheduleInstalment['instalments'][0]['instalment_tax_amount']);
+
+    // Last instalment carries the remainder.
+    $this->assertEquals(8.37, $scheduleInstalment['instalments'][11]['instalment_amount']);
+    $this->assertEquals(1.63, $scheduleInstalment['instalments'][11]['instalment_tax_amount']);
+
+    // Total reconstructs to original amount.
+    $this->assertEquals(120.00, round((float) $scheduleInstalment['total_amount'], 2));
+  }
+
+  /**
+   * Tests quarterly rolling schedule produces correct instalments.
+   *
+   * £100, 4 quarterly instalments (divides evenly: 25.00 each).
+   */
+  public function testQuarterlyRollingScheduleCalculatesCorrectInstalments() {
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling Quarterly Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 100,
+      'duration_interval' => 1,
+    ]);
+
+    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], 'quarterly');
+
+    $this->assertCount(4, $scheduleInstalment['instalments']);
+
+    // All instalments should be equal (100/4 = 25.00 exact).
+    foreach ($scheduleInstalment['instalments'] as $instalment) {
+      $this->assertEquals(25.00, round($instalment['instalment_amount'], 2));
+      $this->assertEquals(0.00, round($instalment['instalment_tax_amount'], 2));
+    }
+
+    $this->assertEquals(100.00, round((float) $scheduleInstalment['total_amount'], 2));
+  }
+
+  /**
+   * Tests £685 monthly rolling schedule total reconstructs exactly.
+   *
+   * £685 no tax, 12 monthly instalments.
+   * Regular: 57.08, Last: 57.12 (685 - 57.08×11 = 57.12)
+   * Total: 685.00
+   */
+  public function testMonthlyRollingSchedule685TotalReconstructsExactly() {
+    $membershipType = MembershipTypeFabricator::fabricate([
+      'name' => 'Rolling 685 Type',
+      'period_type' => 'rolling',
+      'duration_unit' => 'year',
+      'minimum_fee' => 685,
+      'duration_interval' => 1,
+    ]);
+
+    $scheduleInstalment = $this->getMembershipTypeSchedule($membershipType['id'], 'monthly');
+
+    $this->assertCount(12, $scheduleInstalment['instalments']);
+
+    // First 11 regular instalments.
+    for ($i = 0; $i < 11; $i++) {
+      $this->assertEquals(57.08, round($scheduleInstalment['instalments'][$i]['instalment_amount'], 2),
+        "Instalment $i should be 57.08");
+    }
+
+    // Last instalment carries the remainder.
+    $this->assertEquals(57.12, round($scheduleInstalment['instalments'][11]['instalment_amount'], 2));
+
+    // Total reconstructs exactly to £685.
+    $this->assertEquals(685.00, round((float) $scheduleInstalment['total_amount'], 2));
   }
 
   /**

@@ -13,6 +13,11 @@ class CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator {
   private $calculator;
 
   /**
+   * @var CRM_MembershipExtras_DTO_ScheduleInstalmentAmount|null
+   */
+  private $lastInstalmentAmount;
+
+  /**
    * CRM_MembershipExtras_Service_MembershipTypeInstalmentCalculator constructor.
    * @param \CRM_MembershipExtras_Service_MembershipPeriodType_PeriodTypeCalculatorInterface $calculator
    */
@@ -38,27 +43,19 @@ class CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator {
    * @return CRM_MembershipExtras_DTO_ScheduleInstalmentAmount
    */
   public function calculateInstalmentAmount(int $instalmentCount) {
-    $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalmentAmount();
-
     $lineItems = $this->calculator->getLineItems();
-    if ($instalmentCount != 1) {
-      $lineItems = $this->setLineItemsAmountPerInstalment($lineItems, $instalmentCount);
-    }
-    $instalment->setLineItems($lineItems);
+    if ($instalmentCount == 1) {
+      $instalmentAmount = $this->buildInstalmentAmount($lineItems);
+      $this->lastInstalmentAmount = $this->buildInstalmentAmount($lineItems);
 
-    $amount = 0.0;
-    $taxAmount = 0.0;
-    $totalAmount = 0.0;
-    foreach ($lineItems as $lineItem) {
-      $amount += $lineItem->getSubTotal();
-      $taxAmount += $lineItem->getTaxAmount();
-      $totalAmount += $lineItem->getTotalAmount();
+      return $instalmentAmount;
     }
-    $instalment->setAmount($amount);
-    $instalment->setTaxAmount($taxAmount);
-    $instalment->setTotalAmount($totalAmount);
 
-    return $instalment;
+    $instalmentLineItems = $this->setLineItemsAmountPerInstalment($lineItems, $instalmentCount);
+    $instalmentAmount = $this->buildInstalmentAmount($instalmentLineItems['regular']);
+    $this->lastInstalmentAmount = $this->buildInstalmentAmount($instalmentLineItems['last']);
+
+    return $instalmentAmount;
 
   }
 
@@ -70,19 +67,34 @@ class CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator {
    * @return array
    */
   private function setLineItemsAmountPerInstalment(array $lineItems, int $instalmentCount) {
-    $newInstalmentLineItems = [];
+    $newInstalmentLineItems = ['regular' => [], 'last' => []];
     foreach ($lineItems as $lineItem) {
+      $regularLineItem = clone $lineItem;
+      $lastLineItem = clone $lineItem;
+
       $instalmentUnitPrice = $this->calculateSingleInstalmentAmount($lineItem->getUnitPrice(), $instalmentCount);
       $instalmentSubTotal = $this->calculateSingleInstalmentAmount($lineItem->getSubTotal(), $instalmentCount);
       $instalmentTaxAmount = $this->calculateSingleInstalmentAmount($lineItem->getTaxAmount(), $instalmentCount);
+
+      $lastInstalmentUnitPrice = MoneyUtils::roundToPrecision($lineItem->getUnitPrice() - ($instalmentUnitPrice * ($instalmentCount - 1)), 2);
+      $lastInstalmentSubTotal = MoneyUtils::roundToPrecision($lineItem->getSubTotal() - ($instalmentSubTotal * ($instalmentCount - 1)), 2);
+      $lastInstalmentTaxAmount = MoneyUtils::roundToPrecision($lineItem->getTaxAmount() - ($instalmentTaxAmount * ($instalmentCount - 1)), 2);
+
       $instalmentTotal = MoneyUtils::roundToPrecision($instalmentSubTotal + $instalmentTaxAmount, 2);
+      $lastInstalmentTotal = MoneyUtils::roundToPrecision($lastInstalmentSubTotal + $lastInstalmentTaxAmount, 2);
 
-      $lineItem->setUnitPrice($instalmentUnitPrice);
-      $lineItem->setSubTotal($instalmentSubTotal);
-      $lineItem->setTaxAmount($instalmentTaxAmount);
-      $lineItem->setTotalAmount($instalmentTotal);
+      $regularLineItem->setUnitPrice($instalmentUnitPrice);
+      $regularLineItem->setSubTotal($instalmentSubTotal);
+      $regularLineItem->setTaxAmount($instalmentTaxAmount);
+      $regularLineItem->setTotalAmount($instalmentTotal);
 
-      array_push($newInstalmentLineItems, $lineItem);
+      $lastLineItem->setUnitPrice($lastInstalmentUnitPrice);
+      $lastLineItem->setSubTotal($lastInstalmentSubTotal);
+      $lastLineItem->setTaxAmount($lastInstalmentTaxAmount);
+      $lastLineItem->setTotalAmount($lastInstalmentTotal);
+
+      $newInstalmentLineItems['regular'][] = $regularLineItem;
+      $newInstalmentLineItems['last'][] = $lastLineItem;
     }
 
     return $newInstalmentLineItems;
@@ -106,6 +118,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator {
     $totalNonMembershipPriceFieldValueAmount = 0;
     $totalNonMembershipPriceFieldValueTaxAmount = 0;
     $nonMembershipPriceFieldValueLineItems = [];
+    $nonMembershipPriceFieldValueLastLineItems = [];
     foreach ($nonMembershipPriceFieldValues as $priceFieldValue) {
       $quantity = $priceFieldValue['quantity'];
       $amount = $priceFieldValue['values']['amount'];
@@ -115,16 +128,30 @@ class CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator {
       $totalNonMembershipPriceFieldValueTaxAmount += $salesTax;
 
       $scheduleInstalmentLineItem = new CRM_MembershipExtras_DTO_ScheduleInstalmentLineItem();
+      $lastScheduleInstalmentLineItem = new CRM_MembershipExtras_DTO_ScheduleInstalmentLineItem();
       $financialTypeId = $priceFieldValue['values']['financial_type_id'];
       $scheduleInstalmentLineItem->setFinancialTypeId($financialTypeId);
       $scheduleInstalmentLineItem->setQuantity($quantity);
-      $scheduleInstalmentLineItem->setUnitPrice($this->calculateSingleInstalmentAmount($amount, $instalmentCount));
-      $scheduleInstalmentLineItem->setSubTotal($this->calculateSingleInstalmentAmount($subTotal, $instalmentCount));
+      $lineItemUnitPrice = $this->calculateSingleInstalmentAmount($amount, $instalmentCount);
+      $lineItemSubTotal = $this->calculateSingleInstalmentAmount($subTotal, $instalmentCount);
+      $lineItemTaxAmount = $this->calculateSingleInstalmentAmount($salesTax, $instalmentCount);
+      $scheduleInstalmentLineItem->setUnitPrice($lineItemUnitPrice);
+      $scheduleInstalmentLineItem->setSubTotal($lineItemSubTotal);
       $scheduleInstalmentLineItem->setTaxRate($instalmentTaxAmountCalculator->getTaxRateByFinancialTypeId($financialTypeId));
-      $scheduleInstalmentLineItem->setTaxAmount($this->calculateSingleInstalmentAmount($salesTax, $instalmentCount));
+      $scheduleInstalmentLineItem->setTaxAmount($lineItemTaxAmount);
       $lineItemTotalAmount = $scheduleInstalmentLineItem->getSubTotal() + $scheduleInstalmentLineItem->getTaxAmount();
       $scheduleInstalmentLineItem->setTotalAmount($lineItemTotalAmount);
+
+      $lastScheduleInstalmentLineItem->setFinancialTypeId($financialTypeId);
+      $lastScheduleInstalmentLineItem->setQuantity($quantity);
+      $lastScheduleInstalmentLineItem->setUnitPrice(MoneyUtils::roundToPrecision($amount - ($lineItemUnitPrice * ($instalmentCount - 1)), 2));
+      $lastScheduleInstalmentLineItem->setSubTotal(MoneyUtils::roundToPrecision($subTotal - ($lineItemSubTotal * ($instalmentCount - 1)), 2));
+      $lastScheduleInstalmentLineItem->setTaxRate($instalmentTaxAmountCalculator->getTaxRateByFinancialTypeId($financialTypeId));
+      $lastScheduleInstalmentLineItem->setTaxAmount(MoneyUtils::roundToPrecision($salesTax - ($lineItemTaxAmount * ($instalmentCount - 1)), 2));
+      $lastScheduleInstalmentLineItem->setTotalAmount($lastScheduleInstalmentLineItem->getSubTotal() + $lastScheduleInstalmentLineItem->getTaxAmount());
+
       $nonMembershipPriceFieldValueLineItems[] = $scheduleInstalmentLineItem;
+      $nonMembershipPriceFieldValueLastLineItems[] = $lastScheduleInstalmentLineItem;
     }
 
     $totalNonMembershipPriceFieldValueAmountPerInstalment = $this->calculateSingleInstalmentAmount($totalNonMembershipPriceFieldValueAmount, $instalmentCount);
@@ -149,6 +176,44 @@ class CRM_MembershipExtras_Service_MembershipInstalmentAmountCalculator {
       array_push($currentLineItems, $priceFieldLineItem);
     }
     $instalmentAmount->setLineItems($currentLineItems);
+
+    if ($this->lastInstalmentAmount) {
+      $lastLineItems = $this->lastInstalmentAmount->getLineItems();
+      foreach ($nonMembershipPriceFieldValueLastLineItems as $priceFieldLineItem) {
+        $lastLineItems[] = $priceFieldLineItem;
+      }
+      $this->lastInstalmentAmount = $this->buildInstalmentAmount($lastLineItems);
+    }
+  }
+
+  /**
+   * Gets calculated last instalment amount.
+   */
+  public function getLastInstalmentAmount(): ?CRM_MembershipExtras_DTO_ScheduleInstalmentAmount {
+    return $this->lastInstalmentAmount;
+  }
+
+  /**
+   * Builds instalment amount object for the provided line items.
+   */
+  private function buildInstalmentAmount(array $lineItems): CRM_MembershipExtras_DTO_ScheduleInstalmentAmount {
+    $instalment = new CRM_MembershipExtras_DTO_ScheduleInstalmentAmount();
+    $instalment->setLineItems($lineItems);
+
+    $amount = 0.0;
+    $taxAmount = 0.0;
+    $totalAmount = 0.0;
+    foreach ($lineItems as $lineItem) {
+      $amount += $lineItem->getSubTotal();
+      $taxAmount += $lineItem->getTaxAmount();
+      $totalAmount += $lineItem->getTotalAmount();
+    }
+
+    $instalment->setAmount($amount);
+    $instalment->setTaxAmount($taxAmount);
+    $instalment->setTotalAmount($totalAmount);
+
+    return $instalment;
   }
 
   /**
