@@ -36,8 +36,8 @@ class CRM_MembershipExtras_Hook_PageRun_MemberPageTabColourUpdate implements CRM
    * @param CRM_Core_Page $page
    */
   private function setMembershipTypeColourStyle($page) {
-    $inactiveMembers = $page->get_template_vars('inActiveMembers') ?? [];
-    $activeMembers = $page->get_template_vars('activeMembers') ?? [];
+    $inactiveMembers = $page->getTemplateVars('inActiveMembers') ?? [];
+    $activeMembers = $page->getTemplateVars('activeMembers') ?? [];
     $allMemberships = array_merge($inactiveMembers, $activeMembers);
     $css = '';
     $membershipTypeColourSettings = Civi::settings()->get(MembershipTypeSettings::COLOUR_SETTINGS_KEY);
