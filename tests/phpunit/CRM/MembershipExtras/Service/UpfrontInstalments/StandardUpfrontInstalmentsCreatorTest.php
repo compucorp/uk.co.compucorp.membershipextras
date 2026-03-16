@@ -382,7 +382,7 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
    * Fabricates payment plan membership order
    *
    * @param $periodType
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPaymentPlanMembershipOrder($periodType) {
     $this->membershipType = CRM_MembershipExtras_Test_Fabricator_MembershipType::fabricate([
@@ -526,7 +526,7 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
    *
    * @param array $line
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createLineItemForContribution($line) {
     $contribution = CRM_Contribute_BAO_Contribution::findById($line['line_item']['contribution_id']);

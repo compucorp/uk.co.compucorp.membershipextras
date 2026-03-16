@@ -186,7 +186,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
    * @param array $currentContribution
    * @param array $nextContribution
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function copyRecurringLineItems($currentContribution, $nextContribution) {
     $recurringLineItems = civicrm_api3('ContributionRecurLineItem', 'get', [
