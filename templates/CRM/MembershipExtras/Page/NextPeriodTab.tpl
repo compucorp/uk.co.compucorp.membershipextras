@@ -32,7 +32,7 @@ var nextPeriodMembershipTypes = {$nextPeriodMembershipTypes|@json_encode};
         <td>{$currentItem.line_total|crmMoney}</td>
         <td>
           <a class="remove-next-period-line-button">
-            <span><i class="crm-i fa-trash"></i></span>
+            <span><i class="crm-i fa-trash" role="img" aria-hidden="true"></i></span>
           </a>
         </td>
       </tr>
@@ -56,10 +56,10 @@ var nextPeriodMembershipTypes = {$nextPeriodMembershipTypes|@json_encode};
     </td>
     <td nowrap class="confirmation-icons">
       <a href="#" class="confirm-add-next-period-line-button">
-        <span><i class="crm-i fa-check crm-i-green"></i></span>
+        <span><i class="crm-i fa-check crm-i-green" role="img" aria-hidden="true"></i></span>
       </a>
       <a href="#" class="cancel-add-next-period-line-button">
-        <span><i class="crm-i fa-times crm-i-red"></i></span>
+        <span><i class="crm-i fa-times crm-i-red" role="img" aria-hidden="true"></i></span>
       </a>
     </td>
   </tr>
@@ -79,10 +79,10 @@ var nextPeriodMembershipTypes = {$nextPeriodMembershipTypes|@json_encode};
     </td>
     <td nowrap class="confirmation-icons">
       <a href="#" class="confirm-add-next-period-membership-button">
-        <span><i class="crm-i fa-check"></i></span>
+        <span><i class="crm-i fa-check" role="img" aria-hidden="true"></i></span>
       </a>
       <a href="#" class="cancel-add-next-period-membership-button">
-        <span><i class="crm-i fa-times"></i></span>
+        <span><i class="crm-i fa-times" role="img" aria-hidden="true"></i></span>
       </a>
     </td>
   </tr>
@@ -90,10 +90,10 @@ var nextPeriodMembershipTypes = {$nextPeriodMembershipTypes|@json_encode};
 </table>
 <div id="next_buttons">
   <a href="" class="button clickable" id="addMembership">
-    <span><i class="crm-i fa-plus"></i>&nbsp; Add Membership</span>
+    <span><i class="crm-i fa-plus" role="img" aria-hidden="true"></i>&nbsp; Add Membership</span>
   </a>
   <a href="" class="button clickable" id="addOtherAmount">
-    <span><i class="crm-i fa-plus"></i>&nbsp; Add Other Amount</span>
+    <span><i class="crm-i fa-plus" role="img" aria-hidden="true"></i>&nbsp; Add Other Amount</span>
   </a>
 </div>
 <div class="clear"></div>
