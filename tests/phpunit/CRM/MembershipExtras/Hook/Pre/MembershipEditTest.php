@@ -69,6 +69,30 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
   }
 
   /**
+   * Creates a payment plan with Pending contributions for integration testing.
+   */
+  private function createPendingPaymentPlan($membershipType) {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Pending';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $membershipType->priceFieldValue['price_field_id'],
+      'price_field_value_id' => $membershipType->priceFieldValue['id'],
+      'label' => $membershipType->membershipType['name'],
+      'qty' => 1,
+      'unit_price' => $membershipType->priceFieldValue['amount'],
+      'line_total' => $membershipType->priceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+      'auto_renew' => 1,
+    ];
+
+    return PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+  }
+
+  /**
    * Obtains memberships set to auto-renew for payment plan.
    *
    * @param int $paymentPlanID
@@ -293,6 +317,112 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
       date('Y-m-d', strtotime($membershipParams['end_date']))
     );
     CRM_Utils_GlobalStack::singleton()->pop();
+  }
+
+  public function testEndDateNotUnsetWhenContributionIdIsNull() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 12,
+      'duration_unit' => 'month',
+    ]);
+
+    $paymentPlan = $this->createPaymentPlan($mainMembershipType);
+    $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
+    $membershipParams = array_shift($memberships);
+
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, NULL, '');
+    $hook->preProcess();
+
+    $this->assertArrayHasKey('end_date', $membershipParams, 'end_date should not be unset when contributionID is NULL');
+  }
+
+  public function testEndDateUnsetWhenContributionIdIsSet() {
+    $mainMembershipType = $this->createMembershipType([
+      'name' => 'Main Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 12,
+      'duration_unit' => 'month',
+    ]);
+
+    $paymentPlan = $this->createPaymentPlan($mainMembershipType);
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $memberships = $this->getPaymentPlanRenewableMemberships($paymentPlan['id']);
+    $membershipParams = array_shift($memberships);
+    $membershipParams['end_date'] = date('Y-m-d', strtotime('+1 year'));
+
+    $hook = new MembershipEditHook($membershipParams['id'], $membershipParams, $contributions[0]['id'], '');
+    $hook->preProcess();
+
+    $this->assertArrayNotHasKey('end_date', $membershipParams, 'end_date should be unset when contributionID is set for a payment plan membership');
+  }
+
+  /**
+   * Integration test: simulates the real webhook scenario with two
+   * completeTransaction calls in the same PHP request.
+   * The second call should not have its membership end_date reset
+   * by a stale static $contributionID from the first call.
+   */
+  public function testSecondCompleteTransactionDoesNotResetMembershipEndDate() {
+    $membershipTypeA = $this->createMembershipType([
+      'name' => 'Membership Type A',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 12,
+      'duration_unit' => 'month',
+    ]);
+    $membershipTypeB = $this->createMembershipType([
+      'name' => 'Membership Type B',
+      'period_type' => 'rolling',
+      'minimum_fee' => 60,
+      'duration_interval' => 12,
+      'duration_unit' => 'month',
+    ]);
+
+    $paymentPlanA = $this->createPendingPaymentPlan($membershipTypeA);
+    $paymentPlanB = $this->createPendingPaymentPlan($membershipTypeB);
+
+    $contributionsA = $this->getPaymentPlanContributions($paymentPlanA['id']);
+    $contributionsB = $this->getPaymentPlanContributions($paymentPlanB['id']);
+
+    $membershipB = civicrm_api3('Membership', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => $paymentPlanB['id'],
+    ])['values'][0];
+
+    $endDateBeforeB = $membershipB['end_date'];
+
+    // Payment 1: complete contribution A (simulates first event in webhook)
+    civicrm_api3('Contribution', 'completetransaction', [
+      'id' => $contributionsA[0]['id'],
+      'trxn_id' => 'GC_TEST_PM001',
+      'is_transactional' => FALSE,
+    ]);
+
+    // Payment 2: complete contribution B (simulates second event in same webhook)
+    civicrm_api3('Contribution', 'completetransaction', [
+      'id' => $contributionsB[0]['id'],
+      'trxn_id' => 'GC_TEST_PM002',
+      'is_transactional' => FALSE,
+    ]);
+
+    // Refresh membership B from DB
+    $membershipBAfter = civicrm_api3('Membership', 'getsingle', ['id' => $membershipB['id']]);
+
+    // Membership B's end_date should be preserved — not nulled by stale
+    // $contributionID, and not extended per-installment. The
+    // completeTransactionCalled flag ensures prevention fires correctly.
+    $this->assertNotEmpty(
+      $membershipBAfter['end_date'],
+      'Second completeTransaction in same request should not null membership B end_date'
+    );
+    $this->assertEquals(
+      $endDateBeforeB,
+      $membershipBAfter['end_date'],
+      'Second completeTransaction should preserve membership B end_date (not extend per-installment)'
+    );
   }
 
   public function testExtendPendingPlanWithFixedMembershipAndOneInstalment() {
