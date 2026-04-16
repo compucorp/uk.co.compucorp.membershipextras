@@ -73,7 +73,8 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
         $this->paymentContributionID ||
         $this->isRecordingPayment() ||
         $this->isBulkStatusUpdate() ||
-        $this->editedFromPaymentAPIContext()
+        $this->editedFromPaymentAPIContext() ||
+        $this->editedFromCompleteTransactionContext()
       ) && $this->isSupportedPaymentPlanMembership();
 
     $null = NULL;
@@ -177,6 +178,25 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    */
   private function editedFromPaymentAPIContext() {
     if (!empty(Civi::$statics[ExtensionUti::LONG_NAME]['paymentApiCalled'])) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Is this membership being edited from
+   * Contribution.completetransaction API context?
+   *
+   * This detects when a payment is being completed via webhook
+   * (e.g. GoCardless) and prevents per-installment membership
+   * date extensions. Follows the same pattern as
+   * editedFromPaymentAPIContext().
+   *
+   * @return bool
+   */
+  private function editedFromCompleteTransactionContext() {
+    if (!empty(Civi::$statics[ExtensionUti::LONG_NAME]['completeTransactionCalled'])) {
       return TRUE;
     }
 
