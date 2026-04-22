@@ -7,11 +7,12 @@ class CRM_MembershipExtras_Hook_Config_APIWrapper_ContributionCompleteTransactio
   /**
    * Callback precedes Contribution.completetransaction API call.
    *
-   * Sets `completeTransactionCalled` flag so that the Membership Pre Edit
-   * hook can detect we're in a payment completion context (e.g. GoCardless
-   * webhook) and prevent per-installment membership date extensions.
-   *
-   * This follows the same pattern as PaymentAPI wrapper.
+   * Sets `resetContributionID` flag so that the static $contributionID
+   * in membershipextras_civicrm_pre() is reset to NULL before each
+   * completeTransaction's Membership edit hook fires. This prevents
+   * stale contribution IDs from a previous completeTransaction call
+   * (e.g. multi-event GoCardless webhook) from incorrectly triggering
+   * prevention of membership date extension.
    */
   public static function preApiCall($event) {
     $apiRequestSig = $event->getApiRequestSig();
@@ -19,7 +20,7 @@ class CRM_MembershipExtras_Hook_Config_APIWrapper_ContributionCompleteTransactio
       return;
     }
 
-    Civi::$statics[ExtensionUti::LONG_NAME]['completeTransactionCalled'] = TRUE;
+    Civi::$statics[ExtensionUti::LONG_NAME]['resetContributionID'] = TRUE;
   }
 
 }
