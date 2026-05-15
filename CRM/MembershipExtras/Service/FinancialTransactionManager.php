@@ -72,7 +72,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
     // create financial item for added line item
     $newFinancialItemDAO = CRM_Financial_BAO_FinancialItem::create($newFinancialItem, NULL, $trxnId);
     if (!empty($lineItem['tax_amount']) && $lineItem['tax_amount'] != 0) {
-      $taxTerm = CRM_Utils_Array::value('tax_term', Civi::settings()->get('contribution_invoice_settings'));
+      $taxTerm = Civi::settings()->get('tax_term');
       $taxFinancialItemInfo = array_merge($newFinancialItem, array(
         'amount' => $lineItem['tax_amount'],
         'description' => $taxTerm,
@@ -173,7 +173,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
     $ftItem = CRM_Financial_BAO_FinancialItem::create($financialItem, NULL, $trxnId);
 
     if ($deltaTaxAmount != 0) {
-      $taxTerm = CRM_Utils_Array::value('tax_term', Civi::settings()->get('contribution_invoice_settings'));
+      $taxTerm = Civi::settings()->get('tax_term');
       $taxFinancialItemInfo = array_merge($financialItem, [
         'amount' => $deltaTaxAmount,
         'description' => $taxTerm,
