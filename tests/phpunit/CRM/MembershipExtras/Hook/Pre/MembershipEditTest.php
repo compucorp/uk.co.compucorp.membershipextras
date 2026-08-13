@@ -546,4 +546,105 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $this->assertEquals($originalStartDate, $membershipParams['start_date']);
   }
 
+  /**
+   * Creates a one-off (non payment plan) membership with a linked
+   * contribution in the given status.
+   *
+   * @param string $contributionStatus
+   *
+   * @return array
+   *   The membership record.
+   */
+  private function createOneOffMembershipWithLinkedContribution($contributionStatus) {
+    $membershipType = $this->createMembershipType([
+      'name' => 'One-off Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 50,
+      'duration_interval' => 1,
+      'duration_unit' => 'year',
+    ]);
+
+    $contact = ContactFabricator::fabricate();
+    $membership = MembershipFabricator::fabricate([
+      'contact_id' => $contact['id'],
+      'membership_type_id' => $membershipType->membershipType['id'],
+      'join_date' => date('Y-m-d', strtotime('-1 year')),
+      'start_date' => date('Y-m-d', strtotime('-1 year')),
+      'end_date' => date('Y-m-d', strtotime('-1 day')),
+    ]);
+
+    $contribution = ContributionFabricator::fabricate([
+      'contact_id' => $contact['id'],
+      'financial_type_id' => 'Member Dues',
+      'total_amount' => 50,
+      'contribution_status_id' => $contributionStatus,
+      'receive_date' => date('Y-m-d'),
+    ]);
+
+    civicrm_api3('MembershipPayment', 'create', [
+      'membership_id' => $membership['id'],
+      'contribution_id' => $contribution['id'],
+    ]);
+
+    return $membership;
+  }
+
+  private function pushWebformSubmissionRequest() {
+    $tmpGlobals = [];
+    $tmpGlobals['_POST']['form_id'] = 'webform_client_form_25';
+    CRM_Utils_GlobalStack::singleton()->push($tmpGlobals);
+  }
+
+  public function testWebformRenewalExtensionIsBlockedWhenLatestLinkedContributionIsUnpaid() {
+    $membership = $this->createOneOffMembershipWithLinkedContribution('Pending');
+    $params = ['end_date' => date('Y-m-d', strtotime('+1 year'))];
+
+    $this->pushWebformSubmissionRequest();
+    $hook = new MembershipEditHook($membership['id'], $params, NULL, '');
+    $hook->preProcess();
+    CRM_Utils_GlobalStack::singleton()->pop();
+
+    $this->assertArrayNotHasKey('end_date', $params);
+  }
+
+  public function testWebformRenewalExtensionIsAllowedWhenLatestLinkedContributionIsCompleted() {
+    $membership = $this->createOneOffMembershipWithLinkedContribution('Completed');
+    $newEndDate = date('Y-m-d', strtotime('+1 year'));
+    $params = ['end_date' => $newEndDate];
+
+    $this->pushWebformSubmissionRequest();
+    $hook = new MembershipEditHook($membership['id'], $params, NULL, '');
+    $hook->preProcess();
+    CRM_Utils_GlobalStack::singleton()->pop();
+
+    $this->assertEquals($newEndDate, $params['end_date']);
+  }
+
+  public function testExtensionOutsideWebformRequestIsAllowed() {
+    $membership = $this->createOneOffMembershipWithLinkedContribution('Pending');
+    $newEndDate = date('Y-m-d', strtotime('+1 year'));
+    $params = ['end_date' => $newEndDate];
+
+    $hook = new MembershipEditHook($membership['id'], $params, NULL, '');
+    $hook->preProcess();
+
+    $this->assertEquals($newEndDate, $params['end_date']);
+  }
+
+  public function testWebformExtensionInPaymentCompletionContextIsAllowed() {
+    $membership = $this->createOneOffMembershipWithLinkedContribution('Pending');
+    $newEndDate = date('Y-m-d', strtotime('+1 year'));
+    $params = [
+      'end_date' => $newEndDate,
+      'membership_activity_status' => 'Completed',
+    ];
+
+    $this->pushWebformSubmissionRequest();
+    $hook = new MembershipEditHook($membership['id'], $params, NULL, '');
+    $hook->preProcess();
+    CRM_Utils_GlobalStack::singleton()->pop();
+
+    $this->assertEquals($newEndDate, $params['end_date']);
+  }
+
 }

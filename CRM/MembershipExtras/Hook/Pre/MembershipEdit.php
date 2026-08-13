@@ -89,6 +89,10 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       $this->preventExtendingPaymentPlanMembership();
     }
 
+    if (!$preventMembershipDateExtension && $this->isUnpaidWebformRenewal()) {
+      $this->preventExtendingUnpaidMembership();
+    }
+
     if (!in_array($this->id, self::$extendedMemberships)) {
       $isPaymentPlan = $this->isPaymentPlanBeingRecordedOnForm();
       $isMembershipRenewal = CRM_Utils_Request::retrieve('action', 'String') & CRM_Core_Action::RENEW;
@@ -198,6 +202,115 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   public function preventExtendingPaymentPlanMembership() {
     unset($this->params['end_date']);
     $this->preventCreatingRenewalActivity();
+  }
+
+  /**
+   * Prevents extending a membership whose renewal payment is incomplete.
+   *
+   * A webform renewal against an offsite payment processor can save the
+   * membership with a new end date before the payment has completed, and
+   * each duplicate submission extends it by another term. This blocks the
+   * extension while the latest payment linked to the membership is not
+   * Completed.
+   */
+  public function preventExtendingUnpaidMembership() {
+    unset($this->params['end_date']);
+    $this->preventCreatingRenewalActivity();
+  }
+
+  /**
+   * Determines if this edit is a webform-submitted renewal of a one-off
+   * (non payment plan) membership whose payment has not been completed.
+   *
+   * @return bool
+   */
+  private function isUnpaidWebformRenewal() {
+    if (empty($this->id) || empty($this->params['end_date'])) {
+      return FALSE;
+    }
+
+    if (!$this->isWebformSubmissionRequest()) {
+      return FALSE;
+    }
+
+    // Contexts where a payment is being received are allowed to extend.
+    $isPaymentContext = $this->paymentContributionID
+      || $this->isRecordingPayment()
+      || $this->editedFromPaymentAPIContext()
+      || CRM_Utils_Array::value('membership_activity_status', $this->params) === 'Completed';
+    if ($isPaymentContext) {
+      return FALSE;
+    }
+
+    // Payment plan memberships are handled by preventExtendingPaymentPlanMembership.
+    if ($this->getMembershipRecurringContributionID() !== NULL) {
+      return FALSE;
+    }
+
+    if (!$this->isExtendingEndDate()) {
+      return FALSE;
+    }
+
+    return $this->latestLinkedContributionIsUnpaid();
+  }
+
+  /**
+   * Checks if the current request is a Drupal webform submission.
+   *
+   * @return bool
+   */
+  private function isWebformSubmissionRequest() {
+    $formId = CRM_Utils_Array::value('form_id', $_POST, '');
+
+    return is_string($formId)
+      && (strpos($formId, 'webform_client_form') === 0 || strpos($formId, 'webform_submission') === 0);
+  }
+
+  /**
+   * Checks if the parameters move the membership end date forward.
+   *
+   * @return bool
+   */
+  private function isExtendingEndDate() {
+    try {
+      $currentEndDate = civicrm_api3('Membership', 'getvalue', [
+        'return' => 'end_date',
+        'id' => $this->id,
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      return FALSE;
+    }
+
+    if (empty($currentEndDate)) {
+      return FALSE;
+    }
+
+    return strtotime($this->params['end_date']) > strtotime($currentEndDate);
+  }
+
+  /**
+   * Checks if the latest contribution linked to the membership is unpaid.
+   *
+   * @return bool
+   */
+  private function latestLinkedContributionIsUnpaid() {
+    $statusId = CRM_Core_DAO::singleValueQuery('
+      SELECT c.contribution_status_id
+      FROM civicrm_membership_payment mp
+      INNER JOIN civicrm_contribution c ON c.id = mp.contribution_id
+      WHERE mp.membership_id = %1
+      ORDER BY mp.contribution_id DESC
+      LIMIT 1
+    ', [1 => [$this->id, 'Integer']]);
+
+    if (empty($statusId)) {
+      return FALSE;
+    }
+
+    $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+
+    return (int) $statusId !== (int) $completedStatusId;
   }
 
   /**
