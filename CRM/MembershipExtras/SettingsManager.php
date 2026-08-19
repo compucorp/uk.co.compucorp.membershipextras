@@ -39,27 +39,22 @@ class CRM_MembershipExtras_SettingsManager {
   }
 
   public static function getCustomFieldsIdsToExcludeForAutoRenew() {
-    $customGroupsIdsToExcludeForAutoRenew = self::getSettingValue('membershipextras_customgroups_to_exclude_for_autorenew');
-    if (empty($customGroupsIdsToExcludeForAutoRenew)) {
-      return [];
-    }
-
-    $customFieldsToExcludeForAutoRenew = civicrm_api3('CustomField', 'get', [
-      'return' => ['id'],
-      'sequential' => 1,
-      'custom_group_id' => ['IN' => $customGroupsIdsToExcludeForAutoRenew],
-      'options' => ['limit' => 0],
-    ]);
-    if (empty($customFieldsToExcludeForAutoRenew['values'])) {
-      return [];
-    }
-
     $customFieldsIdsToExcludeForAutoRenew = [];
-    foreach ($customFieldsToExcludeForAutoRenew['values'] as $customField) {
-      $customFieldsIdsToExcludeForAutoRenew[] = $customField['id'];
+
+    $customGroupsIdsToExcludeForAutoRenew = self::getSettingValue('membershipextras_customgroups_to_exclude_for_autorenew');
+    if (!empty($customGroupsIdsToExcludeForAutoRenew)) {
+      $customFieldsToExcludeForAutoRenew = \Civi\Api4\CustomField::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('custom_group_id', 'IN', (array) $customGroupsIdsToExcludeForAutoRenew)
+        ->execute();
+      foreach ($customFieldsToExcludeForAutoRenew as $customField) {
+        $customFieldsIdsToExcludeForAutoRenew[] = (int) $customField['id'];
+      }
     }
 
-    return $customFieldsIdsToExcludeForAutoRenew;
+    (new CRM_MembershipExtras_Hook_CustomDispatch_AutoRenewExcludedCustomFields($customFieldsIdsToExcludeForAutoRenew))->dispatch();
+
+    return array_values(array_unique(array_map('intval', $customFieldsIdsToExcludeForAutoRenew)));
   }
 
   /**
