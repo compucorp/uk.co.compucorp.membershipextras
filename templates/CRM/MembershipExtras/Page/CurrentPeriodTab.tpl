@@ -154,10 +154,10 @@
 
 <div id="current_buttons">
   <a class="button clickable" href="" id="add_membership_btn">
-    <span><i class="crm-i fa-plus"></i>&nbsp; Add Membership</span>
+    <span><i class="crm-i fa-plus" role="img" aria-hidden="true"></i>&nbsp; Add Membership</span>
   </a>
   <a class="button clickable" href="" id="add_other_btn">
-    <span><i class="crm-i fa-plus"></i>&nbsp; Add Other Amount</span>
+    <span><i class="crm-i fa-plus" role="img" aria-hidden="true"></i>&nbsp; Add Other Amount</span>
   </a>
 </div>
 <div class="clear"></div>
