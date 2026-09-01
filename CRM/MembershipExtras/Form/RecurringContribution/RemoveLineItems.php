@@ -68,7 +68,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_RemoveLineItems extends CR
    */
   public function buildQuickForm() {
     $lineItemLabel = $this->recurringLineItemData['label'];
-    CRM_Utils_System::setTitle(E::ts('Remove ' . $lineItemLabel . '?'));
+    CRM_Utils_System::setTitle(E::ts('Remove %1?', [1 => $lineItemLabel]));
 
     $this->assign('lineItem', $this->recurringLineItemData);
 
