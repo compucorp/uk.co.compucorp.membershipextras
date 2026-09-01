@@ -150,7 +150,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlanTest extends B
 
   /**
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceSet() {
     $priceSetParams = [
@@ -167,7 +167,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlanTest extends B
    * @param $priceSetId
    * @param string $priceFieldLabel
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceField($priceSetId, $priceFieldLabel = 'Membership Amount') {
     return PriceFieldFabricator::fabricate([
@@ -181,7 +181,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlanTest extends B
   /**
    *
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceFieldValue($priceFieldId, $membershipTypeId) {
     return PriceFieldValueFabricator::fabricate([
@@ -199,7 +199,7 @@ class CRM_MembershipExtras_Hook_ValidateForm_MembershipPaymentPlanTest extends B
    * @param $setting
    * @param $fixedPeriodStartDate
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockMembershipType($membershipPeriodType, $durationUnit, $fixedPeriodStartDate = 101) {
     $memType = MembershipTypeFabricator::fabricate([

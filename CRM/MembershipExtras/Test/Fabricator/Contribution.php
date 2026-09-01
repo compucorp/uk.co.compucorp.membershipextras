@@ -19,7 +19,7 @@ class CRM_MembershipExtras_Test_Fabricator_Contribution extends BaseFabricator {
    * @param array $params
    *
    * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function fabricate(array $params = []) {
     $contribution = parent::fabricate($params);

@@ -92,7 +92,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
    * @param array $paymentPlan
    * @param array $membershipParams
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function addRenewableNewMembershipToNextPeriodOnly($paymentPlan, $membershipParams) {
     $membershipTypeObject = $this->createMembershipType($membershipParams);
@@ -123,7 +123,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
    * @param int $paymentPlanID
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getPaymentPlanContributions($paymentPlanID) {
     return civicrm_api3('Contribution', 'get', [
@@ -142,7 +142,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
    * @param array $params
    *
    * @return \stdClass
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function createMembershipType($params) {
     $membershipType = MembershipTypeFabricator::fabricate($params);

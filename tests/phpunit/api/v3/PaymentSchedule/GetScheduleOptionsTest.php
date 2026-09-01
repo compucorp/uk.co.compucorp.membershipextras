@@ -17,7 +17,7 @@ class api_v3_PaymentSchedule_GetScheduleOptionsTest extends BaseHeadlessTest {
   /**
    * Test get schedule options for fixed period membership type
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testGetScheduleOptionsForFixedPeriodMembershipType() {
     $membershipType = MembershipTypeFabricator::fabricate([
@@ -92,7 +92,7 @@ class api_v3_PaymentSchedule_GetScheduleOptionsTest extends BaseHeadlessTest {
    * @param string $durationUnit
    *
    * @return CRM_Member_BAO_MembershipType|mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockRollingMembershipType($durationUnit = 'year') {
     return MembershipTypeFabricator::fabricate([
@@ -109,7 +109,7 @@ class api_v3_PaymentSchedule_GetScheduleOptionsTest extends BaseHeadlessTest {
    * @param $action
    *
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function callAPI($params, $action) {
     return civicrm_api3('PaymentSchedule', $action, $params)['values'];
@@ -117,7 +117,7 @@ class api_v3_PaymentSchedule_GetScheduleOptionsTest extends BaseHeadlessTest {
 
   /**
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceFieldValues() {
     $priceFieldValues = [];

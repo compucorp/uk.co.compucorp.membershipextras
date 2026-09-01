@@ -25,7 +25,7 @@ abstract class CRM_MembershipExtras_Test_Fabricator_Base {
    * @param array $params
    *
    * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Exception
    */
   public static function fabricate(array $params = []) {

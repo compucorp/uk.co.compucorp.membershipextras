@@ -268,7 +268,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
    * @param $membershipPeriodType
    * @param $durationUnit
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockFormParams($membershipPeriodType, $durationUnit) {
     $this->mockSalesTaxFinancialAccount();
@@ -360,7 +360,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
    * @param string $group
    *
    * @return array|string
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getOptionValue($name, $group) {
     return civicrm_api3('OptionValue', 'getvalue', [
@@ -376,7 +376,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_ContributionT
    * @param $financialType
    *
    * @return int|array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getFinancialTypeID($financialType) {
     return civicrm_api3('FinancialType', 'getvalue', [
