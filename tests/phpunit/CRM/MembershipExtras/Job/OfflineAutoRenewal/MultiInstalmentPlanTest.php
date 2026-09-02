@@ -1106,4 +1106,120 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     }
   }
 
+  /**
+   * Tests renewing a plan not priced at the current fee keeps equal instalments.
+   *
+   * Covers CIVIMM-569: simulates a payment plan imported with the Membership
+   * Extras API importer — per-instalment amounts reflect the old £120 fee
+   * (12 × £10) while the membership price has since changed to £150. With
+   * "use latest price" disabled the renewal must keep 12 equal instalments of
+   * £10; the last instalment must not be inflated to £40 to balance the year
+   * total to the new price.
+   */
+  public function testRenewalOfPlanNotPricedAtCurrentFeeKeepsEqualInstalments() {
+    $oldPerInstalmentAmount = 10;
+    $newFee = 150;
+
+    $paymentPlan = $this->fabricateOldPricePaymentPlan($oldPerInstalmentAmount);
+    $this->changeTestMembershipTypePrice($newFee);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $newRecurContributionId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $this->assertNotNull($newRecurContributionId, 'The payment plan should have been renewed');
+
+    $contributions = $this->getPaymentPlanContributions($newRecurContributionId);
+    $this->assertCount(12, $contributions);
+
+    foreach ($contributions as $index => $contribution) {
+      $this->assertEquals($oldPerInstalmentAmount, (float) $contribution['total_amount'],
+        'Instalment ' . ($index + 1) . " should keep the plan amount of {$oldPerInstalmentAmount}");
+    }
+  }
+
+  /**
+   * Tests renewing a plan not priced at the current fee with latest price on.
+   *
+   * Same imported-plan scenario as above, but with the "Use latest price when
+   * auto renew membership?" setting enabled: all 12 instalments must be
+   * recalculated from the new £150 fee (12 × £12.50) — equal instalments at
+   * the new price, with no inflated final instalment.
+   */
+  public function testRenewalOfPlanNotPricedAtCurrentFeeUsesLatestPriceWhenEnabled() {
+    $oldPerInstalmentAmount = 10;
+    $newFee = 150;
+    $newPerInstalmentAmount = round($newFee / 12, 2);
+
+    $paymentPlan = $this->fabricateOldPricePaymentPlan($oldPerInstalmentAmount);
+    $this->changeTestMembershipTypePrice($newFee);
+
+    Civi::settings()->set('membershipextras_paymentplan_use_membership_latest_price', 1);
+    try {
+      $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+      $multipleInstalmentRenewal->run();
+    }
+    finally {
+      Civi::settings()->set('membershipextras_paymentplan_use_membership_latest_price', 0);
+    }
+
+    $newRecurContributionId = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $this->assertNotNull($newRecurContributionId, 'The payment plan should have been renewed');
+
+    $contributions = $this->getPaymentPlanContributions($newRecurContributionId);
+    $this->assertCount(12, $contributions);
+
+    foreach ($contributions as $index => $contribution) {
+      $this->assertEquals($newPerInstalmentAmount, (float) $contribution['total_amount'],
+        'Instalment ' . ($index + 1) . " should be recalculated to {$newPerInstalmentAmount}");
+    }
+  }
+
+  /**
+   * Fabricates a monthly payment plan whose instalments use an old price.
+   *
+   * Mirrors the data shape created by the Membership Extras API importer:
+   * per-instalment unit price and line total on the recurring line items,
+   * linked to the membership type's price field value.
+   *
+   * @param float $perInstalmentAmount
+   *
+   * @return array
+   */
+  private function fabricateOldPricePaymentPlan($perInstalmentAmount) {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $perInstalmentAmount,
+      'line_total' => $perInstalmentAmount,
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+
+    return PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+  }
+
+  /**
+   * Changes the test membership type fee and its price field value amount.
+   *
+   * @param float $newFee
+   */
+  private function changeTestMembershipTypePrice($newFee) {
+    civicrm_api3('MembershipType', 'create', [
+      'id' => $this->testRollingMembershipType['id'],
+      'minimum_fee' => $newFee,
+    ]);
+    civicrm_api3('PriceFieldValue', 'create', [
+      'id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'amount' => $newFee,
+    ]);
+  }
+
 }
