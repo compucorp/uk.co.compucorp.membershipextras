@@ -180,6 +180,190 @@ class CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalments
   }
 
   /**
+   * Tests last contribution is not inflated when the membership price changed.
+   *
+   * Covers CIVIMM-569: a payment plan whose instalment amounts were not derived
+   * from the current price (e.g. imported with the Membership Extras API
+   * importer, then renewed with its last price after the membership price
+   * changed). The last-instalment rounding adjustment must not absorb the
+   * price difference — all instalments must stay equal.
+   *
+   * Plan instalments: £10 × 12 (from old £120 fee). Current price: £150.
+   * Expected: 12 × £10, NOT 11 × £10 + £40.
+   */
+  public function testLastContributionNotAdjustedWhenInstalmentsNotDerivedFromCurrentPrice() {
+    $oldFee = 120;
+    $newFee = 150;
+    $instalments = 12;
+    $perInstalmentAmount = round($oldFee / $instalments, 2);
+
+    $this->mockPaymentPlanOrderWithInstalmentAmounts($oldFee, $perInstalmentAmount, $instalments);
+
+    civicrm_api3('PriceFieldValue', 'create', [
+      'id' => $this->membershipTypePriceFieldValue['id'],
+      'amount' => $newFee,
+    ]);
+
+    $handler = new MembershipInstalmentsHandler($this->recurringContribution['id']);
+    $handler->createRemainingInstalments();
+
+    $membershipPayments = $this->getMembershipPayment();
+    $this->assertEquals($instalments, $membershipPayments['count']);
+
+    $contributions = [];
+    foreach ($membershipPayments['values'] as $membershipPayment) {
+      $contributions[] = $membershipPayment['api.Contribution.get']['values'][0];
+    }
+
+    usort($contributions, function ($a, $b) {
+      return $a['id'] - $b['id'];
+    });
+
+    foreach ($contributions as $index => $contribution) {
+      $this->assertEquals($perInstalmentAmount, (float) $contribution['total_amount'],
+        'Contribution ' . ($index + 1) . " should keep the plan amount of {$perInstalmentAmount}");
+    }
+
+    $lastContribution = $contributions[$instalments - 1];
+    $lastLineItems = civicrm_api3('LineItem', 'get', [
+      'sequential' => 1,
+      'contribution_id' => $lastContribution['id'],
+    ])['values'];
+
+    $this->assertNotEmpty($lastLineItems);
+    $this->assertEquals($perInstalmentAmount, (float) $lastLineItems[0]['line_total'],
+      'Last line item must not absorb the membership price difference');
+  }
+
+  /**
+   * Tests last contribution is not reduced when the membership price decreased.
+   *
+   * Plan instalments: £10 × 12 (from old £120 fee). Current price: £60.
+   * Expected: 12 × £10 — the last instalment must not turn negative or shrink
+   * to balance the year total down to the new price.
+   */
+  public function testLastContributionNotAdjustedWhenMembershipPriceDecreased() {
+    $oldFee = 120;
+    $newFee = 60;
+    $instalments = 12;
+    $perInstalmentAmount = round($oldFee / $instalments, 2);
+
+    $this->mockPaymentPlanOrderWithInstalmentAmounts($oldFee, $perInstalmentAmount, $instalments);
+
+    civicrm_api3('PriceFieldValue', 'create', [
+      'id' => $this->membershipTypePriceFieldValue['id'],
+      'amount' => $newFee,
+    ]);
+
+    $handler = new MembershipInstalmentsHandler($this->recurringContribution['id']);
+    $handler->createRemainingInstalments();
+
+    $contributions = $this->getSortedContributions();
+    $this->assertCount($instalments, $contributions);
+
+    foreach ($contributions as $index => $contribution) {
+      $this->assertEquals($perInstalmentAmount, (float) $contribution['total_amount'],
+        'Contribution ' . ($index + 1) . " should keep the plan amount of {$perInstalmentAmount}");
+    }
+  }
+
+  /**
+   * Tests VAT amounts are not adjusted when the membership price changed.
+   *
+   * Plan instalments: £10 + £2 VAT × 12 (from old £120 + 20% fee).
+   * Current price: £150. Expected: every instalment keeps sub-total £10 and
+   * tax £2 — neither the line total nor the tax may absorb the difference.
+   */
+  public function testLastContributionWithVatNotAdjustedWhenMembershipPriceChanged() {
+    $this->mockSalesTaxFinancialAccount();
+
+    $oldFee = 120;
+    $newFee = 150;
+    $instalments = 12;
+    $perInstalmentSubTotal = round($oldFee / $instalments, 2);
+    $perInstalmentTax = round(($oldFee * 0.20) / $instalments, 2);
+    $perInstalmentTotal = round($perInstalmentSubTotal + $perInstalmentTax, 2);
+
+    $this->mockPaymentPlanOrderWithInstalmentAmounts(
+      $oldFee, $perInstalmentTotal, $instalments, $perInstalmentSubTotal, $perInstalmentTax
+    );
+
+    civicrm_api3('PriceFieldValue', 'create', [
+      'id' => $this->membershipTypePriceFieldValue['id'],
+      'amount' => $newFee,
+    ]);
+
+    $handler = new MembershipInstalmentsHandler($this->recurringContribution['id']);
+    $handler->createRemainingInstalments();
+
+    $contributions = $this->getSortedContributions();
+    $this->assertCount($instalments, $contributions);
+
+    foreach ($contributions as $index => $contribution) {
+      $this->assertEquals($perInstalmentTotal, (float) $contribution['total_amount'],
+        'Contribution ' . ($index + 1) . " should keep the plan total of {$perInstalmentTotal}");
+    }
+
+    $lastLineItems = civicrm_api3('LineItem', 'get', [
+      'sequential' => 1,
+      'contribution_id' => $contributions[$instalments - 1]['id'],
+    ])['values'];
+
+    $this->assertNotEmpty($lastLineItems);
+    $this->assertEquals($perInstalmentSubTotal, (float) $lastLineItems[0]['line_total']);
+    $this->assertEquals($perInstalmentTax, round((float) $lastLineItems[0]['tax_amount'], 2));
+  }
+
+  /**
+   * Tests an adjustment exactly at the rounding tolerance is still applied.
+   *
+   * The tolerance is 1p per instalment (12p for 12 instalments). A £100.08
+   * fee split as 12 × £8.33 leaves a remainder of exactly £0.12 on the last
+   * instalment, which must still be reconciled.
+   */
+  public function testLastContributionAdjustedWhenRemainderIsAtRoundingToleranceBoundary() {
+    $minimumFee = 100.08;
+    $instalments = 12;
+    $perInstalmentAmount = 8.33;
+
+    $this->mockPaymentPlanOrderWithInstalmentAmounts($minimumFee, $perInstalmentAmount, $instalments);
+
+    $handler = new MembershipInstalmentsHandler($this->recurringContribution['id']);
+    $handler->createRemainingInstalments();
+
+    $contributions = $this->getSortedContributions();
+    $this->assertCount($instalments, $contributions);
+
+    for ($i = 0; $i < $instalments - 1; $i++) {
+      $this->assertEquals($perInstalmentAmount, (float) $contributions[$i]['total_amount']);
+    }
+
+    $expectedLastAmount = round($minimumFee - ($perInstalmentAmount * ($instalments - 1)), 2);
+    $this->assertEquals($expectedLastAmount, (float) $contributions[$instalments - 1]['total_amount'],
+      "Last contribution should carry the boundary remainder, total_amount={$expectedLastAmount}");
+  }
+
+  /**
+   * Returns the plan's membership payment contributions sorted by id.
+   *
+   * @return array
+   */
+  private function getSortedContributions() {
+    $membershipPayments = $this->getMembershipPayment();
+
+    $contributions = [];
+    foreach ($membershipPayments['values'] as $membershipPayment) {
+      $contributions[] = $membershipPayment['api.Contribution.get']['values'][0];
+    }
+
+    usort($contributions, function ($a, $b) {
+      return $a['id'] - $b['id'];
+    });
+
+    return $contributions;
+  }
+
+  /**
    * Tests fixed membership pro-rated renewal produces correct last instalment.
    *
    * This covers the scenario that caused the negative-amount regression:
