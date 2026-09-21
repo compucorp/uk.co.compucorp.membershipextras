@@ -90,6 +90,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
         'url' => 'civicrm/recurring-contribution/edit-lineitems',
         'qs' => 'reset=1&crid=%%crid%%&cid=%%cid%%&context=contribution',
         'title' => 'View/Modify Future Instalments',
+        'weight' => 0,
       ];
     }
   }
