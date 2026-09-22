@@ -1,11 +1,11 @@
 <?php
 // This file declares a new entity type. For more details, see "hook_civicrm_entityTypes" at:
 // http://wiki.civicrm.org/confluence/display/CRMDOC/Hook+Reference
-return array (
+return [
   0 => 
-  array (
+  [
     'name' => 'ContributionRecurLineItem',
     'class' => 'CRM_MembershipExtras_DAO_ContributionRecurLineItem',
     'table' => 'membershipextras_subscription_line',
-  ),
-);
+  ],
+];
