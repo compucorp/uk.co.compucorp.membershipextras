@@ -1,6 +1,7 @@
 <?php
 use CRM_MembershipExtras_Service_UpfrontInstalments_StandardUpfrontInstalmentsCreator as StandardUpfrontInstalmentsCreator;
 use CRM_MembershipExtras_Service_MoneyUtilities as MoneyUtilities;
+use CRM_MembershipExtras_Hook_CustomDispatch_CalculateContributionReceiveDate as CalculateContributionReceiveDateDispatcher;
 
 /**
  * Renews a payment plan with multiple instalments.
@@ -76,7 +77,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $this->renewPaymentPlanMemberships($this->newRecurringContributionID);
     $this->buildLineItemsParams();
     $this->setTotalAndTaxAmount();
-    $this->recordPaymentPlanFirstContribution();
+    $this->recordPaymentPlanFirstContribution([
+      'receive_date' => $this->paymentPlanStartDate,
+    ]);
 
     $instalmentsHandler = new StandardUpfrontInstalmentsCreator($this->newRecurringContributionID);
     $instalmentsHandler->createRemainingInstalments();
@@ -99,9 +102,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $paymentProcessorID = !empty($currentRecurContribution['payment_processor_id']) ? $currentRecurContribution['payment_processor_id'] : NULL;
 
     $this->membershipsStartDate = $this->calculateRenewedMembershipsStartDate();
-    $this->paymentPlanStartDate = $this->currentRecurringContribution['next_sched_contribution_date'];
-    $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
+    $this->paymentPlanStartDate = !empty($this->currentRecurringContribution['next_sched_contribution_date']) ? $this->currentRecurringContribution['next_sched_contribution_date'] : date('YmdHis');
+    $params = [
+      'payment_instrument_id' => $this->currentRecurringContribution['payment_instrument_id'],
+    ];
+    $dispatcher = new CalculateContributionReceiveDateDispatcher(1, $this->paymentPlanStartDate, $params);
+    $dispatcher->dispatch();
 
+    $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
     $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
       'sequential' => 1,
       'contact_id' => $currentRecurContribution['contact_id'],
