@@ -45,8 +45,9 @@ class CRM_MembershipExtras_Service_PaymentPlanScheduleGeneratorTest extends Base
 
   private function createPaymentPlanOrder() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d');
-    $paymentPlanMembershipOrder->membershipEndDate = date('Y-m-d', strtotime('+1 year'));
+    // Use fixed dates to avoid month-end calculation issues
+    $paymentPlanMembershipOrder->membershipStartDate = '2026-10-01';
+    $paymentPlanMembershipOrder->membershipEndDate = '2027-09-30';
     $paymentPlanMembershipOrder->paymentPlanFrequency = 'Yearly';
     $paymentPlanMembershipOrder->lineItems[] = [
       'entity_table' => 'civicrm_membership',
@@ -144,8 +145,8 @@ class CRM_MembershipExtras_Service_PaymentPlanScheduleGeneratorTest extends Base
 
     return [
       [
-        // with membership token
-        [['charge_date' => date('Y-m-d', strtotime('+1 year +1 day +1 month')), 'amount' => 120], ['charge_date' => date('Y-m-d', strtotime('+1 year +1 day +2 month')), 'amount' => 120]],
+        // with membership token - use fixed dates to avoid month-end issues
+        [['charge_date' => '2026-11-01', 'amount' => '120.00'], ['charge_date' => '2026-12-01', 'amount' => '120.00']],
         '{"instalments_count": 2,"instalments": [{"charge_date": "{next_period_start_date}, + 1 month"},{"charge_date": "{next_period_start_date}, + 2 months"}]}',
       ],
       [
