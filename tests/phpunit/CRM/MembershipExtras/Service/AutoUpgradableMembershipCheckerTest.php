@@ -85,8 +85,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'start_date' => date('Y-m-d', strtotime('-1 year')),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
   }
 
@@ -107,8 +107,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'start_date' => date('Y-m-d', strtotime('-1 month')),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertEquals($this->testMonthlyToMembershipType['id'], $upgradeMembershipTypeId);
   }
 
@@ -136,8 +136,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'start_date' => date('Y-m-d', strtotime('-1 year')),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
   }
 
@@ -161,8 +161,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'start_date' => date('Y-m-d', strtotime('-1 year')),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -183,8 +183,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'start_date' => date('Y-m-d', strtotime('-1 year')),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -206,8 +206,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'end_date' => date('Y-m-d'),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -229,8 +229,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'end_date' => date('Y-m-d'),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -252,8 +252,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'end_date' => date('Y-m-d'),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -275,8 +275,8 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'end_date' => date('Y-m-d'),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertNull($upgradeMembershipTypeId);
   }
 
@@ -306,8 +306,263 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipCheckerTest extends B
       'start_date' => date('Y-m-d', strtotime('-1 year')),
     ]);
 
-    $AutoUpgradeService = new AutoUpgradeService();
-    $upgradeMembershipTypeId = $AutoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
+  }
+
+  public function testThatRemovedContactFromRegularFilterGroupIsExcluded() {
+    $filterGroup = GroupFabricator::fabricate();
+
+    civicrm_api3('GroupContact', 'create', [
+      'group_id' => $filterGroup['id'],
+      'contact_id' => $this->testContactId,
+    ]);
+    civicrm_api3('GroupContact', 'create', [
+      'group_id' => $filterGroup['id'],
+      'contact_id' => $this->testContactId,
+      'status' => 'Removed',
+    ]);
+
+    AutoMembershipUpgradeRuleFabricator::fabricate([
+      'label' => 'removed status test',
+      'from_membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'to_membership_type_id' => $this->testYearlyToMembershipType['id'],
+      'upgrade_trigger_date_type' => TriggerDateType::MEMBER_START,
+      'period_length' => 1,
+      'period_length_unit' => PeriodUnit::YEARS,
+      'filter_group' => $filterGroup['id'],
+    ]);
+
+    $testMembership = MembershipFabricator::fabricate([
+      'contact_id' => $this->testContactId,
+      'membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'join_date' => date('Y-m-d', strtotime('-1 year')),
+      'start_date' => date('Y-m-d', strtotime('-1 year')),
+    ]);
+
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $this->assertNull($upgradeMembershipTypeId);
+  }
+
+  public function testThatFilterGroupSnapshotIsTakenAtConstructionTime() {
+    $filterGroup = GroupFabricator::fabricate();
+
+    civicrm_api3('GroupContact', 'create', [
+      'group_id' => $filterGroup['id'],
+      'contact_id' => $this->testContactId,
+    ]);
+
+    AutoMembershipUpgradeRuleFabricator::fabricate([
+      'label' => 'snapshot test',
+      'from_membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'to_membership_type_id' => $this->testYearlyToMembershipType['id'],
+      'upgrade_trigger_date_type' => TriggerDateType::MEMBER_START,
+      'period_length' => 1,
+      'period_length_unit' => PeriodUnit::YEARS,
+      'filter_group' => $filterGroup['id'],
+    ]);
+
+    $testMembership = MembershipFabricator::fabricate([
+      'contact_id' => $this->testContactId,
+      'membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'join_date' => date('Y-m-d', strtotime('-1 year')),
+      'start_date' => date('Y-m-d', strtotime('-1 year')),
+    ]);
+
+    $autoUpgradeService = new AutoUpgradeService();
+
+    civicrm_api3('GroupContact', 'create', [
+      'group_id' => $filterGroup['id'],
+      'contact_id' => $this->testContactId,
+      'status' => 'Removed',
+    ]);
+
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
+  }
+
+  public function testThatDeletedFilterGroupDoesNotCauseFailure() {
+    $filterGroup = GroupFabricator::fabricate();
+    $orphanedGroupId = $filterGroup['id'];
+
+    $rule = AutoMembershipUpgradeRuleFabricator::fabricate([
+      'label' => 'deleted group test',
+      'from_membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'to_membership_type_id' => $this->testYearlyToMembershipType['id'],
+      'upgrade_trigger_date_type' => TriggerDateType::MEMBER_START,
+      'period_length' => 1,
+      'period_length_unit' => PeriodUnit::YEARS,
+      'filter_group' => $orphanedGroupId,
+    ]);
+
+    civicrm_api3('Group', 'delete', ['id' => $orphanedGroupId]);
+
+    try {
+      CRM_Core_DAO::executeQuery('SET FOREIGN_KEY_CHECKS = 0');
+      CRM_Core_DAO::executeQuery(
+        'UPDATE membershipextras_auto_membership_upgrade_rule
+            SET filter_group = %1
+          WHERE id = %2',
+        [
+          1 => [$orphanedGroupId, 'Integer'],
+          2 => [$rule['id'], 'Integer'],
+        ]
+      );
+    }
+    finally {
+      CRM_Core_DAO::executeQuery('SET FOREIGN_KEY_CHECKS = 1');
+    }
+
+    $testMembership = MembershipFabricator::fabricate([
+      'contact_id' => $this->testContactId,
+      'membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'join_date' => date('Y-m-d', strtotime('-1 year')),
+      'start_date' => date('Y-m-d', strtotime('-1 year')),
+    ]);
+
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $this->assertNull($upgradeMembershipTypeId);
+  }
+
+  public function testThatMultipleDistinctFilterGroupsAreAllPreloaded() {
+    $filterGroupA = GroupFabricator::fabricate(['title' => 'Filter Group A']);
+    $filterGroupB = GroupFabricator::fabricate(['title' => 'Filter Group B']);
+
+    civicrm_api3('GroupContact', 'create', [
+      'group_id' => $filterGroupB['id'],
+      'contact_id' => $this->testContactId,
+    ]);
+
+    AutoMembershipUpgradeRuleFabricator::fabricate([
+      'label' => 'group A rule',
+      'from_membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'to_membership_type_id' => $this->testMonthlyToMembershipType['id'],
+      'upgrade_trigger_date_type' => TriggerDateType::MEMBER_START,
+      'period_length' => 1,
+      'period_length_unit' => PeriodUnit::YEARS,
+      'filter_group' => $filterGroupA['id'],
+      'weight' => 1,
+    ]);
+
+    AutoMembershipUpgradeRuleFabricator::fabricate([
+      'label' => 'group B rule',
+      'from_membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'to_membership_type_id' => $this->testYearlyToMembershipType['id'],
+      'upgrade_trigger_date_type' => TriggerDateType::MEMBER_START,
+      'period_length' => 1,
+      'period_length_unit' => PeriodUnit::YEARS,
+      'filter_group' => $filterGroupB['id'],
+      'weight' => 2,
+    ]);
+
+    $testMembership = MembershipFabricator::fabricate([
+      'contact_id' => $this->testContactId,
+      'membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'join_date' => date('Y-m-d', strtotime('-1 year')),
+      'start_date' => date('Y-m-d', strtotime('-1 year')),
+    ]);
+
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
+  }
+
+  public function testThatRulesWithoutFilterGroupStillUpgrade() {
+    AutoMembershipUpgradeRuleFabricator::fabricate([
+      'label' => 'no filter group',
+      'from_membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'to_membership_type_id' => $this->testYearlyToMembershipType['id'],
+      'upgrade_trigger_date_type' => TriggerDateType::MEMBER_START,
+      'period_length' => 1,
+      'period_length_unit' => PeriodUnit::YEARS,
+    ]);
+
+    $testMembership = MembershipFabricator::fabricate([
+      'contact_id' => $this->testContactId,
+      'membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'join_date' => date('Y-m-d', strtotime('-1 year')),
+      'start_date' => date('Y-m-d', strtotime('-1 year')),
+    ]);
+
+    $autoUpgradeService = new AutoUpgradeService();
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
+    $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
+  }
+
+  public function testThatSmartGroupCacheIsRebuiltDuringPreload() {
+    $uniqueSource = 'autoupgrade_test_' . uniqid();
+    civicrm_api3('Contact', 'create', [
+      'id' => $this->testContactId,
+      'source' => $uniqueSource,
+    ]);
+
+    $savedSearch = civicrm_api3('SavedSearch', 'create', [
+      'form_values' => [
+        ['contact_type', '=', 'Individual', 0, 0],
+        ['sort_name', 'LIKE', '%', 0, 1],
+        ['source', '=', $uniqueSource, 0, 0],
+      ],
+    ]);
+
+    $smartGroup = civicrm_api3('Group', 'create', [
+      'title' => 'Smart Filter Group ' . $uniqueSource,
+      'saved_search_id' => $savedSearch['id'],
+      'is_active' => 1,
+    ]);
+    $smartGroupId = $smartGroup['id'];
+
+    CRM_Core_DAO::executeQuery(
+      "DELETE FROM civicrm_group_contact_cache WHERE group_id = %1",
+      [1 => [$smartGroupId, 'Integer']]
+    );
+    CRM_Core_DAO::executeQuery(
+      "UPDATE civicrm_group SET cache_date = NULL WHERE id = %1",
+      [1 => [$smartGroupId, 'Integer']]
+    );
+
+    // Sanity check: the cache really is empty before construction.
+    $rowsBefore = CRM_Core_DAO::singleValueQuery(
+      "SELECT COUNT(*) FROM civicrm_group_contact_cache WHERE group_id = %1",
+      [1 => [$smartGroupId, 'Integer']]
+    );
+    $this->assertEquals(0, (int) $rowsBefore);
+
+    AutoMembershipUpgradeRuleFabricator::fabricate([
+      'label' => 'smart group rebuild test',
+      'from_membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'to_membership_type_id' => $this->testYearlyToMembershipType['id'],
+      'upgrade_trigger_date_type' => TriggerDateType::MEMBER_START,
+      'period_length' => 1,
+      'period_length_unit' => PeriodUnit::YEARS,
+      'filter_group' => $smartGroupId,
+    ]);
+
+    $testMembership = MembershipFabricator::fabricate([
+      'contact_id' => $this->testContactId,
+      'membership_type_id' => $this->testYearlyFromMembershipType['id'],
+      'join_date' => date('Y-m-d', strtotime('-1 year')),
+      'start_date' => date('Y-m-d', strtotime('-1 year')),
+    ]);
+
+    $autoUpgradeService = new AutoUpgradeService();
+
+    $rowsAfter = CRM_Core_DAO::singleValueQuery(
+      "SELECT COUNT(*) FROM civicrm_group_contact_cache WHERE group_id = %1 AND contact_id = %2",
+      [
+        1 => [$smartGroupId, 'Integer'],
+        2 => [$this->testContactId, 'Integer'],
+      ]
+    );
+    $this->assertGreaterThan(
+      0,
+      (int) $rowsAfter,
+      'Smart group cache should be rebuilt for the test contact during checker construction.'
+    );
+
+    $upgradeMembershipTypeId = $autoUpgradeService->calculateMembershipTypeToUpgradeTo($testMembership['id']);
     $this->assertEquals($this->testYearlyToMembershipType['id'], $upgradeMembershipTypeId);
   }
 
