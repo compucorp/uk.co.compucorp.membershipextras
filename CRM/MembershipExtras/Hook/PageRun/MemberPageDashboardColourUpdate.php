@@ -34,7 +34,7 @@ class CRM_MembershipExtras_Hook_PageRun_MemberPageDashboardColourUpdate implemen
    * @param CRM_Core_Page $page
    */
   private function setMembershipTypeColourStyle($page) {
-    $rows = $page->get_template_vars('rows');
+    $rows = $page->getTemplateVars('rows');
 
     if (empty($rows)) {
       return;
