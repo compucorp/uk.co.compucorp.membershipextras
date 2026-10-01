@@ -40,7 +40,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * values if they are not set.
    *
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private static function updatePaymentPlanMissingParams() {
     self::$paymentPlanMembershipOrder->isTest = self::$paymentPlanMembershipOrder->isTest ?? 0;
@@ -91,7 +91,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * Creates the recurring contribution.
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function createRecurringContribution() {
     switch (self::$paymentPlanMembershipOrder->paymentPlanFrequency) {
@@ -168,7 +168,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @param array $recurringContribution
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function createRecurringLineItems($recurringContribution) {
     $createdLines = [];
@@ -209,7 +209,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    *
    * @param $recurringContribution
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function updateRecurringContributionAmount(&$recurringContribution) {
     $totalAmount = self::calculateRecurringContributionTotalAmount($recurringContribution['id']);
@@ -227,7 +227,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @param int $recurringContributionID
    *
    * @return float
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function calculateRecurringContributionTotalAmount($recurringContributionID) {
     $totalAmount = 0;
@@ -266,7 +266,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @param bool $createUpfrontContributions
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function createInstalments($recurringContribution, $lineItems, $createUpfrontContributions) {
     self::createFirstInstalment($recurringContribution, $lineItems);
@@ -283,7 +283,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @param array $lineItems
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function createFirstInstalment($recurringContribution, &$lineItems) {
     $params = [
@@ -320,7 +320,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    *
    * @param array $line
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function createLineItemForContribution($line) {
     $contribution = CRM_Contribute_BAO_Contribution::findById($line['line_item']['contribution_id']);
@@ -395,7 +395,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @param int $priceFieldValueID
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function getPriceFieldValue($priceFieldValueID) {
     return civicrm_api3('PriceFieldValue', 'getsingle', [
@@ -410,7 +410,7 @@ class CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder {
    * @param array $recurringContribution
    *
    * @return int
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function createMembership($lineItem, $recurringContribution) {
     $priceFieldValue = self::getPriceFieldValue($lineItem['price_field_value_id']);

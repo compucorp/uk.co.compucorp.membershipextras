@@ -79,7 +79,7 @@ class CRM_MembershipExtras_Service_RecurringContributionLineItemCreator {
 
       $lastContributionLineItems = civicrm_api3('LineItem', 'get', $lineItemsFilterParams);
     }
-    catch (CiviCRM_API3_Exception $exception) {
+    catch (CRM_Core_Exception $exception) {
       return [];
     }
 

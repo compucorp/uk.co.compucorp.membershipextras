@@ -43,7 +43,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    * @param array $links
    * @param int $mask
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function __construct($contributionID, &$links, &$mask) {
     $this->recurringContributionID = $contributionID;
@@ -58,7 +58,7 @@ class CRM_MembershipExtras_Hook_Links_RecurringContribution {
    * @return array
    *   Array with recurring contribution's data.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getRecurringContribution() {
     return civicrm_api3('ContributionRecur', 'getsingle', [
