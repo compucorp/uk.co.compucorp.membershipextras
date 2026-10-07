@@ -60,7 +60,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateMembershipTypeColour {
   }
 
   /**
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function deleteMembershipTypeColourFields() {
     $membershipTypeId = $this->form->_id;

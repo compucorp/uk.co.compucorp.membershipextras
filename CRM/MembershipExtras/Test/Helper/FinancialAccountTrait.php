@@ -10,7 +10,7 @@ trait CRM_MembershipExtras_Test_Helper_FinancialAccountTrait {
    * @param int $taxRate
    * @param string $financialTypeName
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   protected function mockSalesTaxFinancialAccount($taxRate = 20, $financialTypeName = 'Member Dues') {
     $existingRecordResponse = civicrm_api3('FinancialAccount', 'get', [
@@ -49,7 +49,7 @@ trait CRM_MembershipExtras_Test_Helper_FinancialAccountTrait {
    * @param $financialTypeName
    *
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   protected function getFinancialTypeID($financialTypeName) {
     $financialType = civicrm_api3('FinancialType', 'get', [

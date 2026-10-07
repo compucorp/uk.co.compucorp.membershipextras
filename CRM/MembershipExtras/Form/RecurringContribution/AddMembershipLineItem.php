@@ -337,7 +337,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
    *
    * @return array
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createMembership() {
     $autoRenew = $this->recurringContribution['auto_renew'] && $this->lineItemParams['auto_renew'];

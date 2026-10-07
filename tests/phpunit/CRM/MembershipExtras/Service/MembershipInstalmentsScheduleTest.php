@@ -421,7 +421,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   }
 
   /**
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws InvalidMembershipTypeInstalment
    */
   public function testRollingMembershipTypePriceFieldValuesWithoutTax() {
@@ -457,7 +457,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   /**
    * Tests price field values with tax instalments
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testPriceFieldValuesWithTax() {
     $this->mockSalesTaxFinancialAccount();
@@ -603,7 +603,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   /**
    * Tests exception when duration is not one year for fixed membership type
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testExceptionIsThrownIfFixedPeriodMembershipTypeDurationUnitIsNotOneYear() {
     $memType1 = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
@@ -625,7 +625,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   /**
    * Tests exception when membership period types are mixed
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testExceptionIsThrownIfMembershipPeriodTypesAreMixed() {
     $fixedType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
@@ -646,7 +646,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
   /**
    * Tests exception when membership duration intervals are mixed
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testExceptionIsThrownIfMembershipDurationIntervalsAreMixed() {
     $fixedType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
@@ -668,7 +668,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
    * Tests exception when membership type ts a fixed period
    * and schedule is quarterly
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testExceptionIsThrownIfMembershipTypeIsFixedPeriodAndScheduleIsQuarterly() {
     $fixedType = MembershipTypeFabricator::fabricate(array_merge($this->defaultRollingMembershipTypeParams,
@@ -889,7 +889,7 @@ class CRM_MembershipExtras_Service_MembershipInstalmentsScheduleTest extends Bas
 
   /**
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceFieldValues($includeNonMembershipTypePriceField = FALSE) {
     $priceFieldValues = [];

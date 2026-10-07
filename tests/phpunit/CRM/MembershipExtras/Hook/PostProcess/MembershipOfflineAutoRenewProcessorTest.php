@@ -34,7 +34,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessorT
   private $paymentPlanMembershipOrder;
 
   /**
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function testPostProcessMembershipForm() {
     $this->createPaymentPlanMembershipOrder();
@@ -69,7 +69,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessorT
   /**
    * Fabricates payment plan membership order
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function createPaymentPlanMembershipOrder() {
     $this->membershipType = CRM_MembershipExtras_Test_Fabricator_MembershipType::fabricate([
@@ -117,7 +117,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessorT
 
   /**
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws ReflectionException
    */
   private function simulateMembershipSignupForm() {
@@ -134,7 +134,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipOfflineAutoRenewProcessorT
   }
 
   /**
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws ReflectionException
    */
   private function setFormMembershipIDs() {
