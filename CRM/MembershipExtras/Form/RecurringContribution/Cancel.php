@@ -171,12 +171,12 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
       'contact_id' => $this->contactId,
       'contribution_status_id' => 'Pending',
       'options' => ['limit' => 0],
-      'api.Contribution.create' => array(
+      'api.Contribution.create' => [
         'id' => '$value.id',
         'contribution_status_id' => 'Cancelled',
         'cancel_date' => date('Y-m-d H:i:s'),
         'cancel_reason' => 'Cancelled because related recurring contribution was cancelled.',
-      ),
+      ],
     ]);
   }
 
@@ -184,9 +184,9 @@ class CRM_MembershipExtras_Form_RecurringContribution_Cancel extends CRM_Core_Fo
    * Cancels current recurring contribution.
    */
   private function cancelRecurringContribution() {
-    civicrm_api3('ContributionRecur', 'cancel', array(
+    civicrm_api3('ContributionRecur', 'cancel', [
       'id' => $this->id,
-    ));
+    ]);
   }
 
 }

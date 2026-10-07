@@ -261,7 +261,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
       return $result['values'];
     }
 
-    return array();
+    return [];
   }
 
   /**
