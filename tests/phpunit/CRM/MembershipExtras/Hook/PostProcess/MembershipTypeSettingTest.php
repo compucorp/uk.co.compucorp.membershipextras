@@ -40,7 +40,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSettingTest extends Ba
     $this->membershipTypeForm->_submitValues = $fields;
 
     $postProcessHook = new CRM_MembershipExtras_Hook_PostProcess_MembershipTypeSetting($this->membershipTypeForm);
-    $postProcessHook->process();;
+    $postProcessHook->process();
 
     $settings = $this->getSettings();
     $this->assertNotNull($settings);
