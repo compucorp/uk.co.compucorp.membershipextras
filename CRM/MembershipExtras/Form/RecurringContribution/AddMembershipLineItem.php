@@ -197,7 +197,7 @@ class CRM_MembershipExtras_Form_RecurringContribution_AddMembershipLineItem exte
    * @return array
    */
   private function getNextPeriodLineItems() {
-    $lineItems = array();
+    $lineItems = [];
 
     $params = [
       'sequential' => 1,

@@ -57,7 +57,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
       $accountRelName
     );
 
-    $newFinancialItem = array(
+    $newFinancialItem = [
       'transaction_date' => $transactionDate,
       'contact_id' => $contribution['contact_id'],
       'description' => ($lineItem['qty'] != 1 ? $lineItem['qty'] . ' of ' : '') . $lineItem['label'],
@@ -67,17 +67,17 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
       'status_id' => array_search('Unpaid', CRM_Core_PseudoConstant::get('CRM_Financial_DAO_FinancialItem', 'status_id')),
       'entity_table' => 'civicrm_line_item',
       'entity_id' => $lineItem['id'],
-    );
+    ];
 
     // create financial item for added line item
     $newFinancialItemDAO = CRM_Financial_BAO_FinancialItem::create($newFinancialItem, NULL, $trxnId);
     if (!empty($lineItem['tax_amount']) && $lineItem['tax_amount'] != 0) {
       $taxTerm = Civi::settings()->get('tax_term');
-      $taxFinancialItemInfo = array_merge($newFinancialItem, array(
+      $taxFinancialItemInfo = array_merge($newFinancialItem, [
         'amount' => $lineItem['tax_amount'],
         'description' => $taxTerm,
         'financial_account_id' => self::getTaxFinancialAccountId($lineItem['financial_type_id']),
-      ));
+      ]);
       // create financial item for tax amount related to added line item
       CRM_Financial_BAO_FinancialItem::create($taxFinancialItemInfo, NULL, $trxnId);
     }
@@ -96,12 +96,12 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
    */
   public static function getTaxFinancialAccountId($financialTypeId) {
     $accountRel = key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' "));
-    $searchParams = array(
+    $searchParams = [
       'entity_table' => 'civicrm_financial_type',
       'entity_id' => $financialTypeId,
       'account_relationship' => $accountRel,
-    );
-    $result = array();
+    ];
+    $result = [];
     CRM_Financial_BAO_FinancialTypeAccount::retrieve($searchParams, $result);
 
     return CRM_Utils_Array::value('financial_account_id', $result);
