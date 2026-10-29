@@ -517,10 +517,30 @@ abstract class CRM_MembershipExtras_Service_UpfrontInstalments_AbstractUpfrontIn
       }
     }
 
-    return [
+    $adjustment = [
       'line_total' => MoneyUtilities::roundToPrecision($lastLineTotal - (float) $lineItem['line_total'], 2),
       'tax_amount' => MoneyUtilities::roundToPrecision($lastTaxAmount - (float) ($lineItem['tax_amount'] ?? 0), 2),
     ];
+
+    if (!$this->isWithinRoundingTolerance($adjustment['line_total']) || !$this->isWithinRoundingTolerance($adjustment['tax_amount'])) {
+      return NULL;
+    }
+
+    return $adjustment;
+  }
+
+  /**
+   * Checks the adjustment is a genuine rounding remainder.
+   *
+   * Instalment amounts are derived by rounding (total / instalments) to 2
+   * decimal places, so accumulated rounding drift cannot exceed one cent per
+   * instalment. A larger difference means the instalment amounts were not
+   * derived from the baseline price (e.g. an imported plan renewed with its
+   * last price after the membership price changed), and adjusting would make
+   * the final instalment absorb the whole price difference.
+   */
+  private function isWithinRoundingTolerance(float $adjustment): bool {
+    return abs($adjustment) <= 0.01 * $this->instalmentsCount;
   }
 
   /**
