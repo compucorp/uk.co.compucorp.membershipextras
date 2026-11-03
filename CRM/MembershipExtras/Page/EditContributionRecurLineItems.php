@@ -16,7 +16,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    *
    * @var array
    */
-  private $financialTypes = array();
+  private $financialTypes = [];
 
   /**
    * Contains the list of all membership types
@@ -103,7 +103,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return array
    */
   private function getFinancialTypes() {
-    $financialTypes = array();
+    $financialTypes = [];
 
     $result = civicrm_api3('FinancialType', 'get', [
       'options' => ['limit' => 0],
@@ -111,9 +111,9 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
 
     if ($result['count'] > 0) {
       foreach ($result['values'] as $financialType) {
-        $financialTypes[] = array_merge($financialType, array(
+        $financialTypes[] = array_merge($financialType, [
           'tax_rate' => $this->getTaxRateForFinancialType($financialType['id']),
-        ));
+        ]);
       }
     }
 
@@ -514,7 +514,7 @@ class CRM_MembershipExtras_Page_EditContributionRecurLineItems extends CRM_Core_
    * @return array
    */
   private function getLineItems($conditions = []) {
-    $lineItems = array();
+    $lineItems = [];
 
     $options = array_merge($conditions, [
       'sequential' => 1,
