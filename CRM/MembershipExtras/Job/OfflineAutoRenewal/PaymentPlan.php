@@ -312,7 +312,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       $errorMessage = "Failed to renew recurring contribution ID: {$recurContribution['contribution_recur_id']} after {$executionTime} seconds - Error: {$e->getMessage()}";
       $ctx->log->err($errorMessage);
 
-      return FALSE;
+      return TRUE;
     }
   }
 
