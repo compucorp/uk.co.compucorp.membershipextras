@@ -137,7 +137,7 @@ class CRM_MembershipExtras_Form_Contribution_Action_Duplicate extends CRM_Core_F
         'currency' => $this->duplicateContribution->currency,
         'amount' => $this->duplicateContribution->total_amount,
       ];
-      CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
+      CRM_Contribute_BAO_ContributionSoft::writeRecord($contributionSoftParams);
     }
   }
 
