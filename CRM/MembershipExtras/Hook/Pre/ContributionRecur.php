@@ -77,6 +77,12 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
       $this->preventUpdatingNextScheduledContributionDate();
     }
 
+    if ($this->operation == 'edit' && $isSupportedPaymentPlan && $this->isCancelledPlanBeingCompleted()
+      && RecurringContributionHelper::isRecurringContributionLinkedToMembership($this->recurringContribution['id'])
+    ) {
+      $this->keepPaymentPlanCancelled();
+    }
+
     $forceCancellation = (bool) CRM_Utils_Request::retrieve('force_cancellation', 'String');
     if ($this->operation == 'edit' && $isSupportedPaymentPlan
       && RecurringContributionHelper::isRecurringContributionLinkedToMembership($this->recurringContribution['id']) && !$forceCancellation
@@ -105,6 +111,34 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
     if (!empty($this->params['next_sched_contribution_date'])) {
       unset($this->params['next_sched_contribution_date']);
     }
+  }
+
+  /**
+   * Checks if a cancelled payment plan is being marked as completed.
+   *
+   * CiviCRM core does this when a payment recorded after cancellation pays
+   * the last instalment, e.g. a Direct Debit payment already sent to the bank.
+   *
+   * @return bool
+   */
+  private function isCancelledPlanBeingCompleted() {
+    if (empty($this->params['contribution_status_id'])) {
+      return FALSE;
+    }
+
+    $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+    $currentStatus = $contributionStatus[$this->recurringContribution['contribution_status_id']] ?? NULL;
+    $newStatus = $contributionStatus[$this->params['contribution_status_id']] ?? $this->params['contribution_status_id'];
+
+    return $currentStatus === 'Cancelled' && $newStatus === PaymentPlanStatusCalculator::CONTRIBUTION_STATUS_COMPLETED;
+  }
+
+  private function keepPaymentPlanCancelled() {
+    unset(
+      $this->params['contribution_status_id'],
+      $this->params['end_date'],
+      $this->params['next_sched_contribution_date']
+    );
   }
 
   /**
