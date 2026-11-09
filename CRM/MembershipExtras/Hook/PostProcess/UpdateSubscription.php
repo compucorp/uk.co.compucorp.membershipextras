@@ -121,7 +121,7 @@ class CRM_MembershipExtras_Hook_PostProcess_UpdateSubscription {
    * @return array
    *   Array with the data for the first installment.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getFirstInstallment() {
     $contributions = civicrm_api3('Contribution', 'get', [

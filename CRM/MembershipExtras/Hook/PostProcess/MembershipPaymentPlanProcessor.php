@@ -55,7 +55,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
    * For now, it basically create the remaining instalments
    * contributions upfront for the payment plan.
    *
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws Exception
    */
   public function postProcess() {

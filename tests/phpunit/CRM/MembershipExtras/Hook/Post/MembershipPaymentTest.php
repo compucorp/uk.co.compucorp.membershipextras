@@ -22,7 +22,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPaymentTest extends BaseHeadlessT
   /**
    * Sets up common data for all the tests.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
     $contact = ContactFabricator::fabricate();
@@ -108,7 +108,7 @@ class CRM_MembershipExtras_Hook_Post_MembershipPaymentTest extends BaseHeadlessT
    * Obtains 'Membership Dues' financial type.
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getMembershipDuesFinancialType() {
     $result = civicrm_api3('FinancialType', 'get', [

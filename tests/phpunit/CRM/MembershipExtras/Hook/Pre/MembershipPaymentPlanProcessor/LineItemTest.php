@@ -135,7 +135,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    * @param null $membershipTypeSetting
    * @param null $priceSet
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockParams($membershipPeriodType, $membershipTypeDuration, $membershipTypeSetting = NULL, $priceSet = NULL) {
     $this->mockSalesTaxFinancialAccount();
@@ -184,7 +184,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    * @param $durationUnit
    * @param $setting
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockMembershipType($membershipPeriodType, $durationUnit, $setting) {
     $memType = MembershipTypeFabricator::fabricate([
@@ -210,7 +210,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    * @param $membershipTypeID
    * @param $startDate
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockMembership($contactID, $membershipTypeID, $startDate) {
     return MembershipFabricator::fabricate([
@@ -225,7 +225,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    * @param $membership
    * @param $membershipType
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockContribution($membership, $membershipType) {
     $rate = $this->getMemberDuesTaxRate();
@@ -264,7 +264,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
 
   /**
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceSet() {
     $priceSetParams = [
@@ -281,7 +281,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    * @param $priceSetId
    * @param string $priceFieldLabel
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceField($priceSetId, $priceFieldLabel = 'Membership Amount') {
     return PriceFieldFabricator::fabricate([
@@ -295,7 +295,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
   /**
    *
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function mockPriceFieldValue($priceFieldId, $membershipTypeId, $priceFieldAmount) {
     return PriceFieldValueFabricator::fabricate([
@@ -309,7 +309,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
 
   /**
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function getMemberDuesTaxRate() {
     $financialTypeId = $this->getFinancialTypeID('Member Dues');
@@ -323,7 +323,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
    * @param $financialType
    *
    * @return int|array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getFinancialTypeID($financialType) {
     return civicrm_api3('FinancialType', 'getvalue', [
@@ -334,7 +334,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_LineItemTest 
 
   /**
    * @return mixed
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   private function getDefaultMembershipTypeAmountPriceSet() {
     return civicrm_api3('PriceSet', 'get', [

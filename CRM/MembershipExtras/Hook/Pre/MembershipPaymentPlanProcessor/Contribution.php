@@ -41,7 +41,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor_Contribution 
   private $instalmentAmountCalculator;
 
   /**
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws CRM_Core_Exception
    */
   public function __construct(&$params) {

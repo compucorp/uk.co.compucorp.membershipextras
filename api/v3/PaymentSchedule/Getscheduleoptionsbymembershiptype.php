@@ -19,7 +19,7 @@ function _civicrm_api3_payment_schedule_getscheduleoptionsbymembershiptype_spec(
  *
  * @return array API result descriptor
  *
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_payment_schedule_getscheduleoptionsbymembershiptype($params) {
   $membershipTypePaymentSchedule = new CRM_MembershipExtras_API_PaymentSchedule_MembershipType($params);

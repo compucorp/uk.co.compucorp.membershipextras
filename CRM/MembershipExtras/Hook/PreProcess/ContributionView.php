@@ -69,7 +69,7 @@ class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
         'id' => $contributionID,
       ]);
     }
-    catch (CiviCRM_API3_Exception $exception) {
+    catch (CRM_Core_Exception $exception) {
       return [];
     }
   }
@@ -85,7 +85,7 @@ class CRM_MembershipExtras_Hook_PreProcess_ContributionView {
         'id' => $recurringContributionID,
       ]);
     }
-    catch (CiviCRM_API3_Exception $exception) {
+    catch (CRM_Core_Exception $exception) {
       return [];
     }
   }

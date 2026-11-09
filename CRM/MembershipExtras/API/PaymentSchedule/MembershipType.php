@@ -14,7 +14,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipType extends CRM_Member
    * CRM_MembershipExtras_API_MembershipType constructor.
    * @param $params
    *
-   * @throws API_Exception
+   * @throws CRM_Core_Exception
    */
   public function __construct($params) {
     $this->params = $params;
@@ -25,7 +25,7 @@ class CRM_MembershipExtras_API_PaymentSchedule_MembershipType extends CRM_Member
    * @return array
    *
    * @throws CRM_MembershipExtras_Exception_InvalidMembershipTypeInstalment
-   * @throws CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    */
   public function getPaymentSchedule() {
     $this->validateSchedule();
