@@ -131,7 +131,7 @@ class CRM_MembershipExtras_Form_AutomatedUpgradeRule extends CRM_Core_Form {
   }
 
   public function addRules() {
-    $this->addFormRule(array('CRM_MembershipExtras_Form_AutomatedUpgradeRule', 'validatePeriodLengthField'));
+    $this->addFormRule(['CRM_MembershipExtras_Form_AutomatedUpgradeRule', 'validatePeriodLengthField']);
   }
 
   /**
