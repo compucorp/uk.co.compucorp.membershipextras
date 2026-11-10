@@ -126,6 +126,13 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $supportedPaymentProcessorIDs;
 
   /**
+   * ID of the Cancelled membership status.
+   *
+   * @var int
+   */
+  protected $cancelledMembershipStatusID;
+
+  /**
    * @var CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker
    */
   protected $autoUpgradableMembershipCheckService;
@@ -141,6 +148,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $this->setRecurContributionStatusesNameMap();
     $this->setSupportedPaymentProcessorIDs();
     $this->setDaysToRenewInAdvance();
+    $this->cancelledMembershipStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Member_BAO_Membership', 'status_id', 'Cancelled');
   }
 
   /**

@@ -28,6 +28,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
    * - Recurring contribution has no end date.
    * - Recurring contribution is active
    * - Recurring contribution is not cancelled
+   * - None of its memberships is Cancelled
    * - Recurring contribution has either:
    *   - At least one auto-renew, un-removed line item for a membership with an
    *     end date before today + $daysToRenewInAdvance.
@@ -96,11 +97,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstalmentPlan extends C
          AND msl.is_removed = 0
          AND msl.end_date IS NULL
     GROUP BY ccr.id
-      HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
-      OR (
-        COUNT(cm.id) = 0
-        AND next_run_date <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
+      HAVING (
+        MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
+        OR (
+          COUNT(cm.id) = 0
+          AND next_run_date <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
+        )
       )
+      AND COALESCE(SUM(cm.status_id = {$this->cancelledMembershipStatusID}), 0) = 0
     ";
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 
