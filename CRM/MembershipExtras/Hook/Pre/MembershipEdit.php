@@ -164,23 +164,73 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
   }
 
   /**
-   * Is this membership is being edited from
-   * Payment.create API context ?
+   * Is this membership being edited by a Payment.create or
+   * Contribution.completetransaction API call that should not extend it?
    *
-   * This method works with this class
-   * CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI
-   * that sets `paymentApiCalled` flag if Payment.Create is being
-   * called, and if it is the case then we prevent extending
-   * the membership.
+   * The payment extends the membership only when it pays for a term the
+   * membership doesn't have yet: the first payment of a plan, with the
+   * membership not already running to the end of the term the payment starts.
+   * Instalments, and payments for a term Membership Extras' auto-renewal has
+   * already added, leave the end date alone.
    *
    * @return bool
    */
   private function editedFromPaymentAPIContext() {
-    if (!empty(Civi::$statics[ExtensionUti::LONG_NAME]['paymentApiCalled'])) {
-      return TRUE;
+    $paymentApiCalled = !empty(Civi::$statics[ExtensionUti::LONG_NAME]['paymentApiCalled']);
+    $contributionID = CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentContext::getContributionID();
+    if (empty($contributionID) || $this->isPendingMembership()) {
+      return $paymentApiCalled;
     }
 
-    return FALSE;
+    return $this->isTermAlreadyAllocated($contributionID);
+  }
+
+  private function isPendingMembership() {
+    $statusId = civicrm_api3('Membership', 'getvalue', [
+      'id' => $this->id,
+      'return' => 'status_id',
+    ]);
+
+    return CRM_Core_PseudoConstant::getName('CRM_Member_BAO_Membership', 'status_id', $statusId) === 'Pending';
+  }
+
+  private function isTermAlreadyAllocated($contributionID) {
+    $contribution = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'id' => $contributionID,
+      'return' => ['contribution_recur_id', 'receive_date'],
+    ])['values'][0] ?? NULL;
+    if (empty($contribution)) {
+      return FALSE;
+    }
+
+    if (!empty($contribution['contribution_recur_id'])) {
+      $earlierPlanContributions = civicrm_api3('Contribution', 'getcount', [
+        'contribution_recur_id' => $contribution['contribution_recur_id'],
+        'id' => ['<' => $contributionID],
+      ]);
+      if ($earlierPlanContributions > 0) {
+        return TRUE;
+      }
+    }
+
+    $membership = civicrm_api3('Membership', 'getsingle', [
+      'id' => $this->id,
+      'return' => ['end_date', 'membership_type_id'],
+    ]);
+    if (empty($membership['end_date']) || empty($contribution['receive_date'])) {
+      return FALSE;
+    }
+
+    $termDates = CRM_Member_BAO_MembershipType::getDatesForMembershipType(
+      $membership['membership_type_id'],
+      date('Y-m-d', strtotime($contribution['receive_date']))
+    );
+    if (empty($termDates['end_date'])) {
+      return FALSE;
+    }
+
+    return strtotime($membership['end_date']) >= strtotime($termDates['end_date']);
   }
 
   /**
