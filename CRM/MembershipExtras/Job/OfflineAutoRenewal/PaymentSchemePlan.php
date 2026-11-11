@@ -46,11 +46,14 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
          AND msl.auto_renew = 1
          AND msl.is_removed = 0
     GROUP BY ccr.id
-      HAVING MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
+      HAVING (
+        MIN(cm.end_date) <= DATE_ADD(CURDATE(), INTERVAL {$daysToRenewInAdvance} DAY)
           OR (
             COUNT(cm.id) = 0
             AND COUNT(msl.id) > 0
           )
+      )
+      AND COALESCE(SUM(cm.status_id = {$this->cancelledMembershipStatusID}), 0) = 0
     ";
     $recurContributions = CRM_Core_DAO::executeQuery($query);
 

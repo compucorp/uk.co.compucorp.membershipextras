@@ -159,6 +159,23 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
     return $result;
   }
 
+  protected function cancelPaymentPlanMemberships($paymentPlanId) {
+    CRM_Core_DAO::executeQuery(
+      'UPDATE civicrm_membership SET status_id = %1, is_override = 1 WHERE contribution_recur_id = %2',
+      [
+        1 => [CRM_Core_PseudoConstant::getKey('CRM_Member_BAO_Membership', 'status_id', 'Cancelled'), 'Integer'],
+        2 => [$paymentPlanId, 'Integer'],
+      ]
+    );
+  }
+
+  public function planStatusProvider() {
+    return [
+      'Completed plan' => ['Completed'],
+      'In Progress plan' => ['In Progress'],
+    ];
+  }
+
   protected function createPaymentScheme() {
     $params = [
       'name' => 'Test scheme',
