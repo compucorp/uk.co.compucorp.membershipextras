@@ -14,6 +14,10 @@ function membershipextras_civicrm_config(&$config) {
 
   Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI', 'preApiCall']);
   Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_ContributionCompleteTransactionAPI', 'preApiCall']);
+  foreach (['civi.api.respond', 'civi.api.exception'] as $eventName) {
+    Civi::dispatcher()->addListener($eventName, ['CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI', 'postApiCall']);
+    Civi::dispatcher()->addListener($eventName, ['CRM_MembershipExtras_Hook_Config_APIWrapper_ContributionCompleteTransactionAPI', 'postApiCall']);
+  }
 }
 
 /**
