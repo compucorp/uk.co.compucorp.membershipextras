@@ -201,4 +201,20 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
     return NULL;
   }
 
+  /**
+   * Gets the status name of a recurring contribution.
+   *
+   * @param int $recurContributionId
+   *
+   * @return string
+   */
+  protected function getRecurStatusName($recurContributionId) {
+    $statusId = civicrm_api3('ContributionRecur', 'getvalue', [
+      'return' => 'contribution_status_id',
+      'id' => $recurContributionId,
+    ]);
+
+    return CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $statusId);
+  }
+
 }
