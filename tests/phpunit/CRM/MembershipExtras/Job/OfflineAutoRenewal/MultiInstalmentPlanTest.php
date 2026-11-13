@@ -909,6 +909,16 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $this->assertEquals('In Progress', $this->getRecurStatusName($nextPeriodID));
   }
 
+  /**
+   * A renewed plan must stay In Progress when it is edited before any of its
+   * own instalments is paid (e.g. a failed charge updating failure_count).
+   *
+   * Today this holds because PaymentPlanStatusCalculator looks the status up
+   * in the contribution status list, which has no "In Progress", so it never
+   * recalculates an In Progress plan (the cause of MAE-1403). A fix for
+   * MAE-1403 that lets the calculator see In Progress plans would demote
+   * this plan to Pending: this test is here to fail if that happens.
+   */
   public function testRenewedPaymentPlanStaysInProgressWhenEditedBeforeAnyInstalmentIsPaid() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
