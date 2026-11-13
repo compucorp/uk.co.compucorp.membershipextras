@@ -883,6 +883,73 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     ]);
   }
 
+  public function testRenewalCopiesSavedPaymentMethodToNewPaymentPlan() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+    $paymentTokenId = $this->saveCardOnPaymentPlan($paymentPlan['id']);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $this->assertNotNull($nextPeriodID);
+    $this->assertEquals([
+      'payment_token_id' => $paymentTokenId,
+      'processor_id' => 'cus_renewal_test_' . $paymentPlan['id'],
+    ], $this->getRecurPaymentMethod($nextPeriodID));
+  }
+
+  /**
+   * Plans without a saved card (GoCardless, Manual Direct Debit) keep
+   * renewing as before: their processor_id, which GoCardless uses for its
+   * own purposes, is not copied.
+   */
+  public function testRenewalWithoutSavedPaymentMethodDoesNotCopyProcessorId() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+    civicrm_api3('ContributionRecur', 'create', [
+      'id' => $paymentPlan['id'],
+      'processor_id' => 'createnew',
+    ]);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $this->assertNotNull($nextPeriodID);
+    $paymentMethod = $this->getRecurPaymentMethod($nextPeriodID);
+    $this->assertEmpty($paymentMethod['payment_token_id']);
+    $this->assertEmpty($paymentMethod['processor_id']);
+  }
+
   public function testRenewalWillUpdateNextScheduledContributionDateToOneMonthAfterLastContributionDate() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = '2022-08-01';

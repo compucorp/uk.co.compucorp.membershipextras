@@ -113,7 +113,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
     $this->paymentPlanStartDate = $this->paymentPlanSchedule['instalments'][0]['charge_date'];
     $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
 
-    $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
+    $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', $this->getSavedPaymentMethodParams() + [
       'sequential' => 1,
       'contact_id' => $currentRecurContribution['contact_id'],
       'amount' => 0,

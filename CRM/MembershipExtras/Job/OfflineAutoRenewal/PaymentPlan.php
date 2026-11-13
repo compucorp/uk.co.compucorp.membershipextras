@@ -266,6 +266,32 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   abstract public function renew();
 
   /**
+   * Gets the saved payment method of the current recurring contribution, to
+   * carry over to the renewed one.
+   *
+   * Processors that charge a saved card off-session (Stripe) store it as the
+   * recur's payment_token_id, with the processor's customer in processor_id.
+   * The new recur needs both or the charge job skips it. Recurs without a
+   * payment token (GoCardless, Manual Direct Debit) return nothing, so their
+   * processor_id, which they use differently, is not copied.
+   *
+   * @return array
+   *   payment_token_id and processor_id, or an empty array.
+   */
+  protected function getSavedPaymentMethodParams() {
+    if (empty($this->currentRecurringContribution['payment_token_id'])) {
+      return [];
+    }
+
+    $params = ['payment_token_id' => $this->currentRecurringContribution['payment_token_id']];
+    if (!empty($this->currentRecurringContribution['processor_id'])) {
+      $params['processor_id'] = $this->currentRecurringContribution['processor_id'];
+    }
+
+    return $params;
+  }
+
+  /**
    * Dispatches postOfflineAutoRenewal hook for the recurring contribution.
    */
   protected function dispatchMembershipRenewalHook() {

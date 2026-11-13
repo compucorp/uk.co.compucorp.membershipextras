@@ -201,4 +201,49 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
     return NULL;
   }
 
+  /**
+   * Saves a card on a payment plan the way Stripe does: a payment token on
+   * the recurring contribution and the Stripe customer as its processor_id.
+   *
+   * @param int $recurContributionId
+   *
+   * @return int
+   *   The payment token ID.
+   */
+  protected function saveCardOnPaymentPlan($recurContributionId) {
+    $recur = civicrm_api3('ContributionRecur', 'getsingle', ['id' => $recurContributionId]);
+    $paymentToken = civicrm_api3('PaymentToken', 'create', [
+      'contact_id' => $recur['contact_id'],
+      'payment_processor_id' => $recur['payment_processor_id'],
+      'token' => 'pm_renewal_test_' . $recurContributionId,
+    ]);
+
+    civicrm_api3('ContributionRecur', 'create', [
+      'id' => $recurContributionId,
+      'payment_token_id' => $paymentToken['id'],
+      'processor_id' => 'cus_renewal_test_' . $recurContributionId,
+    ]);
+
+    return (int) $paymentToken['id'];
+  }
+
+  /**
+   * Gets the payment token and processor ID of a recurring contribution.
+   *
+   * @param int $recurContributionId
+   *
+   * @return array
+   */
+  protected function getRecurPaymentMethod($recurContributionId) {
+    $recur = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $recurContributionId,
+      'return' => ['payment_token_id', 'processor_id'],
+    ]);
+
+    return [
+      'payment_token_id' => $recur['payment_token_id'] ?? NULL,
+      'processor_id' => $recur['processor_id'] ?? NULL,
+    ];
+  }
+
 }
