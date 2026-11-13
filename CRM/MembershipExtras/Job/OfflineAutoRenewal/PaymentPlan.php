@@ -278,7 +278,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return array
    *   payment_token_id and processor_id, or an empty array.
    */
-  protected function getSavedPaymentMethodParams() {
+  protected function getSavedPaymentMethodParams(): array {
     if (empty($this->currentRecurringContribution['payment_token_id'])) {
       return [];
     }

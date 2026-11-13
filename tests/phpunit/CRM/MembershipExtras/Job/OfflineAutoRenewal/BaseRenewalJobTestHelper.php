@@ -210,19 +210,27 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
    * @return int
    *   The payment token ID.
    */
-  protected function saveCardOnPaymentPlan($recurContributionId) {
-    $recur = civicrm_api3('ContributionRecur', 'getsingle', ['id' => $recurContributionId]);
-    $paymentToken = civicrm_api3('PaymentToken', 'create', [
-      'contact_id' => $recur['contact_id'],
-      'payment_processor_id' => $recur['payment_processor_id'],
-      'token' => 'pm_renewal_test_' . $recurContributionId,
-    ]);
+  protected function saveCardOnPaymentPlan(int $recurContributionId): int {
+    $recur = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('contact_id', 'payment_processor_id')
+      ->addWhere('id', '=', $recurContributionId)
+      ->execute()
+      ->first();
+    $this->assertIsArray($recur);
 
-    civicrm_api3('ContributionRecur', 'create', [
-      'id' => $recurContributionId,
-      'payment_token_id' => $paymentToken['id'],
-      'processor_id' => 'cus_renewal_test_' . $recurContributionId,
-    ]);
+    $paymentToken = \Civi\Api4\PaymentToken::create(FALSE)
+      ->addValue('contact_id', $recur['contact_id'])
+      ->addValue('payment_processor_id', $recur['payment_processor_id'])
+      ->addValue('token', 'pm_renewal_test_' . $recurContributionId)
+      ->execute()
+      ->first();
+    $this->assertIsArray($paymentToken);
+
+    \Civi\Api4\ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $recurContributionId)
+      ->addValue('payment_token_id', $paymentToken['id'])
+      ->addValue('processor_id', 'cus_renewal_test_' . $recurContributionId)
+      ->execute();
 
     return (int) $paymentToken['id'];
   }
@@ -234,11 +242,13 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
    *
    * @return array
    */
-  protected function getRecurPaymentMethod($recurContributionId) {
-    $recur = civicrm_api3('ContributionRecur', 'getsingle', [
-      'id' => $recurContributionId,
-      'return' => ['payment_token_id', 'processor_id'],
-    ]);
+  protected function getRecurPaymentMethod(int $recurContributionId): array {
+    $recur = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('payment_token_id', 'processor_id')
+      ->addWhere('id', '=', $recurContributionId)
+      ->execute()
+      ->first();
+    $this->assertIsArray($recur);
 
     return [
       'payment_token_id' => $recur['payment_token_id'] ?? NULL,

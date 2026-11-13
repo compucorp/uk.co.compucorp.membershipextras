@@ -935,10 +935,10 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
       'non_deductible_amount' => 0,
     ];
     $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
-    civicrm_api3('ContributionRecur', 'create', [
-      'id' => $paymentPlan['id'],
-      'processor_id' => 'createnew',
-    ]);
+    \Civi\Api4\ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $paymentPlan['id'])
+      ->addValue('processor_id', 'createnew')
+      ->execute();
 
     $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
     $multipleInstalmentRenewal->run();
