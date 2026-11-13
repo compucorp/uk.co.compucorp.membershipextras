@@ -266,6 +266,54 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   abstract public function renew();
 
   /**
+   * SQL condition that leaves out plans which can't be charged: those on a
+   * processor that needs a saved payment method, but with none saved.
+   *
+   * Renewing such a plan would raise instalments nobody collects and extend
+   * the membership for free. Processors declare the need through
+   * hook_membershipextras_updateSupportedPaymentProcessors, see
+   * CRM_MembershipExtras_Service_SupportedPaymentProcessors::getIDsRequiringPaymentToken().
+   *
+   * @return string
+   *   An "AND ..." condition on the ccr alias, or an empty string.
+   */
+  protected function getMissingPaymentTokenCondition(): string {
+    $ids = CRM_MembershipExtras_Service_SupportedPaymentProcessors::getIDsRequiringPaymentToken();
+    if ($ids === []) {
+      return '';
+    }
+
+    return ' AND NOT (ccr.payment_processor_id IN (' . implode(',', array_map('intval', $ids)) . ') AND ccr.payment_token_id IS NULL)';
+  }
+
+  /**
+   * Gets the saved payment method of the current recurring contribution, to
+   * carry over to the renewed one.
+   *
+   * Processors that charge a saved card off-session (Stripe) store it as the
+   * recur's payment_token_id; the charge job only picks up recurs that have
+   * one. processor_id is copied with it so the renewed recur keeps the same
+   * reference. Recurs without a payment token (GoCardless, Manual Direct
+   * Debit) return nothing, so their processor_id, which they use
+   * differently, is not copied.
+   *
+   * @return array
+   *   payment_token_id and processor_id, or an empty array.
+   */
+  protected function getSavedPaymentMethodParams(): array {
+    if (empty($this->currentRecurringContribution['payment_token_id'])) {
+      return [];
+    }
+
+    $params = ['payment_token_id' => $this->currentRecurringContribution['payment_token_id']];
+    if (!empty($this->currentRecurringContribution['processor_id'])) {
+      $params['processor_id'] = $this->currentRecurringContribution['processor_id'];
+    }
+
+    return $params;
+  }
+
+  /**
    * Dispatches postOfflineAutoRenewal hook for the recurring contribution.
    */
   protected function dispatchMembershipRenewalHook() {

@@ -36,6 +36,67 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlanTest extends 
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '-1 month -1 day', 2));
   }
 
+  /**
+   * A payment scheme plan on a processor that can only collect with a saved
+   * payment method is not renewed when it has none.
+   */
+  public function testPlanNeedingSavedPaymentMethodIsNotRenewedWithoutOne() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->paymentSchemeId = $this->createPaymentScheme()->id;
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+    $this->requireSavedPaymentMethodForProcessorOf($paymentPlan['id']);
+
+    $paymentSchemeRenewal = new PaymentSchemePlanRenewalJob();
+    $paymentSchemeRenewal->run();
+
+    $this->assertNull($this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']));
+  }
+
+  public function testRenewalCopiesSavedPaymentMethodToNewPaymentPlan() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->paymentSchemeId = $this->createPaymentScheme()->id;
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+    $paymentTokenId = $this->saveCardOnPaymentPlan($paymentPlan['id']);
+
+    $paymentSchemeRenewal = new PaymentSchemePlanRenewalJob();
+    $paymentSchemeRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $this->assertNotNull($nextPeriodID);
+    $this->assertEquals([
+      'payment_token_id' => $paymentTokenId,
+      'processor_id' => 'cus_renewal_test_' . $paymentPlan['id'],
+    ], $this->getRecurPaymentMethod($nextPeriodID));
+  }
+
   public function testWillNotRenewPaymentPlansNotLinkedToPaymentScheme() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));

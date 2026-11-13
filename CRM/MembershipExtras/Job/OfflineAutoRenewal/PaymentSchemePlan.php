@@ -30,6 +30,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
     $supportedPaymentProcessorsIDs = implode(',', $this->supportedPaymentProcessorIDs);
     $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
+    $missingPaymentTokenCondition = $this->getMissingPaymentTokenCondition();
 
     $query = "
       SELECT ccr.id as contribution_recur_id, ccr.installments, ppea.payment_scheme_id
@@ -41,6 +42,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
        WHERE ccr.payment_processor_id IN ({$supportedPaymentProcessorsIDs})
          AND ccr.auto_renew = 1
          AND ccr.contribution_status_id != {$cancelledStatusID}
+         {$missingPaymentTokenCondition}
          AND ppea.is_active = 1
          AND ppea.payment_scheme_id IS NOT NULL
          AND msl.auto_renew = 1
@@ -113,7 +115,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
     $this->paymentPlanStartDate = $this->paymentPlanSchedule['instalments'][0]['charge_date'];
     $paymentInstrumentName = $this->getPaymentMethodNameFromItsId($currentRecurContribution['payment_instrument_id']);
 
-    $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', [
+    $newRecurringContribution = civicrm_api3('ContributionRecur', 'create', $this->getSavedPaymentMethodParams() + [
       'sequential' => 1,
       'contact_id' => $currentRecurContribution['contact_id'],
       'amount' => 0,
