@@ -120,7 +120,9 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentSchemePlan extends CRM_
       'currency' => $currentRecurContribution['currency'],
       'frequency_interval' => 1,
       'installments' => $this->currentRecurringContribution['installments'],
-      'contribution_status_id' => 'Pending',
+      // The plan is already running: its card or mandate carries over and
+      // its instalments are raised now, so it starts In Progress.
+      'contribution_status_id' => 'In Progress',
       'is_test' => $currentRecurContribution['is_test'],
       'auto_renew' => 1,
       'cycle_day' => $currentRecurContribution['cycle_day'],

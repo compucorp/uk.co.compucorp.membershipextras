@@ -883,6 +883,76 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     ]);
   }
 
+  public function testRenewedPaymentPlanIsInProgress() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $this->assertNotNull($nextPeriodID);
+    $this->assertEquals('In Progress', $this->getRecurStatusName($nextPeriodID));
+  }
+
+  /**
+   * A renewed plan must stay In Progress when it is edited before any of its
+   * own instalments is paid (e.g. a failed charge updating failure_count).
+   *
+   * Today this holds because PaymentPlanStatusCalculator looks the status up
+   * in the contribution status list, which has no "In Progress", so it never
+   * recalculates an In Progress plan (the cause of MAE-1403). A fix for
+   * MAE-1403 that lets the calculator see In Progress plans would demote
+   * this plan to Pending: this test is here to fail if that happens.
+   */
+  public function testRenewedPaymentPlanStaysInProgressWhenEditedBeforeAnyInstalmentIsPaid() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $this->assertNotNull($nextPeriodID);
+
+    // A failed charge records the failure on the plan, which runs Membership
+    // Extras' status recalculation.
+    \Civi\Api4\ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $nextPeriodID)
+      ->addValue('failure_count', 1)
+      ->execute();
+
+    $this->assertEquals('In Progress', $this->getRecurStatusName($nextPeriodID));
+  }
+
   public function testRenewalWillUpdateNextScheduledContributionDateToOneMonthAfterLastContributionDate() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = '2022-08-01';
