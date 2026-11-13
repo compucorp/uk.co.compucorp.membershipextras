@@ -208,13 +208,15 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
    *
    * @return string
    */
-  protected function getRecurStatusName($recurContributionId) {
-    $statusId = civicrm_api3('ContributionRecur', 'getvalue', [
-      'return' => 'contribution_status_id',
-      'id' => $recurContributionId,
-    ]);
+  protected function getRecurStatusName(int $recurContributionId): string {
+    $recur = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('contribution_status_id:name')
+      ->addWhere('id', '=', $recurContributionId)
+      ->execute()
+      ->first();
+    $this->assertIsArray($recur);
 
-    return CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $statusId);
+    return (string) $recur['contribution_status_id:name'];
   }
 
 }
