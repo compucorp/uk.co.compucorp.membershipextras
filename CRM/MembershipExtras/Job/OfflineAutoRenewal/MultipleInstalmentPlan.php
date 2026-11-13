@@ -33,6 +33,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
     $supportedPaymentProcessorsIDs = implode(',', $this->supportedPaymentProcessorIDs);
     $cancelledStatusID = $this->recurContributionStatusesNameMap['Cancelled'];
     $daysToRenewInAdvance = $this->daysToRenewInAdvance;
+    $missingPaymentTokenCondition = $this->getMissingPaymentTokenCondition();
 
     $query = "
       SELECT ccr.id as contribution_recur_id, ccr.installments
@@ -45,6 +46,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultipleInstalmentPlan extends
          AND ccr.installments > 1
          AND ccr.auto_renew = 1
          AND ccr.contribution_status_id != {$cancelledStatusID}
+         {$missingPaymentTokenCondition}
          AND ppea.is_active = 1
          AND ppea.payment_scheme_id IS NULL
          AND msl.auto_renew = 1

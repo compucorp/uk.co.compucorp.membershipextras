@@ -27,9 +27,51 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
    */
   protected $testRollingMembershipTypePriceFieldValue;
 
+  /**
+   * Listener added by requireSavedPaymentMethodForProcessorOf(), if any.
+   *
+   * @var callable|null
+   */
+  private $savedPaymentMethodListener;
+
   public function setUp(): void {
     $this->setDefaultPaymentPlanSettings();
     $this->createTestRollingMembershipType();
+  }
+
+  public function tearDown(): void {
+    if ($this->savedPaymentMethodListener !== NULL) {
+      \Civi::dispatcher()->removeListener('hook_membershipextras_updateSupportedPaymentProcessors', $this->savedPaymentMethodListener);
+      $this->savedPaymentMethodListener = NULL;
+    }
+    parent::tearDown();
+  }
+
+  /**
+   * Marks the payment plan's processor as one that can only collect with a
+   * saved payment method, the way an extension like Stripe does through
+   * hook_membershipextras_updateSupportedPaymentProcessors.
+   *
+   * @param int $recurContributionId
+   */
+  protected function requireSavedPaymentMethodForProcessorOf(int $recurContributionId): void {
+    $recur = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('payment_processor_id')
+      ->addWhere('id', '=', $recurContributionId)
+      ->execute()
+      ->first();
+    $this->assertIsArray($recur);
+    $processorId = (int) $recur['payment_processor_id'];
+    $this->assertGreaterThan(0, $processorId);
+
+    $this->savedPaymentMethodListener = function ($event) use ($processorId) {
+      foreach ($event->supportedPaymentProcessor as $key => $paymentProcessor) {
+        if ((int) $paymentProcessor['id'] === $processorId) {
+          $event->supportedPaymentProcessor[$key]['requires_payment_token'] = TRUE;
+        }
+      }
+    };
+    \Civi::dispatcher()->addListener('hook_membershipextras_updateSupportedPaymentProcessors', $this->savedPaymentMethodListener);
   }
 
   private function setDefaultPaymentPlanSettings() {

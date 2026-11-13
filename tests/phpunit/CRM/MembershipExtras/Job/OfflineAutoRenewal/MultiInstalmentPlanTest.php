@@ -914,6 +914,61 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
   }
 
   /**
+   * A plan on a processor that can only collect with a saved payment method
+   * (Stripe) is not renewed when it has none: nobody could collect the new
+   * instalments, and the membership would be extended for free.
+   */
+  public function testPlanNeedingSavedPaymentMethodIsNotRenewedWithoutOne() {
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($this->buildRenewablePaymentPlanOrder());
+    $this->requireSavedPaymentMethodForProcessorOf($paymentPlan['id']);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $this->assertNull($this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']));
+  }
+
+  /**
+   * The same plan with a saved payment method renews and keeps it.
+   */
+  public function testPlanNeedingSavedPaymentMethodRenewsWithOne() {
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($this->buildRenewablePaymentPlanOrder());
+    $paymentTokenId = $this->saveCardOnPaymentPlan($paymentPlan['id']);
+    $this->requireSavedPaymentMethodForProcessorOf($paymentPlan['id']);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
+    $this->assertNotNull($nextPeriodID);
+    $this->assertEquals($paymentTokenId, $this->getRecurPaymentMethod($nextPeriodID)['payment_token_id']);
+  }
+
+  /**
+   * A monthly payment plan that started over two years ago and is due for
+   * renewal.
+   */
+  private function buildRenewablePaymentPlanOrder(): PaymentPlanMembershipOrder {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+
+    return $paymentPlanMembershipOrder;
+  }
+
+  /**
    * Plans without a saved card (GoCardless, Manual Direct Debit) keep
    * renewing as before: their processor_id, which GoCardless uses for its
    * own purposes, is not copied.
