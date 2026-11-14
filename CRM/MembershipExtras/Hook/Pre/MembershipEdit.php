@@ -69,12 +69,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
-    $preventMembershipDateExtension = (
+    $isPaymentBeingRecorded = (
         $this->paymentContributionID ||
         $this->isRecordingPayment() ||
         $this->isBulkStatusUpdate() ||
-        $this->editedFromPaymentAPIContext()
-      ) && $this->isSupportedPaymentPlanMembership();
+        $this->editedFromPaymentAPIContext() ||
+        $this->editedFromOrderCompletion()
+      );
+    $preventMembershipDateExtension = $isPaymentBeingRecorded
+      && $this->isSupportedPaymentPlanMembership()
+      && $this->isTermAlreadyCovered();
 
     $null = NULL;
     $contributionId = (int) $this->paymentContributionID;
@@ -181,6 +185,110 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     }
 
     return FALSE;
+  }
+
+  /**
+   * Is this membership being edited while an order (contribution) completes?
+   *
+   * CRM_MembershipExtras_Hook_Config_OrderCompletion marks the contribution
+   * while core's order completion updates its memberships, both for
+   * Contribution.completetransaction and for the civi.order.complete event
+   * (e.g. a contribution page's Pay Online). Core renews the membership by
+   * a term at that point unless it is still Pending.
+   *
+   * @return bool
+   */
+  private function editedFromOrderCompletion() {
+    $contributionID = CRM_MembershipExtras_Hook_Config_OrderCompletion::getCompletingContributionID();
+    if (empty($contributionID)) {
+      return FALSE;
+    }
+
+    if (empty($this->paymentContributionID)) {
+      $this->paymentContributionID = $contributionID;
+    }
+
+    return TRUE;
+  }
+
+  /**
+   * Does the membership's end date already cover the period of the payment
+   * plan that the payment belongs to?
+   *
+   * A payment plan pays for a term that was given when the plan was set up:
+   * at signup the membership is created with its full term, and the renewal
+   * job extends it when it creates the next period's plan. Payments on such
+   * a plan must not add another term. A plan set up to renew a membership
+   * that has not been extended yet (e.g. an existing member renewing on a
+   * webform, paid later by GoCardless) is not covered, and its payment is
+   * what extends the membership, once.
+   *
+   * The term counts as given when either:
+   * - another payment on this plan has already completed: its term was added
+   *   then (a renewal's later instalments), or
+   * - the end date is on or after the end of one membership term counted from
+   *   the plan's start date, using core's own date calculation for the
+   *   membership type so fixed and rolling types work (signups and plans
+   *   created by the renewal job).
+   *
+   * @return bool
+   */
+  private function isTermAlreadyCovered() {
+    $recurringContributionID = $this->getMembershipRecurringContributionID();
+    if (empty($recurringContributionID)) {
+      return TRUE;
+    }
+
+    if ($this->hasOtherCompletedPaymentOnPlan((int) $recurringContributionID)) {
+      return TRUE;
+    }
+
+    $plan = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('start_date')
+      ->addWhere('id', '=', $recurringContributionID)
+      ->execute()
+      ->first();
+    $membership = \Civi\Api4\Membership::get(FALSE)
+      ->addSelect('end_date', 'membership_type_id')
+      ->addWhere('id', '=', $this->id)
+      ->execute()
+      ->first();
+    if (!is_array($plan) || !is_array($membership) || empty($plan['start_date']) || empty($membership['end_date'])) {
+      return TRUE;
+    }
+    $planStartDate = $plan['start_date'];
+
+    $termDates = CRM_Member_BAO_MembershipType::getDatesForMembershipType(
+      $membership['membership_type_id'],
+      NULL,
+      date('Y-m-d', strtotime($planStartDate))
+    );
+    if (empty($termDates['end_date'])) {
+      return TRUE;
+    }
+
+    return date('Ymd', strtotime($membership['end_date'])) >= date('Ymd', strtotime($termDates['end_date']));
+  }
+
+  /**
+   * Has another instalment of the plan, besides the one being paid, already
+   * completed?
+   *
+   * @param int $recurringContributionID
+   *
+   * @return bool
+   */
+  private function hasOtherCompletedPaymentOnPlan(int $recurringContributionID) {
+    $query = \Civi\Api4\Contribution::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('contribution_recur_id', '=', $recurringContributionID)
+      ->addWhere('contribution_status_id:name', '=', 'Completed')
+      ->setLimit(1);
+    if (!empty($this->paymentContributionID)) {
+      $query->addWhere('id', '!=', (int) $this->paymentContributionID);
+    }
+
+    return is_array($query->execute()->first());
   }
 
   /**
