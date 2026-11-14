@@ -546,4 +546,154 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $this->assertEquals($originalStartDate, $membershipParams['start_date']);
   }
 
+  /**
+   * Paying instalments of a plan whose term the membership already has
+   * (a signup, or a plan created by the renewal job) through
+   * Contribution.completetransaction, as Stripe and Pay Online invoices do,
+   * doesn't add a term (CIVIMM-592, MAE-1404, MAE-1405).
+   */
+  public function testCompleteTransactionOnPlanWithTermAlreadyGivenKeepsEndDate() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $endDateBefore = $this->getPlanMembershipEndDate($paymentPlan['id']);
+
+    $this->completeTransaction($contributions[0]['id']);
+    $this->assertEquals($endDateBefore, $this->getPlanMembershipEndDate($paymentPlan['id']), 'First instalment');
+
+    $this->completeTransaction($contributions[1]['id']);
+    $this->assertEquals($endDateBefore, $this->getPlanMembershipEndDate($paymentPlan['id']), 'Later instalment');
+  }
+
+  /**
+   * The same through Payment.create, as GoCardless and Record Payment do:
+   * unchanged behaviour.
+   */
+  public function testPaymentCreateOnPlanWithTermAlreadyGivenKeepsEndDate() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $endDateBefore = $this->getPlanMembershipEndDate($paymentPlan['id']);
+
+    $this->recordPayment($contributions[0]);
+    $this->recordPayment($contributions[1]);
+
+    $this->assertEquals($endDateBefore, $this->getPlanMembershipEndDate($paymentPlan['id']));
+  }
+
+  /**
+   * A plan set up to renew a membership that hasn't been extended yet (e.g.
+   * an existing member renewing on a webform, paid later by GoCardless):
+   * its first payment extends the membership once, later instalments don't
+   * (IESSPRT-293).
+   */
+  public function testPaymentCreateOnRenewalPlanExtendsMembershipOnce() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $lapsedEndDate = $this->endMembershipBeforePlanStarts($paymentPlan['id']);
+
+    $this->recordPayment($contributions[0]);
+    $endDateAfterFirstPayment = $this->getPlanMembershipEndDate($paymentPlan['id']);
+    $this->assertGreaterThan($lapsedEndDate, $endDateAfterFirstPayment, 'First payment renews the membership');
+
+    $this->recordPayment($contributions[1]);
+    $this->assertEquals($endDateAfterFirstPayment, $this->getPlanMembershipEndDate($paymentPlan['id']), 'Later instalment');
+  }
+
+  /**
+   * As above, through Contribution.completetransaction.
+   */
+  public function testCompleteTransactionOnRenewalPlanExtendsMembershipOnce() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $lapsedEndDate = $this->endMembershipBeforePlanStarts($paymentPlan['id']);
+
+    $this->completeTransaction($contributions[0]['id']);
+    $endDateAfterFirstPayment = $this->getPlanMembershipEndDate($paymentPlan['id']);
+    $this->assertGreaterThan($lapsedEndDate, $endDateAfterFirstPayment, 'First payment renews the membership');
+
+    $this->completeTransaction($contributions[1]['id']);
+    $this->assertEquals($endDateAfterFirstPayment, $this->getPlanMembershipEndDate($paymentPlan['id']), 'Later instalment');
+  }
+
+  /**
+   * The order-completion mark never outlives its order.
+   */
+  public function testOrderCompletionMarkIsClearedAfterCompleteTransaction() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+
+    $this->completeTransaction($contributions[0]['id']);
+
+    $this->assertNull(CRM_MembershipExtras_Hook_Config_OrderCompletion::getCompletingContributionID());
+  }
+
+  /**
+   * @return \stdClass
+   */
+  private function createOneYearRollingMembershipType() {
+    return $this->createMembershipType([
+      'name' => 'One Year Rolling Membership',
+      'period_type' => 'rolling',
+      'minimum_fee' => 120,
+      'duration_interval' => 1,
+      'duration_unit' => 'year',
+    ]);
+  }
+
+  /**
+   * @param int $paymentPlanID
+   *
+   * @return string
+   */
+  private function getPlanMembershipEndDate($paymentPlanID) {
+    return civicrm_api3('Membership', 'getvalue', [
+      'contribution_recur_id' => $paymentPlanID,
+      'return' => 'end_date',
+    ]);
+  }
+
+  /**
+   * Moves the plan's membership end date to the day before the plan starts,
+   * as for a lapsed member who sets up a plan to renew.
+   *
+   * @param int $paymentPlanID
+   *
+   * @return string
+   *   The new end date.
+   */
+  private function endMembershipBeforePlanStarts($paymentPlanID) {
+    $planStartDate = civicrm_api3('ContributionRecur', 'getvalue', [
+      'id' => $paymentPlanID,
+      'return' => 'start_date',
+    ]);
+    $endDate = date('Y-m-d', strtotime('-1 day', strtotime($planStartDate)));
+    CRM_Core_DAO::executeQuery(
+      'UPDATE civicrm_membership SET end_date = %1 WHERE contribution_recur_id = %2',
+      [1 => [$endDate, 'String'], 2 => [$paymentPlanID, 'Integer']]
+    );
+
+    return $endDate;
+  }
+
+  /**
+   * @param int $contributionID
+   */
+  private function completeTransaction($contributionID) {
+    civicrm_api3('Contribution', 'completetransaction', [
+      'id' => $contributionID,
+      'trxn_id' => 'TEST_' . $contributionID,
+      'is_transactional' => FALSE,
+    ]);
+  }
+
+  /**
+   * @param array $contribution
+   */
+  private function recordPayment($contribution) {
+    civicrm_api3('Payment', 'create', [
+      'contribution_id' => $contribution['id'],
+      'total_amount' => $contribution['total_amount'],
+      'trxn_date' => date('Y-m-d'),
+    ]);
+  }
+
 }

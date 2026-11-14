@@ -14,6 +14,15 @@ function membershipextras_civicrm_config(&$config) {
 
   Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI', 'preApiCall']);
   Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_ContributionCompleteTransactionAPI', 'preApiCall']);
+
+  // Mark which contribution's order is completing, around core's
+  // civi.order.complete handler (priority 0) and around
+  // Contribution.completetransaction, for the membership pre-hook.
+  Civi::dispatcher()->addListener('civi.order.complete', ['CRM_MembershipExtras_Hook_Config_OrderCompletion', 'onOrderCompleteStart'], 100);
+  Civi::dispatcher()->addListener('civi.order.complete', ['CRM_MembershipExtras_Hook_Config_OrderCompletion', 'onOrderCompleteEnd'], -100);
+  Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_OrderCompletion', 'onApiPrepare']);
+  Civi::dispatcher()->addListener('civi.api.respond', ['CRM_MembershipExtras_Hook_Config_OrderCompletion', 'onApiDone']);
+  Civi::dispatcher()->addListener('civi.api.exception', ['CRM_MembershipExtras_Hook_Config_OrderCompletion', 'onApiDone']);
 }
 
 /**
