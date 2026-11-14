@@ -243,14 +243,20 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       return TRUE;
     }
 
-    $planStartDate = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionRecur', $recurringContributionID, 'start_date');
-    $membership = civicrm_api3('Membership', 'getsingle', [
-      'id' => $this->id,
-      'return' => ['end_date', 'membership_type_id'],
-    ]);
-    if (empty($planStartDate) || empty($membership['end_date'])) {
+    $plan = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('start_date')
+      ->addWhere('id', '=', $recurringContributionID)
+      ->execute()
+      ->first();
+    $membership = \Civi\Api4\Membership::get(FALSE)
+      ->addSelect('end_date', 'membership_type_id')
+      ->addWhere('id', '=', $this->id)
+      ->execute()
+      ->first();
+    if (!is_array($plan) || !is_array($membership) || empty($plan['start_date']) || empty($membership['end_date'])) {
       return TRUE;
     }
+    $planStartDate = $plan['start_date'];
 
     $termDates = CRM_Member_BAO_MembershipType::getDatesForMembershipType(
       $membership['membership_type_id'],
@@ -273,18 +279,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * @return bool
    */
   private function hasOtherCompletedPaymentOnPlan(int $recurringContributionID) {
-    $completedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-    $query = 'SELECT COUNT(*) FROM civicrm_contribution WHERE contribution_recur_id = %1 AND contribution_status_id = %2';
-    $params = [
-      1 => [$recurringContributionID, 'Integer'],
-      2 => [$completedStatusID, 'Integer'],
-    ];
+    $query = \Civi\Api4\Contribution::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('contribution_recur_id', '=', $recurringContributionID)
+      ->addWhere('contribution_status_id:name', '=', 'Completed')
+      ->setLimit(1);
     if (!empty($this->paymentContributionID)) {
-      $query .= ' AND id <> %3';
-      $params[3] = [(int) $this->paymentContributionID, 'Integer'];
+      $query->addWhere('id', '!=', (int) $this->paymentContributionID);
     }
 
-    return (int) CRM_Core_DAO::singleValueQuery($query, $params) > 0;
+    return is_array($query->execute()->first());
   }
 
   /**
