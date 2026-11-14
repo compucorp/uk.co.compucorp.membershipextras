@@ -615,6 +615,36 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
   }
 
   /**
+   * Several payments recorded in one PHP process, as a GoCardless webhook
+   * queue run does: an earlier payment's contribution, not on any plan, must
+   * not decide whether a plan payment adds a term.
+   */
+  public function testPaymentCreateAfterAnotherContributionKeepsEndDate() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $endDateBefore = $this->getPlanMembershipEndDate($paymentPlan['id']);
+    $this->editContributionNotOnAPlan();
+
+    $this->recordPayment($contributions[0]);
+
+    $this->assertEquals($endDateBefore, $this->getPlanMembershipEndDate($paymentPlan['id']));
+  }
+
+  /**
+   * As above, through Contribution.completetransaction.
+   */
+  public function testCompleteTransactionAfterAnotherContributionKeepsEndDate() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $endDateBefore = $this->getPlanMembershipEndDate($paymentPlan['id']);
+    $this->editContributionNotOnAPlan();
+
+    $this->completeTransaction($contributions[0]['id']);
+
+    $this->assertEquals($endDateBefore, $this->getPlanMembershipEndDate($paymentPlan['id']));
+  }
+
+  /**
    * The order-completion mark never outlives its order.
    */
   public function testOrderCompletionMarkIsClearedAfterCompleteTransaction() {
@@ -622,8 +652,33 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
     $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
 
     $this->completeTransaction($contributions[0]['id']);
-
     $this->assertNull(CRM_MembershipExtras_Hook_Config_OrderCompletion::getCompletingContributionID());
+
+    $this->recordPayment($contributions[1]);
+    $this->assertNull(CRM_MembershipExtras_Hook_Config_OrderCompletion::getCompletingContributionID(), 'After Payment.create');
+  }
+
+  /**
+   * Edits a contribution that isn't on any payment plan, as recording an
+   * earlier payment (e.g. an event fee) does in the same PHP process.
+   */
+  private function editContributionNotOnAPlan() {
+    $contactID = civicrm_api3('Contact', 'create', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Earlier',
+      'last_name' => 'Payer',
+    ])['id'];
+    $contribution = civicrm_api3('Contribution', 'create', [
+      'contact_id' => $contactID,
+      'financial_type_id' => 'Donation',
+      'total_amount' => 50,
+      'contribution_status_id' => 'Pending',
+      'is_pay_later' => 1,
+    ]);
+    civicrm_api3('Contribution', 'create', [
+      'id' => $contribution['id'],
+      'source' => 'Edited before the plan payment',
+    ]);
   }
 
   /**

@@ -12,19 +12,38 @@ use CRM_MembershipExtras_ExtensionUtil as ExtensionUtil;
  * on the first payment and on every later instalment
  * (CRM_MembershipExtras_Hook_Pre_MembershipEdit decides whether to allow it).
  *
- * Two entry points set the mark, and each clears it when it is done, so it
+ * These entry points set the mark, and each clears it when it is done, so it
  * never outlives the order it belongs to:
  * - the civi.order.complete event (CiviCRM 6.x), around core's own handler,
  *   which covers every route, e.g. a contribution page's Pay Online;
- * - the Contribution.completetransaction API, which works on every CiviCRM
- *   version (e.g. 5.x, where core updates memberships without the event).
+ * - the Contribution.completetransaction and Payment.create APIs, which work
+ *   on every CiviCRM version (e.g. 5.x, where core updates memberships
+ *   without the event).
+ *
+ * The marks are kept as a stack, because the entry points nest: an API call
+ * completes its order through the event on 6.x. The innermost mark is the
+ * order being completed.
+ *
+ * The mark is what tells the pre-hook which contribution is being paid. The
+ * pre-hook's other source, the last contribution edited in this PHP process,
+ * can still hold the previous payment's contribution when several payments
+ * are recorded in one run, e.g. a GoCardless webhook queue run.
  */
 class CRM_MembershipExtras_Hook_Config_OrderCompletion {
 
   /**
-   * Static key holding the contribution ID being completed.
+   * Static key holding the stack of contribution IDs being completed.
    */
   private const KEY = 'completingOrderContributionID';
+
+  /**
+   * API calls that complete an order, with the parameter holding the
+   * contribution ID.
+   */
+  private const API_CONTRIBUTION_ID_PARAMS = [
+    '3.contribution.completetransaction' => 'id',
+    '3.payment.create' => 'contribution_id',
+  ];
 
   /**
    * Gets the contribution whose order is being completed, if any.
@@ -32,7 +51,8 @@ class CRM_MembershipExtras_Hook_Config_OrderCompletion {
    * @return int|null
    */
   public static function getCompletingContributionID() {
-    $contributionID = Civi::$statics[ExtensionUtil::LONG_NAME][self::KEY] ?? NULL;
+    $marks = Civi::$statics[ExtensionUtil::LONG_NAME][self::KEY] ?? [];
+    $contributionID = empty($marks) ? NULL : end($marks);
 
     return empty($contributionID) ? NULL : (int) $contributionID;
   }
@@ -63,38 +83,42 @@ class CRM_MembershipExtras_Hook_Config_OrderCompletion {
    * @param \Civi\API\Event\PrepareEvent $event
    */
   public static function onApiPrepare($event) {
-    if ($event->getApiRequestSig() !== '3.contribution.completetransaction') {
+    $contributionIDParam = self::API_CONTRIBUTION_ID_PARAMS[$event->getApiRequestSig()] ?? NULL;
+    if ($contributionIDParam === NULL) {
       return;
     }
 
     $request = $event->getApiRequest();
-    $contributionID = $request['params']['id'] ?? NULL;
-    if (!empty($contributionID)) {
-      self::mark((int) $contributionID);
-    }
+    $contributionID = $request['params'][$contributionIDParam] ?? NULL;
+    self::mark(empty($contributionID) ? 0 : (int) $contributionID);
   }
 
   /**
-   * Runs after an API call, or when it fails: clears the mark set for a
-   * Contribution.completetransaction.
+   * Clears the mark after Contribution.completetransaction or Payment.create
+   * (on success or failure).
    *
-   * @param \Civi\API\Event\Event $event
+   * @param \Civi\API\Event\RespondEvent|\Civi\API\Event\ExceptionEvent $event
    */
   public static function onApiDone($event) {
-    if ($event->getApiRequestSig() === '3.contribution.completetransaction') {
+    if (isset(self::API_CONTRIBUTION_ID_PARAMS[$event->getApiRequestSig()])) {
       self::clear();
     }
   }
 
   /**
+   * Pushes a contribution being completed. 0 marks an API call without a
+   * contribution ID, so its clear still pairs with it.
+   *
    * @param int $contributionID
    */
   private static function mark(int $contributionID) {
-    Civi::$statics[ExtensionUtil::LONG_NAME][self::KEY] = $contributionID;
+    Civi::$statics[ExtensionUtil::LONG_NAME][self::KEY][] = $contributionID;
   }
 
   private static function clear() {
-    unset(Civi::$statics[ExtensionUtil::LONG_NAME][self::KEY]);
+    if (!empty(Civi::$statics[ExtensionUtil::LONG_NAME][self::KEY])) {
+      array_pop(Civi::$statics[ExtensionUtil::LONG_NAME][self::KEY]);
+    }
   }
 
 }

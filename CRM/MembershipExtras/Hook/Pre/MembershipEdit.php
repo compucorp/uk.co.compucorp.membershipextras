@@ -69,12 +69,16 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Preprocesses parameters used for Membership operations.
    */
   public function preProcess() {
+    // Checked first: while an order completes, its contribution is the one
+    // being paid, and it replaces the contribution passed in, which can be an
+    // earlier payment's when several are recorded in one run.
+    $isOrderBeingCompleted = $this->editedFromOrderCompletion();
     $isPaymentBeingRecorded = (
+        $isOrderBeingCompleted ||
         $this->paymentContributionID ||
         $this->isRecordingPayment() ||
         $this->isBulkStatusUpdate() ||
-        $this->editedFromPaymentAPIContext() ||
-        $this->editedFromOrderCompletion()
+        $this->editedFromPaymentAPIContext()
       );
     $preventMembershipDateExtension = $isPaymentBeingRecorded
       && $this->isSupportedPaymentPlanMembership()
@@ -204,9 +208,11 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       return FALSE;
     }
 
-    if (empty($this->paymentContributionID)) {
-      $this->paymentContributionID = $contributionID;
-    }
+    // The completing order's contribution is the one being paid. The
+    // contribution passed in is the last one edited in this PHP process, which
+    // can be an earlier payment's when several payments are recorded in one
+    // run (e.g. a GoCardless webhook queue run).
+    $this->paymentContributionID = $contributionID;
 
     return TRUE;
   }
