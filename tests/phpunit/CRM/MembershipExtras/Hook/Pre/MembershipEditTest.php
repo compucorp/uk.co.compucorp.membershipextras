@@ -588,14 +588,13 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
   public function testPaymentCreateOnRenewalPlanExtendsMembershipOnce() {
     $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
     $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
-    $lapsedEndDate = $this->endMembershipBeforePlanStarts($paymentPlan['id']);
+    $lapsedEndDate = $this->lapsePlanMembership($paymentPlan['id']);
 
     $this->recordPayment($contributions[0]);
-    $endDateAfterFirstPayment = $this->getPlanMembershipEndDate($paymentPlan['id']);
-    $this->assertGreaterThan($lapsedEndDate, $endDateAfterFirstPayment, 'First payment renews the membership');
+    $this->assertEquals($this->getEndDateOneTermAfter($lapsedEndDate), $this->getPlanMembershipEndDate($paymentPlan['id']), 'First payment renews the membership');
 
     $this->recordPayment($contributions[1]);
-    $this->assertEquals($endDateAfterFirstPayment, $this->getPlanMembershipEndDate($paymentPlan['id']), 'Later instalment');
+    $this->assertEquals($this->getEndDateOneTermAfter($lapsedEndDate), $this->getPlanMembershipEndDate($paymentPlan['id']), 'Later instalment');
   }
 
   /**
@@ -604,14 +603,51 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
   public function testCompleteTransactionOnRenewalPlanExtendsMembershipOnce() {
     $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
     $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
-    $lapsedEndDate = $this->endMembershipBeforePlanStarts($paymentPlan['id']);
+    $lapsedEndDate = $this->lapsePlanMembership($paymentPlan['id']);
 
     $this->completeTransaction($contributions[0]['id']);
-    $endDateAfterFirstPayment = $this->getPlanMembershipEndDate($paymentPlan['id']);
-    $this->assertGreaterThan($lapsedEndDate, $endDateAfterFirstPayment, 'First payment renews the membership');
+    $this->assertEquals($this->getEndDateOneTermAfter($lapsedEndDate), $this->getPlanMembershipEndDate($paymentPlan['id']), 'First payment renews the membership');
 
     $this->completeTransaction($contributions[1]['id']);
-    $this->assertEquals($endDateAfterFirstPayment, $this->getPlanMembershipEndDate($paymentPlan['id']), 'Later instalment');
+    $this->assertEquals($this->getEndDateOneTermAfter($lapsedEndDate), $this->getPlanMembershipEndDate($paymentPlan['id']), 'Later instalment');
+  }
+
+  /**
+   * A current member who renews early with a new plan, before the membership
+   * ends: the first payment extends it by one term from its end date.
+   */
+  public function testPaymentCreateOnEarlyRenewalPlanExtendsMembershipOnce() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    $currentEndDate = date('Y-m-d', strtotime('+20 days'));
+    $this->setPlanMembershipEndDate($paymentPlan['id'], $currentEndDate, '-1 year');
+
+    $this->recordPayment($contributions[0]);
+
+    $this->assertEquals($this->getEndDateOneTermAfter($currentEndDate), $this->getPlanMembershipEndDate($paymentPlan['id']));
+  }
+
+  /**
+   * A membership renewed with a payment plan on the back-office renewal form
+   * is extended there, when the plan is created. Paying the plan's first
+   * instalment later doesn't extend it again, even though the plan starts
+   * after the old end date, so the new end date is before one term from the
+   * plan's start.
+   */
+  public function testPaymentCreateOnPlanRenewedInBackOfficeKeepsEndDate() {
+    $paymentPlan = $this->createPendingPaymentPlan($this->createOneYearRollingMembershipType());
+    $contributions = $this->getPaymentPlanContributions($paymentPlan['id']);
+    CRM_Core_DAO::executeQuery(
+      'UPDATE civicrm_contribution_recur SET start_date = %1 WHERE id = %2',
+      [1 => [date('Y-m-d'), 'String'], 2 => [$paymentPlan['id'], 'Integer']]
+    );
+    $this->setPlanMembershipEndDate($paymentPlan['id'], date('Y-m-d', strtotime('-14 days')), '-1 year');
+    $renewedEndDate = date('Y-m-d', strtotime('+1 year -14 days'));
+    $this->setPlanMembershipEndDate($paymentPlan['id'], $renewedEndDate, 'now');
+
+    $this->recordPayment($contributions[0]);
+
+    $this->assertEquals($renewedEndDate, $this->getPlanMembershipEndDate($paymentPlan['id']));
   }
 
   /**
@@ -707,26 +743,56 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEditTest extends BaseHeadlessTest 
   }
 
   /**
-   * Moves the plan's membership end date to the day before the plan starts,
-   * as for a lapsed member who sets up a plan to renew.
+   * Ends the plan's membership yesterday, an end date set when it was last
+   * renewed a year ago, as for a lapsed member who sets up a plan to renew.
    *
    * @param int $paymentPlanID
    *
    * @return string
    *   The new end date.
    */
-  private function endMembershipBeforePlanStarts($paymentPlanID) {
-    $planStartDate = civicrm_api3('ContributionRecur', 'getvalue', [
-      'id' => $paymentPlanID,
-      'return' => 'start_date',
-    ]);
-    $endDate = date('Y-m-d', strtotime('-1 day', strtotime($planStartDate)));
+  private function lapsePlanMembership($paymentPlanID) {
+    $endDate = date('Y-m-d', strtotime('-1 day'));
+    $this->setPlanMembershipEndDate($paymentPlanID, $endDate, '-1 year');
+
+    return $endDate;
+  }
+
+  /**
+   * Sets the plan's membership end date and logs it in core's membership log
+   * as set at the given time.
+   *
+   * @param int $paymentPlanID
+   * @param string $endDate
+   * @param string $loggedAt
+   *   When the end date was set, e.g. '-1 year'.
+   */
+  private function setPlanMembershipEndDate($paymentPlanID, $endDate, $loggedAt) {
     CRM_Core_DAO::executeQuery(
       'UPDATE civicrm_membership SET end_date = %1 WHERE contribution_recur_id = %2',
       [1 => [$endDate, 'String'], 2 => [$paymentPlanID, 'Integer']]
     );
+    CRM_Core_DAO::executeQuery('
+      INSERT INTO civicrm_membership_log (membership_id, status_id, start_date, end_date, modified_id, modified_date, membership_type_id)
+      SELECT id, status_id, start_date, end_date, contact_id, %1, membership_type_id
+      FROM civicrm_membership
+      WHERE contribution_recur_id = %2
+    ', [
+      1 => [date('YmdHis', strtotime($loggedAt)), 'String'],
+      2 => [$paymentPlanID, 'Integer'],
+    ]);
+  }
 
-    return $endDate;
+  /**
+   * Gets the end date core gives a one-year rolling membership renewed from
+   * the given end date.
+   *
+   * @param string $endDate
+   *
+   * @return string
+   */
+  private function getEndDateOneTermAfter($endDate) {
+    return date('Y-m-d', strtotime('-1 day', strtotime('+1 year', strtotime('+1 day', strtotime($endDate)))));
   }
 
   /**

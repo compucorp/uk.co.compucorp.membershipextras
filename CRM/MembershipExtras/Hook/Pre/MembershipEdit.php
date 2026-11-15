@@ -10,6 +10,14 @@ use CRM_MembershipExtras_ExtensionUtil as ExtensionUti;
 class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
 
   /**
+   * How many days apart a membership's end date and a payment plan can be
+   * saved and still count as set up together. Core logs some membership
+   * changes with the day only (at midnight), so they are compared by day,
+   * and a day either side covers a setup that runs past midnight.
+   */
+  private const PLAN_SETUP_DAYS = 1;
+
+  /**
    * Parameters that will be used to create the membership.
    *
    * @var array
@@ -221,21 +229,27 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
    * Does the membership's end date already cover the period of the payment
    * plan that the payment belongs to?
    *
-   * A payment plan pays for a term that was given when the plan was set up:
-   * at signup the membership is created with its full term, and the renewal
-   * job extends it when it creates the next period's plan. Payments on such
-   * a plan must not add another term. A plan set up to renew a membership
-   * that has not been extended yet (e.g. an existing member renewing on a
-   * webform, paid later by GoCardless) is not covered, and its payment is
-   * what extends the membership, once.
+   * A payment plan pays for a term that is usually given when the plan is set
+   * up: a signup creates the membership with its term, and the renewal job
+   * and the back-office renewal extend the membership as they create the
+   * plan. Payments on such a plan must not add another term. A plan set up to
+   * renew a membership that has not been extended yet (e.g. an existing
+   * member renewing on a webform, paid later by GoCardless) is not covered,
+   * and its payment is what extends the membership, once.
    *
-   * The term counts as given when either:
+   * Core logs a membership's dates on every save, so the log says when its
+   * current end date was set. The term counts as given when:
    * - another payment on this plan has already completed: its term was added
    *   then (a renewal's later instalments), or
-   * - the end date is on or after the end of one membership term counted from
-   *   the plan's start date, using core's own date calculation for the
-   *   membership type so fixed and rolling types work (signups and plans
-   *   created by the renewal job).
+   * - the end date was first logged when the plan was set up.
+   * It is not given when the end date was already logged before the plan was
+   * set up: the plan renews that membership.
+   *
+   * With no log of the end date from before or at the plan's setup (data
+   * imported, or extended by the renewal job before it logged its changes),
+   * the term counts as given when the end date is on or after the end of one
+   * membership term counted from the plan's start date, using core's own date
+   * calculation for the membership type.
    *
    * @return bool
    */
@@ -250,7 +264,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
     }
 
     $plan = \Civi\Api4\ContributionRecur::get(FALSE)
-      ->addSelect('start_date')
+      ->addSelect('start_date', 'create_date')
       ->addWhere('id', '=', $recurringContributionID)
       ->execute()
       ->first();
@@ -259,21 +273,60 @@ class CRM_MembershipExtras_Hook_Pre_MembershipEdit {
       ->addWhere('id', '=', $this->id)
       ->execute()
       ->first();
-    if (!is_array($plan) || !is_array($membership) || empty($plan['start_date']) || empty($membership['end_date'])) {
+    if (!is_array($plan) || !is_array($membership) || empty($membership['end_date'])) {
       return TRUE;
     }
-    $planStartDate = $plan['start_date'];
 
+    $endDateLoggedOn = $this->getEndDateFirstLoggedOn($membership['end_date']);
+    if ($endDateLoggedOn !== NULL && !empty($plan['create_date'])) {
+      $planCreatedOn = date('Y-m-d', strtotime($plan['create_date']));
+      if ($endDateLoggedOn < date('Y-m-d', strtotime($planCreatedOn . ' -' . self::PLAN_SETUP_DAYS . ' day'))) {
+        return FALSE;
+      }
+      if ($endDateLoggedOn <= date('Y-m-d', strtotime($planCreatedOn . ' +' . self::PLAN_SETUP_DAYS . ' day'))) {
+        return TRUE;
+      }
+    }
+
+    if (empty($plan['start_date'])) {
+      return TRUE;
+    }
+
+    // The plan's start is passed as the join date too, so a fixed period
+    // type's rollover is checked on that day rather than on the payment's.
+    $planStartDate = date('Y-m-d', strtotime($plan['start_date']));
     $termDates = CRM_Member_BAO_MembershipType::getDatesForMembershipType(
       $membership['membership_type_id'],
-      NULL,
-      date('Y-m-d', strtotime($planStartDate))
+      $planStartDate,
+      $planStartDate
     );
     if (empty($termDates['end_date'])) {
       return TRUE;
     }
 
     return date('Ymd', strtotime($membership['end_date'])) >= date('Ymd', strtotime($termDates['end_date']));
+  }
+
+  /**
+   * On what day was the membership's end date first logged?
+   *
+   * @param string $endDate
+   *   The membership's current end date.
+   *
+   * @return string|null
+   *   The day (Y-m-d) of the first membership log entry with that end date,
+   *   or NULL when there is none.
+   */
+  private function getEndDateFirstLoggedOn($endDate) {
+    $loggedAt = CRM_Core_DAO::singleValueQuery(
+      'SELECT MIN(modified_date) FROM civicrm_membership_log WHERE membership_id = %1 AND end_date = %2',
+      [
+        1 => [$this->id, 'Integer'],
+        2 => [date('Y-m-d', strtotime($endDate)), 'String'],
+      ]
+    );
+
+    return empty($loggedAt) ? NULL : date('Y-m-d', strtotime($loggedAt));
   }
 
   /**

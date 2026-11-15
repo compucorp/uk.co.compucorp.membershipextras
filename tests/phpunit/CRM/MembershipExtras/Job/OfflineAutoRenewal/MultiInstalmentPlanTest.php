@@ -37,6 +37,48 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '-1 month -1 day'));
   }
 
+  /**
+   * The renewal job logs the membership's new end date in core's membership
+   * log, as core does on every membership save. Membership Extras reads it
+   * to tell that the renewed plan's term was given when the plan was created.
+   */
+  public function testRenewalLogsExtendedMembershipEndDate() {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+    $endDateBefore = civicrm_api3('Membership', 'getvalue', [
+      'contribution_recur_id' => $paymentPlan['id'],
+      'return' => 'end_date',
+    ]);
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $membership = civicrm_api3('Membership', 'getsingle', [
+      'contact_id' => $paymentPlan['contact_id'],
+      'return' => ['id', 'end_date'],
+    ]);
+    $this->assertGreaterThan($endDateBefore, $membership['end_date']);
+    $loggedRows = CRM_Core_DAO::singleValueQuery(
+      'SELECT COUNT(id) FROM civicrm_membership_log WHERE membership_id = %1 AND end_date = %2',
+      [1 => [$membership['id'], 'Integer'], 2 => [$membership['end_date'], 'String']]
+    );
+    $this->assertGreaterThan(0, (int) $loggedRows);
+  }
+
   public function testRenewalWithMembershipEndDateEqualTodayDateWillRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
