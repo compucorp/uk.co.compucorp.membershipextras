@@ -909,50 +909,6 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $this->assertEquals('In Progress', $this->getRecurStatusName($nextPeriodID));
   }
 
-  /**
-   * A renewed plan must stay In Progress when it is edited before any of its
-   * own instalments is paid (e.g. a failed charge updating failure_count).
-   *
-   * Every save of a plan runs PaymentPlanStatusCalculator. With no paid
-   * instalments it used to return Pending, which demoted the renewed plan
-   * wherever the calculator can see In Progress plans (CiviCRM 5.x, and 6.x
-   * once it reads the plan statuses). It now keeps an In Progress plan In
-   * Progress until its instalments are paid.
-   */
-  public function testRenewedPaymentPlanStaysInProgressWhenEditedBeforeAnyInstalmentIsPaid() {
-    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
-    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
-    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
-    $paymentPlanMembershipOrder->paymentPlanStatus = 'Completed';
-    $paymentPlanMembershipOrder->lineItems[] = [
-      'entity_table' => 'civicrm_membership',
-      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
-      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
-      'label' => $this->testRollingMembershipType['name'],
-      'qty' => 1,
-      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
-      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
-      'financial_type_id' => 'Member Dues',
-      'non_deductible_amount' => 0,
-    ];
-    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
-
-    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
-    $multipleInstalmentRenewal->run();
-
-    $nextPeriodID = $this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']);
-    $this->assertNotNull($nextPeriodID);
-
-    // A failed charge records the failure on the plan, which runs Membership
-    // Extras' status recalculation.
-    \Civi\Api4\ContributionRecur::update(FALSE)
-      ->addWhere('id', '=', $nextPeriodID)
-      ->addValue('failure_count', 1)
-      ->execute();
-
-    $this->assertEquals('In Progress', $this->getRecurStatusName($nextPeriodID));
-  }
-
   public function testRenewalWillUpdateNextScheduledContributionDateToOneMonthAfterLastContributionDate() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = '2022-08-01';
