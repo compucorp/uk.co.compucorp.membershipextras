@@ -11,6 +11,13 @@ use CRM_MembershipExtras_Test_Fabricator_PaymentPlanOrder as PaymentPlanOrderFab
  */
 class CRM_MembershipExtras_Hook_Pre_ContributionRecurTest extends BaseHeadlessTest {
 
+  /**
+   * The "In Progress" contribution status option a test removed.
+   *
+   * @var array|null
+   */
+  private $removedInProgressStatus = NULL;
+
   public function testPreventUpdatingNextScheduledContributionDateForSupportedRecurContribution() {
     $offlinePaymentProcessorId = civicrm_api3('PaymentProcessor', 'getvalue', [
       'return' => 'id',
@@ -120,17 +127,41 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecurTest extends BaseHeadlessTe
   }
 
   /**
+   * Puts back the "In Progress" contribution status a test removed.
+   *
+   * The test transaction rolls the delete back, but not the cached status
+   * lists, so they are flushed here for the next test.
+   */
+  protected function tearDown(): void {
+    if (is_array($this->removedInProgressStatus)) {
+      \Civi\Api4\OptionValue::create(FALSE)
+        ->setValues($this->removedInProgressStatus)
+        ->execute();
+      $this->removedInProgressStatus = NULL;
+    }
+    CRM_Core_PseudoConstant::flush();
+    Civi::cache('metadata')->clear();
+
+    parent::tearDown();
+  }
+
+  /**
    * Removes "In Progress" from the contribution status options, as on
    * CiviCRM 6.x, where it is only a recurring contribution status.
    */
   private function removeInProgressFromContributionStatuses() {
-    $optionValueID = CRM_Core_DAO::singleValueQuery("
-      SELECT ov.id FROM civicrm_option_value ov
-      INNER JOIN civicrm_option_group og ON og.id = ov.option_group_id
-      WHERE og.name = 'contribution_status' AND ov.name = 'In Progress'
-    ");
-    if ($optionValueID) {
-      CRM_Core_DAO::executeQuery('DELETE FROM civicrm_option_value WHERE id = %1', [1 => [$optionValueID, 'Integer']]);
+    $inProgress = \Civi\Api4\OptionValue::get(FALSE)
+      ->addSelect('option_group_id', 'label', 'value', 'name', 'weight', 'is_active', 'is_reserved', 'filter')
+      ->addWhere('option_group_id:name', '=', 'contribution_status')
+      ->addWhere('name', '=', 'In Progress')
+      ->execute()
+      ->first();
+    if (is_array($inProgress)) {
+      \Civi\Api4\OptionValue::delete(FALSE)
+        ->addWhere('id', '=', $inProgress['id'])
+        ->execute();
+      unset($inProgress['id']);
+      $this->removedInProgressStatus = $inProgress;
     }
     CRM_Core_PseudoConstant::flush();
     Civi::cache('metadata')->clear();
