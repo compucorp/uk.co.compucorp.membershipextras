@@ -126,9 +126,11 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
       return FALSE;
     }
 
-    $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    $currentStatus = $contributionStatus[$this->recurringContribution['contribution_status_id']] ?? NULL;
-    $newStatus = $contributionStatus[$this->params['contribution_status_id']] ?? $this->params['contribution_status_id'];
+    // Plan statuses come from the recurring contribution status options, not
+    // the contribution ones (CIVIMM-593).
+    $planStatuses = CRM_Contribute_BAO_ContributionRecur::buildOptions('contribution_status_id', 'validate');
+    $currentStatus = $planStatuses[$this->recurringContribution['contribution_status_id']] ?? NULL;
+    $newStatus = $planStatuses[$this->params['contribution_status_id']] ?? $this->params['contribution_status_id'];
 
     return $currentStatus === 'Cancelled' && $newStatus === PaymentPlanStatusCalculator::CONTRIBUTION_STATUS_COMPLETED;
   }
