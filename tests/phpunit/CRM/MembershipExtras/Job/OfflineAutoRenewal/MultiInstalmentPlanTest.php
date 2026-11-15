@@ -913,11 +913,11 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
    * A renewed plan must stay In Progress when it is edited before any of its
    * own instalments is paid (e.g. a failed charge updating failure_count).
    *
-   * Today this holds because PaymentPlanStatusCalculator looks the status up
-   * in the contribution status list, which has no "In Progress", so it never
-   * recalculates an In Progress plan (the cause of MAE-1403). A fix for
-   * MAE-1403 that lets the calculator see In Progress plans would demote
-   * this plan to Pending: this test is here to fail if that happens.
+   * Every save of a plan runs PaymentPlanStatusCalculator. With no paid
+   * instalments it used to return Pending, which demoted the renewed plan
+   * wherever the calculator can see In Progress plans (CiviCRM 5.x, and 6.x
+   * once it reads the plan statuses). It now keeps an In Progress plan In
+   * Progress until its instalments are paid.
    */
   public function testRenewedPaymentPlanStaysInProgressWhenEditedBeforeAnyInstalmentIsPaid() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();

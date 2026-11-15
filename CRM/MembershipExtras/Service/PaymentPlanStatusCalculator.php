@@ -85,6 +85,15 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
         $status = self::CONTRIBUTION_STATUS_INPROGRESS;
         break;
 
+      // A plan that is already In Progress stays In Progress until its
+      // instalments are paid. The renewal job creates the next period's plan
+      // In Progress before any of its instalments is paid (PAYPLAN-6-b), and
+      // it must not drop back to Pending on its next save.
+      case isset($this->contributionStatusValueMap[self::CONTRIBUTION_STATUS_INPROGRESS])
+        && $this->currentStatusId == $this->contributionStatusValueMap[self::CONTRIBUTION_STATUS_INPROGRESS]:
+        $status = self::CONTRIBUTION_STATUS_INPROGRESS;
+        break;
+
       default:
         $status = self::CONTRIBUTION_STATUS_PENDING;
     }
