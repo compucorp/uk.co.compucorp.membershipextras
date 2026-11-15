@@ -8,7 +8,12 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
 
   private $recurContributionId;
 
-  private $contributionStatusValueMap;
+  /**
+   * Recurring contribution (plan) status values, keyed by name.
+   *
+   * @var array
+   */
+  private $recurStatusValueMap;
 
   private $installmentsCount;
 
@@ -17,21 +22,19 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
   public function __construct($recurContributionId) {
     $this->recurContributionId = $recurContributionId;
 
-    $this->setContributionStatusesValueMap();
+    $this->setRecurStatusValueMap();
     $this->setRecurContributionDetails();
   }
 
-  private function setContributionStatusesValueMap() {
-    $contributionStatuses = civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => 'contribution_status',
-      'options' => ['limit' => 0],
-    ]);
-    $contributionStatusValueMap = [];
-    foreach ($contributionStatuses['values'] as $currentStatus) {
-      $contributionStatusValueMap[$currentStatus['name']] = $currentStatus['value'];
-    }
-
-    $this->contributionStatusValueMap = $contributionStatusValueMap;
+  /**
+   * Loads the plan statuses from the recurring contribution status options.
+   *
+   * Not the contribution status options: on CiviCRM 6.x those have no
+   * "In Progress", and some values mean different statuses in the two.
+   */
+  private function setRecurStatusValueMap() {
+    $statuses = CRM_Contribute_BAO_ContributionRecur::buildOptions('contribution_status_id', 'validate');
+    $this->recurStatusValueMap = is_array($statuses) ? array_flip($statuses) : [];
   }
 
   private function setRecurContributionDetails() {
@@ -54,11 +57,11 @@ class CRM_MembershipExtras_Service_PaymentPlanStatusCalculator {
    * @return string
    */
   public function calculate() {
-    $processableStatuses = [
-      $this->contributionStatusValueMap[self::CONTRIBUTION_STATUS_PENDING],
-      $this->contributionStatusValueMap[self::CONTRIBUTION_STATUS_COMPLETED],
-      $this->contributionStatusValueMap[self::CONTRIBUTION_STATUS_INPROGRESS],
-    ];
+    $processableStatuses = array_filter([
+      $this->recurStatusValueMap[self::CONTRIBUTION_STATUS_PENDING] ?? NULL,
+      $this->recurStatusValueMap[self::CONTRIBUTION_STATUS_COMPLETED] ?? NULL,
+      $this->recurStatusValueMap[self::CONTRIBUTION_STATUS_INPROGRESS] ?? NULL,
+    ]);
     if (!in_array($this->currentStatusId, $processableStatuses)) {
       return NULL;
     }

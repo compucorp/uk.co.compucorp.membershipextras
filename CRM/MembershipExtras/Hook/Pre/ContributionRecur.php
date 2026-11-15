@@ -118,8 +118,13 @@ class CRM_MembershipExtras_Hook_Pre_ContributionRecur {
       return;
     }
 
-    $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    $statusID = array_search($newStatus, $contributionStatus);
+    // A plan's status comes from the recurring contribution status options,
+    // not the contribution ones: on CiviCRM 6.x the contribution options have
+    // no "In Progress", and some values mean different statuses in the two.
+    $statusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newStatus);
+    if (empty($statusID)) {
+      return;
+    }
     $this->params['contribution_status_id'] = $statusID;
 
     if ($newStatus === PaymentPlanStatusCalculator::CONTRIBUTION_STATUS_COMPLETED && $this->recurringContribution['installments'] > 1) {

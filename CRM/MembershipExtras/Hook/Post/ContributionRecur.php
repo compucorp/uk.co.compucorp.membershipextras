@@ -51,7 +51,7 @@ class CRM_MembershipExtras_Hook_Post_ContributionRecur {
    * Updates end dates for line items associated to the recurring contribution.
    */
   private function updateLineItemEndDates() {
-    $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus($this->contributionRecurBAO->contribution_status_id, 'name');
+    $contributionStatus = CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $this->contributionRecurBAO->contribution_status_id);
 
     if ($contributionStatus === 'Completed' && $this->contributionRecurBAO->installments > 1) {
       $subscriptionLines = $this->getSubscriptionLines();
