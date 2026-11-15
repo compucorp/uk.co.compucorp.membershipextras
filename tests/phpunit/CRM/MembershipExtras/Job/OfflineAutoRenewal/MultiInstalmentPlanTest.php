@@ -945,6 +945,24 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
   }
 
   /**
+   * A plan with no payment processor (pay later) keeps renewing while another
+   * processor needs a saved payment method.
+   */
+  public function testPlanWithoutProcessorRenewsWhenAnotherProcessorNeedsSavedPaymentMethod() {
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($this->buildRenewablePaymentPlanOrder());
+    $this->requireSavedPaymentMethodForProcessorOf($paymentPlan['id']);
+    \Civi\Api4\ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $paymentPlan['id'])
+      ->addValue('payment_processor_id', NULL)
+      ->execute();
+
+    $multipleInstalmentRenewal = new MultipleInstalmentRenewalJob();
+    $multipleInstalmentRenewal->run();
+
+    $this->assertNotNull($this->getTheNewRecurContributionIdFromCurrentOne($paymentPlan['id']));
+  }
+
+  /**
    * A monthly payment plan that started over two years ago and is due for
    * renewal.
    */

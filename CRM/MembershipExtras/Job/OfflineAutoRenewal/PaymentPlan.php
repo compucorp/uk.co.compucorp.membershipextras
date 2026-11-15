@@ -283,7 +283,10 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       return '';
     }
 
-    return ' AND NOT (ccr.payment_processor_id IN (' . implode(',', array_map('intval', $ids)) . ') AND ccr.payment_token_id IS NULL)';
+    // A plan with no processor (pay later) has payment_processor_id NULL.
+    // "NULL IN (...)" is NULL rather than FALSE, which would leave the plan
+    // out, so compare 0 instead.
+    return ' AND NOT (COALESCE(ccr.payment_processor_id, 0) IN (' . implode(',', array_map('intval', $ids)) . ') AND ccr.payment_token_id IS NULL)';
   }
 
   /**
