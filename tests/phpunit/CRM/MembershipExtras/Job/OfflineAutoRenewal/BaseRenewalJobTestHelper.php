@@ -298,4 +298,22 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_BaseRenewalJobTestHelper exten
     ];
   }
 
+  /**
+   * Gets the status name of a recurring contribution.
+   *
+   * @param int $recurContributionId
+   *
+   * @return string
+   */
+  protected function getRecurStatusName(int $recurContributionId): string {
+    $recur = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('contribution_status_id:name')
+      ->addWhere('id', '=', $recurContributionId)
+      ->execute()
+      ->first();
+    $this->assertIsArray($recur);
+
+    return (string) $recur['contribution_status_id:name'];
+  }
+
 }
