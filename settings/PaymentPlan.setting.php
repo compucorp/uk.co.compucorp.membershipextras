@@ -80,6 +80,9 @@ return [
     'html_type' => 'select',
     'quick_form_type' => 'Element',
     'default' => 'renew',
+    // Needed for Civi::settings()->get() to apply the default above.
+    'is_domain' => 1,
+    'is_contact' => 0,
     'is_required' => TRUE,
     'pseudoconstant' => [
       'callback' => 'CRM_MembershipExtras_SettingsManager::getWebformExistingMembershipModeOptions',

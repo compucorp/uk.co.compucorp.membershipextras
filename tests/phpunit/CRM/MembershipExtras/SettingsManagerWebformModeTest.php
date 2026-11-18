@@ -14,20 +14,21 @@ class CRM_MembershipExtras_SettingsManagerWebformModeTest extends BaseHeadlessTe
   public function testDefaultsToRenewWhenNeverSaved() {
     Civi::settings()->revert(self::SETTING);
 
-    $this->assertEquals(SettingsManager::WEBFORM_MODE_RENEW, SettingsManager::getWebformExistingMembershipMode());
+    $this->assertSame('renew', Civi::settings()->get(self::SETTING));
+    $this->assertSame(SettingsManager::WEBFORM_MODE_RENEW, SettingsManager::getWebformExistingMembershipMode());
   }
 
   public function testReturnsEachSavedOption() {
     foreach (array_keys(SettingsManager::getWebformExistingMembershipModeOptions()) as $mode) {
       Civi::settings()->set(self::SETTING, $mode);
-      $this->assertEquals($mode, SettingsManager::getWebformExistingMembershipMode(), "Mode $mode");
+      $this->assertSame($mode, SettingsManager::getWebformExistingMembershipMode(), "Mode $mode");
     }
   }
 
   public function testUnknownValueFallsBackToRenew() {
     Civi::settings()->set(self::SETTING, 'bogus');
 
-    $this->assertEquals(SettingsManager::WEBFORM_MODE_RENEW, SettingsManager::getWebformExistingMembershipMode());
+    $this->assertSame(SettingsManager::WEBFORM_MODE_RENEW, SettingsManager::getWebformExistingMembershipMode());
   }
 
   public function testOptionsAreTheThreeSpecLabelsInOrder() {
@@ -41,10 +42,16 @@ class CRM_MembershipExtras_SettingsManagerWebformModeTest extends BaseHeadlessTe
   public function testSettingMetadataIsInThePaymentPlanGroup() {
     $field = civicrm_api3('Setting', 'getfields', ['name' => self::SETTING])['values'][self::SETTING];
 
-    $this->assertEquals('membershipextras_paymentplan', $field['group']);
-    $this->assertEquals('String', $field['type']);
-    $this->assertEquals('select', $field['html_type']);
-    $this->assertEquals('renew', $field['default']);
+    $this->assertSame('membershipextras_paymentplan', $field['group']);
+    $this->assertSame('String', $field['type']);
+    $this->assertSame('select', $field['html_type']);
+    $this->assertSame('renew', $field['default']);
+  }
+
+  public function testSettingOptionsComeFromThePseudoconstantCallback() {
+    $options = civicrm_api3('Setting', 'getoptions', ['field' => self::SETTING])['values'];
+
+    $this->assertSame(['renew', 'new_if_not_current', 'new_if_not_current_and_ended'], array_keys($options));
   }
 
 }

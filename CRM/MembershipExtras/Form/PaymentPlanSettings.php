@@ -70,11 +70,11 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
    */
   private function addWebformExistingMembershipModeField($field) {
     $this->add(
-      'select',
+      $field['html_type'],
       $field['name'],
       ts($field['title']),
       CRM_MembershipExtras_SettingsManager::getWebformExistingMembershipModeOptions(),
-      TRUE
+      $field['is_required']
     );
   }
 

@@ -79,12 +79,15 @@ class CRM_MembershipExtras_SettingsManager {
 
   /**
    * What a webform sign-up does with an existing membership of the same
-   * organisation. Falls back to 'renew' (CiviCRM default) for any unknown value.
+   * organisation. Read straight from Civi::settings() (which applies the
+   * metadata default) rather than the Setting API, so a stale metadata cache
+   * cannot make it throw. Falls back to 'renew' (CiviCRM default) for a
+   * missing or unknown value.
    *
    * @return string
    */
   public static function getWebformExistingMembershipMode() {
-    $mode = self::getSettingValue('membershipextras_webform_existing_membership_mode');
+    $mode = Civi::settings()->get('membershipextras_webform_existing_membership_mode');
     if (is_string($mode) && array_key_exists($mode, self::getWebformExistingMembershipModeOptions())) {
       return $mode;
     }
