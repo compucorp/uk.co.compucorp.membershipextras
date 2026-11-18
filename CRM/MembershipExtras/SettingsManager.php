@@ -14,6 +14,13 @@ class CRM_MembershipExtras_SettingsManager {
   const MEMBERSHIP_TYPE_SETTINGS_KEY = 'membership_extras_membership_type_settings';
 
   /**
+   * Values of the 'membershipextras_webform_existing_membership_mode' setting.
+   */
+  const WEBFORM_MODE_RENEW = 'renew';
+  const WEBFORM_MODE_NEW_IF_NOT_CURRENT = 'new_if_not_current';
+  const WEBFORM_MODE_NEW_IF_NOT_CURRENT_AND_ENDED = 'new_if_not_current_and_ended';
+
+  /**
    * Returns the details of the default payment processor as per payment plan
    * settings, or NULL if it does not exist.
    *
@@ -55,6 +62,34 @@ class CRM_MembershipExtras_SettingsManager {
     (new CRM_MembershipExtras_Hook_CustomDispatch_AutoRenewExcludedCustomFields($customFieldsIdsToExcludeForAutoRenew))->dispatch();
 
     return array_values(array_unique(array_map('intval', $customFieldsIdsToExcludeForAutoRenew)));
+  }
+
+  /**
+   * Options for the 'Re-joining through a webform' setting, in display order.
+   *
+   * @return string[]
+   */
+  public static function getWebformExistingMembershipModeOptions() {
+    return [
+      self::WEBFORM_MODE_RENEW => ts('Renew the existing membership (CiviCRM default)'),
+      self::WEBFORM_MODE_NEW_IF_NOT_CURRENT => ts('Create a new membership only if the existing one is not current'),
+      self::WEBFORM_MODE_NEW_IF_NOT_CURRENT_AND_ENDED => ts('Create a new membership only if the existing one is not current and its end date has passed (more strict)'),
+    ];
+  }
+
+  /**
+   * What a webform sign-up does with an existing membership of the same
+   * organisation. Falls back to 'renew' (CiviCRM default) for any unknown value.
+   *
+   * @return string
+   */
+  public static function getWebformExistingMembershipMode() {
+    $mode = self::getSettingValue('membershipextras_webform_existing_membership_mode');
+    if (is_string($mode) && array_key_exists($mode, self::getWebformExistingMembershipModeOptions())) {
+      return $mode;
+    }
+
+    return self::WEBFORM_MODE_RENEW;
   }
 
   /**
