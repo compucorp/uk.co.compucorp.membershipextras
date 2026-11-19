@@ -126,6 +126,13 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
   protected $supportedPaymentProcessorIDs;
 
   /**
+   * ID of the Cancelled membership status.
+   *
+   * @var int
+   */
+  protected $cancelledMembershipStatusID;
+
+  /**
    * @var CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker
    */
   protected $autoUpgradableMembershipCheckService;
@@ -141,6 +148,22 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
     $this->setRecurContributionStatusesNameMap();
     $this->setSupportedPaymentProcessorIDs();
     $this->setDaysToRenewInAdvance();
+    $this->setCancelledMembershipStatusID();
+  }
+
+  /**
+   * Sets the ID of the Cancelled membership status.
+   *
+   * If a site has no membership status named Cancelled, no plan can be
+   * skipped for a cancelled membership, and renewals run as before. That is
+   * logged rather than thrown: stopping the renewal job would stop every
+   * plan's renewal, not just the ones with a cancelled membership.
+   */
+  private function setCancelledMembershipStatusID() {
+    $this->cancelledMembershipStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Member_BAO_Membership', 'status_id', 'Cancelled');
+    if ($this->cancelledMembershipStatusID === 0) {
+      \Civi::log()->warning('Membership Extras offline auto-renewal: no membership status named "Cancelled" was found, so plans whose membership is cancelled are not skipped.');
+    }
   }
 
   /**

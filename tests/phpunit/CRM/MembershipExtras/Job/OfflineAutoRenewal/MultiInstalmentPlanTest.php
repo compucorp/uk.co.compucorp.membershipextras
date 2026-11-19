@@ -37,6 +37,33 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_MultiInstalmentPlanTest extend
     $this->assertTrue($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '-1 month -1 day'));
   }
 
+  /**
+   * @dataProvider planStatusProvider
+   */
+  public function testRenewalWithCancelledMembershipWillNotRenew($planStatus) {
+    $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
+    $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-2 year -1 month'));
+    $paymentPlanMembershipOrder->paymentPlanFrequency = 'Monthly';
+    $paymentPlanMembershipOrder->paymentPlanStatus = $planStatus;
+    $paymentPlanMembershipOrder->lineItems[] = [
+      'entity_table' => 'civicrm_membership',
+      'price_field_id' => $this->testRollingMembershipTypePriceFieldValue['price_field_id'],
+      'price_field_value_id' => $this->testRollingMembershipTypePriceFieldValue['id'],
+      'label' => $this->testRollingMembershipType['name'],
+      'qty' => 1,
+      'unit_price' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'line_total' => $this->testRollingMembershipTypePriceFieldValue['amount'],
+      'financial_type_id' => 'Member Dues',
+      'non_deductible_amount' => 0,
+    ];
+    $paymentPlan = PaymentPlanOrderFabricator::fabricate($paymentPlanMembershipOrder);
+    $this->cancelPaymentPlanMemberships($paymentPlan['id']);
+
+    (new MultipleInstalmentRenewalJob())->run();
+
+    $this->assertFalse($this->isPaymentPlanMembershipRenewed($paymentPlan['id'], '-1 month -1 day'));
+  }
+
   public function testRenewalWithMembershipEndDateEqualTodayDateWillRenew() {
     $paymentPlanMembershipOrder = new PaymentPlanMembershipOrder();
     $paymentPlanMembershipOrder->membershipStartDate = date('Y-m-d', strtotime('-1 year +1 day'));
