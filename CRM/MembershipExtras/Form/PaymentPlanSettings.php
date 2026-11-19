@@ -36,6 +36,10 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
           $this->addCustomGroupsToExcludeField($field);
           break;
 
+        case 'membershipextras_webform_existing_membership_mode':
+          $this->addWebformExistingMembershipModeField($field);
+          break;
+
         default:
           $this->addSettingField($field);
           break;
@@ -57,6 +61,21 @@ class CRM_MembershipExtras_Form_PaymentPlanSettings extends CRM_Core_Form {
     ]);
 
     $this->assign('settingFields', $settingFieldNames);
+  }
+
+  /**
+   * Adds the 'Re-joining through a webform' select (MRJ-001.1).
+   *
+   * @param array $field
+   */
+  private function addWebformExistingMembershipModeField($field) {
+    $this->add(
+      $field['html_type'],
+      $field['name'],
+      ts($field['title']),
+      CRM_MembershipExtras_SettingsManager::getWebformExistingMembershipModeOptions(),
+      $field['is_required']
+    );
   }
 
   /**

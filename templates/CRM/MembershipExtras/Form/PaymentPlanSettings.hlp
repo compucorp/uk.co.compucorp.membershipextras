@@ -37,3 +37,10 @@
 {ts}If the field is selected, on membership auto-renewed, 
 the start date of the membership period is set as the end date of the last period + 1 day, so the start date increases each period{/ts}
 {/htxt}
+
+{htxt id="membershipextras_webform_existing_membership_mode-title"}
+  {ts}Re-joining through a webform{/ts}
+{/htxt}
+{htxt id="membershipextras_webform_existing_membership_mode"}
+{ts}Controls what happens when a contact submits a CiviCRM webform for a membership and already has a membership of the same organisation. 'Not current' means the membership's status is not marked as a current membership (for example Expired, Lapsed or Cancelled). Memberships with a current status (for example New, Current or Grace) are always renewed. Memberships with no end date (lifetime) never count as having passed their end date. This setting applies only to webform sign-ups. Contribution pages and back-office renewals are not affected.{/ts}
+{/htxt}

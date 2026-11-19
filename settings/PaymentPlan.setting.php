@@ -71,4 +71,22 @@ return [
     'default' => FALSE,
     'is_required' => FALSE,
   ],
+  'membershipextras_webform_existing_membership_mode' => [
+    'group_name' => 'MembershipExtras: Payment Plan',
+    'group' => 'membershipextras_paymentplan',
+    'name' => 'membershipextras_webform_existing_membership_mode',
+    'title' => 'When someone signs up through a webform and already has a membership of the same organisation',
+    'type' => 'String',
+    'html_type' => 'select',
+    'quick_form_type' => 'Element',
+    'default' => 'renew',
+    // Needed for Civi::settings()->get() to apply the default above.
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'is_required' => TRUE,
+    'pseudoconstant' => [
+      'callback' => 'CRM_MembershipExtras_SettingsManager::getWebformExistingMembershipModeOptions',
+    ],
+    'description' => 'Controls whether a webform sign-up renews an existing membership of the same organisation or creates a new one when the existing one is not current.',
+  ],
 ];
