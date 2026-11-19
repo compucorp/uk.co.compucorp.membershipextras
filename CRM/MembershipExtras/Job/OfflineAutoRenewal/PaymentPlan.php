@@ -731,7 +731,38 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
       }
 
       $membership->save();
+      $this->logMembershipDates((int) $relatedMembershipID);
     }
+  }
+
+  /**
+   * Logs a membership's dates the way core does on every membership save.
+   *
+   * extendExistingMembership() saves the membership directly, which doesn't
+   * write core's membership log. The log shows when the membership was
+   * renewed, and CRM_MembershipExtras_Hook_Pre_MembershipEdit reads it to
+   * tell that the renewed plan's term was given when the plan was created.
+   *
+   * @param int $membershipID
+   */
+  private function logMembershipDates(int $membershipID) {
+    $membership = new CRM_Member_DAO_Membership();
+    $membership->id = $membershipID;
+    if (!$membership->find(TRUE)) {
+      return;
+    }
+
+    $logParams = [
+      'membership_id' => $membership->id,
+      'status_id' => $membership->status_id,
+      'start_date' => CRM_Utils_Date::isoToMysql($membership->start_date),
+      'end_date' => CRM_Utils_Date::isoToMysql($membership->end_date),
+      'modified_date' => date('YmdHis', CRM_Utils_Time::time()),
+      'modified_id' => CRM_Core_Session::getLoggedInContactID() ?: $membership->contact_id,
+      'membership_type_id' => $membership->membership_type_id,
+      'max_related' => $membership->max_related,
+    ];
+    CRM_Member_BAO_MembershipLog::add($logParams);
   }
 
   /**
