@@ -291,7 +291,7 @@ class CRM_MembershipExtras_Service_FinancialTransactionManager {
    * @param string $context
    */
   public static function createDeferredTrxn($contributionID, $lineItem, $context) {
-    if (CRM_Contribute_BAO_Contribution::checkContributeSettings('deferred_revenue_enabled')) {
+    if (Civi::settings()->get('deferred_revenue_enabled')) {
       $lineItem = [$contributionID => [$lineItem['id'] => $lineItem]];
 
       $contribution = new CRM_Contribute_BAO_Contribution();

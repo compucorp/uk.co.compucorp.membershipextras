@@ -16,7 +16,7 @@ var nextPeriodMembershipTypes = {$nextPeriodMembershipTypes|@json_encode};
   {assign var='subTotal' value=0}
   {assign var='taxTotal' value=0}
   {assign var='installmentTotal' value=0}
-  {assign var='installments' value=$recurringContribution.installments|intval}
+  {assign var='installments' value=$recurringContribution.installments|string_format:"%d"}
 
   {foreach from=$nextPeriodLineItems item='currentItem'}
     {if ($installments || (!$installments && !$currentItem.end_date))}
