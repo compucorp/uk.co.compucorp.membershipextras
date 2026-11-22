@@ -14,6 +14,7 @@ function membershipextras_civicrm_config(&$config) {
 
   Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_PaymentAPI', 'preApiCall']);
   Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_ContributionCompleteTransactionAPI', 'preApiCall']);
+  Civi::dispatcher()->addListener('civi.api.prepare', ['CRM_MembershipExtras_Hook_Config_APIWrapper_SubscriptionLineItemProtector', 'preApiCall']);
 }
 
 /**
