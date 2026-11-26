@@ -112,8 +112,9 @@ class CRM_MembershipExtras_Service_AutoUpgradableMembershipChecker {
   private function checkIfMemberInFilterGroup($contactId, $filterGroupId) {
     // smart group contacts are stored in civicrm_group_contact_cache table
     // which has no API, so we are forced to use an SQL query here.
-    $query = "SELECT id FROM civicrm_group_contact WHERE contact_id = %1 AND group_id = %2 UNION 
-                  SELECT id FROM civicrm_group_contact_cache WHERE contact_id = %1 AND group_id = %2";
+    // contact_id, not id: CiviCRM 6.9 drops the id column from civicrm_group_contact_cache (dev/core#2290).
+    $query = "SELECT contact_id FROM civicrm_group_contact WHERE contact_id = %1 AND group_id = %2 UNION
+                  SELECT contact_id FROM civicrm_group_contact_cache WHERE contact_id = %1 AND group_id = %2";
     $result = CRM_Core_DAO::executeQuery($query, [
       1 => [$contactId, 'Integer'],
       2 => [$filterGroupId, 'Integer'],
